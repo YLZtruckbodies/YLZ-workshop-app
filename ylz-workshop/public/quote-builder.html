@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YLZ Quote Builder</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#000;--surface:#111;--surface2:#1a1a1a;--surface3:#222;
+  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.15);
+  --accent:#E8681A;--accent2:#ff7a2e;--accent-dim:rgba(232,104,26,0.15);
+  --text:#fff;--text2:rgba(255,255,255,0.7);--text3:rgba(255,255,255,0.4);
+  --success:#22c55e;--success-dim:rgba(34,197,94,0.15);
+  --warn:#eab308;--warn-dim:rgba(234,179,8,0.15);
+  --danger:#ef4444;
+  --radius:8px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+
+/* Layout */
+.app{display:flex;height:100vh}
+.sidebar{width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-family:'League Spartan',sans-serif;font-size:22px;font-weight:800;letter-spacing:3px;color:#fff}
+.sidebar-logo span{color:var(--accent)}
+.sidebar-sub{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-top:2px}
+.sidebar-nav{flex:1;overflow-y:auto;padding:12px 0}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 20px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text3);transition:all .15s;border-left:3px solid transparent}
+.nav-item:hover{color:var(--text2);background:rgba(255,255,255,0.03)}
+.nav-item.active{color:#fff;background:rgba(255,255,255,0.06);border-left-color:var(--accent)}
+.nav-item.completed{color:var(--success)}
+.nav-item .step-num{width:22px;height:22px;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.nav-item.active .step-num{background:var(--accent);color:#fff}
+.nav-item.completed .step-num{background:var(--success-dim);color:var(--success)}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.main-header{padding:20px 32px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.main-title{font-family:'League Spartan',sans-serif;font-size:24px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.main-desc{font-size:12px;color:var(--text3);margin-top:4px}
+.main-content{flex:1;overflow-y:auto;padding:24px 32px 80px}
+
+/* Step panels */
+.step-panel{display:none}
+.step-panel.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Product Cards */
+.product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.product-card{background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:24px;cursor:pointer;transition:all .2s;text-align:center;position:relative}
+.product-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.product-card.selected{border-color:var(--accent);background:var(--accent-dim)}
+.product-card .card-icon{font-size:48px;margin-bottom:12px}
+.product-card .card-label{font-family:'League Spartan',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}
+.product-card .card-desc{font-size:11px;color:var(--text3);line-height:1.4}
+.product-card .card-badge{position:absolute;top:12px;right:12px;font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;background:var(--accent);color:#fff;text-transform:uppercase;letter-spacing:.5px}
+
+/* Brand cards */
+.brand-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.brand-card{background:var(--surface2);border:2px solid var(--border);border-radius:10px;padding:16px 12px;cursor:pointer;transition:all .2s;text-align:center}
+.brand-card:hover{border-color:var(--accent)}
+.brand-card.selected{border-color:var(--accent);background:var(--accent-dim)}
+.brand-card .brand-name{font-size:13px;font-weight:700;margin-top:8px}
+.brand-card .brand-icon{font-size:32px}
+
+/* Option grid cards */
+.option-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.option-card{background:var(--surface2);border:2px solid var(--border);border-radius:8px;padding:14px 12px;cursor:pointer;transition:all .15s;text-align:center;font-size:13px;font-weight:600}
+.option-card:hover{border-color:var(--accent);color:var(--accent)}
+.option-card.selected{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+
+/* Form elements */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text3)}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border .2s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent)}
+.form-select{appearance:auto;background:var(--surface2)}
+.form-textarea{min-height:80px;resize:vertical}
+.section-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.section-label:first-child{margin-top:0}
+
+/* Checkbox grid */
+.check-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.check-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;transition:all .15s;user-select:none}
+.check-item:hover{border-color:var(--accent)}
+.check-item.checked{border-color:var(--success);background:var(--success-dim)}
+.check-item input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:pointer}
+
+/* Pricing */
+.price-section{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px}
+.price-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:14px}
+.price-row.total{border-top:2px solid var(--border);margin-top:8px;padding-top:16px;font-size:18px;font-weight:700}
+.price-row .label{color:var(--text2)}
+.price-row .value{font-weight:600;font-family:'League Spartan',sans-serif;letter-spacing:.5px}
+.price-row.total .value{color:var(--accent);font-size:22px}
+.price-input{width:100px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:6px 8px;color:var(--text);font-size:14px;text-align:right;font-family:'Inter',sans-serif}
+.price-input:focus{border-color:var(--accent);outline:none}
+
+/* Line items */
+.line-items{margin-bottom:20px}
+.line-item{display:grid;grid-template-columns:2fr 3fr auto auto auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.line-item-header{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);padding-bottom:8px;border-bottom:1px solid var(--border)}
+.line-item input,.line-item select{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:8px;color:var(--text);font-size:12px}
+.line-item input:focus,.line-item select:focus{border-color:var(--accent);outline:none}
+.line-item .remove-btn{width:28px;height:28px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.line-item .remove-btn:hover{border-color:var(--danger);color:var(--danger)}
+.add-line-btn{padding:8px 16px;border-radius:6px;border:1px dashed var(--border);background:transparent;color:var(--text3);cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;margin-top:8px}
+.add-line-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Override section */
+.override-box{background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.3);border-radius:8px;padding:16px;margin-top:16px}
+.override-box .title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--warn);margin-bottom:10px}
+
+/* Buttons */
+.btn{padding:12px 24px;border-radius:8px;font-family:'League Spartan',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:none;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--accent2)}
+.btn-secondary{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-secondary:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover:not(:disabled){background:#16a34a}
+.btn-group{display:flex;gap:10px;margin-top:24px}
+
+/* Customer details box */
+.customer-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px}
+
+/* Quote summary cards */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.summary-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px}
+.summary-card .sc-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px}
+.summary-card .sc-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.summary-card .sc-row .label{color:var(--text3)}
+.summary-card .sc-row .value{font-weight:600}
+
+/* Toast */
+.toast{position:fixed;top:20px;right:20px;padding:14px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:1000;animation:slideIn .3s ease;display:none}
+.toast.success{background:var(--success);color:#fff;display:block}
+.toast.error{background:var(--danger);color:#fff;display:block}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* Historical pricing banner */
+.history-banner{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:rgba(59,130,246,0.9);display:none}
+.history-banner.visible{display:flex;align-items:center;gap:10px}
+
+/* Responsive */
+@media(max-width:900px){
+  .sidebar{display:none}
+  .product-grid,.brand-grid{grid-template-columns:repeat(2,1fr)}
+  .main-content{padding:16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">YLZ <span>QUOTE</span></div>
+      <div class="sidebar-sub">Build & Price</div>
+    </div>
+    <div class="sidebar-nav" id="sidebarNav"></div>
+    <div class="sidebar-footer">
+      <div id="quoteNumDisplay" style="font-weight:700;color:var(--accent);font-size:13px;margin-bottom:4px"></div>
+      <div id="saveStatus">Not saved</div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="main-header">
+      <div class="main-title" id="stepTitle">Select Build Type</div>
+      <div class="main-desc" id="stepDesc">Choose what you're quoting</div>
+    </div>
+    <div class="main-content" id="mainContent"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// DATA - All dropdown options from templates
+// ============================================================
+const DATA = {
+  truckBrands: ['Volvo','Kenworth','Western Star','Isuzu','MAN','Scania','Mercedes Benz','DAF','Mack','Sitrak','UD','Hino','Fuso'],
+  trailerModels: [
+    {id:'DT-3',label:'DT-3 (3-Axle Dog)'},
+    {id:'DT-4',label:'DT-4 (4-Axle Dog)'},
+    {id:'DT-5',label:'DT-5 (5-Axle Dog)'},
+    {id:'ST-2',label:'ST-2 (2-Axle Semi)'},
+    {id:'ST-3',label:'ST-3 (3-Axle Semi)'},
+    {id:'CD-2',label:'CD-2 (2-Axle Convertor Dolly)'},
+    {id:'CD-3',label:'CD-3 (3-Axle Convertor Dolly)'},
+    {id:'PIG-2',label:'PIG 2 (2-Axle Pig)'},
+    {id:'PIG-3',label:'PIG 3 (3-Axle Pig)'}
+  ],
+  trailerTypes: ['P Beam','I Beam','I Beam Drop Deck','Converter Dolly'],
+  materials: ['Hardox 450','Hardox 500','Bisalloy 400','Aluminium','Steel'],
+  bodyLengthsTruck: ['3900mm','4000mm','4100mm','4200mm','4300mm','4400mm','4500mm','4600mm','4660mm','4700mm','4800mm','4900mm','5000mm','5100mm','5200mm','5300mm','5400mm','5500mm','5600mm','5700mm','5800mm','5900mm','6000mm'],
+  bodyLengthsTrailer: ['4660mm','6000mm','6050mm','6100mm','6400mm','7700mm','8300mm','9200mm','9400mm','9600mm','10400mm'],
+  bodyWidths: ['2250mm Steel','2290mm Alloy','2400mm Quarry spec'],
+  bodyHeightsTruck: ['1000mm','1100mm','1150mm','1200mm','1300mm','1410mm','1500mm'],
+  bodyHeightsTrailer: ['1000mm','1100mm','1150mm','1410mm','1500mm','1520mm'],
+  tailgateTypes: ['Barn Doors','Single Piece Drop Down','Single Piece Swing Up','Bi-Fold'],
+  hoists: ['Hyva Alpha 191-4','Hyva Alpha 201-4','Hyva Alpha 241-4','Palfinger PH T74','HPF4090-154-4 (3AD)','HPF5450-174-5 (7700 Dog)','HPF5730-174-5 (8300 Dog)','HPF5800-174-5 (8300 Dog)','HPF6500-196-5 (Semi)','HPF7020-196-5 (10.4m Semi)','HPF3120-135-3','HPF2850-135-3-60','MFB3126.3.2840','Delta S2-87TT-5-5.7'],
+  tarpSystems: ['Manual Pull Over','EziTarp Electric (Razor)','Pulltarp Electric','Aero Easy Cover','Rollover Mesh','Rollover PVC','Side Tipper Tarp','Hoop Tarp'],
+  tarpColours: ['Black','Blue','Dark Blue','Red','Green','Grey','N/A'],
+  tarpBows: ['250mm','320mm (Hardox 4AD)','380mm','450mm'],
+  suspensions: ['SAF Intra IO','SAF Intra IU','TMC LMV','BPW Air Ride','Fuwa Air Ride'],
+  axleMakes: ['BPW','Fuwa','SAF','TMC'],
+  axleTypes: ['Drum Brake','Disc Brake'],
+  brakeModels: ['PD900013 - SAF Intra Disc 285','PD900014 - SAF Intra Disc 335','PD900015 - SAF Intra Drum 285','PD900016 - SAF Intra Drum 335','PD900017 - BPW Air Ride Disc 285','PD900018 - BPW Air Ride Disc 335','PD900019 - Fuwa Air Ride Drum 285','PD900020 - Fuwa Air Ride Drum 335','PD900021 - TMC LMV Drum 285'],
+  wheels: ['Alcoa Machine Finished 285 PCD','Alcoa Machine Finished 335 PCD','Alcoa Dura Bright 285 PCD','Alcoa Dura Bright 335 PCD','Ogreen Machine 285 PCD','Ogreen Machine 335 PCD','Ogreen Polished 285 PCD','Ogreen Polished 335 PCD','Super Light Machined 285 PCD','Super Light Machined 335 PCD','Super Light Polished 285 PCD','Super Light Polished 335 PCD'],
+  tyres: ['Adventurers LR188','Austyre ST01','Austyre Transit','Bridgestone R187','Loadrunner LR188','Remington R628','Austyre Adventurer'],
+  oilTanks: ['TKBRS-40L - Behind cab steel 40L','TKBRS-60L - Behind cab steel 60L','TKBRS-80L - Behind cab steel 80L','TKVER-40L - Vertical steel 40L','TKVER-60L - Vertical steel 60L','TKBRS-40A - Behind cab alloy 40L','TKBRS-60A - Behind cab alloy 60L','TKBRS-80A - Behind cab alloy 80L','TKVER-40A - Vertical alloy 40L','TKVER-60A - Vertical alloy 60L'],
+  valveBanks: ['121.15.113 - Steel outboard','121.15.113 - Steel inside','121.15.104 - Alloy outboard','121.15.104 - Alloy inside'],
+  pumpTypes: ['Permco','Parker','Casappa','Customer Supplied'],
+  couplings: ['V Orlandi','Ringfeder','Rockhinger','Pintle Hook','Bartlett Ball','Holland'],
+  lighting: ['113RMG - Stop/Tail','113AMG - Indicator','113WMG - Reverse','42ARB - Side marker amber','Hella Dura LED side','7030AB - Reflector amber','7030WB - Reflector white','7030RB - Reflector red','LED Beacon amber','LED reverse work light','LED number plate light','Narva combination rear','LED clearance lights'],
+  bodyAccessories: ['Rope Rails','Toolbox LHS','Toolbox RHS','Water Cooler','Ladder','Tow Hitch','Headboard','Cab Guard','Load Pegs','Underbody Toolbox','Grain Sides','Mesh Extensions','Drop Sides','Side Pegs','Rear Bumper'],
+  chassisAccessories: ['Mudguards','Spray Suppression','Side Markers','Reflectors','Air Reservoir','Water Tank','Fuel Tank','Air Dryer','Belly Plates','Chassis Toolbox','Jockey Wheel','Safety Chains'],
+  drawbarOptions: ['Tow coupling - V Orlandi','Tow coupling - Ringfeder','Tow coupling - Rockhinger','Tow coupling - Pintle Hook','Lockflap - Manual','Lockflap - Air operated','Brake - Override','Brake - Air only','Safety chain - 13mm','Safety chain - 16mm','Anderson plug - 50A','Anderson plug - 175A','Drawbar length - 3000mm','Drawbar length - 3500mm','Drawbar length - 4000mm','Drawbar type - Straight / A-frame'],
+  controls: ['Existing Electric in Dash','Existing PTO Switch with Hand Held Controller','12V Hand Controller','24V Hand Controller','OEM Switches in Cab','N/A'],
+  mudflaps: ['YLZ','Customer Supplied','No'],
+  fullCoverGuards: ['Black','White','Grey','Red','Green'],
+  paintColours: ['Black','White','Red','Blue','Green','Grey','Yellow','Orange','Custom'],
+  preparedBy: ['JW','JH','NW','CT'],
+  salesPersons: ['NW','PS'],
+};
+
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  currentStep: 0,
+  buildType: '',       // truck-body, trailer, truck-and-trailer
+  truckBrand: '',
+  trailerModel: '',
+  trailerType: '',
+  material: '',
+  // Dimensions
+  bodyLength: '', bodyWidth: '', bodyHeight: '',
+  // Body options
+  tailgate: '', headboard: false, sheets: '',
+  bodyAccessories: [],
+  // Chassis/Subframe
+  hoist: '', suspension: '', brakes: '', axleMake: '', axleType: '',
+  oilTank: '', valveBank: '', pumpType: '', controls: '',
+  // Tarp
+  tarpSystem: '', tarpColour: '', tarpBows: '',
+  // Running gear
+  wheels: '', tyres: '', mudflaps: '', fullCoverGuards: '',
+  // Drawbar (trailer)
+  drawbarOptions: [],
+  // Paint
+  paintColour: '', paintNotes: '',
+  // Extras
+  chassisAccessories: [],
+  lighting: [],
+  extras: '',
+  // Customer
+  customerName: '', dealerName: '', contactName: '', contactEmail: '', contactPhone: '',
+  // Quote
+  quoteNumber: '', preparedBy: '', salesPerson: '',
+  validDays: 30, notes: '', terms: '',
+  // Pricing
+  lineItems: [],
+  subtotal: 0, margin: 25, overhead: 0, discount: 0, total: 0,
+  overridePrice: null, overrideBy: '', overrideNote: '',
+  // Meta
+  quoteId: null,
+};
+
+// ============================================================
+// STEPS DEFINITION
+// ============================================================
+const STEPS = [
+  { id:'build-type', title:'Build Type', desc:'Choose what you\'re quoting', icon:'1' },
+  { id:'truck-brand', title:'Truck Brand', desc:'Select the truck brand', icon:'2', showIf: ()=> state.buildType==='truck-body'||state.buildType==='truck-and-trailer' },
+  { id:'trailer-type', title:'Trailer Type', desc:'Select trailer model and type', icon:'2', showIf: ()=> state.buildType==='trailer'||state.buildType==='truck-and-trailer' },
+  { id:'material', title:'Material', desc:'Select body material', icon:'3' },
+  { id:'dimensions', title:'Dimensions', desc:'Body length, width, and height', icon:'4' },
+  { id:'body-options', title:'Body Options', desc:'Tailgate, headboard, sheets, accessories', icon:'5' },
+  { id:'chassis', title:'Chassis / Subframe', desc:'Hoist, suspension, brakes, hydraulics', icon:'6' },
+  { id:'tarp', title:'Tarp System', desc:'Tarp type, material, colour', icon:'7' },
+  { id:'running-gear', title:'Running Gear', desc:'Wheels, tyres, mudflaps', icon:'8' },
+  { id:'drawbar', title:'Drawbar & Couplings', desc:'Coupling, safety chain, fittings', icon:'9', showIf: ()=> state.buildType==='trailer'||state.buildType==='truck-and-trailer' },
+  { id:'paint', title:'Paint & Lighting', desc:'Colour, lighting, extras', icon:'10' },
+  { id:'customer', title:'Customer & Quote Details', desc:'Customer info, quote number, terms', icon:'11' },
+  { id:'pricing', title:'Review & Price', desc:'Line items, pricing, overrides', icon:'12' },
+  { id:'generate', title:'Generate Outputs', desc:'Quote PDF, Job Sheet, save to DB', icon:'13' },
+];
+
+function getVisibleSteps() {
+  return STEPS.filter(s => !s.showIf || s.showIf());
+}
+
+// ============================================================
+// RENDER SIDEBAR
+// ============================================================
+function renderSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  const visible = getVisibleSteps();
+  nav.innerHTML = visible.map((step, i) => {
+    const cls = i === state.currentStep ? 'active' : (i < state.currentStep ? 'completed' : '');
+    return `<div class="nav-item ${cls}" onclick="goToStep(${i})">
+      <div class="step-num">${i < state.currentStep ? '✓' : (i+1)}</div>
+      <span>${step.title}</span>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// RENDER STEP CONTENT
+// ============================================================
+function renderStep() {
+  const visible = getVisibleSteps();
+  const step = visible[state.currentStep];
+  if (!step) return;
+
+  document.getElementById('stepTitle').textContent = step.title;
+  document.getElementById('stepDesc').textContent = step.desc;
+
+  const content = document.getElementById('mainContent');
+  let html = '';
+
+  switch (step.id) {
+    case 'build-type':
+      html = renderBuildType();
+      break;
+    case 'truck-brand':
+      html = renderTruckBrand();
+      break;
+    case 'trailer-type':
+      html = renderTrailerType();
+      break;
+    case 'material':
+      html = renderMaterial();
+      break;
+    case 'dimensions':
+      html = renderDimensions();
+      break;
+    case 'body-options':
+      html = renderBodyOptions();
+      break;
+    case 'chassis':
+      html = renderChassis();
+      break;
+    case 'tarp':
+      html = renderTarp();
+      break;
+    case 'running-gear':
+      html = renderRunningGear();
+      break;
+    case 'drawbar':
+      html = renderDrawbar();
+      break;
+    case 'paint':
+      html = renderPaintLighting();
+      break;
+    case 'customer':
+      html = renderCustomer();
+      break;
+    case 'pricing':
+      html = renderPricing();
+      break;
+    case 'generate':
+      html = renderGenerate();
+      break;
+  }
+
+  // Add nav buttons
+  const isFirst = state.currentStep === 0;
+  const isLast = state.currentStep === visible.length - 1;
+  html += `<div class="btn-group">
+    ${!isFirst ? '<button class="btn btn-secondary" onclick="prevStep()">Back</button>' : ''}
+    ${!isLast ? '<button class="btn btn-primary" onclick="nextStep()">Continue</button>' : ''}
+  </div>`;
+
+  content.innerHTML = html;
+  renderSidebar();
+
+  // Post-render hooks
+  if (step.id === 'pricing') loadPricingHistory();
+}
+
+// ============================================================
+// STEP RENDERERS
+// ============================================================
+function renderBuildType() {
+  return `
+    <div class="product-grid">
+      <div class="product-card ${state.buildType==='truck-body'?'selected':''}" onclick="selectBuildType('truck-body')">
+        <div class="card-icon">🚛</div>
+        <div class="card-label">Truck Body</div>
+        <div class="card-desc">Tipper body for truck chassis</div>
+      </div>
+      <div class="product-card ${state.buildType==='trailer'?'selected':''}" onclick="selectBuildType('trailer')">
+        <div class="card-icon">🚜</div>
+        <div class="card-label">Trailer</div>
+        <div class="card-desc">Dog, Semi, Pig, or Dolly</div>
+      </div>
+      <div class="product-card ${state.buildType==='truck-and-trailer'?'selected':''}" onclick="selectBuildType('truck-and-trailer')">
+        <div class="card-icon">🚚</div>
+        <div class="card-label">Truck + Trailer</div>
+        <div class="card-desc">Complete combination build</div>
+        <div class="card-badge">Combo</div>
+      </div>
+    </div>
+    ${cachedTemplates.length > 0 ? `
+    <div class="section-label">Quick Templates</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px">
+      ${cachedTemplates.filter(t => !state.buildType || t.category === state.buildType).map((t, _i) => {
+        const i = cachedTemplates.indexOf(t);
+        return `<div class="option-card" onclick="applyTemplate(cachedTemplates[${i}])" style="text-align:left;padding:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${esc(t.category)}</div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">${esc(t.name)}</div>
+          <div style="font-size:11px;color:var(--text3)">${esc(t.description)}</div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+    <div id="templateSection"></div>`;
+}
+
+function renderTruckBrand() {
+  return `
+    <div class="brand-grid">
+      ${DATA.truckBrands.map(b => `
+        <div class="brand-card ${state.truckBrand===b?'selected':''}" onclick="selectTruckBrand('${b}')">
+          <div class="brand-icon">🚛</div>
+          <div class="brand-name">${b}</div>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+function renderTrailerType() {
+  let html = '<div class="section-label">Trailer Model</div><div class="option-grid">';
+  DATA.trailerModels.forEach(m => {
+    html += `<div class="option-card ${state.trailerModel===m.id?'selected':''}" onclick="setState('trailerModel','${m.id}');renderStep()">${m.label}</div>`;
+  });
+  html += '</div>';
+  html += '<div class="section-label">Frame Type</div><div class="option-grid" style="grid-template-columns:repeat(4,1fr)">';
+  DATA.trailerTypes.forEach(t => {
+    html += `<div class="option-card ${state.trailerType===t?'selected':''}" onclick="setState('trailerType','${t}');renderStep()">${t}</div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderMaterial() {
+  return `<div class="option-grid">
+    ${DATA.materials.map(m => `
+      <div class="option-card ${state.material===m?'selected':''}" onclick="setState('material','${m}');renderStep()">
+        <div style="font-size:24px;margin-bottom:6px">${m.includes('Hardox')?'🔶':m==='Aluminium'?'⬜':m==='Steel'?'⬛':'🔷'}</div>
+        ${m}
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+function renderDimensions() {
+  const isTrailer = state.buildType === 'trailer' || state.buildType === 'truck-and-trailer';
+  const isTruck = state.buildType === 'truck-body' || state.buildType === 'truck-and-trailer';
+  const lengths = isTrailer && !isTruck ? DATA.bodyLengthsTrailer : (isTruck && !isTrailer ? DATA.bodyLengthsTruck : [...new Set([...DATA.bodyLengthsTruck,...DATA.bodyLengthsTrailer])].sort());
+  const heights = isTrailer && !isTruck ? DATA.bodyHeightsTrailer : (isTruck && !isTrailer ? DATA.bodyHeightsTruck : [...new Set([...DATA.bodyHeightsTruck,...DATA.bodyHeightsTrailer])].sort());
+
+  return `<div class="form-grid-3">
+    <div class="form-group">
+      <label class="form-label">Body Length</label>
+      <select class="form-select" onchange="setState('bodyLength',this.value);renderStep()">
+        <option value="">Select length...</option>
+        ${lengths.map(l => `<option ${state.bodyLength===l?'selected':''}>${l}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Body Width</label>
+      <select class="form-select" onchange="setState('bodyWidth',this.value);renderStep()">
+        <option value="">Select width...</option>
+        ${DATA.bodyWidths.map(w => `<option ${state.bodyWidth===w?'selected':''}>${w}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Body Height</label>
+      <select class="form-select" onchange="setState('bodyHeight',this.value);renderStep()">
+        <option value="">Select height...</option>
+        ${heights.map(h => `<option ${state.bodyHeight===h?'selected':''}>${h}</option>`).join('')}
+      </select>
+    </div>
+  </div>
+  <div style="margin-top:16px;padding:16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Build Summary So Far</div>
+    <div style="font-size:14px;color:var(--text2);line-height:1.8">
+      ${state.buildType==='truck-body'?'🚛 Truck Body':''}${state.buildType==='trailer'?'🚜 Trailer':''}${state.buildType==='truck-and-trailer'?'🚚 Truck + Trailer':''}
+      ${state.truckBrand?' &mdash; '+state.truckBrand:''}
+      ${state.trailerModel?' &mdash; '+state.trailerModel:''}
+      ${state.material?' &mdash; '+state.material:''}
+      ${state.bodyLength?' &mdash; '+state.bodyLength:''}
+      ${state.bodyWidth?' x '+state.bodyWidth:''}
+      ${state.bodyHeight?' x '+state.bodyHeight:''}
+    </div>
+  </div>`;
+}
+
+function renderBodyOptions() {
+  return `
+    <div class="section-label">Tailgate</div>
+    <div class="option-grid" style="grid-template-columns:repeat(4,1fr)">
+      ${DATA.tailgateTypes.map(t => `<div class="option-card ${state.tailgate===t?'selected':''}" onclick="setState('tailgate','${t}');renderStep()">${t}</div>`).join('')}
+    </div>
+    <div class="section-label">Headboard</div>
+    <div class="option-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="option-card ${state.headboard?'selected':''}" onclick="setState('headboard',true);renderStep()">Yes - Include Headboard</div>
+      <div class="option-card ${state.headboard===false?'selected':''}" onclick="setState('headboard',false);renderStep()">No Headboard</div>
+    </div>
+    <div class="section-label">Body Accessories</div>
+    <div class="check-grid">
+      ${DATA.bodyAccessories.map(a => `
+        <label class="check-item ${state.bodyAccessories.includes(a)?'checked':''}">
+          <input type="checkbox" ${state.bodyAccessories.includes(a)?'checked':''} onchange="toggleArrayItem('bodyAccessories','${a}');renderStep()">
+          ${a}
+        </label>
+      `).join('')}
+    </div>`;
+}
+
+function renderChassis() {
+  return `
+    <div class="section-label">Hoist</div>
+    <div class="form-group" style="margin-bottom:20px">
+      <select class="form-select" onchange="setState('hoist',this.value)">
+        <option value="">Select hoist...</option>
+        ${DATA.hoists.map(h => `<option ${state.hoist===h?'selected':''}>${h}</option>`).join('')}
+      </select>
+    </div>
+    <div class="section-label">Suspension & Brakes</div>
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label class="form-label">Suspension</label>
+        <select class="form-select" onchange="setState('suspension',this.value)">
+          <option value="">Select...</option>
+          ${DATA.suspensions.map(s => `<option ${state.suspension===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Axle Make</label>
+        <select class="form-select" onchange="setState('axleMake',this.value)">
+          <option value="">Select...</option>
+          ${DATA.axleMakes.map(a => `<option ${state.axleMake===a?'selected':''}>${a}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Axle Type</label>
+        <select class="form-select" onchange="setState('axleType',this.value)">
+          <option value="">Select...</option>
+          ${DATA.axleTypes.map(a => `<option ${state.axleType===a?'selected':''}>${a}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label class="form-label">Brake Model</label>
+      <select class="form-select" onchange="setState('brakes',this.value)">
+        <option value="">Select brake model...</option>
+        ${DATA.brakeModels.map(b => `<option ${state.brakes===b?'selected':''}>${b}</option>`).join('')}
+      </select>
+    </div>
+    <div class="section-label">Hydraulics</div>
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label class="form-label">Oil Tank</label>
+        <select class="form-select" onchange="setState('oilTank',this.value)">
+          <option value="">Select...</option>
+          ${DATA.oilTanks.map(o => `<option ${state.oilTank===o?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Valve Bank</label>
+        <select class="form-select" onchange="setState('valveBank',this.value)">
+          <option value="">Select...</option>
+          ${DATA.valveBanks.map(v => `<option ${state.valveBank===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pump Type</label>
+        <select class="form-select" onchange="setState('pumpType',this.value)">
+          <option value="">Select...</option>
+          ${DATA.pumpTypes.map(p => `<option ${state.pumpType===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="section-label">Controls</div>
+    <div class="option-grid" style="grid-template-columns:repeat(3,1fr)">
+      ${DATA.controls.map(c => `<div class="option-card ${state.controls===c?'selected':''}" onclick="setState('controls','${c.replace(/'/g,"\\'")}');renderStep()">${c}</div>`).join('')}
+    </div>`;
+}
+
+function renderTarp() {
+  return `
+    <div class="section-label">Tarp System</div>
+    <div class="option-grid">
+      ${DATA.tarpSystems.map(t => `<div class="option-card ${state.tarpSystem===t?'selected':''}" onclick="setState('tarpSystem','${t.replace(/'/g,"\\'")}');renderStep()">${t}</div>`).join('')}
+    </div>
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label class="form-label">Tarp Colour</label>
+        <select class="form-select" onchange="setState('tarpColour',this.value)">
+          <option value="">Select colour...</option>
+          ${DATA.tarpColours.map(c => `<option ${state.tarpColour===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tarp Bows</label>
+        <select class="form-select" onchange="setState('tarpBows',this.value)">
+          <option value="">Select bows...</option>
+          ${DATA.tarpBows.map(b => `<option ${state.tarpBows===b?'selected':''}>${b}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+}
+
+function renderRunningGear() {
+  return `
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Wheels</label>
+        <select class="form-select" onchange="setState('wheels',this.value)">
+          <option value="">Select wheels...</option>
+          ${DATA.wheels.map(w => `<option ${state.wheels===w?'selected':''}>${w}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tyres</label>
+        <select class="form-select" onchange="setState('tyres',this.value)">
+          <option value="">Select tyres...</option>
+          ${DATA.tyres.map(t => `<option ${state.tyres===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mudflaps</label>
+        <select class="form-select" onchange="setState('mudflaps',this.value)">
+          <option value="">Select...</option>
+          ${DATA.mudflaps.map(m => `<option ${state.mudflaps===m?'selected':''}>${m}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Full Cover Guards</label>
+        <select class="form-select" onchange="setState('fullCoverGuards',this.value)">
+          <option value="">Select colour...</option>
+          ${DATA.fullCoverGuards.map(g => `<option ${state.fullCoverGuards===g?'selected':''}>${g}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+}
+
+function renderDrawbar() {
+  return `
+    <div class="section-label">Drawbar Options</div>
+    <div class="check-grid" style="grid-template-columns:repeat(2,1fr)">
+      ${DATA.drawbarOptions.map(d => `
+        <label class="check-item ${state.drawbarOptions.includes(d)?'checked':''}">
+          <input type="checkbox" ${state.drawbarOptions.includes(d)?'checked':''} onchange="toggleArrayItem('drawbarOptions','${d.replace(/'/g,"\\'")}');renderStep()">
+          ${d}
+        </label>
+      `).join('')}
+    </div>`;
+}
+
+function renderPaintLighting() {
+  return `
+    <div class="section-label">Paint</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Colour</label>
+        <select class="form-select" onchange="setState('paintColour',this.value)">
+          <option value="">Select colour...</option>
+          ${DATA.paintColours.map(c => `<option ${state.paintColour===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Paint Notes</label>
+        <input class="form-input" value="${esc(state.paintNotes)}" onchange="setState('paintNotes',this.value)" placeholder="e.g. Customer colour code">
+      </div>
+    </div>
+    <div class="section-label">Lighting</div>
+    <div class="check-grid" style="grid-template-columns:repeat(2,1fr)">
+      ${DATA.lighting.map(l => `
+        <label class="check-item ${state.lighting.includes(l)?'checked':''}">
+          <input type="checkbox" ${state.lighting.includes(l)?'checked':''} onchange="toggleArrayItem('lighting','${l.replace(/'/g,"\\'")}');renderStep()">
+          ${l}
+        </label>
+      `).join('')}
+    </div>
+    <div class="section-label">Chassis Accessories</div>
+    <div class="check-grid">
+      ${DATA.chassisAccessories.map(a => `
+        <label class="check-item ${state.chassisAccessories.includes(a)?'checked':''}">
+          <input type="checkbox" ${state.chassisAccessories.includes(a)?'checked':''} onchange="toggleArrayItem('chassisAccessories','${a.replace(/'/g,"\\'")}');renderStep()">
+          ${a}
+        </label>
+      `).join('')}
+    </div>
+    <div class="section-label">Additional Extras</div>
+    <textarea class="form-textarea" placeholder="Any additional extras or notes..." onchange="setState('extras',this.value)">${esc(state.extras)}</textarea>`;
+}
+
+function renderCustomer() {
+  return `
+    <div class="customer-box">
+      <div class="section-label" style="margin-top:0">Customer Information</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Customer Name</label>
+          <input class="form-input" value="${esc(state.customerName)}" onchange="setState('customerName',this.value)" placeholder="Company name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dealer</label>
+          <input class="form-input" value="${esc(state.dealerName)}" onchange="setState('dealerName',this.value)" placeholder="Dealer name (if applicable)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact Name</label>
+          <input class="form-input" value="${esc(state.contactName)}" onchange="setState('contactName',this.value)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact Email</label>
+          <input class="form-input" type="email" value="${esc(state.contactEmail)}" onchange="setState('contactEmail',this.value)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact Phone</label>
+          <input class="form-input" value="${esc(state.contactPhone)}" onchange="setState('contactPhone',this.value)">
+        </div>
+      </div>
+    </div>
+    <div class="customer-box">
+      <div class="section-label" style="margin-top:0">Quote Details</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Quote Number</label>
+          <input class="form-input" value="${esc(state.quoteNumber)}" onchange="setState('quoteNumber',this.value)" placeholder="Auto-generated" id="quoteNumInput">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prepared By</label>
+          <select class="form-select" onchange="setState('preparedBy',this.value)">
+            <option value="">Select...</option>
+            ${DATA.preparedBy.map(p => `<option ${state.preparedBy===p?'selected':''}>${p}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sales Person</label>
+          <select class="form-select" onchange="setState('salesPerson',this.value)">
+            <option value="">Select...</option>
+            ${DATA.salesPersons.map(s => `<option ${state.salesPerson===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valid For (Days)</label>
+          <input class="form-input" type="number" value="${state.validDays}" onchange="setState('validDays',parseInt(this.value)||30)">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:14px">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" onchange="setState('notes',this.value)" placeholder="Additional notes for this quote...">${esc(state.notes)}</textarea>
+      </div>
+      <div class="form-group" style="margin-top:14px">
+        <label class="form-label">Terms & Conditions</label>
+        <textarea class="form-textarea" onchange="setState('terms',this.value)" style="min-height:120px">${esc(state.terms || DEFAULT_TERMS)}</textarea>
+      </div>
+    </div>`;
+}
+
+function renderPricing() {
+  // Auto-generate initial line items if empty
+  if (state.lineItems.length === 0) {
+    generateDefaultLineItems();
+    recalcPricing();
+  }
+
+  let html = '';
+
+  // Historical pricing banner
+  html += '<div class="history-banner" id="historyBanner"><span style="font-size:16px">📊</span> <span id="historyText"></span></div>';
+
+  // Line items
+  html += '<div class="section-label">Line Items</div>';
+  html += '<div class="line-items">';
+  html += '<div class="line-item line-item-header"><span>Section</span><span>Description</span><span>Qty</span><span style="text-align:right">Unit Price</span><span></span></div>';
+
+  state.lineItems.forEach((item, i) => {
+    html += `<div class="line-item">
+      <select onchange="updateLineItem(${i},'section',this.value)" style="padding:8px">
+        <option value="">Section...</option>
+        <option ${item.section==='Body'?'selected':''}>Body</option>
+        <option ${item.section==='Chassis'?'selected':''}>Chassis</option>
+        <option ${item.section==='Subframe'?'selected':''}>Subframe</option>
+        <option ${item.section==='Tarp'?'selected':''}>Tarp</option>
+        <option ${item.section==='Paint'?'selected':''}>Paint</option>
+        <option ${item.section==='Fitout'?'selected':''}>Fitout</option>
+        <option ${item.section==='Running Gear'?'selected':''}>Running Gear</option>
+        <option ${item.section==='Drawbar'?'selected':''}>Drawbar</option>
+        <option ${item.section==='Hydraulics'?'selected':''}>Hydraulics</option>
+        <option ${item.section==='Extras'?'selected':''}>Extras</option>
+        <option ${item.section==='Labour'?'selected':''}>Labour</option>
+      </select>
+      <input value="${esc(item.description)}" onchange="updateLineItem(${i},'description',this.value)" placeholder="Description">
+      <input type="number" value="${item.quantity}" onchange="updateLineItem(${i},'quantity',parseInt(this.value)||1)" style="width:60px;text-align:center">
+      <input type="number" value="${item.unitPrice}" onchange="updateLineItem(${i},'unitPrice',parseFloat(this.value)||0)" style="width:110px;text-align:right" step="0.01">
+      <button class="remove-btn" onclick="removeLineItem(${i})">×</button>
+    </div>`;
+  });
+  html += '</div>';
+  html += '<button class="add-line-btn" onclick="addLineItem()">+ Add Line Item</button>';
+
+  // Pricing summary
+  html += '<div class="price-section" style="margin-top:24px">';
+  html += `<div class="price-row"><span class="label">Subtotal</span><span class="value" id="priceSubtotal">$${fmt(state.subtotal)}</span></div>`;
+  html += `<div class="price-row"><span class="label" id="marginLabel">Margin (${state.margin}%)</span><span class="value"><input class="price-input" type="number" value="${state.margin}" onchange="setState('margin',parseFloat(this.value)||0);recalcPricing();renderPriceSummary()" step="0.5" style="width:70px"> %</span></div>`;
+  html += `<div class="price-row"><span class="label">Overhead</span><span class="value">$<input class="price-input" type="number" value="${state.overhead}" onchange="setState('overhead',parseFloat(this.value)||0);recalcPricing();renderPriceSummary()" step="100"></span></div>`;
+  html += `<div class="price-row"><span class="label">Discount</span><span class="value">$<input class="price-input" type="number" value="${state.discount}" onchange="setState('discount',parseFloat(this.value)||0);recalcPricing();renderPriceSummary()" step="100"></span></div>`;
+  html += `<div class="price-row"><span class="label">GST (10%)</span><span class="value" id="priceGST">$${fmt((state.total||0)*0.1)}</span></div>`;
+  html += `<div class="price-row total"><span class="label">Total (inc GST)</span><span class="value" id="priceTotal">$${fmt((state.total||0)*1.1)}</span></div>`;
+  html += '</div>';
+
+  // Override
+  html += `<div class="override-box">
+    <div class="title">Manual Price Override</div>
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label class="form-label">Override Price (ex GST)</label>
+        <input class="form-input" type="number" value="${state.overridePrice||''}" onchange="setState('overridePrice',this.value?parseFloat(this.value):null);recalcPricing();renderPriceSummary()" placeholder="Leave blank for calculated" step="100">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Override By</label>
+        <input class="form-input" value="${esc(state.overrideBy)}" onchange="setState('overrideBy',this.value)" placeholder="Name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason</label>
+        <input class="form-input" value="${esc(state.overrideNote)}" onchange="setState('overrideNote',this.value)" placeholder="Why override?">
+      </div>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+function renderGenerate() {
+  const config = buildConfigSummary();
+  const totalIncGST = ((state.overridePrice || state.total) * 1.1);
+
+  return `
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="sc-title">Build Configuration</div>
+        <div class="sc-row"><span class="label">Type</span><span class="value">${state.buildType}</span></div>
+        ${state.truckBrand?`<div class="sc-row"><span class="label">Truck</span><span class="value">${state.truckBrand}</span></div>`:''}
+        ${state.trailerModel?`<div class="sc-row"><span class="label">Trailer</span><span class="value">${state.trailerModel}</span></div>`:''}
+        <div class="sc-row"><span class="label">Material</span><span class="value">${state.material}</span></div>
+        <div class="sc-row"><span class="label">Dimensions</span><span class="value">${state.bodyLength} x ${state.bodyWidth} x ${state.bodyHeight}</span></div>
+        ${state.tailgate?`<div class="sc-row"><span class="label">Tailgate</span><span class="value">${state.tailgate}</span></div>`:''}
+        ${state.hoist?`<div class="sc-row"><span class="label">Hoist</span><span class="value">${state.hoist}</span></div>`:''}
+        ${state.tarpSystem?`<div class="sc-row"><span class="label">Tarp</span><span class="value">${state.tarpSystem}</span></div>`:''}
+      </div>
+      <div class="summary-card">
+        <div class="sc-title">Quote Details</div>
+        <div class="sc-row"><span class="label">Quote #</span><span class="value" style="color:var(--accent)">${state.quoteNumber||'Not assigned'}</span></div>
+        <div class="sc-row"><span class="label">Customer</span><span class="value">${state.customerName||'Not set'}</span></div>
+        <div class="sc-row"><span class="label">Prepared By</span><span class="value">${state.preparedBy||'Not set'}</span></div>
+        <div class="sc-row"><span class="label">Valid</span><span class="value">${state.validDays} days</span></div>
+        <div class="sc-row" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"><span class="label" style="font-weight:700;color:var(--text)">Total (inc GST)</span><span class="value" style="font-size:20px;color:var(--accent)">$${fmt(totalIncGST)}</span></div>
+        ${state.overridePrice?`<div style="font-size:10px;color:var(--warn);margin-top:4px">⚠ Price manually overridden by ${state.overrideBy||'unknown'}</div>`:''}
+      </div>
+    </div>
+
+    <div class="section-label">Generate Outputs</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+      <button class="btn btn-primary" onclick="generateQuotePDF()" style="justify-content:center;padding:20px">
+        <span style="font-size:20px">📄</span> Quote PDF
+      </button>
+      <button class="btn btn-success" onclick="generateJobSheet()" style="justify-content:center;padding:20px">
+        <span style="font-size:20px">📋</span> Job Sheet (Excel)
+      </button>
+      <button class="btn btn-secondary" onclick="saveQuote()" style="justify-content:center;padding:20px" id="saveQuoteBtn">
+        <span style="font-size:20px">💾</span> Save Quote
+      </button>
+    </div>
+
+    <div id="generateStatus" style="margin-top:16px"></div>`;
+}
+
+// ============================================================
+// DEFAULT TERMS
+// ============================================================
+const DEFAULT_TERMS = `1. This quotation is valid for ${state.validDays || 30} days from the date of issue.
+2. Payment terms: 50% deposit upon acceptance, balance prior to delivery.
+3. Delivery timeframe will be confirmed upon order acceptance and is subject to material availability.
+4. All prices are in Australian Dollars and exclude GST unless otherwise stated.
+5. Any variations to the specifications after acceptance may result in additional charges.
+6. YLZ Truck Bodies reserves the right to adjust pricing if material costs change significantly before order confirmation.
+7. Warranty: 12 months from date of delivery on workmanship. Component warranties as per manufacturer terms.
+8. This quote is based on standard specifications. Custom modifications may incur additional charges.`;
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function goToStep(idx) {
+  state.currentStep = idx;
+  renderStep();
+  document.getElementById('mainContent').scrollTop = 0;
+}
+
+function nextStep() {
+  const visible = getVisibleSteps();
+  if (state.currentStep < visible.length - 1) {
+    state.currentStep++;
+    renderStep();
+    document.getElementById('mainContent').scrollTop = 0;
+  }
+}
+
+function prevStep() {
+  if (state.currentStep > 0) {
+    state.currentStep--;
+    renderStep();
+    document.getElementById('mainContent').scrollTop = 0;
+  }
+}
+
+// ============================================================
+// STATE HELPERS
+// ============================================================
+function setState(key, value) {
+  state[key] = value;
+}
+
+function selectBuildType(type) {
+  state.buildType = type;
+  state.currentStep = 0; // Stay on same step to show selection
+  renderStep();
+}
+
+function selectTruckBrand(brand) {
+  state.truckBrand = brand;
+  renderStep();
+}
+
+function toggleArrayItem(key, value) {
+  const arr = state[key];
+  const idx = arr.indexOf(value);
+  if (idx >= 0) arr.splice(idx, 1);
+  else arr.push(value);
+}
+
+function esc(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmt(num) {
+  return (num || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ============================================================
+// LINE ITEMS & PRICING
+// ============================================================
+function generateDefaultLineItems() {
+  state.lineItems = [];
+  const bt = state.buildType;
+
+  // Body
+  if (bt === 'truck-body' || bt === 'truck-and-trailer') {
+    state.lineItems.push({ section: 'Body', description: `${state.material} Tipper Body ${state.bodyLength} x ${state.bodyWidth} x ${state.bodyHeight}`, quantity: 1, unitPrice: 0 });
+    if (state.headboard) state.lineItems.push({ section: 'Body', description: 'Headboard', quantity: 1, unitPrice: 0 });
+    if (state.tailgate) state.lineItems.push({ section: 'Body', description: `Tailgate - ${state.tailgate}`, quantity: 1, unitPrice: 0 });
+  }
+
+  if (bt === 'trailer' || bt === 'truck-and-trailer') {
+    state.lineItems.push({ section: 'Chassis', description: `${state.trailerModel} ${state.trailerType} Chassis - ${state.material}`, quantity: 1, unitPrice: 0 });
+    state.lineItems.push({ section: 'Body', description: `${state.material} Body ${state.bodyLength} x ${state.bodyWidth} x ${state.bodyHeight}`, quantity: 1, unitPrice: 0 });
+    if (state.tailgate) state.lineItems.push({ section: 'Body', description: `Tailgate - ${state.tailgate}`, quantity: 1, unitPrice: 0 });
+  }
+
+  // Hoist
+  if (state.hoist) state.lineItems.push({ section: 'Hydraulics', description: `Hoist - ${state.hoist}`, quantity: 1, unitPrice: 0 });
+
+  // Suspension/brakes
+  if (state.suspension) state.lineItems.push({ section: 'Running Gear', description: `Suspension - ${state.suspension}`, quantity: 1, unitPrice: 0 });
+  if (state.brakes) state.lineItems.push({ section: 'Running Gear', description: `Brakes - ${state.brakes}`, quantity: 1, unitPrice: 0 });
+
+  // Wheels/tyres
+  if (state.wheels) state.lineItems.push({ section: 'Running Gear', description: `Wheels - ${state.wheels}`, quantity: 1, unitPrice: 0 });
+  if (state.tyres) state.lineItems.push({ section: 'Running Gear', description: `Tyres - ${state.tyres}`, quantity: 1, unitPrice: 0 });
+
+  // Tarp
+  if (state.tarpSystem) state.lineItems.push({ section: 'Tarp', description: `${state.tarpSystem}${state.tarpColour?' - '+state.tarpColour:''}`, quantity: 1, unitPrice: 0 });
+
+  // Paint
+  if (state.paintColour) state.lineItems.push({ section: 'Paint', description: `Paint - ${state.paintColour}`, quantity: 1, unitPrice: 0 });
+
+  // Accessories
+  state.bodyAccessories.forEach(a => state.lineItems.push({ section: 'Fitout', description: a, quantity: 1, unitPrice: 0 }));
+  state.chassisAccessories.forEach(a => state.lineItems.push({ section: 'Chassis', description: a, quantity: 1, unitPrice: 0 }));
+
+  // Drawbar options
+  state.drawbarOptions.forEach(d => state.lineItems.push({ section: 'Drawbar', description: d, quantity: 1, unitPrice: 0 }));
+
+  // Labour
+  state.lineItems.push({ section: 'Labour', description: 'Labour (estimated hours x $150/hr)', quantity: 1, unitPrice: 0 });
+}
+
+function addLineItem() {
+  state.lineItems.push({ section: '', description: '', quantity: 1, unitPrice: 0 });
+  renderStep();
+}
+
+function removeLineItem(idx) {
+  state.lineItems.splice(idx, 1);
+  recalcPricing();
+  renderStep();
+}
+
+function updateLineItem(idx, field, value) {
+  state.lineItems[idx][field] = value;
+  if (field === 'unitPrice' || field === 'quantity') {
+    state.lineItems[idx].totalPrice = (state.lineItems[idx].quantity || 1) * (state.lineItems[idx].unitPrice || 0);
+    recalcPricing();
+    renderPriceSummary();
+  }
+}
+
+function recalcPricing() {
+  state.subtotal = state.lineItems.reduce((sum, li) => sum + ((li.quantity || 1) * (li.unitPrice || 0)), 0);
+  const marginAmount = state.subtotal * (state.margin / 100);
+  const beforeDiscount = state.subtotal + marginAmount + (state.overhead || 0);
+  state.total = beforeDiscount - (state.discount || 0);
+}
+
+function renderPriceSummary() {
+  const el = (id) => document.getElementById(id);
+  const effectiveTotal = state.overridePrice || state.total;
+  const gst = effectiveTotal * 0.1;
+  if (el('priceSubtotal')) el('priceSubtotal').textContent = '$' + fmt(state.subtotal);
+  if (el('priceGST')) el('priceGST').textContent = '$' + fmt(gst);
+  if (el('priceTotal')) el('priceTotal').textContent = '$' + fmt(effectiveTotal + gst);
+  if (el('marginLabel')) el('marginLabel').textContent = `Margin (${state.margin}%)`;
+}
+
+// ============================================================
+// BUILD CONFIG SUMMARY
+// ============================================================
+function buildConfigSummary() {
+  return {
+    buildType: state.buildType,
+    truckBrand: state.truckBrand,
+    trailerModel: state.trailerModel,
+    trailerType: state.trailerType,
+    material: state.material,
+    bodyLength: state.bodyLength,
+    bodyWidth: state.bodyWidth,
+    bodyHeight: state.bodyHeight,
+    tailgate: state.tailgate,
+    headboard: state.headboard,
+    bodyAccessories: state.bodyAccessories,
+    hoist: state.hoist,
+    suspension: state.suspension,
+    brakes: state.brakes,
+    axleMake: state.axleMake,
+    axleType: state.axleType,
+    oilTank: state.oilTank,
+    valveBank: state.valveBank,
+    pumpType: state.pumpType,
+    controls: state.controls,
+    tarpSystem: state.tarpSystem,
+    tarpColour: state.tarpColour,
+    tarpBows: state.tarpBows,
+    wheels: state.wheels,
+    tyres: state.tyres,
+    mudflaps: state.mudflaps,
+    fullCoverGuards: state.fullCoverGuards,
+    drawbarOptions: state.drawbarOptions,
+    paintColour: state.paintColour,
+    chassisAccessories: state.chassisAccessories,
+    lighting: state.lighting,
+    extras: state.extras,
+  };
+}
+
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+// ============================================================
+// SAVE QUOTE
+// ============================================================
+async function saveQuote() {
+  try {
+    // Get next quote number if not set
+    if (!state.quoteNumber) {
+      const res = await fetch('/api/quotes/next-number');
+      const data = await res.json();
+      state.quoteNumber = data.quoteNumber;
+    }
+
+    const config = buildConfigSummary();
+    const effectiveTotal = state.overridePrice || state.total;
+
+    const payload = {
+      quoteNumber: state.quoteNumber,
+      status: 'draft',
+      customerName: state.customerName || 'Unknown',
+      dealerName: state.dealerName,
+      contactName: state.contactName,
+      contactEmail: state.contactEmail,
+      contactPhone: state.contactPhone,
+      buildType: state.buildType,
+      configuration: config,
+      subtotal: state.subtotal,
+      margin: state.margin,
+      overhead: state.overhead,
+      discount: state.discount,
+      total: effectiveTotal,
+      overridePrice: state.overridePrice,
+      overrideBy: state.overrideBy || null,
+      overrideNote: state.overrideNote || null,
+      preparedBy: state.preparedBy || '',
+      salesPerson: state.salesPerson || '',
+      validDays: state.validDays,
+      notes: state.notes,
+      terms: state.terms || DEFAULT_TERMS,
+      lineItems: state.lineItems.map((li, i) => ({
+        section: li.section,
+        description: li.description,
+        quantity: li.quantity || 1,
+        unitPrice: li.unitPrice || 0,
+        totalPrice: (li.quantity || 1) * (li.unitPrice || 0),
+        sortOrder: i,
+      })),
+    };
+
+    let res;
+    if (state.quoteId) {
+      res = await fetch(`/api/quotes/${state.quoteId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } else {
+      res = await fetch('/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    }
+
+    if (!res.ok) throw new Error('Failed to save');
+    const saved = await res.json();
+    state.quoteId = saved.id;
+    state.quoteNumber = saved.quoteNumber;
+
+    document.getElementById('quoteNumDisplay').textContent = state.quoteNumber;
+    document.getElementById('saveStatus').textContent = 'Saved ✓';
+    showToast('Quote saved successfully', 'success');
+    renderStep();
+  } catch (err) {
+    showToast('Failed to save: ' + err.message, 'error');
+  }
+}
+
+// ============================================================
+// QUOTE PDF GENERATION
+// ============================================================
+async function generateQuotePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const pageW = 210, pageH = 297;
+  const margin = 20;
+  let y = margin;
+
+  // Colors
+  const orange = [232, 104, 26];
+  const dark = [26, 29, 38];
+  const grey = [107, 114, 128];
+  const lightGrey = [240, 242, 245];
+
+  // Header
+  doc.setFillColor(...orange);
+  doc.rect(0, 0, pageW, 40, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(24);
+  doc.text('YLZ TRUCK BODIES', margin, 18);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Quotation', margin, 28);
+  doc.text(state.quoteNumber || 'DRAFT', pageW - margin, 18, { align: 'right' });
+  doc.text(new Date().toLocaleDateString('en-AU'), pageW - margin, 28, { align: 'right' });
+
+  y = 52;
+
+  // Customer details
+  doc.setTextColor(...dark);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('QUOTED TO:', margin, y);
+  doc.text('QUOTE DETAILS:', pageW/2 + 10, y);
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(state.customerName || '', margin, y);
+  doc.text(`Quote #: ${state.quoteNumber || 'DRAFT'}`, pageW/2 + 10, y);
+  y += 5;
+  if (state.dealerName) { doc.text(`Dealer: ${state.dealerName}`, margin, y); y += 5; }
+  if (state.contactName) { doc.text(state.contactName, margin, y); }
+  doc.text(`Date: ${new Date().toLocaleDateString('en-AU')}`, pageW/2 + 10, y);
+  y += 5;
+  if (state.contactEmail) { doc.text(state.contactEmail, margin, y); }
+  doc.text(`Valid: ${state.validDays} days`, pageW/2 + 10, y);
+  y += 5;
+  if (state.contactPhone) { doc.text(state.contactPhone, margin, y); }
+  if (state.preparedBy) doc.text(`Prepared By: ${state.preparedBy}`, pageW/2 + 10, y);
+  y += 5;
+  if (state.salesPerson) doc.text(`Sales: ${state.salesPerson}`, pageW/2 + 10, y);
+  y += 10;
+
+  // Build Specification
+  doc.setFillColor(...lightGrey);
+  doc.rect(margin, y, pageW - margin*2, 8, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...dark);
+  doc.text('BUILD SPECIFICATION', margin + 4, y + 5.5);
+  y += 12;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  const specs = [
+    ['Build Type', state.buildType],
+    state.truckBrand ? ['Truck Brand', state.truckBrand] : null,
+    state.trailerModel ? ['Trailer Model', state.trailerModel + (state.trailerType ? ' - ' + state.trailerType : '')] : null,
+    ['Material', state.material],
+    ['Dimensions', `${state.bodyLength} x ${state.bodyWidth} x ${state.bodyHeight}`],
+    state.tailgate ? ['Tailgate', state.tailgate] : null,
+    state.hoist ? ['Hoist', state.hoist] : null,
+    state.suspension ? ['Suspension', state.suspension] : null,
+    state.brakes ? ['Brakes', state.brakes] : null,
+    state.wheels ? ['Wheels', state.wheels] : null,
+    state.tyres ? ['Tyres', state.tyres] : null,
+    state.tarpSystem ? ['Tarp', state.tarpSystem + (state.tarpColour ? ' - ' + state.tarpColour : '')] : null,
+    state.paintColour ? ['Paint', state.paintColour] : null,
+  ].filter(Boolean);
+
+  specs.forEach(([label, value]) => {
+    doc.setTextColor(...grey);
+    doc.text(label + ':', margin + 4, y);
+    doc.setTextColor(...dark);
+    doc.text(String(value), margin + 45, y);
+    y += 5;
+    if (y > pageH - 40) { doc.addPage(); y = margin; }
+  });
+
+  y += 5;
+
+  // Line items table
+  doc.setFillColor(...lightGrey);
+  doc.rect(margin, y, pageW - margin*2, 8, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...dark);
+  doc.text('PRICING', margin + 4, y + 5.5);
+  y += 12;
+
+  // Table header
+  doc.setFillColor(245, 245, 248);
+  doc.rect(margin, y, pageW - margin*2, 7, 'F');
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Section', margin + 2, y + 5);
+  doc.text('Description', margin + 35, y + 5);
+  doc.text('Qty', pageW - margin - 45, y + 5, { align: 'right' });
+  doc.text('Unit Price', pageW - margin - 20, y + 5, { align: 'right' });
+  doc.text('Total', pageW - margin - 2, y + 5, { align: 'right' });
+  y += 9;
+
+  doc.setFont('helvetica', 'normal');
+  state.lineItems.forEach(li => {
+    if (y > pageH - 50) { doc.addPage(); y = margin; }
+    const liTotal = (li.quantity || 1) * (li.unitPrice || 0);
+    doc.setTextColor(...grey);
+    doc.text(li.section || '', margin + 2, y);
+    doc.setTextColor(...dark);
+    const desc = li.description || '';
+    doc.text(desc.length > 55 ? desc.substring(0, 55) + '...' : desc, margin + 35, y);
+    doc.text(String(li.quantity || 1), pageW - margin - 45, y, { align: 'right' });
+    doc.text('$' + fmt(li.unitPrice || 0), pageW - margin - 20, y, { align: 'right' });
+    doc.text('$' + fmt(liTotal), pageW - margin - 2, y, { align: 'right' });
+    y += 5;
+  });
+
+  y += 3;
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, y, pageW - margin, y);
+  y += 5;
+
+  // Totals
+  const effectiveTotal = state.overridePrice || state.total;
+  const gst = effectiveTotal * 0.1;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text('Subtotal:', pageW - margin - 50, y);
+  doc.text('$' + fmt(state.subtotal), pageW - margin - 2, y, { align: 'right' });
+  y += 5;
+  doc.text(`Margin (${state.margin}%):`, pageW - margin - 50, y);
+  doc.text('$' + fmt(state.subtotal * state.margin / 100), pageW - margin - 2, y, { align: 'right' });
+  y += 5;
+  if (state.overhead > 0) {
+    doc.text('Overhead:', pageW - margin - 50, y);
+    doc.text('$' + fmt(state.overhead), pageW - margin - 2, y, { align: 'right' });
+    y += 5;
+  }
+  if (state.discount > 0) {
+    doc.text('Discount:', pageW - margin - 50, y);
+    doc.text('-$' + fmt(state.discount), pageW - margin - 2, y, { align: 'right' });
+    y += 5;
+  }
+  doc.text('GST (10%):', pageW - margin - 50, y);
+  doc.text('$' + fmt(gst), pageW - margin - 2, y, { align: 'right' });
+  y += 7;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...orange);
+  doc.text('TOTAL (inc GST):', pageW - margin - 55, y);
+  doc.text('$' + fmt(effectiveTotal + gst), pageW - margin - 2, y, { align: 'right' });
+
+  if (state.overridePrice) {
+    y += 5;
+    doc.setFontSize(8);
+    doc.setTextColor(200, 150, 0);
+    doc.text(`* Price manually set by ${state.overrideBy || 'N/A'}${state.overrideNote ? ' - ' + state.overrideNote : ''}`, pageW - margin - 2, y, { align: 'right' });
+  }
+
+  y += 15;
+
+  // Terms
+  if (y > pageH - 80) { doc.addPage(); y = margin; }
+  doc.setFillColor(...lightGrey);
+  doc.rect(margin, y, pageW - margin*2, 8, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...dark);
+  doc.text('TERMS & CONDITIONS', margin + 4, y + 5.5);
+  y += 12;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...grey);
+  const termsText = state.terms || DEFAULT_TERMS;
+  const termsLines = doc.splitTextToSize(termsText, pageW - margin*2 - 8);
+  termsLines.forEach(line => {
+    if (y > pageH - 20) { doc.addPage(); y = margin; }
+    doc.text(line, margin + 4, y);
+    y += 3.5;
+  });
+
+  // Footer
+  const footerY = pageH - 12;
+  doc.setFontSize(7);
+  doc.setTextColor(...grey);
+  doc.text('YLZ Truck Bodies Pty Ltd | ABN XX XXX XXX XXX', margin, footerY);
+  doc.text('www.ylztruckbodies.com.au', pageW - margin, footerY, { align: 'right' });
+
+  // Save
+  const filename = `${state.quoteNumber || 'DRAFT'}_${state.customerName || 'Quote'}.pdf`.replace(/\s+/g, '_');
+  doc.save(filename);
+  showToast('Quote PDF downloaded', 'success');
+}
+
+// ============================================================
+// JOB SHEET GENERATION (Excel)
+// ============================================================
+async function generateJobSheet() {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'YLZ Quote Builder';
+  wb.created = new Date();
+
+  const headerStyle = { font: { name: 'Arial', bold: true, size: 11, color: { argb: 'FFFFFFFF' } }, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8681A' } }, alignment: { horizontal: 'center', vertical: 'middle' } };
+  const labelStyle = { font: { name: 'Arial', bold: true, size: 9 }, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } } };
+  const valueStyle = { font: { name: 'Arial', size: 9 }, alignment: { wrapText: true } };
+  const sectionStyle = { font: { name: 'Arial', bold: true, size: 10, color: { argb: 'FFE8681A' } }, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9F0E8' } } };
+
+  // -- Selection Sheet --
+  const sel = wb.addWorksheet('Selection');
+  sel.columns = [{ width: 25 }, { width: 40 }];
+
+  sel.getRow(1).values = ['YLZ TRUCK BODIES', 'JOB SHEET - SELECTION'];
+  sel.getRow(1).eachCell(c => Object.assign(c, headerStyle));
+  sel.mergeCells('A1:B1');
+
+  let r = 3;
+  const addSelRow = (label, value) => {
+    sel.getCell(`A${r}`).value = label; Object.assign(sel.getCell(`A${r}`), labelStyle);
+    sel.getCell(`B${r}`).value = value || ''; Object.assign(sel.getCell(`B${r}`), valueStyle);
+    r++;
+  };
+
+  addSelRow('Quote Number', state.quoteNumber);
+  addSelRow('Customer', state.customerName);
+  addSelRow('Dealer', state.dealerName);
+  addSelRow('Build Type', state.buildType);
+  if (state.truckBrand) addSelRow('Truck Brand', state.truckBrand);
+  if (state.trailerModel) addSelRow('Trailer Model', state.trailerModel);
+  if (state.trailerType) addSelRow('Trailer Type', state.trailerType);
+  addSelRow('Material', state.material);
+  addSelRow('Body Length', state.bodyLength);
+  addSelRow('Body Width', state.bodyWidth);
+  addSelRow('Body Height', state.bodyHeight);
+  addSelRow('Tailgate', state.tailgate);
+  addSelRow('Headboard', state.headboard ? 'Yes' : 'No');
+  addSelRow('Hoist', state.hoist);
+  addSelRow('Suspension', state.suspension);
+  addSelRow('Brakes', state.brakes);
+  addSelRow('Wheels', state.wheels);
+  addSelRow('Tyres', state.tyres);
+  addSelRow('Tarp System', state.tarpSystem);
+  addSelRow('Tarp Colour', state.tarpColour);
+  addSelRow('Paint Colour', state.paintColour);
+  addSelRow('Controls', state.controls);
+  addSelRow('Prepared By', state.preparedBy);
+  addSelRow('Date', new Date().toLocaleDateString('en-AU'));
+
+  // -- Body Sheet --
+  const body = wb.addWorksheet('Body');
+  body.columns = [{ width: 25 }, { width: 40 }];
+  body.getRow(1).values = ['BODY JOB SHEET'];
+  body.getRow(1).eachCell(c => Object.assign(c, headerStyle));
+  body.mergeCells('A1:B1');
+
+  let br = 3;
+  const addBodyRow = (label, value) => {
+    body.getCell(`A${br}`).value = label; Object.assign(body.getCell(`A${br}`), labelStyle);
+    body.getCell(`B${br}`).value = value || ''; Object.assign(body.getCell(`B${br}`), valueStyle);
+    br++;
+  };
+
+  addBodyRow('Material', state.material);
+  addBodyRow('Length', state.bodyLength);
+  addBodyRow('Width', state.bodyWidth);
+  addBodyRow('Height', state.bodyHeight);
+  addBodyRow('Tailgate', state.tailgate);
+  addBodyRow('Headboard', state.headboard ? 'Yes' : 'No');
+  br++;
+  body.getCell(`A${br}`).value = 'ACCESSORIES'; Object.assign(body.getCell(`A${br}`), sectionStyle); br++;
+  state.bodyAccessories.forEach(a => { addBodyRow(a, '✓'); });
+
+  // -- Chassis Sheet --
+  const chassis = wb.addWorksheet('Chassis');
+  chassis.columns = [{ width: 25 }, { width: 40 }];
+  chassis.getRow(1).values = ['CHASSIS / SUBFRAME JOB SHEET'];
+  chassis.getRow(1).eachCell(c => Object.assign(c, headerStyle));
+  chassis.mergeCells('A1:B1');
+
+  let cr = 3;
+  const addChassisRow = (label, value) => {
+    chassis.getCell(`A${cr}`).value = label; Object.assign(chassis.getCell(`A${cr}`), labelStyle);
+    chassis.getCell(`B${cr}`).value = value || ''; Object.assign(chassis.getCell(`B${cr}`), valueStyle);
+    cr++;
+  };
+
+  addChassisRow('Hoist', state.hoist);
+  addChassisRow('Suspension', state.suspension);
+  addChassisRow('Axle Make', state.axleMake);
+  addChassisRow('Axle Type', state.axleType);
+  addChassisRow('Brakes', state.brakes);
+  addChassisRow('Oil Tank', state.oilTank);
+  addChassisRow('Valve Bank', state.valveBank);
+  addChassisRow('Pump Type', state.pumpType);
+  addChassisRow('Controls', state.controls);
+  cr++;
+  chassis.getCell(`A${cr}`).value = 'CHASSIS ACCESSORIES'; Object.assign(chassis.getCell(`A${cr}`), sectionStyle); cr++;
+  state.chassisAccessories.forEach(a => { addChassisRow(a, '✓'); });
+  cr++;
+  if (state.drawbarOptions.length) {
+    chassis.getCell(`A${cr}`).value = 'DRAWBAR'; Object.assign(chassis.getCell(`A${cr}`), sectionStyle); cr++;
+    state.drawbarOptions.forEach(d => { addChassisRow(d, '✓'); });
+  }
+
+  // -- Fitout Sheet --
+  const fitout = wb.addWorksheet('Fitout');
+  fitout.columns = [{ width: 25 }, { width: 40 }];
+  fitout.getRow(1).values = ['FITOUT JOB SHEET'];
+  fitout.getRow(1).eachCell(c => Object.assign(c, headerStyle));
+  fitout.mergeCells('A1:B1');
+
+  let fr = 3;
+  const addFitoutRow = (label, value) => {
+    fitout.getCell(`A${fr}`).value = label; Object.assign(fitout.getCell(`A${fr}`), labelStyle);
+    fitout.getCell(`B${fr}`).value = value || ''; Object.assign(fitout.getCell(`B${fr}`), valueStyle);
+    fr++;
+  };
+
+  addFitoutRow('Tarp System', state.tarpSystem);
+  addFitoutRow('Tarp Colour', state.tarpColour);
+  addFitoutRow('Tarp Bows', state.tarpBows);
+  addFitoutRow('Wheels', state.wheels);
+  addFitoutRow('Tyres', state.tyres);
+  addFitoutRow('Mudflaps', state.mudflaps);
+  addFitoutRow('Full Cover Guards', state.fullCoverGuards);
+  fr++;
+  fitout.getCell(`A${fr}`).value = 'LIGHTING'; Object.assign(fitout.getCell(`A${fr}`), sectionStyle); fr++;
+  state.lighting.forEach(l => { addFitoutRow(l, '✓'); });
+
+  // -- Paint Sheet --
+  const paint = wb.addWorksheet('Paint');
+  paint.columns = [{ width: 25 }, { width: 40 }];
+  paint.getRow(1).values = ['PAINT JOB SHEET'];
+  paint.getRow(1).eachCell(c => Object.assign(c, headerStyle));
+  paint.mergeCells('A1:B1');
+
+  let pr = 3;
+  paint.getCell(`A${pr}`).value = 'Paint Colour'; Object.assign(paint.getCell(`A${pr}`), labelStyle);
+  paint.getCell(`B${pr}`).value = state.paintColour || ''; Object.assign(paint.getCell(`B${pr}`), valueStyle);
+  pr++;
+  paint.getCell(`A${pr}`).value = 'Paint Notes'; Object.assign(paint.getCell(`A${pr}`), labelStyle);
+  paint.getCell(`B${pr}`).value = state.paintNotes || ''; Object.assign(paint.getCell(`B${pr}`), valueStyle);
+
+  // Download
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `JobSheet_${state.quoteNumber || 'DRAFT'}_${state.customerName || 'Job'}.xlsx`.replace(/\s+/g, '_');
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Job Sheet Excel downloaded', 'success');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, type) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast ' + type;
+  setTimeout(() => { toast.className = 'toast'; }, 3000);
+}
+
+// ============================================================
+// LOAD EXISTING QUOTE
+// ============================================================
+function loadQuoteIntoState(quote) {
+  state.quoteId = quote.id;
+  state.quoteNumber = quote.quoteNumber;
+  state.buildType = quote.buildType || '';
+  state.customerName = quote.customerName || '';
+  state.dealerName = quote.dealerName || '';
+  state.contactName = quote.contactName || '';
+  state.contactEmail = quote.contactEmail || '';
+  state.contactPhone = quote.contactPhone || '';
+  state.preparedBy = quote.preparedBy || '';
+  state.salesPerson = quote.salesPerson || '';
+  state.validDays = quote.validDays || 30;
+  state.notes = quote.notes || '';
+  state.terms = quote.terms || '';
+  state.subtotal = quote.subtotal || 0;
+  state.margin = quote.margin || 25;
+  state.overhead = quote.overhead || 0;
+  state.discount = quote.discount || 0;
+  state.total = quote.total || 0;
+  state.overridePrice = quote.overridePrice || null;
+  state.overrideBy = quote.overrideBy || '';
+  state.overrideNote = quote.overrideNote || '';
+  // Load configuration fields
+  const cfg = quote.configuration || {};
+  state.truckBrand = cfg.truckBrand || '';
+  state.trailerModel = cfg.trailerModel || '';
+  state.trailerType = cfg.trailerType || '';
+  state.material = cfg.material || '';
+  state.bodyLength = cfg.bodyLength || '';
+  state.bodyWidth = cfg.bodyWidth || '';
+  state.bodyHeight = cfg.bodyHeight || '';
+  state.tailgate = cfg.tailgate || '';
+  state.headboard = cfg.headboard || false;
+  state.bodyAccessories = cfg.bodyAccessories || [];
+  state.hoist = cfg.hoist || '';
+  state.suspension = cfg.suspension || '';
+  state.brakes = cfg.brakes || '';
+  state.axleMake = cfg.axleMake || '';
+  state.axleType = cfg.axleType || '';
+  state.oilTank = cfg.oilTank || '';
+  state.valveBank = cfg.valveBank || '';
+  state.pumpType = cfg.pumpType || '';
+  state.controls = cfg.controls || '';
+  state.tarpSystem = cfg.tarpSystem || '';
+  state.tarpColour = cfg.tarpColour || '';
+  state.tarpBows = cfg.tarpBows || '';
+  state.wheels = cfg.wheels || '';
+  state.tyres = cfg.tyres || '';
+  state.mudflaps = cfg.mudflaps || '';
+  state.fullCoverGuards = cfg.fullCoverGuards || '';
+  state.drawbarOptions = cfg.drawbarOptions || [];
+  state.paintColour = cfg.paintColour || '';
+  state.paintNotes = cfg.paintNotes || '';
+  state.chassisAccessories = cfg.chassisAccessories || [];
+  state.lighting = cfg.lighting || [];
+  state.extras = cfg.extras || '';
+  // Load line items
+  if (quote.lineItems && quote.lineItems.length > 0) {
+    state.lineItems = quote.lineItems.map(li => ({
+      section: li.section,
+      description: li.description,
+      quantity: li.quantity,
+      unitPrice: li.unitPrice,
+      totalPrice: li.totalPrice,
+    }));
+  }
+  document.getElementById('quoteNumDisplay').textContent = state.quoteNumber;
+  document.getElementById('saveStatus').textContent = 'Loaded';
+  // Go to generate step to show the loaded quote
+  state.currentStep = getVisibleSteps().length - 1;
+}
+
+// ============================================================
+// TEMPLATES
+// ============================================================
+let cachedTemplates = [];
+
+async function loadTemplates() {
+  try {
+    const res = await fetch('/api/templates?active=true');
+    cachedTemplates = await res.json();
+  } catch (e) {
+    cachedTemplates = [];
+  }
+}
+
+function applyTemplate(tpl) {
+  const cfg = tpl.configuration;
+  if (cfg.buildType) { state.buildType = cfg.buildType; state.currentStep = 0; }
+  if (cfg.material) state.material = cfg.material;
+  if (cfg.defaultLength) state.bodyLength = cfg.defaultLength;
+  if (cfg.defaultWidth) state.bodyWidth = cfg.defaultWidth;
+  if (cfg.defaultHeight) state.bodyHeight = cfg.defaultHeight;
+  if (cfg.trailerModel) state.trailerModel = cfg.trailerModel;
+  if (cfg.trailerType) state.trailerType = cfg.trailerType;
+  // For combo builds, apply truck config
+  if (cfg.truckConfig) {
+    if (cfg.truckConfig.material) state.material = cfg.truckConfig.material;
+    if (cfg.truckConfig.defaultLength) state.bodyLength = cfg.truckConfig.defaultLength;
+    if (cfg.truckConfig.defaultWidth) state.bodyWidth = cfg.truckConfig.defaultWidth;
+    if (cfg.truckConfig.defaultHeight) state.bodyHeight = cfg.truckConfig.defaultHeight;
+  }
+  if (cfg.trailerConfig) {
+    if (cfg.trailerConfig.trailerModel) state.trailerModel = cfg.trailerConfig.trailerModel;
+    if (cfg.trailerConfig.trailerType) state.trailerType = cfg.trailerConfig.trailerType;
+  }
+  renderStep();
+}
+
+// ============================================================
+// PRICING HISTORY
+// ============================================================
+async function loadPricingHistory() {
+  const banner = document.getElementById('historyBanner');
+  const text = document.getElementById('historyText');
+  if (!banner || !text) return;
+  try {
+    const configStr = JSON.stringify(buildConfigSummary());
+    const hash = simpleHash(configStr);
+    const res = await fetch(`/api/pricing?hash=${hash}&buildType=${encodeURIComponent(state.buildType)}`);
+    const history = await res.json();
+    if (history && history.length > 0) {
+      const latest = history[0];
+      const avg = history.reduce((s, h) => s + h.quotedPrice, 0) / history.length;
+      text.textContent = `Similar builds quoted ${history.length}x — last: $${fmt(latest.quotedPrice)} (${latest.quoteNumber}, ${latest.customerName}) · Avg: $${fmt(avg)}`;
+      banner.classList.add('visible');
+    }
+  } catch (e) {
+    // Silently fail
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  // Check if loading an existing quote
+  const urlId = new URLSearchParams(window.location.search).get('id');
+
+  // Fetch next quote number, templates, and optionally existing quote in parallel
+  await Promise.allSettled([
+    loadTemplates(),
+    urlId
+      ? fetch(`/api/quotes/${urlId}`).then(r => r.json()).then(data => {
+          if (data && data.id) loadQuoteIntoState(data);
+        })
+      : fetch('/api/quotes/next-number').then(r => r.json()).then(data => {
+          state.quoteNumber = data.quoteNumber;
+          document.getElementById('quoteNumDisplay').textContent = state.quoteNumber;
+        }),
+  ]);
+
+  // Fallback quote number if fetch failed
+  if (!state.quoteNumber) {
+    state.quoteNumber = 'QU-DRAFT';
+    document.getElementById('quoteNumDisplay').textContent = 'DRAFT';
+  }
+
+  renderStep();
+}
+
+init();
+</script>
+</body>
+</html>

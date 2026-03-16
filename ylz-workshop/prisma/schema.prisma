@@ -1,0 +1,327 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  role          String
+  pin           String
+  color         String   @default("#E8681A")
+  access        String[]
+  canAdvance    Boolean  @default(false)
+  canEdit       Boolean  @default(false)
+  fullAdmin     Boolean  @default(false)
+  defaultScreen String   @default("dashboard")
+  section       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Job {
+  id        String   @id @default(cuid())
+  num       String   @unique
+  type      String
+  customer  String   @default("")
+  stage     String   @default("Fab")
+  flag      Boolean  @default(false)
+  pairedId  String?
+  due       String   @default("")
+  btype     String   @default("")
+  prodGroup String   @default("issued")
+  dealer    String   @default("")
+  site      String   @default("")
+  sheet     String   @default("")
+  dwg       String   @default("")
+  mrp       String   @default("")
+  parts     String   @default("")
+  ebs       String   @default("")
+  notes     String   @default("")
+  make      String   @default("")
+  po        String   @default("")
+  dims      String   @default("")
+  vin       String   @default("")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Worker {
+  id             String      @id
+  name           String
+  role           String
+  section        String
+  color          String
+  hdr            String
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  lastSyncAt     DateTime?
+  lastSyncSource String?
+  jobs           WorkerJob[]
+}
+
+model SyncLog {
+  id        String   @id @default(cuid())
+  workerId  String
+  direction String
+  status    String
+  detail    String   @default("")
+  jobCount  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([workerId])
+  @@index([createdAt])
+}
+
+model WorkerJob {
+  id       String @id @default(cuid())
+  workerId String
+  jobNo    String
+  type     String
+  start    String @default("")
+  days     Int    @default(1)
+  position Int    @default(0)
+  worker   Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model Tarp {
+  id    String @id @default(cuid())
+  jobNo String
+  type  String @default("")
+  susp  String @default("pending")
+  tyres String @default("pending")
+  tarp  String @default("pending")
+}
+
+model Timesheet {
+  id         String   @id @default(cuid())
+  workerName String
+  jobNum     String
+  section    String
+  date       String
+  hours      Float
+  startTime  String   @default("")
+  endTime    String   @default("")
+  createdBy  String
+  createdAt  DateTime @default(now())
+}
+
+model CompletedOrder {
+  id     String @id @default(cuid())
+  jobNo  String
+  name   String
+  fab    String @default("")
+  paint  String @default("")
+  fitout String @default("")
+  date   String @default("")
+}
+
+model JobNote {
+  id         String   @id @default(cuid())
+  jobId      String
+  authorId   String
+  authorName String   @default("")
+  type       String
+  message    String
+  createdAt  DateTime @default(now())
+
+  @@index([jobId])
+  @@index([type])
+}
+
+model JobFile {
+  id         String   @id @default(cuid())
+  jobId      String
+  fileName   String
+  fileType   String   @default("")
+  filePath   String
+  fileSize   Int      @default(0)
+  uploadedBy String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([jobId])
+}
+
+model ColdformKit {
+  id           String   @id @default(cuid())
+  size         String   @default("")
+  walls        String   @default("")
+  tunnel       String   @default("")
+  floor        String   @default("")
+  headBoard    String   @default("")
+  tailGate     String   @default("")
+  splashGuards String   @default("")
+  lightStrips  String   @default("")
+  allocatedTo  String   @default("")
+  notes        String   @default("")
+  status       String   @default("")
+  position     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ColdformChassis {
+  id            String   @id @default(cuid())
+  jobNo         String   @default("")
+  chassisLength String   @default("")
+  dollyType     String   @default("")
+  drawbar       String   @default("")
+  dateNeeded    String   @default("")
+  notes         String   @default("")
+  status        String   @default("")
+  position      Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Delivery {
+  id            String   @id @default(cuid())
+  jobId         String
+  jobNum        String
+  customer      String   @default("")
+  type          String   @default("")
+  invoiceNum    String   @default("")
+  invoiceAmount Float    @default(0)
+  depositAmount Float    @default(0)
+  depositPaid   Boolean  @default(false)
+  invoiceSent   Boolean  @default(false)
+  paymentStatus String   @default("pending")
+  deliveryDate  String   @default("")
+  paymentDue    String   @default("")
+  paymentDate   String   @default("")
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([jobId])
+  @@index([paymentStatus])
+}
+
+model RepairJob {
+  id            String   @id @default(cuid())
+  num           String   @unique
+  type          String
+  description   String   @default("")
+  status        String   @default("Open")
+  dateReported  String   @default("")
+  dateCompleted String   @default("")
+  createdBy     String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ColdformDelivery {
+  id          String   @id @default(cuid())
+  date        String
+  hardoxJobs  String   @default("")
+  chassisJobs String   @default("")
+  alloyJobs   String   @default("")
+  notes       String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model JobFollowerCheck {
+  id        String    @id @default(cuid())
+  jobNum    String
+  checkKey  String
+  checked   Boolean   @default(false)
+  checkedBy String    @default("")
+  checkedAt DateTime?
+
+  @@unique([jobNum, checkKey])
+  @@index([jobNum])
+}
+
+model Quote {
+  id            String   @id @default(cuid())
+  quoteNumber   String   @unique
+  status        String   @default("draft")
+  customerId    String?
+  customerName  String
+  dealerName    String   @default("")
+  contactName   String   @default("")
+  contactEmail  String   @default("")
+  contactPhone  String   @default("")
+  buildType     String
+
+  configuration Json
+
+  subtotal      Float    @default(0)
+  margin        Float    @default(25)
+  overhead      Float    @default(0)
+  discount      Float    @default(0)
+  total         Float    @default(0)
+  overridePrice Float?
+  overrideBy    String?
+  overrideNote  String?
+
+  preparedBy    String
+  salesPerson   String   @default("")
+  validDays     Int      @default(30)
+  notes         String   @default("")
+  terms         String   @default("")
+
+  jobId         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  sentAt        DateTime?
+  acceptedAt    DateTime?
+  expiresAt     DateTime?
+
+  lineItems     QuoteLineItem[]
+
+  @@index([status])
+  @@index([customerName])
+}
+
+model QuoteLineItem {
+  id          String @id @default(cuid())
+  quoteId     String
+  quote       Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  section     String
+  description String
+  quantity    Int    @default(1)
+  unitPrice   Float  @default(0)
+  totalPrice  Float  @default(0)
+  sortOrder   Int    @default(0)
+
+  @@index([quoteId])
+}
+
+model PricingHistory {
+  id            String   @id @default(cuid())
+  configHash    String
+  buildType     String
+  configuration Json
+  quotedPrice   Float
+  quoteNumber   String
+  customerName  String
+  createdAt     DateTime @default(now())
+
+  @@index([configHash])
+  @@index([buildType])
+}
+
+model ProductTemplate {
+  id            String   @id @default(cuid())
+  name          String
+  category      String
+  description   String   @default("")
+  imagePath     String   @default("")
+  configuration Json
+  basePrice     Float    @default(0)
+  sortOrder     Int      @default(0)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category])
+  @@index([active])
+}

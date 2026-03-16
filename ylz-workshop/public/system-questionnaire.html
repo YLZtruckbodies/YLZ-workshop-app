@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YLZ System Questionnaire</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#000000;--surface:#111111;--card:#1a1a1a;--card-hover:#222222;
+  --accent:#E8681A;--accent-dim:rgba(232,104,26,0.15);--accent-glow:rgba(232,104,26,0.3);
+  --text:#ffffff;--text2:#aaaaaa;--text3:#666666;
+  --border:#2a2a2a;--border-active:#E8681A;
+  --green:#22c55e;--green-dim:rgba(34,197,94,0.15);
+  --blue:#3b82f6;--blue-dim:rgba(59,130,246,0.15);
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 2px 8px rgba(0,0,0,0.3);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.4);
+  --transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+html{scroll-behavior:smooth;scroll-padding-top:120px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+::selection{background:var(--accent);color:#fff}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* Sticky Header */
+.header{position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0}
+.header-inner{max-width:1200px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.header-left{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{width:36px;height:36px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;flex-shrink:0}
+.header-title{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-subtitle{font-size:11px;color:var(--text2);white-space:nowrap}
+.progress-section{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.progress-text{font-size:13px;font-weight:600;color:var(--accent);white-space:nowrap}
+.progress-bar-wrap{width:120px;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width 0.5s ease;width:0%}
+.header-actions{display:flex;gap:8px;flex-shrink:0}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;border:none;cursor:pointer;transition:var(--transition);white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#d45e17;transform:translateY(-1px);box-shadow:0 4px 12px var(--accent-glow)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--text3)}
+.btn-danger{background:transparent;color:#ef4444;border:1px solid rgba(239,68,68,0.3)}
+.btn-danger:hover{background:rgba(239,68,68,0.1);border-color:#ef4444}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn svg{width:16px;height:16px}
+
+/* Tab Bar */
+.tab-bar{max-width:1200px;margin:0 auto;display:flex;border-bottom:2px solid var(--border);padding:0 24px;background:var(--surface)}
+.tab-btn{position:relative;padding:14px 24px;font-size:14px;font-weight:600;color:var(--text3);border:none;background:none;cursor:pointer;transition:var(--transition);white-space:nowrap;display:flex;align-items:center;gap:8px}
+.tab-btn:hover{color:var(--text2)}
+.tab-btn.active{color:var(--accent)}
+.tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--accent);border-radius:1px}
+.tab-btn .tab-count{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--border);color:var(--text3)}
+.tab-btn.active .tab-count{background:var(--accent-dim);color:var(--accent)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* Layout */
+.layout{max-width:1200px;margin:0 auto;display:flex;gap:0;min-height:calc(100vh - 110px)}
+.sidebar{width:260px;flex-shrink:0;padding:24px 16px;position:sticky;top:110px;height:calc(100vh - 110px);overflow-y:auto;border-right:1px solid var(--border)}
+.sidebar::-webkit-scrollbar{width:4px}
+.main{flex:1;padding:24px 32px 120px;min-width:0;max-width:900px}
+
+/* Sidebar Nav */
+.nav-section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:16px 12px 6px;margin-top:4px}
+.nav-section-title:first-child{margin-top:0;padding-top:0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);margin-bottom:2px;font-size:13px;color:var(--text2)}
+.nav-item:hover{background:var(--card);color:var(--text)}
+.nav-item.active{background:var(--accent-dim);color:var(--accent);font-weight:600}
+.nav-item .nav-icon{width:28px;height:28px;border-radius:6px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:var(--transition)}
+.nav-item.active .nav-icon{background:var(--accent);color:#fff}
+.nav-badge{margin-left:auto;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--border);color:var(--text3)}
+.nav-item.active .nav-badge{background:var(--accent-dim);color:var(--accent)}
+.nav-item.complete .nav-badge{background:var(--green-dim);color:var(--green)}
+
+/* Category Sections */
+.category-section{margin-bottom:32px}
+.category-header{display:flex;align-items:center;gap:12px;padding:16px 0;cursor:pointer;user-select:none;border-bottom:1px solid var(--border);margin-bottom:16px}
+.category-header:hover .category-title{color:var(--accent)}
+.category-icon{width:40px;height:40px;border-radius:10px;background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.category-title{font-size:18px;font-weight:700;transition:color 0.2s}
+.category-meta{font-size:12px;color:var(--text3);margin-top:2px}
+.category-chevron{margin-left:auto;color:var(--text3);transition:transform 0.3s;font-size:20px}
+.category-section.collapsed .category-chevron{transform:rotate(-90deg)}
+.category-section.collapsed .category-body{display:none}
+
+/* Question Cards */
+.q-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;transition:var(--transition)}
+.q-card:hover{border-color:var(--text3)}
+.q-card.expanded{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 8px 24px rgba(232,104,26,0.1)}
+.q-card.answered .q-card-header .q-status{color:var(--green)}
+.q-card-header{display:flex;align-items:center;gap:12px;padding:16px 20px;cursor:pointer;user-select:none;transition:background 0.2s}
+.q-card-header:hover{background:var(--card-hover)}
+.q-num{width:32px;height:32px;border-radius:8px;background:var(--border);color:var(--text3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;transition:var(--transition)}
+.q-card.expanded .q-num{background:var(--accent);color:#fff}
+.q-card.answered .q-num{background:var(--green-dim);color:var(--green)}
+.q-title{font-size:14px;font-weight:600;flex:1;min-width:0}
+.q-status{font-size:16px;flex-shrink:0;color:var(--text3);transition:color 0.3s}
+.q-chevron{color:var(--text3);transition:transform 0.3s;flex-shrink:0}
+.q-card.expanded .q-chevron{transform:rotate(180deg);color:var(--accent)}
+
+/* Question Body */
+.q-body{padding:0 20px 20px;display:none}
+.q-card.expanded .q-body{display:block;animation:fadeIn 0.3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.q-body .q-text{font-size:13px;color:var(--text2);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.q-hint{font-size:12px;color:var(--text3);font-style:italic;margin-bottom:12px}
+
+/* Form Elements */
+.field-group{margin-bottom:16px}
+.field-label{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
+.sub-question{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px}
+.sub-question .sub-label{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px}
+
+textarea,input[type="text"],input[type="number"],select{
+  width:100%;padding:10px 14px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text);font-size:14px;font-family:inherit;
+  transition:var(--transition);resize:vertical;
+}
+textarea:focus,input[type="text"]:focus,input[type="number"]:focus,select:focus{
+  outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);
+}
+textarea{min-height:80px}
+textarea::placeholder,input::placeholder{color:var(--text3)}
+select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+select option{background:var(--card);color:var(--text)}
+
+/* Checkbox & Radio */
+.check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.check-grid-wide{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.check-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);user-select:none;font-size:13px}
+.check-item:hover{border-color:var(--text3);background:var(--card-hover)}
+.check-item.checked{border-color:var(--accent);background:var(--accent-dim)}
+.check-item input[type="checkbox"],.check-item input[type="radio"]{display:none}
+.check-box{width:18px;height:18px;border:2px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:var(--transition)}
+.check-item.checked .check-box{background:var(--accent);border-color:var(--accent)}
+.check-box::after{content:'';display:none;width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);margin-top:-2px}
+.check-item.checked .check-box::after{display:block}
+.radio-dot{width:18px;height:18px;border:2px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:var(--transition)}
+.check-item.checked .radio-dot{border-color:var(--accent)}
+.radio-dot::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--accent);display:none;transition:var(--transition)}
+.check-item.checked .radio-dot::after{display:block}
+
+.inline-radios{display:flex;gap:8px;flex-wrap:wrap}
+.inline-radios .check-item{flex:0 0 auto;padding:8px 16px}
+
+/* Priority Rank */
+.rank-list{counter-reset:rank}
+.rank-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;cursor:pointer;transition:var(--transition);user-select:none}
+.rank-item:hover{background:var(--card-hover);border-color:var(--text3)}
+.rank-item .rank-num{width:24px;height:24px;border-radius:6px;background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.rank-item .rank-label{font-size:13px;flex:1}
+.rank-selected .rank-num{background:var(--accent);color:#fff}
+
+/* Role Grid */
+.role-grid{display:grid;gap:10px}
+.role-row{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:start;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.role-name{font-size:13px;font-weight:600;color:var(--accent);padding-top:8px}
+.role-row textarea{min-height:40px;font-size:13px}
+
+/* Template Cards (ALREADY FROM TEMPLATES) */
+.tpl-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;transition:var(--transition)}
+.tpl-card:hover{border-color:var(--text3)}
+.tpl-card.expanded{border-color:var(--green);box-shadow:0 0 0 1px rgba(34,197,94,0.3),0 8px 24px rgba(34,197,94,0.05)}
+.tpl-card-header{display:flex;align-items:center;gap:12px;padding:14px 20px;cursor:pointer;user-select:none;transition:background 0.2s}
+.tpl-card-header:hover{background:var(--card-hover)}
+.tpl-card-title{font-size:14px;font-weight:600;flex:1;min-width:0}
+.tpl-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;background:var(--green-dim);color:var(--green);text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0}
+.tpl-count{font-size:12px;color:var(--text3);flex-shrink:0;margin-right:4px}
+.tpl-chevron{color:var(--text3);transition:transform 0.3s;flex-shrink:0;font-size:16px}
+.tpl-card.expanded .tpl-chevron{transform:rotate(180deg);color:var(--green)}
+.tpl-body{padding:0 20px 16px;display:none}
+.tpl-card.expanded .tpl-body{display:block;animation:fadeIn 0.3s ease}
+.tpl-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tpl-tag{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);border-radius:20px;font-size:12px;color:var(--text2);transition:var(--transition)}
+.tpl-tag .tag-remove{cursor:pointer;color:var(--text3);font-size:14px;margin-left:2px;transition:color 0.2s}
+.tpl-tag .tag-remove:hover{color:#ef4444}
+.tpl-tag.editing{border-color:var(--accent);background:var(--accent-dim)}
+.tpl-note{font-size:12px;color:var(--text3);font-style:italic;padding:8px 12px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);border:1px dashed var(--border);margin-bottom:12px}
+.tpl-add-row{display:flex;gap:8px;margin-top:8px}
+.tpl-add-row input{flex:1;padding:8px 12px;font-size:13px}
+.tpl-add-btn{padding:8px 16px;background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.3);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:600;transition:var(--transition);white-space:nowrap}
+.tpl-add-btn:hover{background:rgba(34,197,94,0.2);border-color:var(--green)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--green);color:#fff;padding:12px 24px;border-radius:var(--radius-sm);font-size:14px;font-weight:600;z-index:200;transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);box-shadow:var(--shadow-lg)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Footer Actions */
+.footer-actions{position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:12px 24px;z-index:100;display:flex;justify-content:center;gap:12px}
+
+/* Notes Section */
+.notes-section{margin-top:40px;padding-top:24px;border-top:1px solid var(--border)}
+.notes-section h3{font-size:16px;font-weight:700;margin-bottom:12px}
+.notes-section textarea{min-height:120px}
+
+/* Mobile */
+@media(max-width:900px){
+  .sidebar{display:none}
+  .layout{flex-direction:column}
+  .main{padding:16px 16px 120px}
+  .header-inner{flex-wrap:wrap;gap:8px}
+  .header-subtitle{display:none}
+  .progress-bar-wrap{width:80px}
+  .check-grid{grid-template-columns:1fr}
+  .role-row{grid-template-columns:1fr;gap:4px}
+  .role-name{padding-top:0}
+  .tab-bar{padding:0 12px;overflow-x:auto}
+  .tab-btn{padding:12px 16px;font-size:13px}
+}
+@media(max-width:600px){
+  .header-actions .btn span{display:none}
+  .header-actions .btn{padding:8px 10px}
+  .category-title{font-size:16px}
+  .q-card-header{padding:12px 14px}
+  .q-body{padding:0 14px 14px}
+}
+
+/* Mobile Category Nav */
+.mobile-nav{display:none;overflow-x:auto;white-space:nowrap;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border);gap:6px}
+.mobile-nav::-webkit-scrollbar{display:none}
+.mobile-nav .mnav{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;color:var(--text2);background:var(--card);border:1px solid var(--border);cursor:pointer;white-space:nowrap;transition:var(--transition)}
+.mobile-nav .mnav.active{background:var(--accent-dim);color:var(--accent);border-color:var(--accent)}
+@media(max-width:900px){.mobile-nav{display:flex}}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <div class="header-left">
+      <div class="logo">YLZ</div>
+      <div>
+        <div class="header-title">System Questionnaire</div>
+        <div class="header-subtitle">YLZ Truck Bodies Workshop App Discovery</div>
+      </div>
+    </div>
+    <div class="progress-section">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
+      <div class="progress-text" id="progressText">0 / 26</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost btn-sm" onclick="clearAll()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14"/></svg><span>Clear</span></button>
+      <button class="btn btn-primary btn-sm" onclick="exportAnswers()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>Export</span></button>
+    </div>
+  </div>
+</header>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="input" onclick="switchTab('input')">
+    <span>&#9997;</span> NEEDS YOUR INPUT <span class="tab-count" id="inputTabCount">0/26</span>
+  </button>
+  <button class="tab-btn" data-tab="templates" onclick="switchTab('templates')">
+    <span>&#128230;</span> ALREADY FROM TEMPLATES <span class="tab-count" id="templatesTabCount">34 categories</span>
+  </button>
+</div>
+
+<!-- Mobile Category Nav -->
+<nav class="mobile-nav" id="mobileNav"></nav>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- INPUT TAB -->
+<div class="tab-panel active" id="panel-input">
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main" id="mainContent"></main>
+</div>
+</div>
+
+<!-- TEMPLATES TAB -->
+<div class="tab-panel" id="panel-templates">
+<div class="layout">
+  <aside class="sidebar" id="sidebarTpl"></aside>
+  <main class="main" id="mainContentTpl"></main>
+</div>
+</div>
+
+<!-- Footer -->
+<div class="footer-actions">
+  <button class="btn btn-ghost" onclick="collapseAll()">Collapse All</button>
+  <button class="btn btn-ghost" onclick="expandAll()">Expand All</button>
+  <button class="btn btn-primary" onclick="exportAnswers()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> Export All Answers</button>
+</div>
+
+<script>
+// ===== NEEDS YOUR INPUT DATA =====
+const CATEGORIES = [
+  {
+    id:'product-sales', title:'Product / Sales', icon:'&#128722;', questions:[
+      {id:'q1',num:'Q1',title:'What are your most common repeat builds? (Top 10 most quoted)',type:'textarea',
+        hint:'e.g. UD Hardox 5.4m tipper, 3-axle Hardox dog 8300mm...'},
+      {id:'q2',num:'Q2',title:'Quote document - what sections does your quote include?',type:'multi-part',
+        parts:[
+          {id:'q2a',label:'Quote sections included',type:'checkboxes',options:['Description','Line items with pricing','Inclusions','Exclusions','Terms & Conditions','Payment terms','Delivery timeframe','Warranty info']},
+          {id:'q2b',label:'Do you currently use Xero to send quotes?',type:'yesno'},
+          {id:'q2c',label:'Standard terms & conditions wording',type:'textarea'}
+        ]},
+      {id:'q3',num:'Q3',title:'Discount / approval rules',type:'multi-part',
+        parts:[
+          {id:'q3a',label:'Are there standard discount tiers?',type:'yesno-text',textLabel:'Details'},
+          {id:'q3b',label:'Who can approve quotes?',type:'checkboxes-text',options:['Pete','Sales team','Other'],textLabel:'Other details'},
+          {id:'q3c',label:'Is there a discount threshold requiring approval?',type:'yesno-text',textLabel:'Threshold amount'}
+        ]},
+      {id:'q4',num:'Q4',title:'Do you have standard inclusions/exclusions lists per product type?',type:'multi-part',
+        parts:[
+          {id:'q4a',label:'Standard lists exist?',type:'yesno'},
+          {id:'q4b',label:'Details',type:'textarea'}
+        ]}
+    ]
+  },
+  {
+    id:'pricing', title:'Pricing', icon:'&#128176;', questions:[
+      {id:'q5',num:'Q5',title:'Where does pricing come from today?',type:'multi-check-plus-text',
+        options:['MRPeasy BOMs','Pricing spreadsheet','Experience-based (in Pete\'s head)','Supplier quotes','Combination'],
+        textLabel:'Details'},
+      {id:'q6',num:'Q6',title:'MRPeasy setup',type:'multi-part',
+        parts:[
+          {id:'q6a',label:'Do you have BOMs in MRPeasy?',type:'radio',options:['Yes','No','Partial']},
+          {id:'q6b',label:'Does MRPeasy hold material costs, labour costs, or both?',type:'checkboxes',options:['Material costs','Labour costs','Both']},
+          {id:'q6c',label:'What MRPeasy plan are you on?',type:'text',placeholder:'e.g. Professional, Enterprise'},
+          {id:'q6d',label:'Do you have API credentials?',type:'yesno'}
+        ]},
+      {id:'q7',num:'Q7',title:'Labour pricing',type:'multi-part',
+        parts:[
+          {id:'q7a',label:'Shop rate per hour? ($)',type:'text',placeholder:'$ per hour'},
+          {id:'q7b',label:'Different rates per section?',type:'yesno-text',textLabel:'Rate details per section'},
+          {id:'q7c',label:'Labour hours estimated or from BOMs?',type:'radio',options:['Estimated per build type','Calculated from BOMs','Both']}
+        ]},
+      {id:'q8',num:'Q8',title:'Margin & overhead',type:'multi-part',
+        parts:[
+          {id:'q8a',label:'Target margin %?',type:'text',placeholder:'e.g. 25%'},
+          {id:'q8b',label:'Flat or different by category?',type:'radio-text',options:['Flat','Different by category'],textLabel:'Category details'},
+          {id:'q8c',label:'Fixed overhead costs per job?',type:'yesno-text',textLabel:'Details'},
+          {id:'q8d',label:'How do you handle freight/delivery pricing?',type:'textarea'}
+        ]},
+      {id:'q9',num:'Q9',title:'Manual overrides',type:'multi-part',
+        parts:[
+          {id:'q9a',label:'Can salespeople override any price?',type:'yesno'},
+          {id:'q9b',label:'Should overrides be flagged/logged?',type:'yesno'},
+          {id:'q9c',label:'Does override need approval above a threshold?',type:'yesno-text',textLabel:'Threshold amount'}
+        ]},
+      {id:'q10',num:'Q10',title:'Historical pricing',type:'multi-part',
+        parts:[
+          {id:'q10a',label:'Remember what you charged last time for same config?',type:'yesno'},
+          {id:'q10b',label:'Show "last quoted price" on similar builds?',type:'yesno'}
+        ]}
+    ]
+  },
+  {
+    id:'production', title:'Production', icon:'&#127981;', questions:[
+      {id:'q11',num:'Q11',title:'Job sheet feedback',type:'multi-part',
+        parts:[
+          {id:'q11a',label:'Is the current Excel format working well?',type:'yesno-text',textLabel:'What\'s missing or needs improving'},
+          {id:'q11b',label:'Should quoting auto-create job sheets?',type:'yesno'}
+        ]},
+      {id:'q12',num:'Q12',title:'Work orders',type:'multi-part',
+        parts:[
+          {id:'q12a',label:'What info does the floor need beyond the job sheet?',type:'textarea'},
+          {id:'q12b',label:'Are cut lists separate or part of work order?',type:'radio',options:['Separate','Part of work order','Both']}
+        ]},
+      {id:'q13',num:'Q13',title:'Job stages',type:'multi-part',
+        parts:[
+          {id:'q13info',label:'Current 7 stages: Requires Engineering, Ready to Start, Fab, Paint, Fitout, QC, Dispatch',type:'info'},
+          {id:'q13a',label:'Any stages to add, remove, or rename?',type:'textarea'}
+        ]}
+    ]
+  },
+  {
+    id:'parts-bom', title:'Parts / BOM / MRP', icon:'&#128230;', questions:[
+      {id:'q14',num:'Q14',title:'BOM structure',type:'multi-part',
+        parts:[
+          {id:'q14a',label:'Do BOMs exist in MRPeasy?',type:'radio',options:['Yes','No','Partial']},
+          {id:'q14b',label:'Are BOMs also in spreadsheets?',type:'yesno'},
+          {id:'q14c',label:'How detailed are BOMs?',type:'radio',options:['Every bolt','Major assemblies only','Mix']}
+        ]},
+      {id:'q15',num:'Q15',title:'Parts ordering',type:'multi-part',
+        parts:[
+          {id:'q15a',label:'Who orders parts?',type:'text',placeholder:'Name(s)'},
+          {id:'q15b',label:'Format needed?',type:'checkboxes-text',options:['Excel','PDF','Email','MRPeasy','Other'],textLabel:'Other format'},
+          {id:'q15c',label:'Specific suppliers per part category?',type:'yesno-text',textLabel:'Details'}
+        ]},
+      {id:'q16',num:'Q16',title:'MRP export for Liz',type:'multi-part',
+        parts:[
+          {id:'q16a',label:'Format?',type:'checkboxes-text',options:['Excel','CSV','MRPeasy import','Other'],textLabel:'Other format'},
+          {id:'q16b',label:'Required fields?',type:'textarea'}
+        ]}
+    ]
+  },
+  {
+    id:'vin-compliance', title:'VIN / Compliance', icon:'&#128203;', questions:[
+      {id:'q17',num:'Q17',title:'VIN plates',type:'multi-part',
+        parts:[
+          {id:'q17a',label:'Current generator working well?',type:'yesno-text',textLabel:'Feedback'},
+          {id:'q17b',label:'What triggers VIN creation?',type:'radio-text',options:['After QC','After dispatch','Manual'],textLabel:'Other trigger'}
+        ]},
+      {id:'q18',num:'Q18',title:'Compliance outputs needed',type:'multi-part',
+        parts:[
+          {id:'q18a',label:'Compliance documents needed',type:'checkboxes',options:['ADR compliance certificate','Engineer\'s certification','Weight certificate','Modification plate']},
+          {id:'q18b',label:'Format?',type:'checkboxes-text',options:['PDF','Excel','Print-ready'],textLabel:'Other format'},
+          {id:'q18c',label:'Additional details',type:'textarea'}
+        ]}
+    ]
+  },
+  {
+    id:'images', title:'Images', icon:'&#128247;', questions:[
+      {id:'q19',num:'Q19',title:'Product images',type:'multi-part',
+        parts:[
+          {id:'q19a',label:'Do you have build photos organized anywhere?',type:'yesno-text',textLabel:'Location'},
+          {id:'q19b',label:'Can someone take photos for the configurator?',type:'yesno'},
+          {id:'q19c',label:'Which products need images first?',type:'textarea'}
+        ]}
+    ]
+  },
+  {
+    id:'integrations', title:'Integrations', icon:'&#128279;', questions:[
+      {id:'q20',num:'Q20',title:'Xero',type:'multi-part',
+        parts:[
+          {id:'q20a',label:'Should the new system replace Xero quoting?',type:'radio',options:['Replace Xero','Work alongside Xero','Generate quotes that go through Xero']},
+          {id:'q20b',label:'Details',type:'textarea'}
+        ]},
+      {id:'q21',num:'Q21',title:'Monday.com',type:'multi-part',
+        parts:[
+          {id:'q21a',label:'Still using Monday.com sync?',type:'yesno'},
+          {id:'q21b',label:'Should quoting create Monday.com items?',type:'yesno'}
+        ]},
+      {id:'q22',num:'Q22',title:'Website',type:'multi-part',
+        parts:[
+          {id:'q22a',label:'Should quotes be requestable from ylztruckbodies.com.au?',type:'yesno'},
+          {id:'q22b',label:'Other integrations?',type:'textarea'}
+        ]}
+    ]
+  },
+  {
+    id:'user-roles', title:'User Roles & Priority', icon:'&#128101;', questions:[
+      {id:'q23',num:'Q23',title:'Who does what?',type:'role-grid',
+        roles:['Pete','Keith','Nathan','Matt','Liz','Chris (Sales)','Engineers','Production staff']},
+      {id:'q24',num:'Q24',title:'Quote permissions',type:'multi-part',
+        parts:[
+          {id:'q24a',label:'Who can create quotes?',type:'checkboxes',options:['Pete','Keith','Nathan','Sales team','Anyone']},
+          {id:'q24b',label:'Who can approve/send?',type:'checkboxes',options:['Pete','Keith','Nathan','Sales team','Other']},
+          {id:'q24c',label:'Who can override pricing?',type:'checkboxes',options:['Pete','Keith','Nathan','Other']},
+          {id:'q24d',label:'Should production see pricing?',type:'yesno'}
+        ]},
+      {id:'q25',num:'Q25',title:'Top 3 priorities - what to build first?',type:'rank',
+        options:['Visual product selection with image cards','Quick quote templates','Full configurator','Pricing engine','Quote PDF generation','Auto job sheet from quote','BOM generation','MRPeasy integration','Parts ordering']},
+      {id:'q26',num:'Q26',title:'Biggest pain points today?',type:'multi-check-plus-text',
+        options:['Quoting takes too long','Pricing is inconsistent','Job sheets require too much manual entry','Parts get missed','No visibility on job costs','Too many spreadsheets','Manual data re-entry'],
+        textLabel:'Other pain points'}
+    ]
+  }
+];
+
+// ===== TEMPLATE DATA =====
+const TEMPLATE_CATEGORIES = [
+  {id:'tpl-truck-brands',title:'Truck Brands',items:['Volvo','Kenworth','Western Star','Isuzu','MAN','Scania','Mercedes Benz','DAF','Mack','Sitrak','UD','Hino','Fuso']},
+  {id:'tpl-trailer-models',title:'Trailer Models',items:['DT-3 (3-Axle Dog)','DT-4 (4-Axle Dog)','DT-5 (5-Axle Dog)','ST-2 (2-Axle Semi)','ST-3 (3-Axle Semi)','CD-2 (2-Axle Convertor Dolly)','CD-3 (3-Axle Convertor Dolly)','PIG 2 (2-Axle Pig)','PIG 3 (3-Axle Pig)']},
+  {id:'tpl-trailer-types',title:'Trailer Types',items:['P Beam','I Beam','I Beam Drop Deck','Converter Dolly']},
+  {id:'tpl-materials',title:'Materials',items:['Aluminium','Hardox 450','Hardox 500','Bisalloy 400','Steel']},
+  {id:'tpl-body-lengths-truck',title:'Body Lengths - Truck',items:['3900mm','4000mm','4100mm','4200mm','4300mm','4400mm','4500mm','4600mm','4660mm','4700mm','4800mm','4900mm','5000mm','5100mm','5200mm','5300mm','5400mm','5500mm','5600mm','5700mm','5800mm','5900mm','6000mm']},
+  {id:'tpl-body-lengths-trailer',title:'Body Lengths - Trailer',items:['6000mm','6050mm','6100mm','6400mm','7700mm','8300mm','9200mm','9400mm','9600mm','10400mm','4660mm']},
+  {id:'tpl-body-widths',title:'Body Widths',items:['2250mm Steel','2290mm Alloy','2400mm Quarry spec']},
+  {id:'tpl-body-heights-truck',title:'Body Heights - Truck',items:['1000mm','1100mm','1150mm','1200mm','1300mm','1410mm','1500mm']},
+  {id:'tpl-body-heights-trailer',title:'Body Heights - Trailer',items:['1000mm','1100mm','1150mm','1410mm','1500mm','1520mm']},
+  {id:'tpl-hoists',title:'Hoists',items:['Hyva Alpha 191-4','Hyva Alpha 201-4','Hyva Alpha 241-4','Palfinger PH T74','HPF4090-154-4 (3AD)','HPF5450-174-5 (7700 Dog)','HPF5730-174-5 (8300 Dog)','HPF5800-174-5 (8300 Dog)','HPF6500-196-5 (Semi)','HPF7020-196-5 (10.4m Semi)','HPF3120-135-3','HPF2850-135-3-60','MFB3126.3.2840','Delta S2-87TT-5-5.7']},
+  {id:'tpl-tarps',title:'Tarp Systems',items:['Manual Pull Over','EziTarp Electric (Razor)','Pulltarp Electric','Aero Easy Cover','Rollover Mesh','Rollover PVC','Side Tipper Tarp','Hoop Tarp']},
+  {id:'tpl-tarp-colours',title:'Tarp Colours',items:['Black','Blue','Dark Blue','Red','Green','Grey','N/A']},
+  {id:'tpl-tarp-bows',title:'Tarp Bows',items:['250mm','320mm (Hardox 4AD)','380mm','450mm']},
+  {id:'tpl-tailgates',title:'Tailgate Types',items:['Barn Doors','Single Piece Drop Down','Single Piece Swing Up','Bi-Fold']},
+  {id:'tpl-suspension',title:'Suspension',items:['SAF Intra IO','SAF Intra IU','TMC LMV','BPW Air Ride','Fuwa Air Ride']},
+  {id:'tpl-axle-makes',title:'Axle Makes',items:['BPW','Fuwa','SAF','TMC']},
+  {id:'tpl-axle-types',title:'Axle Types',items:['Drum Brake','Disc Brake']},
+  {id:'tpl-brakes',title:'Brakes - Trailer Models',items:['PD900013 - SAF Intra Disc 285','PD900014 - SAF Intra Disc 335','PD900015 - SAF Intra Drum 285','PD900016 - SAF Intra Drum 335','PD900017 - BPW Air Ride Disc 285','PD900018 - BPW Air Ride Disc 335','PD900019 - Fuwa Air Ride Drum 285','PD900020 - Fuwa Air Ride Drum 335','PD900021 - TMC LMV Drum 285']},
+  {id:'tpl-wheels',title:'Wheels',items:['Alcoa Machine Finished 285 PCD','Alcoa Machine Finished 335 PCD','Alcoa Dura Bright 285 PCD','Alcoa Dura Bright 335 PCD','Ogreen Machine 285 PCD','Ogreen Machine 335 PCD','Ogreen Polished 285 PCD','Ogreen Polished 335 PCD','Super Light Machined 285 PCD','Super Light Machined 335 PCD','Super Light Polished 285 PCD','Super Light Polished 335 PCD']},
+  {id:'tpl-tyres',title:'Tyres',items:['Adventurers LR188','Austyre ST01','Austyre Transit','Bridgestone R187','Loadrunner LR188','Remington R628','Austyre Adventurer']},
+  {id:'tpl-oil-tanks',title:'Hydraulics - Oil Tanks',items:['TKBRS-40L - Behind cab steel 40L','TKBRS-60L - Behind cab steel 60L','TKBRS-80L - Behind cab steel 80L','TKVER-40L - Vertical steel 40L','TKVER-60L - Vertical steel 60L','TKBRS-40A - Behind cab alloy 40L','TKBRS-60A - Behind cab alloy 60L','TKBRS-80A - Behind cab alloy 80L','TKVER-40A - Vertical alloy 40L','TKVER-60A - Vertical alloy 60L']},
+  {id:'tpl-valve-banks',title:'Hydraulics - Valve Banks',items:['121.15.113 - Steel outboard','121.15.113 - Steel inside','121.15.104 - Alloy outboard','121.15.104 - Alloy inside']},
+  {id:'tpl-pump-types',title:'Hydraulics - Pump Types',items:['Permco','Parker','Casappa','Customer Supplied']},
+  {id:'tpl-couplings',title:'Couplings',items:['V Orlandi','Ringfeder','Rockhinger','Pintle Hook','Bartlett Ball','Holland']},
+  {id:'tpl-lighting',title:'Lighting',items:['113RMG - Stop/Tail','113AMG - Indicator','113WMG - Reverse','42ARB - Side marker amber','Hella Dura LED side','7030AB - Reflector amber','7030WB - Reflector white','7030RB - Reflector red','LED Beacon amber','LED reverse work light','LED number plate light','Narva combination rear','LED clearance lights']},
+  {id:'tpl-body-accessories',title:'Body Accessories',items:['Rope Rails','Toolbox LHS','Toolbox RHS','Water Cooler','Ladder','Tow Hitch','Headboard','Cab Guard','Load Pegs','Underbody Toolbox','Grain Sides','Mesh Extensions','Drop Sides','Side Pegs','Rear Bumper']},
+  {id:'tpl-chassis-accessories',title:'Chassis Accessories',items:['Mudguards','Spray Suppression','Side Markers','Reflectors','Air Reservoir','Water Tank','Fuel Tank','Air Dryer','Belly Plates','Chassis Toolbox','Jockey Wheel','Safety Chains']},
+  {id:'tpl-drawbar',title:'Drawbar Options',items:['Tow coupling - V Orlandi','Tow coupling - Ringfeder','Tow coupling - Rockhinger','Tow coupling - Pintle Hook','Lockflap - Manual','Lockflap - Air operated','Brake - Override','Brake - Air only','Safety chain - 13mm','Safety chain - 16mm','Anderson plug - 50A','Anderson plug - 175A','Drawbar length - 3000mm','Drawbar length - 3500mm','Drawbar length - 4000mm','Drawbar type - Straight / A-frame']},
+  {id:'tpl-mudflaps',title:'Mudflap Options',items:['YLZ','Customer Supplied','No']},
+  {id:'tpl-guards',title:'Full Cover Guards',items:['Black','White','Grey','Red','Green']},
+  {id:'tpl-controls',title:'Controls',items:['Existing Electric in Dash','Existing PTO Switch with Hand Held Controller','12V Hand Controller','24V Hand Controller','OEM Switches in Cab','N/A']},
+  {id:'tpl-staff',title:'Staff (Prepared By / Sales)',items:['Prepared By: JW','Prepared By: JH','Prepared By: NW','Prepared By: CT','Sales: NW','Sales: PS']},
+  {id:'tpl-assembly-parts',title:'Assembly Part Numbers',items:[],note:'155 part numbers loaded from assembly part numbers spreadsheet. Available in system.'},
+  {id:'tpl-bom-refs',title:'BOM References',items:[],note:'BOM100-BOM213 defined in MRPeasy. Covers hardox/aluminium bodies, trailers (3/4/5 axle), subframes, towbar variants, camera kits, weight scales, lift axles, tarp BOMs, paint BOMs, wheel/tyre BOMs, fitout BOMs.'}
+];
+
+// ===== STATE =====
+const STORAGE_KEY = 'ylz-questionnaire-answers';
+const TPL_STORAGE_KEY = 'ylz-questionnaire-templates';
+let answers = {};
+let templateEdits = {};
+let expandedCard = null;
+let activeTab = 'input';
+
+function loadAnswers(){
+  try{
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if(saved) answers = JSON.parse(saved);
+  }catch(e){answers = {};}
+  try{
+    const saved = localStorage.getItem(TPL_STORAGE_KEY);
+    if(saved) templateEdits = JSON.parse(saved);
+  }catch(e){templateEdits = {};}
+}
+function saveAnswers(){
+  try{localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));}catch(e){}
+  updateProgress();
+  updateSidebar();
+}
+function saveTemplates(){
+  try{localStorage.setItem(TPL_STORAGE_KEY, JSON.stringify(templateEdits));}catch(e){}
+}
+function setAnswer(key, value){
+  if(value === '' || value === null || value === undefined || (Array.isArray(value) && value.length === 0)){
+    delete answers[key];
+  } else {
+    answers[key] = value;
+  }
+  saveAnswers();
+  updateCardState(key);
+}
+function getAnswer(key, fallback){
+  return answers[key] !== undefined ? answers[key] : fallback;
+}
+function getTemplateItems(catId){
+  if(templateEdits[catId]) return templateEdits[catId];
+  const cat = TEMPLATE_CATEGORIES.find(c=>c.id===catId);
+  return cat ? [...cat.items] : [];
+}
+function setTemplateItems(catId, items){
+  templateEdits[catId] = items;
+  saveTemplates();
+}
+
+// ===== TAB SWITCHING =====
+function switchTab(tab){
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab===tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p=>{
+    p.classList.toggle('active', p.id==='panel-'+tab);
+  });
+  if(tab==='input'){
+    renderSidebar();
+    renderMobileNav();
+  } else {
+    renderSidebarTpl();
+  }
+}
+
+// ===== RENDERING =====
+function render(){
+  loadAnswers();
+  renderSidebar();
+  renderMobileNav();
+  renderMain();
+  renderMainTpl();
+  renderSidebarTpl();
+  updateProgress();
+}
+
+function renderSidebar(){
+  const sb = document.getElementById('sidebar');
+  sb.innerHTML = CATEGORIES.map(cat => {
+    const answered = countAnswered(cat);
+    const total = cat.questions.length;
+    const complete = answered === total;
+    return `<div class="nav-item${complete?' complete':''}" data-cat="${cat.id}" onclick="scrollToCat('${cat.id}')">
+      <div class="nav-icon">${cat.icon}</div>
+      <span>${cat.title}</span>
+      <span class="nav-badge">${answered}/${total}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderSidebarTpl(){
+  const sb = document.getElementById('sidebarTpl');
+  if(!sb) return;
+  sb.innerHTML = TEMPLATE_CATEGORIES.map(cat => {
+    const items = getTemplateItems(cat.id);
+    const count = items.length;
+    const label = cat.note && count===0 ? 'ref' : count+'';
+    return `<div class="nav-item" data-cat="${cat.id}" onclick="scrollToTplCat('${cat.id}')">
+      <div class="nav-icon" style="background:var(--green-dim);color:var(--green);font-size:10px">${label}</div>
+      <span style="font-size:12px">${cat.title}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderMobileNav(){
+  const nav = document.getElementById('mobileNav');
+  nav.innerHTML = CATEGORIES.map(cat => {
+    const answered = countAnswered(cat);
+    const total = cat.questions.length;
+    return `<div class="mnav" data-cat="${cat.id}" onclick="scrollToCat('${cat.id}')">${cat.icon} ${cat.title} (${answered}/${total})</div>`;
+  }).join('');
+}
+
+function renderMain(){
+  const main = document.getElementById('mainContent');
+  let html = '';
+  CATEGORIES.forEach(cat => {
+    const answered = countAnswered(cat);
+    const total = cat.questions.length;
+    html += `<div class="category-section" id="cat-${cat.id}">
+      <div class="category-header" onclick="toggleCategory('${cat.id}')">
+        <div class="category-icon">${cat.icon}</div>
+        <div>
+          <div class="category-title">${cat.title}</div>
+          <div class="category-meta">${answered} of ${total} answered</div>
+        </div>
+        <div class="category-chevron">&#9660;</div>
+      </div>
+      <div class="category-body">
+        ${cat.questions.map(q => renderQuestion(q)).join('')}
+      </div>
+    </div>`;
+  });
+  html += renderNotesSection();
+  main.innerHTML = html;
+  document.querySelectorAll('.q-card').forEach(card => {
+    const qid = card.dataset.qid;
+    if(isQuestionAnswered(qid)) card.classList.add('answered');
+  });
+}
+
+function renderMainTpl(){
+  const main = document.getElementById('mainContentTpl');
+  if(!main) return;
+  let html = '<div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700;margin-bottom:4px">Pre-filled from Job Sheet Templates</h2><p style="font-size:13px;color:var(--text2)">This data has been extracted from your existing job sheet templates. Review and edit if needed.</p></div>';
+  TEMPLATE_CATEGORIES.forEach(cat => {
+    const items = getTemplateItems(cat.id);
+    const count = items.length;
+    const hasNote = !!cat.note;
+    html += `<div class="tpl-card" id="tpl-${cat.id}">
+      <div class="tpl-card-header" onclick="toggleTplCard('${cat.id}')">
+        <div class="tpl-card-title">${cat.title}</div>
+        ${count>0?`<div class="tpl-count">${count} items</div>`:''}
+        <div class="tpl-badge">From Templates</div>
+        <div class="tpl-chevron">&#9660;</div>
+      </div>
+      <div class="tpl-body" id="tpl-body-${cat.id}">
+        ${hasNote?`<div class="tpl-note">${cat.note}</div>`:''}
+        <div class="tpl-tags" id="tpl-tags-${cat.id}">
+          ${items.map((item,i)=>`<span class="tpl-tag" data-cat="${cat.id}" data-idx="${i}">${escHtml(item)} <span class="tag-remove" onclick="removeTplItem(event,'${cat.id}',${i})">&times;</span></span>`).join('')}
+          ${count===0 && !hasNote?'<span style="color:var(--text3);font-size:12px;font-style:italic">No items yet</span>':''}
+        </div>
+        <div class="tpl-add-row">
+          <input type="text" id="tpl-input-${cat.id}" placeholder="Add new item..." onkeydown="if(event.key==='Enter')addTplItem('${cat.id}')">
+          <button class="tpl-add-btn" onclick="addTplItem('${cat.id}')">+ Add</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  main.innerHTML = html;
+}
+
+function renderQuestion(q){
+  const isAnswered = isQuestionAnswered(q.id);
+  return `<div class="q-card${isAnswered?' answered':''}" data-qid="${q.id}" id="card-${q.id}">
+    <div class="q-card-header" onclick="toggleCard('${q.id}')">
+      <div class="q-num">${q.num}</div>
+      <div class="q-title">${q.title}</div>
+      <div class="q-status">${isAnswered?'&#10003;':''}</div>
+      <div class="q-chevron">&#9660;</div>
+    </div>
+    <div class="q-body">${renderQuestionBody(q)}</div>
+  </div>`;
+}
+
+function renderQuestionBody(q){
+  let html = '';
+  if(q.hint) html += `<div class="q-hint">${q.hint}</div>`;
+  switch(q.type){
+    case 'textarea':
+      html += `<textarea id="input-${q.id}" placeholder="${q.hint||'Enter your answer...'}" oninput="setAnswer('${q.id}',this.value)">${getAnswer(q.id,'')}</textarea>`;
+      break;
+    case 'multi-check-plus-text':
+      html += renderCheckGrid(q.id, q.options);
+      html += `<div class="field-group" style="margin-top:12px"><div class="field-label">${q.textLabel||'Other'}</div>
+        <input type="text" id="input-${q.id}-other" value="${escAttr(getAnswer(q.id+'-other',''))}" placeholder="Type here..." oninput="setAnswer('${q.id}-other',this.value)"></div>`;
+      break;
+    case 'multi-part':
+      q.parts.forEach(p => {
+        html += `<div class="sub-question">${renderSubQuestion(p)}</div>`;
+      });
+      break;
+    case 'role-grid':
+      html += renderRoleGrid(q);
+      break;
+    case 'rank':
+      html += renderRankList(q);
+      break;
+    default:
+      html += `<textarea id="input-${q.id}" oninput="setAnswer('${q.id}',this.value)">${getAnswer(q.id,'')}</textarea>`;
+  }
+  return html;
+}
+
+function renderSubQuestion(p){
+  let html = '';
+  if(p.type === 'info'){
+    return `<div class="sub-label" style="color:var(--accent);font-style:italic">${p.label}</div>`;
+  }
+  html += `<div class="sub-label">${p.label}</div>`;
+  switch(p.type){
+    case 'yesno':
+      html += renderInlineRadios(p.id, ['Yes','No']);
+      break;
+    case 'yesno-text':
+      html += renderInlineRadios(p.id, ['Yes','No']);
+      html += `<div style="margin-top:8px"><input type="text" id="input-${p.id}-text" value="${escAttr(getAnswer(p.id+'-text',''))}" placeholder="${p.textLabel||'Details...'}" oninput="setAnswer('${p.id}-text',this.value)"></div>`;
+      break;
+    case 'radio':
+      html += renderInlineRadios(p.id, p.options);
+      break;
+    case 'radio-text':
+      html += renderInlineRadios(p.id, p.options);
+      html += `<div style="margin-top:8px"><input type="text" id="input-${p.id}-text" value="${escAttr(getAnswer(p.id+'-text',''))}" placeholder="${p.textLabel||'Details...'}" oninput="setAnswer('${p.id}-text',this.value)"></div>`;
+      break;
+    case 'checkboxes':
+      html += renderCheckGrid(p.id, p.options);
+      break;
+    case 'checkboxes-text':
+      html += renderCheckGrid(p.id, p.options);
+      html += `<div style="margin-top:8px"><input type="text" id="input-${p.id}-text" value="${escAttr(getAnswer(p.id+'-text',''))}" placeholder="${p.textLabel||'Other...'}" oninput="setAnswer('${p.id}-text',this.value)"></div>`;
+      break;
+    case 'textarea':
+      html += `<textarea id="input-${p.id}" placeholder="${p.placeholder||'Enter details...'}" oninput="setAnswer('${p.id}',this.value)">${getAnswer(p.id,'')}</textarea>`;
+      break;
+    case 'text':
+      html += `<input type="text" id="input-${p.id}" value="${escAttr(getAnswer(p.id,''))}" placeholder="${p.placeholder||''}" oninput="setAnswer('${p.id}',this.value)">`;
+      break;
+    case 'dropdown':
+      const selVal = getAnswer(p.id,'');
+      html += `<select id="input-${p.id}" onchange="setAnswer('${p.id}',this.value)">
+        <option value="">-- Select --</option>
+        ${p.options.map(o => `<option value="${o}"${selVal===o?' selected':''}>${o}</option>`).join('')}
+      </select>`;
+      break;
+  }
+  return html;
+}
+
+function renderCheckGrid(key, options){
+  const selected = getAnswer(key, []);
+  return `<div class="check-grid">${options.map(opt => {
+    const checked = selected.includes(opt);
+    return `<label class="check-item${checked?' checked':''}" onclick="toggleCheck(event,'${escJs(key)}','${escJs(opt)}')">
+      <input type="checkbox" ${checked?'checked':''}>
+      <div class="check-box"></div>
+      <span>${escHtml(opt)}</span>
+    </label>`;
+  }).join('')}</div>`;
+}
+
+function renderInlineRadios(key, options){
+  const selected = getAnswer(key, '');
+  return `<div class="inline-radios">${options.map(opt => {
+    const checked = selected === opt;
+    return `<label class="check-item${checked?' checked':''}" onclick="selectRadio(event,'${escJs(key)}','${escJs(opt)}')">
+      <input type="radio" name="${key}" ${checked?'checked':''}>
+      <div class="radio-dot"></div>
+      <span>${escHtml(opt)}</span>
+    </label>`;
+  }).join('')}</div>`;
+}
+
+function renderRoleGrid(q){
+  return `<div class="role-grid">${q.roles.map(role => {
+    const rkey = role.replace(/\s+/g,'-').toLowerCase().replace(/[()]/g,'');
+    return `<div class="role-row">
+      <div class="role-name">${escHtml(role)}</div>
+      <textarea id="input-${q.id}-${rkey}" placeholder="Role / access description..."
+        oninput="setRoleAnswer('${q.id}','${escJs(role)}',this.value)">${getAnswer(q.id+'-'+role,'')}</textarea>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function renderRankList(q){
+  const savedOrder = getAnswer(q.id+'-order', null);
+  const selectedTop3 = getAnswer(q.id, []);
+  const opts = savedOrder || q.options;
+  return `<div class="field-label">Select your top 3 priorities (click to select/deselect)</div>
+    <div class="rank-list" id="rank-${q.id}">${opts.map((opt, i) => {
+    const isSelected = selectedTop3.includes(opt);
+    const rank = isSelected ? selectedTop3.indexOf(opt)+1 : '';
+    return `<div class="rank-item${isSelected?' rank-selected':''}" data-value="${escAttr(opt)}" onclick="toggleRank('${q.id}',this,'${escJs(opt)}')">
+      <div class="rank-num">${rank || (i+1)}</div>
+      <div class="rank-label">${escHtml(opt)}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function renderNotesSection(){
+  return `<div class="notes-section">
+    <h3>Additional Notes</h3>
+    <textarea id="input-general-notes" placeholder="Any additional thoughts, concerns, or context..." oninput="setAnswer('general-notes',this.value)">${getAnswer('general-notes','')}</textarea>
+  </div>`;
+}
+
+// ===== ESCAPE HELPERS =====
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escJs(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"');}
+
+// ===== INTERACTIONS =====
+function toggleCard(qid){
+  const card = document.getElementById('card-'+qid);
+  if(!card) return;
+  if(card.classList.contains('expanded')){
+    card.classList.remove('expanded');
+    expandedCard = null;
+  } else {
+    document.querySelectorAll('.q-card.expanded').forEach(c => c.classList.remove('expanded'));
+    card.classList.add('expanded');
+    expandedCard = qid;
+    setTimeout(()=>{
+      card.scrollIntoView({behavior:'smooth',block:'nearest'});
+    },100);
+  }
+}
+
+function toggleTplCard(catId){
+  const card = document.getElementById('tpl-'+catId);
+  if(!card) return;
+  card.classList.toggle('expanded');
+}
+
+function toggleCategory(catId){
+  const section = document.getElementById('cat-'+catId);
+  if(!section) return;
+  section.classList.toggle('collapsed');
+}
+
+function toggleCheck(e, key, value){
+  e.preventDefault();
+  let selected = getAnswer(key, []);
+  if(!Array.isArray(selected)) selected = [];
+  const idx = selected.indexOf(value);
+  if(idx > -1){
+    selected.splice(idx,1);
+  } else {
+    selected = [...selected, value];
+  }
+  setAnswer(key, selected);
+  rerenderCheckGrid(e.currentTarget, key, value, idx === -1);
+}
+
+function rerenderCheckGrid(label, key, value, checked){
+  if(checked){
+    label.classList.add('checked');
+    label.querySelector('input').checked = true;
+  } else {
+    label.classList.remove('checked');
+    label.querySelector('input').checked = false;
+  }
+  const card = label.closest('.q-card');
+  if(card) updateCardAnsweredFromDOM(card);
+}
+
+function selectRadio(e, key, value){
+  e.preventDefault();
+  setAnswer(key, value);
+  const container = e.currentTarget.parentElement;
+  container.querySelectorAll('.check-item').forEach(item => {
+    item.classList.remove('checked');
+    item.querySelector('input').checked = false;
+  });
+  e.currentTarget.classList.add('checked');
+  e.currentTarget.querySelector('input').checked = true;
+  const card = e.currentTarget.closest('.q-card');
+  if(card) updateCardAnsweredFromDOM(card);
+}
+
+function toggleRank(qid, el, value){
+  let selected = getAnswer(qid, []);
+  if(!Array.isArray(selected)) selected = [];
+  const idx = selected.indexOf(value);
+  if(idx > -1){
+    selected.splice(idx,1);
+  } else {
+    if(selected.length >= 3){
+      showToast('You can only select 3 priorities');
+      return;
+    }
+    selected = [...selected, value];
+  }
+  setAnswer(qid, selected);
+  const list = document.getElementById('rank-'+qid);
+  if(!list) return;
+  list.querySelectorAll('.rank-item').forEach(item => {
+    const val = item.dataset.value;
+    const si = selected.indexOf(val);
+    if(si > -1){
+      item.classList.add('rank-selected');
+      item.querySelector('.rank-num').textContent = si+1;
+    } else {
+      item.classList.remove('rank-selected');
+      item.querySelector('.rank-num').textContent = '';
+    }
+  });
+  const card = el.closest('.q-card');
+  if(card) updateCardAnsweredFromDOM(card);
+}
+
+function setRoleAnswer(qid, role, value){
+  setAnswer(qid+'-'+role, value);
+  const card = document.getElementById('card-'+qid);
+  if(card) updateCardAnsweredFromDOM(card);
+}
+
+// ===== TEMPLATE INTERACTIONS =====
+function addTplItem(catId){
+  const input = document.getElementById('tpl-input-'+catId);
+  if(!input) return;
+  const val = input.value.trim();
+  if(!val) return;
+  const items = getTemplateItems(catId);
+  items.push(val);
+  setTemplateItems(catId, items);
+  input.value = '';
+  rerenderTplTags(catId);
+  showToast('Item added');
+}
+
+function removeTplItem(e, catId, idx){
+  e.stopPropagation();
+  const items = getTemplateItems(catId);
+  items.splice(idx, 1);
+  setTemplateItems(catId, items);
+  rerenderTplTags(catId);
+}
+
+function rerenderTplTags(catId){
+  const container = document.getElementById('tpl-tags-'+catId);
+  if(!container) return;
+  const items = getTemplateItems(catId);
+  const cat = TEMPLATE_CATEGORIES.find(c=>c.id===catId);
+  const hasNote = cat && cat.note;
+  container.innerHTML = items.map((item,i)=>`<span class="tpl-tag" data-cat="${catId}" data-idx="${i}">${escHtml(item)} <span class="tag-remove" onclick="removeTplItem(event,'${catId}',${i})">&times;</span></span>`).join('')
+    + (items.length===0 && !hasNote?'<span style="color:var(--text3);font-size:12px;font-style:italic">No items yet</span>':'');
+  // Update count in header
+  const card = document.getElementById('tpl-'+catId);
+  if(card){
+    const countEl = card.querySelector('.tpl-count');
+    if(countEl) countEl.textContent = items.length+' items';
+  }
+}
+
+function updateCardState(key){
+  CATEGORIES.forEach(cat => {
+    cat.questions.forEach(q => {
+      if(key.startsWith(q.id)){
+        const card = document.getElementById('card-'+q.id);
+        if(card){
+          if(isQuestionAnswered(q.id)){
+            card.classList.add('answered');
+            card.querySelector('.q-status').innerHTML = '&#10003;';
+          } else {
+            card.classList.remove('answered');
+            card.querySelector('.q-status').innerHTML = '';
+          }
+        }
+      }
+    });
+  });
+}
+
+function updateCardAnsweredFromDOM(card){
+  const qid = card.dataset.qid;
+  setTimeout(() => {
+    if(isQuestionAnswered(qid)){
+      card.classList.add('answered');
+      card.querySelector('.q-status').innerHTML = '&#10003;';
+    } else {
+      card.classList.remove('answered');
+      card.querySelector('.q-status').innerHTML = '';
+    }
+    updateProgress();
+    updateSidebar();
+  }, 50);
+}
+
+// ===== QUESTION ANSWERED LOGIC =====
+function isQuestionAnswered(qid){
+  const q = findQuestion(qid);
+  if(!q) return false;
+  switch(q.type){
+    case 'textarea':
+      var tv = getAnswer(q.id,'');
+      return typeof tv === 'string' ? !!tv.trim() : !!tv;
+    case 'multi-check-plus-text':
+      const checks = getAnswer(q.id,[]);
+      var otherVal = getAnswer(q.id+'-other','');
+      return (Array.isArray(checks) && checks.length > 0) || (typeof otherVal === 'string' ? !!otherVal.trim() : !!otherVal);
+    case 'multi-part':
+      return q.parts.some(p => isPartAnswered(p));
+    case 'role-grid':
+      return q.roles.some(r => { var rv = getAnswer(q.id+'-'+r,''); return typeof rv === 'string' ? !!rv.trim() : !!rv; });
+    case 'rank':
+      const sel = getAnswer(q.id,[]);
+      return sel.length > 0;
+    default:
+      return !!getAnswer(q.id,'');
+  }
+}
+
+function isPartAnswered(p){
+  if(p.type === 'info') return false;
+  switch(p.type){
+    case 'yesno':
+    case 'radio':
+      return !!getAnswer(p.id,'');
+    case 'yesno-text':
+    case 'radio-text':
+      var ptv = getAnswer(p.id+'-text','');
+      return !!getAnswer(p.id,'') || (typeof ptv === 'string' ? !!ptv.trim() : !!ptv);
+    case 'checkboxes':
+      var cv = getAnswer(p.id,[]);
+      return Array.isArray(cv) ? cv.length > 0 : !!cv;
+    case 'checkboxes-text':
+      var cv2 = getAnswer(p.id,[]);
+      var ct2 = getAnswer(p.id+'-text','');
+      return (Array.isArray(cv2) ? cv2.length > 0 : !!cv2) || (typeof ct2 === 'string' ? !!ct2.trim() : !!ct2);
+    case 'textarea':
+    case 'text':
+      var ttv = getAnswer(p.id,'');
+      return typeof ttv === 'string' ? !!ttv.trim() : !!ttv;
+    case 'dropdown':
+      return !!getAnswer(p.id,'');
+    default:
+      return false;
+  }
+}
+
+function findQuestion(qid){
+  for(const cat of CATEGORIES){
+    for(const q of cat.questions){
+      if(q.id === qid) return q;
+    }
+  }
+  return null;
+}
+
+function countAnswered(cat){
+  return cat.questions.filter(q => isQuestionAnswered(q.id)).length;
+}
+
+// ===== PROGRESS =====
+function updateProgress(){
+  let total = 0, answered = 0;
+  CATEGORIES.forEach(cat => {
+    total += cat.questions.length;
+    answered += countAnswered(cat);
+  });
+  const pct = total > 0 ? Math.round((answered/total)*100) : 0;
+  const bar = document.getElementById('progressBar');
+  const text = document.getElementById('progressText');
+  const tabCount = document.getElementById('inputTabCount');
+  if(bar) bar.style.width = pct+'%';
+  if(text) text.textContent = answered+' / '+total;
+  if(tabCount) tabCount.textContent = answered+'/'+total;
+}
+
+function updateSidebar(){
+  renderSidebar();
+  renderMobileNav();
+}
+
+// ===== NAVIGATION =====
+function scrollToCat(catId){
+  const el = document.getElementById('cat-'+catId);
+  if(el){
+    if(activeTab !== 'input') switchTab('input');
+    el.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+}
+
+function scrollToTplCat(catId){
+  const el = document.getElementById('tpl-'+catId);
+  if(el){
+    if(activeTab !== 'templates') switchTab('templates');
+    el.scrollIntoView({behavior:'smooth',block:'start'});
+    // Auto expand
+    if(!el.classList.contains('expanded')) el.classList.add('expanded');
+  }
+}
+
+function collapseAll(){
+  if(activeTab === 'input'){
+    document.querySelectorAll('.q-card.expanded').forEach(c => c.classList.remove('expanded'));
+    document.querySelectorAll('.category-section').forEach(s => s.classList.add('collapsed'));
+  } else {
+    document.querySelectorAll('.tpl-card.expanded').forEach(c => c.classList.remove('expanded'));
+  }
+}
+
+function expandAll(){
+  if(activeTab === 'input'){
+    document.querySelectorAll('.category-section.collapsed').forEach(s => s.classList.remove('collapsed'));
+  } else {
+    document.querySelectorAll('.tpl-card').forEach(c => c.classList.add('expanded'));
+  }
+}
+
+// ===== CLEAR =====
+function clearAll(){
+  if(!confirm('Clear all answers? This cannot be undone.')) return;
+  answers = {};
+  templateEdits = {};
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(TPL_STORAGE_KEY);
+  render();
+  showToast('All answers cleared');
+}
+
+// ===== TOAST =====
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ===== EXPORT =====
+function exportAnswers(){
+  let text = '=== YLZ SYSTEM QUESTIONNAIRE - EXPORT ===\n';
+  text += 'Exported: '+new Date().toLocaleString()+'\n\n';
+
+  // SECTION 1: NEEDS YOUR INPUT
+  text += '========================================\n';
+  text += 'SECTION 1: NEEDS YOUR INPUT\n';
+  text += '========================================\n\n';
+
+  CATEGORIES.forEach(cat => {
+    text += '--- '+cat.title.toUpperCase()+' ---\n\n';
+    cat.questions.forEach(q => {
+      text += q.num+': '+q.title+'\n';
+      switch(q.type){
+        case 'textarea':
+          text += '  Answer: '+(getAnswer(q.id,'')||'(not answered)')+'\n';
+          break;
+        case 'multi-check-plus-text':
+          const checks = getAnswer(q.id,[]);
+          text += '  Selected: '+(checks.length>0?checks.join(', '):'(none)')+'\n';
+          const oth = getAnswer(q.id+'-other','');
+          if(oth) text += '  Other: '+oth+'\n';
+          break;
+        case 'multi-part':
+          q.parts.forEach(p => {
+            if(p.type==='info') return;
+            text += '  '+p.label+': ';
+            switch(p.type){
+              case 'yesno':
+              case 'radio':
+                text += (getAnswer(p.id,'')||'(not answered)');
+                break;
+              case 'yesno-text':
+              case 'radio-text':
+                text += (getAnswer(p.id,'')||'(not answered)');
+                const t2 = getAnswer(p.id+'-text','');
+                if(t2) text += ' - '+t2;
+                break;
+              case 'checkboxes':
+                const cc = getAnswer(p.id,[]);
+                text += cc.length>0?cc.join(', '):'(none)';
+                break;
+              case 'checkboxes-text':
+                const ct = getAnswer(p.id,[]);
+                text += ct.length>0?ct.join(', '):'(none)';
+                const tx = getAnswer(p.id+'-text','');
+                if(tx) text += ' + '+tx;
+                break;
+              case 'textarea':
+              case 'text':
+                text += (getAnswer(p.id,'')||'(not answered)');
+                break;
+              case 'dropdown':
+                text += (getAnswer(p.id,'')||'(not selected)');
+                break;
+            }
+            text += '\n';
+          });
+          break;
+        case 'role-grid':
+          q.roles.forEach(r => {
+            const rv = getAnswer(q.id+'-'+r,'');
+            if(rv) text += '  '+r+': '+rv+'\n';
+          });
+          if(!q.roles.some(r=>getAnswer(q.id+'-'+r,''))) text += '  (not answered)\n';
+          break;
+        case 'rank':
+          const sel = getAnswer(q.id,[]);
+          if(sel.length>0){
+            sel.forEach((s,i)=>text += '  #'+(i+1)+': '+s+'\n');
+          } else {
+            text += '  (not answered)\n';
+          }
+          break;
+      }
+      text += '\n';
+    });
+  });
+
+  const notes = getAnswer('general-notes','');
+  if(notes){
+    text += '--- ADDITIONAL NOTES ---\n'+notes+'\n\n';
+  }
+
+  // SECTION 2: FROM TEMPLATES
+  text += '========================================\n';
+  text += 'SECTION 2: ALREADY FROM TEMPLATES\n';
+  text += '========================================\n\n';
+
+  TEMPLATE_CATEGORIES.forEach(cat => {
+    const items = getTemplateItems(cat.id);
+    text += cat.title;
+    if(items.length>0) text += ' ('+items.length+' items)';
+    text += ':\n';
+    if(cat.note) text += '  Note: '+cat.note+'\n';
+    if(items.length>0){
+      items.forEach(item => text += '  - '+item+'\n');
+    }
+    text += '\n';
+  });
+
+  // Create download
+  const blob = new Blob([text], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'YLZ-Questionnaire-Export-'+new Date().toISOString().slice(0,10)+'.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Exported successfully!');
+}
+
+// ===== INIT =====
+render();
+</script>
+</body>
+</html>

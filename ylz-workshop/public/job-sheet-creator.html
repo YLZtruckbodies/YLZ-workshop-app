@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YLZ Job Sheet Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f4f6f9;--surface:#fff;--surface2:#f0f2f5;--border:#dfe3ea;
+  --accent:#1a56db;--accent-light:#e8edfb;--accent-hover:#1648b8;
+  --text:#1a1d26;--text2:#6b7280;--text3:#9ca3af;
+  --success:#059669;--success-bg:#ecfdf5;--success-border:#a7f3d0;
+  --warn:#d97706;--warn-bg:#fffbeb;--warn-border:#fde68a;
+  --danger:#dc2626;--danger-bg:#fef2f2;
+  --eng:#b45309;--eng-bg:#fffbeb;--eng-border:#fcd34d;
+  --auto:#059669;--auto-bg:#ecfdf5;--auto-border:#6ee7b7;
+  --radius:10px;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow-lg:0 4px 12px rgba(0,0,0,.1),0 2px 4px rgba(0,0,0,.06);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:960px;margin:0 auto;padding:32px 24px 80px}
+.header{margin-bottom:32px}
+.logo-row{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.logo{width:40px;height:40px;border-radius:10px;background:#E8681A;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px}
+h1{font-size:22px;font-weight:700;color:var(--text)}
+.subtitle{color:var(--text2);font-size:14px;margin-left:52px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;box-shadow:var(--shadow)}
+.card-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title .num{width:22px;height:22px;border-radius:6px;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.hidden{display:none!important}
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2)}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--accent-light)}
+.drop-zone .icon{font-size:48px;margin-bottom:12px}
+.drop-zone .label{font-size:15px;font-weight:600;color:var(--text)}
+.drop-zone .hint{font-size:12px;color:var(--text3);margin-top:4px}
+.drop-zone.parsed{border-color:var(--success);background:var(--success-bg)}
+.drop-zone.parsed .icon{font-size:32px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.form-grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);display:flex;align-items:center;gap:6px}
+.badge-auto{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:var(--auto-bg);color:var(--auto);border:1px solid var(--auto-border);text-transform:uppercase;letter-spacing:.3px}
+.badge-eng{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:var(--eng-bg);color:var(--eng);border:1px solid var(--eng-border);text-transform:uppercase;letter-spacing:.3px}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border .2s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);background:#fff}
+.form-input.auto-filled{border-left:3px solid var(--auto)}
+.form-input.eng-input{border-left:3px solid var(--eng)}
+.form-select{appearance:auto}
+.form-textarea{min-height:80px;resize:vertical;font-family:'JetBrains Mono',monospace;font-size:12px}
+.option-cards{display:flex;gap:8px}
+.option-card{flex:1;padding:12px 8px;border:2px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);font-size:14px;font-weight:600;color:var(--text2);user-select:none}
+.option-card:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.option-card.selected{border-color:var(--accent);background:var(--accent);color:#fff}
+.section-header{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.section-header:first-child{margin-top:0}
+.check-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.check-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;transition:all .2s}
+.check-item:hover{border-color:var(--accent)}
+.check-item.checked{border-color:var(--auto);background:var(--auto-bg)}
+.check-item input{accent-color:var(--accent)}
+.status{padding:12px 16px;border-radius:8px;font-size:13px;margin-top:16px;display:none;font-weight:500}
+.status.ok{display:block;background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)}
+.status.error{display:block;background:var(--danger-bg);color:var(--danger);border:1px solid #fca5a5}
+.status.info{display:block;background:var(--accent-light);color:var(--accent);border:1px solid #bfdbfe}
+.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.btn{padding:12px 24px;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--accent-hover);box-shadow:var(--shadow-lg)}
+.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover:not(:disabled){background:#047857}
+.parsed-summary{background:var(--success-bg);border:1px solid var(--success-border);border-radius:8px;padding:16px;margin-top:12px}
+.parsed-summary .title{font-size:13px;font-weight:700;color:var(--success);margin-bottom:8px}
+.parsed-tags{display:flex;flex-wrap:wrap;gap:6px}
+.parsed-tag{font-size:11px;font-weight:600;padding:4px 10px;border-radius:4px;background:#fff;color:var(--text);border:1px solid var(--border)}
+.mode-label{display:inline-block;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;background:var(--accent);padding:2px 8px;border-radius:4px;margin-bottom:8px}
+.mode-label.trailer-label{background:#7c3aed}
+.mode-label.truck-label{background:#E8681A}
+.fade-in{animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:600px){.form-grid,.form-grid-3,.form-grid-4,.check-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo-row"><div class="logo">YLZ</div><h1>Job Sheet Generator</h1></div>
+    <p class="subtitle">Drop a quote PDF to auto-populate, then fill engineering details and generate job sheets</p>
+  </div>
+
+  <!-- Card 1: Import Quote -->
+  <div class="card" id="card1">
+    <div class="card-title"><span class="num">1</span> Import Quote</div>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="icon">&#128196;</div>
+      <div class="label">Drop a Xero Quote PDF here</div>
+      <div class="hint">or click to browse</div>
+    </div>
+    <input type="file" id="fileInput" accept=".pdf" style="display:none" onchange="handleFile(this.files[0])">
+    <div id="parsedSummary" class="parsed-summary hidden"></div>
+    <div class="status" id="parseStatus"></div>
+  </div>
+
+  <!-- Card 2: Job Type & Order Details -->
+  <div class="card hidden" id="card2">
+    <div class="card-title"><span class="num">2</span> Job Type &amp; Order Details</div>
+    <div class="section-header">Build Type</div>
+    <div class="option-cards" style="margin-bottom:16px">
+      <div class="option-card" data-value="truck" onclick="selectJobType('truck',this)">Truck Body</div>
+      <div class="option-card selected" data-value="trailer" onclick="selectJobType('trailer',this)">Trailer</div>
+      <div class="option-card" data-value="both" onclick="selectJobType('both',this)">Truck + Trailer</div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Customer <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_customer"></div>
+      <div class="form-group"><label class="form-label">Dealer <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_dealer"></div>
+      <div class="form-group"><label class="form-label">Quote Number <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_quote_number"></div>
+      <div class="form-group"><label class="form-label">Job Number <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_job_number" placeholder="e.g. YLZ1085"></div>
+      <div class="form-group"><label class="form-label">Issue Date</label><input class="form-input" id="f_issue_date" type="date"></div>
+      <div class="form-group"><label class="form-label">Prepared By <span class="badge-eng">Eng</span></label><select class="form-select" id="f_prepared_by"><option value="">Select...</option><option>JW</option><option>JH</option><option>NW</option><option>CT</option></select></div>
+      <div class="form-group"><label class="form-label">Sales Person</label><select class="form-select" id="f_sales_person"><option value="">Select...</option><option>NW</option><option>PS</option></select></div>
+      <div class="form-group"><label class="form-label">Revision</label><input class="form-input" id="f_revision" value="A"></div>
+    </div>
+    <div id="trailerOrderFields">
+      <div class="form-grid" style="margin-top:14px">
+        <div class="form-group"><label class="form-label">Trailer Model <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_trailer_model"><option value="">Select...</option><option>DT-3 (3-Axle Dog Trailer)</option><option>DT-4 (4-Axle Dog Trailer)</option><option>DT-5 (5-Axle Dog Trailer)</option><option>ST-2 (2-Axle Semi Trailer)</option><option>ST-3 (3-Axle Semi Trailer)</option><option>CD-2 (2-Axle Convertor Dolly)</option><option>CD-3 (3-Axle Convertor Dolly)</option><option>PIG 2 (2-Axle Pig Trailer)</option><option>PIG 3 (3-Axle Pig Trailer)</option></select></div>
+        <div class="form-group"><label class="form-label">Trailer Type</label><select class="form-select" id="f_trailer_type"><option value="">Select...</option><option>P Beam</option><option>I Beam</option><option>I Beam Drop Deck</option><option>Converter Dolly</option></select></div>
+        <div class="form-group"><label class="form-label">Trailer Serial <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_trailer_serial"></div>
+        <div class="form-group"><label class="form-label">Trailer VIN <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_trailer_vin" maxlength="17"></div>
+      </div>
+    </div>
+    <div id="truckOrderFields" class="hidden">
+      <div class="form-grid" style="margin-top:14px">
+        <div class="form-group"><label class="form-label">Truck Make <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_truck_make"><option value="">Select...</option><option>Volvo</option><option>Kenworth</option><option>Western Star</option><option>Isuzu</option><option>MAN</option><option>Scania</option><option>Mercedes Benz</option><option>DAF</option><option>Mack</option><option>Sitrak</option><option>UD</option><option>Hino</option><option>Fuso</option></select></div>
+        <div class="form-group"><label class="form-label">Truck Model <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_truck_model"></div>
+        <div class="form-group"><label class="form-label">Truck VIN <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_truck_vin" maxlength="17"></div>
+        <div class="form-group"><label class="form-label">Sales Drawing</label><input class="form-input" id="f_sales_drawing"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3: Body Dimensions -->
+  <div class="card hidden" id="card3">
+    <div class="card-title"><span class="num">3</span> Body Dimensions</div>
+    <div id="truckBodyDimsLabel" class="mode-label truck-label hidden">TRUCK BODY</div>
+    <div class="form-grid-4">
+      <div class="form-group"><label class="form-label">Material <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_material"><option value="">Select...</option><option>Aluminium</option><option>Hardox</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Body Length <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_body_length"><option value="">Select...</option></select></div>
+      <div class="form-group"><label class="form-label">Body Width <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_body_width"><option value="">Select...</option><option>2250mm - Steel</option><option>2290mm - Alloy</option><option>2400mm Quarry spec</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Body Height <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_body_height"><option value="">Select...</option></select></div>
+    </div>
+    <div class="form-grid-4" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">Mainrunner Width <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_mainrunner_width"><option value="">Select...</option></select></div>
+      <div class="form-group"><label class="form-label">Hoist Box Height <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_hoist_box_height"><option value="">Select...</option><option>1520mm - 3AD</option><option>1630mm - 4AD</option><option>1630mm - 5AD</option><option>1730mm - 10.4m Semi</option><option>1260mm Bottom of Hoist top to Bottom of Main Runner</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Hinged <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_hinged"><option value="">Select...</option><option>430mm Forward</option><option>250mm Forward &amp; Side</option><option>Rear Hinged</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">C/L Pivot to Rear <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_cl_pivot"><option value="">Select...</option><option>510mm - 3AD</option><option>190mm - 7700 Dog</option><option>330mm - 8300 Dog</option><option>250mm - 9200 Semi</option><option>395mm</option><option>N/A</option></select></div>
+    </div>
+    <div id="trailerBodyDimsSection" class="hidden">
+      <div class="mode-label trailer-label" style="margin-top:20px">TRAILER BODY</div>
+      <div class="form-grid-4">
+        <div class="form-group"><label class="form-label">Material <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_t_material"><option value="">Select...</option><option>Aluminium</option><option>Hardox</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Body Length <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_t_body_length"><option value="">Select...</option><option>6000mm</option><option>6050mm</option><option>6100mm</option><option>6400mm</option><option>7700mm</option><option>8300mm</option><option>9200mm</option><option>9400mm</option><option>9600mm</option><option>10400mm</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Body Width <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_t_body_width"><option value="">Select...</option><option>2250mm - Steel</option><option>2290mm - Alloy</option><option>2400mm Quarry spec</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Body Height <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_t_body_height"><option value="">Select...</option><option>1100mm</option><option>1410mm</option><option>1500mm</option><option>1000mm</option><option>1150mm</option><option>1520mm</option><option>N/A</option></select></div>
+      </div>
+      <div class="form-grid-4" style="margin-top:14px">
+        <div class="form-group"><label class="form-label">Mainrunner Width <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_mainrunner_width"><option value="">Select...</option><option>965mm Inside</option><option>1000mm Inside</option><option>818mm Inside - Pig</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Hoist Box Height <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_hoist_box_height"><option value="">Select...</option><option>1520mm - 3AD</option><option>1630mm - 4AD</option><option>1630mm - 5AD</option><option>1730mm - 10.4m Semi</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Hinged <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_hinged"><option value="">Select...</option><option>430mm Forward</option><option>250mm Forward &amp; Side</option><option>Rear Hinged</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">C/L Pivot to Rear <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_cl_pivot"><option value="">Select...</option><option>510mm - 3AD</option><option>190mm - 7700 Dog</option><option>330mm - 8300 Dog</option><option>250mm - 9200 Semi</option><option>395mm</option><option>N/A</option></select></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 4: Controls (truck/both modes) -->
+  <div class="card hidden" id="card4">
+    <div class="card-title"><span class="num">4</span> Controls</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">PTO</label><select class="form-select" id="f_pto"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Truck Hoist</label><select class="form-select" id="f_ctrl_truck_hoist"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Trailer Hoist</label><select class="form-select" id="f_ctrl_trailer_hoist"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Truck Tailgate</label><select class="form-select" id="f_ctrl_truck_tailgate"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Trailer Tailgate</label><select class="form-select" id="f_ctrl_trailer_tailgate"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Trailer Lockflap</label><select class="form-select" id="f_ctrl_lockflap"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Truck Tarp</label><select class="form-select" id="f_ctrl_truck_tarp"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Trailer Tarp</label><select class="form-select" id="f_ctrl_trailer_tarp"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+    </div>
+  </div>
+
+  <!-- Card 5: Subframe / Chassis -->
+  <div class="card hidden" id="card5">
+    <div class="card-title"><span class="num">5</span> Subframe / Chassis</div>
+    <div id="truckSubframeSection">
+      <div id="truckSubframeLabel" class="mode-label truck-label hidden">TRUCK SUBFRAME</div>
+      <div class="form-grid-4">
+        <div class="form-group"><label class="form-label">Subframe Length <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_subframe_length"></div>
+        <div class="form-group"><label class="form-label">Subframe Width <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_subframe_width"></div>
+        <div class="form-group"><label class="form-label">Hoist Model <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_hoist_model"><option value="">Select...</option><option>Hyva Alpha 191-4</option><option>Hyva Alpha 201-4</option><option>Hyva Alpha 241-4</option><option>Palfinger PH T74</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Valve Bank <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_valve_bank"><option value="">Select...</option><option>1 Spool (Body Only)</option><option>2 Spool (Body + Tailgate)</option><option>3 Spool (Body + Tailgate + Tarp)</option><option>N/A</option></select></div>
+      </div>
+      <div class="form-grid-4" style="margin-top:14px">
+        <div class="form-group"><label class="form-label">Oil Tank Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_oil_tank_type"><option value="">Select...</option><option>Behind Cab Upright Steel 80L</option><option>Behind Cab Upright Steel 120L</option><option>Behind Cab Upright Alloy 80L</option><option>Behind Cab Upright Alloy 120L</option><option>Under Tray Steel 80L</option><option>Under Tray Steel 120L</option><option>Under Tray Alloy 80L</option><option>Under Tray Alloy 120L</option><option>Existing Customer Supplied Tank</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Oil Tank Location <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_oil_tank_location"><option value="">Select...</option><option>Behind Cab LHS</option><option>Behind Cab RHS</option><option>Under Tray LHS Front</option><option>Under Tray LHS Rear</option><option>Under Tray RHS Front</option><option>Under Tray RHS Rear</option><option>Under Tray Centre</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">PTO Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_pto_type"><option value="">Select...</option><option>Chelsea / Parker</option><option>Muncie</option><option>Customer Supplied</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Pump Type <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_pump_type"><option value="">Select...</option><option>Permco</option><option>Parker</option><option>Casappa</option><option>Customer Supplied</option><option>N/A</option></select></div>
+      </div>
+    </div>
+    <div id="trailerChassisSection">
+      <div id="trailerChassisLabel" class="mode-label trailer-label hidden">TRAILER CHASSIS</div>
+      <div class="form-grid-4">
+        <div class="form-group"><label class="form-label">Chassis Length <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_chassis_length"><option value="">Select...</option><option>4930mm Dog</option><option>5450mm Dog</option><option>7470mm Dog</option><option>7870mm Dog</option><option>9100mm Semi</option><option>9120mm Dog</option><option>9405mm Dog</option><option>10000mm Semi</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Wheelbase <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_wheelbase"><option value="">Select...</option><option>3240mm</option><option>3760mm</option><option>5700mm</option><option>6150mm</option><option>6610mm</option><option>6685/6235mm</option><option>7615/7165mm</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Drawbar Length <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_drawbar_length"><option value="">Select...</option><option>3000mm</option><option>3200mm</option><option>3400mm</option><option>3800mm</option><option>4000mm</option><option>5000mm</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Hoist Model <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_hoist_model"><option value="">Select...</option><option>Hyva Alpha 191-4</option><option>Hyva Alpha 201-4</option><option>Hyva Alpha 241-4</option><option>Palfinger PH T74</option><option>N/A</option></select></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 6: Sheets & Accessories -->
+  <div class="card hidden" id="card6">
+    <div class="card-title"><span class="num">6</span> Sheets &amp; Accessories</div>
+    <div class="section-header">Sheet Specs</div>
+    <div class="form-grid-4">
+      <div class="form-group"><label class="form-label">Floor Sheets <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_floor_sheets"><option value="">Select...</option><option>3mm Hardox 450</option><option>4mm Hardox 450</option><option>5mm Hardox 450</option><option>6mm Hardox 450</option><option>3mm Bisalloy 400</option><option>4mm Bisalloy 400</option><option>5mm Bisalloy 400</option><option>6mm Bisalloy 400</option><option>3mm Aluminium</option><option>4mm Aluminium</option><option>5mm Aluminium</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Side Sheets <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_side_sheets"><option value="">Select...</option><option>3mm Hardox 450</option><option>4mm Hardox 450</option><option>5mm Hardox 450</option><option>3mm Bisalloy 400</option><option>4mm Bisalloy 400</option><option>5mm Bisalloy 400</option><option>3mm Aluminium</option><option>4mm Aluminium</option><option>5mm Aluminium</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Front Sheet <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_front_sheet"><option value="">Select...</option><option>3mm Hardox 450</option><option>4mm Hardox 450</option><option>5mm Hardox 450</option><option>3mm Bisalloy 400</option><option>4mm Bisalloy 400</option><option>5mm Bisalloy 400</option><option>3mm Aluminium</option><option>4mm Aluminium</option><option>5mm Aluminium</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Tailgate Sheet <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_tailgate_sheet"><option value="">Select...</option><option>3mm Hardox 450</option><option>4mm Hardox 450</option><option>5mm Hardox 450</option><option>3mm Bisalloy 400</option><option>4mm Bisalloy 400</option><option>5mm Bisalloy 400</option><option>3mm Aluminium</option><option>4mm Aluminium</option><option>5mm Aluminium</option><option>N/A</option></select></div>
+    </div>
+    <div class="section-header">Body Accessories</div>
+    <div class="check-grid">
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_rope_rails">Rope Rails</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_toolbox_lhs">Toolbox LHS</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_toolbox_rhs">Toolbox RHS</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_water_cooler">Water Cooler Holder</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_ladder">Ladder</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_tow_hitch">Tow Hitch</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_headboard">Headboard</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_cab_guard">Cab Guard</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_load_pegs">Load Pegs</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_underbody_toolbox">Underbody Toolbox</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_grain_sides">Bolt-in Grain Sides</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_mesh_extensions">Mesh Extensions</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_drop_sides">Drop Sides</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_side_pegs">Side Pegs</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_rear_bumper">Rear Bumper Bar</label>
+    </div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">Tailgate Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_tailgate_type"><option value="">Select...</option><option>Barn Doors</option><option>Single Piece Drop Down</option><option>Single Piece Swing Up</option><option>Bi-Fold</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Tailgate Lights</label><select class="form-select" id="f_tailgate_lights"><option value="">Select...</option><option>LED Recessed</option><option>LED Surface Mount</option><option>Incandescent</option><option>Customer Supplied</option><option>N/A</option></select></div>
+    </div>
+  </div>
+
+  <!-- Card 7: Tarp -->
+  <div class="card hidden" id="card7">
+    <div class="card-title"><span class="num">7</span> Tarp</div>
+    <div id="truckTarpLabel" class="mode-label truck-label hidden">TRUCK TARP</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Tarp Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_tarp_type"><option value="">Select...</option><option>Manual Pull Over</option><option>EziTarp Electric</option><option>Pulltarp Electric</option><option>Aero Easy Cover</option><option>Rollover Mesh</option><option>Rollover PVC</option><option>Side Tipper Tarp</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Tarp Make/Model <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_tarp_make"></div>
+    </div>
+    <div id="trailerTarpSection" class="hidden">
+      <div class="mode-label trailer-label" style="margin-top:20px">TRAILER TARP</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Tarp Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_t_tarp_type"><option value="">Select...</option><option>Manual Pull Over</option><option>EziTarp Electric</option><option>Pulltarp Electric</option><option>Aero Easy Cover</option><option>Rollover Mesh</option><option>Rollover PVC</option><option>Side Tipper Tarp</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Tarp Make/Model <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_t_tarp_make"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 8: Running Gear -->
+  <div class="card hidden" id="card8">
+    <div class="card-title"><span class="num">8</span> Running Gear</div>
+    <div class="form-grid-4">
+      <div class="form-group"><label class="form-label">Axle Make <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_axle_make"><option value="">Select...</option><option>BPW</option><option>Fuwa</option><option>SAF</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Axle Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_axle_type"><option value="">Select...</option><option>Drum Brake</option><option>Disc Brake</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Axle Rating <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_axle_rating"><option value="">Select...</option><option>9T</option><option>10T</option><option>12T</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">No. of Axles <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_num_axles"><option value="">Select...</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+    </div>
+    <div class="form-grid-4" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">Suspension <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_suspension"><option value="">Select...</option><option>BPW Air Ride</option><option>Fuwa Air Ride</option><option>SAF Air Ride</option><option>Mechanical Spring</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Tyres <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_tyres"><option value="">Select...</option><option>295/80R22.5</option><option>11R22.5</option><option>385/65R22.5</option><option>Super Single</option><option>Customer Supplied</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Wheels <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_wheels"><option value="">Select...</option><option>Steel 10 Stud</option><option>Alloy 10 Stud</option><option>Steel 8 Stud</option><option>Alloy 8 Stud</option><option>Super Single Alloy</option><option>Customer Supplied</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Brakes <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_brakes"><option value="">Select...</option><option>EBS (Full Electronic)</option><option>ABS</option><option>Standard Relay Valve</option><option>N/A</option></select></div>
+    </div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">Spare Wheel Carrier <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_spare_carrier"><option value="">Select...</option><option>Under Chassis - Winch</option><option>Under Chassis - Slider</option><option>Rear Mounted</option><option>Side Mounted</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Landing Legs</label><select class="form-select" id="f_landing_legs"><option value="">Select...</option><option>Holland</option><option>Jost</option><option>BPW</option><option>N/A</option></select></div>
+    </div>
+  </div>
+
+  <!-- Card 9: Chassis Accessories & Couplings -->
+  <div class="card hidden" id="card9">
+    <div class="card-title"><span class="num">9</span> Chassis Accessories &amp; Couplings</div>
+    <div class="section-header">Couplings</div>
+    <div class="form-grid-4">
+      <div class="form-group"><label class="form-label">Coupling Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_coupling_type"><option value="">Select...</option><option>Ring Feeder</option><option>Auto</option><option>Jost Turntable</option><option>Holland Turntable</option><option>Ringfeder Turntable</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Coupling Height <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_coupling_height"></div>
+      <div class="form-group"><label class="form-label">Kingpin <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_kingpin"><option value="">Select...</option><option>2" Jost</option><option>2" Holland</option><option>3.5" Jost</option><option>3.5" Holland</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Pintle Hook <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_pintle_hook"><option value="">Select...</option><option>Ringfeder</option><option>Holland</option><option>N/A</option></select></div>
+    </div>
+    <div class="section-header">D-Value / Towbar</div>
+    <div class="form-grid-4">
+      <div class="form-group"><label class="form-label">Towbar D Value (kN)</label><input class="form-input" id="f_d_value" placeholder="e.g. 113"></div>
+      <div class="form-group"><label class="form-label">Towbar Plate Vertical Load</label><select class="form-select" id="f_towbar_vertical"><option value="">Select...</option><option>Light Duty (up to 30kN)</option><option>Medium Duty (30-50kN)</option><option>Heavy Duty (50kN+)</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Towbar Type</label><select class="form-select" id="f_towbar_type"><option value="">Select...</option><option>Bolted</option><option>Welded</option><option>Customer Supplied</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Pintle Eye Height</label><input class="form-input" id="f_pintle_eye_height" placeholder="mm"></div>
+    </div>
+    <div class="section-header">Chassis Accessories</div>
+    <div class="check-grid">
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_mudguards">Mudguards</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_spray_suppression">Spray Suppression</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_side_markers">Side Markers</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_reflectors">Reflectors</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_air_reservoir">Air Reservoir</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_water_tank">Water Tank</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_fuel_tank">Fuel Tank</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_air_dryer">Air Dryer</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_belly_plates">Belly Plates</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_chassis_toolbox">Chassis Toolbox</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_jockey_wheel">Jockey Wheel</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_safety_chains">Safety Chains</label>
+    </div>
+  </div>
+
+  <!-- Card 10: Paint, Lights & Mudflaps -->
+  <div class="card hidden" id="card10">
+    <div class="card-title"><span class="num">10</span> Paint, Lights &amp; Mudflaps</div>
+    <div class="section-header">Paint</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Body Paint Colour <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_body_paint"></div>
+      <div class="form-group"><label class="form-label">Chassis Paint Colour <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_chassis_paint"></div>
+      <div class="form-group"><label class="form-label">Drawbar Paint Colour</label><input class="form-input" id="f_drawbar_paint"></div>
+      <div class="form-group"><label class="form-label">Paint Code</label><input class="form-input" id="f_paint_code"></div>
+    </div>
+    <div class="section-header">Lights</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Rear Lights <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_rear_lights"><option value="">Select...</option><option>LED Combo Tail Lights</option><option>LED Separate Functions</option><option>Narva LED</option><option>Hella LED</option><option>Incandescent</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Side Marker Lights <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_side_marker_lights"><option value="">Select...</option><option>LED Amber</option><option>LED Red/Amber</option><option>Incandescent</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Work Lights</label><select class="form-select" id="f_work_lights"><option value="">Select...</option><option>2x LED Rear</option><option>4x LED (2 Front + 2 Rear)</option><option>Customer Supplied</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Beacon <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_beacon"><option value="">Select...</option><option>LED Amber Rotating</option><option>LED Amber Strobe</option><option>LED Mini Light Bar</option><option>Customer Supplied</option><option>N/A</option></select></div>
+    </div>
+    <div class="section-header">Mudflaps</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Mudflap Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_mudflap_type"><option value="">Select...</option><option>Rubber Black</option><option>Rubber with Logo</option><option>Poly Plastic</option><option>Anti-Spray</option><option>Customer Supplied</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Mudflap Brackets</label><select class="form-select" id="f_mudflap_brackets"><option value="">Select...</option><option>Standard Steel</option><option>Spring Loaded</option><option>Stainless Steel</option><option>N/A</option></select></div>
+    </div>
+  </div>
+
+  <!-- Card 11: Notes -->
+  <div class="card hidden" id="card11">
+    <div class="card-title"><span class="num">11</span> Notes</div>
+    <div class="form-group full">
+      <label class="form-label">General Notes / Special Instructions</label>
+      <textarea class="form-textarea" id="f_notes" rows="5" placeholder="Enter any additional notes, special requirements, or instructions..."></textarea>
+    </div>
+    <div class="form-group full" style="margin-top:14px">
+      <label class="form-label">Parsed Quote Lines <span class="badge-auto">Auto</span></label>
+      <textarea class="form-textarea auto-filled" id="f_quote_lines" rows="8" placeholder="Auto-populated from quote PDF..." readonly></textarea>
+    </div>
+  </div>
+
+  <!-- Card 12: Generate -->
+  <div class="card hidden" id="card12">
+    <div class="card-title"><span class="num">12</span> Generate Job Sheets</div>
+    <div class="actions">
+      <button class="btn btn-success" id="btnGenerate" onclick="generateExcel()">&#128196; Generate Excel Job Sheets</button>
+      <button class="btn btn-secondary" onclick="resetForm()">&#8635; Reset Form</button>
+    </div>
+    <div class="status" id="generateStatus"></div>
+  </div>
+
+</div>
+
+<script>
+// =================== CONFIGURATION ===================
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+var currentJobType = "trailer";
+
+// Option lists for mode-dependent dropdowns
+var TRUCK_BODY_LENGTHS = ["3900mm","4000mm","4100mm","4200mm","4300mm","4400mm","4500mm","4600mm","4660mm","4700mm","4800mm","4900mm","5000mm","5100mm","5200mm","5300mm","5400mm","5500mm","5600mm","5700mm","5800mm","5900mm","6000mm"];
+var TRAILER_BODY_LENGTHS = ["6000mm","6050mm","6100mm","6400mm","7700mm","8300mm","9200mm","9400mm","9600mm","10400mm","N/A"];
+var TRUCK_HEIGHTS = ["1000mm","1100mm","1150mm","1200mm","1300mm","1410mm","1500mm"];
+var TRAILER_HEIGHTS = ["1100mm","1410mm","1500mm","1000mm","1150mm","1520mm","N/A"];
+var TRUCK_MAINRUNNER = ["762mm","770mm","850mm","860mm","865mm"];
+var TRAILER_MAINRUNNER = ["965mm Inside","1000mm Inside","818mm Inside - Pig","N/A"];
+
+// Chassis length mapping from trailer body length
+var CHASSIS_LENGTH_MAP = {
+  "5400mm": "4930mm Dog", "6000mm": "5450mm Dog", "6050mm": "5450mm Dog", "6100mm": "5450mm Dog",
+  "6400mm": "5450mm Dog", "7700mm": "7470mm Dog", "8300mm": "7870mm Dog",
+  "9200mm": "9100mm Semi", "9400mm": "9120mm Dog", "9600mm": "9405mm Dog", "10400mm": "10000mm Semi"
+};
+
+// Wheelbase mapping from chassis length
+var WHEELBASE_MAP = {
+  "4930mm Dog": "3240mm", "5450mm Dog": "3760mm", "7470mm Dog": "5700mm",
+  "7870mm Dog": "6150mm", "9100mm Semi": "6610mm", "9120mm Dog": "6685/6235mm",
+  "9405mm Dog": "7615/7165mm", "10000mm Semi": "7615/7165mm"
+};
+
+// Populate a select with options
+function populateSelect(id, opts) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var cur = el.value;
+  el.innerHTML = '<option value="">Select...</option>';
+  opts.forEach(function(o) {
+    var opt = document.createElement("option");
+    opt.value = o; opt.textContent = o;
+    el.appendChild(opt);
+  });
+  if (cur) el.value = cur;
+}
+
+// Switch dropdown options based on mode
+function updateModeOptions(mode) {
+  if (mode === "truck" || mode === "both") {
+    populateSelect("f_body_length", TRUCK_BODY_LENGTHS);
+    populateSelect("f_body_height", TRUCK_HEIGHTS);
+    populateSelect("f_mainrunner_width", TRUCK_MAINRUNNER);
+  } else {
+    populateSelect("f_body_length", TRAILER_BODY_LENGTHS);
+    populateSelect("f_body_height", TRAILER_HEIGHTS);
+    populateSelect("f_mainrunner_width", TRAILER_MAINRUNNER);
+  }
+  // Trailer body dims in both mode use trailer options
+  if (mode === "both") {
+    populateSelect("f_t_body_length", TRAILER_BODY_LENGTHS);
+    populateSelect("f_t_body_height", TRAILER_HEIGHTS);
+    populateSelect("f_t_mainrunner_width", TRAILER_MAINRUNNER);
+  }
+}
+
+// Auto-cascade: body length -> chassis length -> wheelbase
+function autoCascade() {
+  // For trailer body length (main or trailer-specific in both mode)
+  var bodyLenEl = currentJobType === "both" ? document.getElementById("f_t_body_length") : (currentJobType === "trailer" ? document.getElementById("f_body_length") : null);
+  if (bodyLenEl) {
+    var bodyLen = bodyLenEl.value;
+    var chassisLen = CHASSIS_LENGTH_MAP[bodyLen] || "";
+    var chassisEl = document.getElementById("f_chassis_length");
+    if (chassisEl && chassisLen) {
+      chassisEl.value = chassisLen;
+      var wb = WHEELBASE_MAP[chassisLen] || "";
+      var wbEl = document.getElementById("f_wheelbase");
+      if (wbEl && wb) wbEl.value = wb;
+    }
+  }
+}
+
+// =================== DRAG & DROP ===================
+var dropZone = null;
+document.addEventListener("DOMContentLoaded", function() {
+  dropZone = document.getElementById("dropZone");
+  dropZone.addEventListener("dragover", function(e) { e.preventDefault(); dropZone.classList.add("dragover"); });
+  dropZone.addEventListener("dragleave", function() { dropZone.classList.remove("dragover"); });
+  dropZone.addEventListener("drop", function(e) {
+    e.preventDefault(); dropZone.classList.remove("dragover");
+    var f = e.dataTransfer.files[0];
+    if (f && f.type === "application/pdf") handleFile(f);
+    else showStatus("parseStatus", "Please drop a PDF file", "error");
+  });
+  // Set default date
+  var today = new Date().toISOString().split("T")[0];
+  document.getElementById("f_issue_date").value = today;
+  // Initialize mode options
+  updateModeOptions("trailer");
+  // Listen for body length changes to auto-cascade
+  ["f_body_length","f_t_body_length"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener("change", autoCascade);
+  });
+});
+
+// =================== FILE HANDLING ===================
+function handleFile(file) {
+  if (!file) return;
+  showStatus("parseStatus", "Reading PDF...", "info");
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var typedArray = new Uint8Array(e.target.result);
+    pdfjsLib.getDocument(typedArray).promise.then(function(pdf) {
+      var pages = [];
+      var firstPageItems = null;
+      var numPages = pdf.numPages;
+      function getPage(i) {
+        if (i > numPages) {
+          var fullText = pages.join("\n");
+          try {
+            var parsed = parseQuoteText(fullText, firstPageItems);
+            populateForm(parsed);
+            dropZone.classList.add("parsed");
+            dropZone.querySelector(".icon").textContent = "\u2705";
+            dropZone.querySelector(".label").textContent = file.name;
+            dropZone.querySelector(".hint").textContent = "Parsed successfully - click to replace";
+            showStatus("parseStatus", "Quote parsed and fields populated!", "ok");
+            showParsedSummary(parsed);
+            showAllCards();
+          } catch(err) {
+            showStatus("parseStatus", "Parse error: " + err.message, "error");
+            console.error(err);
+            showAllCards();
+          }
+          return;
+        }
+        pdf.getPage(i).then(function(page) {
+          page.getTextContent().then(function(tc) {
+            if (i === 1) firstPageItems = tc.items;
+            var text = tc.items.map(function(item) { return item.str; }).join(" ");
+            pages.push(text);
+            getPage(i + 1);
+          });
+        });
+      }
+      getPage(1);
+    }).catch(function(err) {
+      showStatus("parseStatus", "Failed to read PDF: " + err.message, "error");
+    });
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// =================== QUOTE PARSER ===================
+function parseQuoteText(fullText, firstPageItems) {
+  var d = { truck: {}, trailer: {} };
+  var t = fullText;
+  
+  // Detect job type - allow words between axle, type and "trailer"
+  var hasTrailerSection = /\d\s*axle\s+(?:\w+\s+)*(dog|semi|pig)(?:\s+\w+)*\s*trailer/i.test(t) || /trailer\s*(body|build|chassis)/i.test(t);
+  var hasTruckSection = /tipper\s*body\s*build|rigid\s*truck|body\s*build|body\s*suit/i.test(t);
+  
+  if (hasTruckSection && hasTrailerSection) {
+    d.job_type = "both";
+    // Try to split at trailer section
+    var splitIdx = t.search(/\d\s*axle\s+(?:\w+\s+)*(dog|semi|pig)(?:\s+\w+)*\s*trailer/i);
+    if (splitIdx < 0) splitIdx = t.search(/trailer\s*(body|build|chassis)/i);
+    var truckText = splitIdx > 0 ? t.substring(0, splitIdx) : t;
+    var trailerText = splitIdx > 0 ? t.substring(splitIdx) : t;
+    parseTruckSection(truckText, d);
+    parseTrailerSection(trailerText, d);
+  } else if (hasTruckSection) {
+    d.job_type = "truck";
+    parseTruckSection(t, d);
+  } else {
+    d.job_type = "trailer";
+    parseTrailerSection(t, d);
+  }
+  
+  // Common fields
+  parseCommonFields(t, d);
+  
+  // Extract customer/dealer from first page items
+  if (firstPageItems) extractCustomerDealer(firstPageItems, t, d);
+
+  // Fallback: extract from text if not found from items
+  if (!d.customer && !d.dealer) {
+    // Try "Invoice to" first (this is the actual customer/company)
+    var inv = t.match(/invoice\s*to\s*[:\s]+([A-Za-z][A-Za-z\s'.&\/-]{1,60}?)(?:\s{2,}|\d|ABN|TEL|FAX|Ph|$)/i);
+    if (inv) d.customer = inv[1].trim();
+    // Company name after "QUOTE" is the customer in Xero quotes
+    var dm = t.match(/QUOTE\s+([A-Za-z][A-Za-z\s&'.]+?)(?:\s{2,}|Date|ABN|Invoice)/);
+    if (dm) {
+      var quoteName = dm[1].trim();
+      if (!d.customer) d.customer = quoteName;
+      d.dealer = quoteName;
+    }
+    if (d.dealer && !d.customer) d.customer = d.dealer;
+    if (d.customer && !d.dealer) d.dealer = d.customer;
+  }
+  
+  // Quote number
+  var qm = t.match(/(?:quote|QU)[\s#:-]*(\w+-\d+|QU-\d+)/i);
+  if (qm) d.quote_number = qm[1];
+  else {
+    var qm2 = t.match(/(QU-\d+)/i);
+    if (qm2) d.quote_number = qm2[1];
+  }
+  
+  // Store raw text
+  d.raw_lines = t;
+  
+  return d;
+}
+
+function parseTruckSection(text, d) {
+  var t = text;
+  
+  // Truck make - use word boundary to avoid "MAN" matching "manufactured"
+  var makes = ["Volvo","Kenworth","Western Star","Isuzu","MAN","Scania","Mercedes Benz","DAF","Mack","Sitrak","UD","Hino","Fuso"];
+  for (var i = 0; i < makes.length; i++) {
+    var makeRe = new RegExp("\\b" + makes[i].replace(/\s+/g,"\\s+") + "\\b", "i");
+    if (makeRe.test(t)) {
+      d.truck.make = makes[i]; break;
+    }
+  }
+  
+  // Truck model - look after the make (use word-boundary search to avoid "UD" matching inside "AUD")
+  if (d.truck.make) {
+    var makeWordRe = new RegExp("\\b" + d.truck.make.replace(/\s+/g,"\\s+") + "\\b", "i");
+    var makeMatch = makeWordRe.exec(t);
+    if (makeMatch) {
+      var afterMake = t.substring(makeMatch.index + makeMatch[0].length, makeMatch.index + makeMatch[0].length + 60);
+      var mm = afterMake.match(/\s*([A-Z][A-Z0-9\s-]{2,20})/i);
+      if (mm) {
+        d.truck.model = mm[1].trim();
+        // Clean up - remove trailing common words and material names (e.g. "Quon Body build" → "Quon")
+        d.truck.model = d.truck.model.replace(/\s+(body|build|tipping|tipper|truck|cab|chassis|rigid|alumin\w*|hardox|alloy|steel)\b.*/i, "").trim();
+        // If the entire model is a material word, clear it
+        if (/^(alumin\w*|hardox|alloy|steel|body|build|tipping)$/i.test(d.truck.model)) d.truck.model = "";
+      }
+    }
+  }
+  
+  // Body dims - try "Label: value" format, then "value qualifier" (with or without units)
+  var blm = t.match(/length[:\s]+(?:up\s*to\s*)?(\d{3,5})\s*m{0,2}/i);
+  if (!blm) blm = t.match(/(\d{3,5})\s*m{0,2}\s*long\b/i);
+  if (blm) d.truck.body_length = blm[1] + "mm";
+
+  var bhm = t.match(/(?:wall\s*)?height[:\s]+(?:up\s*to\s*)?(\d{3,5})\s*m{0,2}/i);
+  if (!bhm) bhm = t.match(/(\d{3,5})\s*m{0,2}\s*(?:wall\s*)?high\b/i);
+  if (!bhm) bhm = t.match(/(\d{3,5})\s*m{0,2}\s*wall\s*height/i);
+  if (bhm) d.truck.body_height = bhm[1] + "mm";
+
+  var bwm = t.match(/width[:\s]+(?:up\s*to\s*)?(\d{3,5})\s*m{0,2}/i);
+  if (!bwm) bwm = t.match(/(\d{3,5})\s*m{0,2}\s*wide\b/i);
+  if (bwm) d.truck.body_width = bwm[1] + "mm";
+  
+  // Material
+  if (/hardox/i.test(t)) d.truck.material = "Hardox";
+  else if (/alumin/i.test(t)) d.truck.material = "Aluminium";
+  
+  // Sheets
+  parseSheetSpecs(t, d.truck);
+  
+  // Oil tank
+  var otm = t.match(/(behind\s*cab|under\s*tray)\s*(upright\s*)?(steel|alloy)\s*(\d+)\s*l/i);
+  if (otm) {
+    var loc = otm[1].charAt(0).toUpperCase() + otm[1].slice(1).toLowerCase();
+    var mat = otm[3].charAt(0).toUpperCase() + otm[3].slice(1).toLowerCase();
+    d.truck.oil_tank_type = loc.replace(/\s+/g," ") + (otm[2] ? " Upright" : "") + " " + mat + " " + otm[4] + "L";
+  }
+  
+  // Oil tank location
+  if (/behind\s*cab.*lhs/i.test(t)) d.truck.oil_tank_location = "Behind Cab LHS";
+  else if (/behind\s*cab.*rhs/i.test(t)) d.truck.oil_tank_location = "Behind Cab RHS";
+  else if (/under\s*tray.*lhs.*front/i.test(t)) d.truck.oil_tank_location = "Under Tray LHS Front";
+  else if (/under\s*tray.*rhs.*front/i.test(t)) d.truck.oil_tank_location = "Under Tray RHS Front";
+  else if (/under\s*tray.*centre/i.test(t)) d.truck.oil_tank_location = "Under Tray Centre";
+  
+  // Tarp
+  if (/razor\s*electric/i.test(t)) d.truck.tarp_type = "EziTarp Electric";
+  else if (/ezitarp/i.test(t)) d.truck.tarp_type = "EziTarp Electric";
+  else if (/pulltarp/i.test(t)) d.truck.tarp_type = "Pulltarp Electric";
+  else if (/aero\s*easy/i.test(t)) d.truck.tarp_type = "Aero Easy Cover";
+  else if (/manual\s*pull/i.test(t)) d.truck.tarp_type = "Manual Pull Over";
+  else if (/rollover.*mesh/i.test(t)) d.truck.tarp_type = "Rollover Mesh";
+  else if (/rollover.*pvc/i.test(t)) d.truck.tarp_type = "Rollover PVC";
+  
+  // PTO type
+  if (/chelsea|parker/i.test(t)) d.truck.pto_type = "Chelsea / Parker";
+  else if (/muncie/i.test(t)) d.truck.pto_type = "Muncie";
+}
+
+function parseTrailerSection(text, d) {
+  var t = text;
+  
+  // Trailer model - allow words between axle/type/trailer (e.g. "4 Axle Tipping Dog Trailer")
+  var tm = t.match(/(\d)\s*axle\s+(?:\w+\s+)*(dog|semi|pig)(?:\s+\w+)*\s*trailer/i);
+  if (tm) {
+    var axles = tm[1];
+    var type = tm[2].toLowerCase();
+    if (type === "dog") d.trailer.model = "DT-" + axles + " (" + axles + "-Axle Dog Trailer)";
+    else if (type === "semi") d.trailer.model = "ST-" + axles + " (" + axles + "-Axle Semi Trailer)";
+    else if (type === "pig") d.trailer.model = "PIG " + axles + " (" + axles + "-Axle Pig Trailer)";
+    d.trailer.num_axles = axles;
+  }
+  
+  // Body dims - try "Label: value" format, then "value qualifier" (with or without units)
+  var blm = t.match(/length[:\s]+(?:up\s*to\s*)?(\d{3,5})\s*m{0,2}/i);
+  if (!blm) blm = t.match(/(\d{3,5})\s*m{0,2}\s*long\b/i);
+  if (blm) d.trailer.body_length = blm[1] + "mm";
+
+  var bhm = t.match(/(?:wall\s*)?height[:\s]+(?:up\s*to\s*)?(\d{3,5})\s*m{0,2}/i);
+  if (!bhm) bhm = t.match(/(\d{3,5})\s*m{0,2}\s*(?:wall\s*)?high\b/i);
+  if (!bhm) bhm = t.match(/(\d{3,5})\s*m{0,2}\s*wall\s*height/i);
+  if (bhm) d.trailer.body_height = bhm[1] + "mm";
+
+  var bwm = t.match(/width[:\s]+(?:up\s*to\s*)?(\d{3,5})\s*m{0,2}/i);
+  if (!bwm) bwm = t.match(/(\d{3,5})\s*m{0,2}\s*wide\b/i);
+  if (bwm) d.trailer.body_width = bwm[1] + "mm";
+  
+  // Material
+  if (/hardox/i.test(t)) d.trailer.material = "Hardox";
+  else if (/alumin/i.test(t)) d.trailer.material = "Aluminium";
+  
+  // Sheets
+  parseSheetSpecs(t, d.trailer);
+  
+  // Axle info
+  if (/bpw/i.test(t)) d.trailer.axle_make = "BPW";
+  else if (/fuwa/i.test(t)) d.trailer.axle_make = "Fuwa";
+  else if (/saf/i.test(t)) d.trailer.axle_make = "SAF";
+  
+  // Check drum first; disc brake often appears as "upgrade if required"
+  if (/drum\s*[-–—]?\s*brak/i.test(t)) d.trailer.axle_type = "Drum Brake";
+  else if (/disc\s*[-–—]?\s*brak/i.test(t) && !/disc\s*[-–—]?\s*brak\w*\s*(upgrade|option|if\s*required)/i.test(t)) d.trailer.axle_type = "Disc Brake";
+  else if (/disc\s*[-–—]?\s*brak/i.test(t)) d.trailer.axle_type = "Disc Brake";
+  
+  // Axle rating
+  var arm = t.match(/(\d+)\s*t(?:onne)?\s*(?:axle|rated)/i);
+  if (arm) d.trailer.axle_rating = arm[1] + "T";
+  
+  // Suspension
+  if (/bpw\s*air/i.test(t)) d.trailer.suspension = "BPW Air Ride";
+  else if (/fuwa\s*air/i.test(t)) d.trailer.suspension = "Fuwa Air Ride";
+  else if (/saf\s*air/i.test(t)) d.trailer.suspension = "SAF Air Ride";
+  else if (/mechanical\s*spring/i.test(t)) d.trailer.suspension = "Mechanical Spring";
+  else if (/air\s*ride/i.test(t)) {
+    if (d.trailer.axle_make) d.trailer.suspension = d.trailer.axle_make + " Air Ride";
+  }
+  
+  // Tyres
+  var tym = t.match(/(295\/80R22\.5|11R22\.5|385\/65R22\.5)/i);
+  if (tym) d.trailer.tyres = tym[1];
+  else if (/super\s*single/i.test(t)) d.trailer.tyres = "Super Single";
+  
+  // Brakes
+  if (/ebs|electronic\s*brak/i.test(t)) d.trailer.brakes = "EBS (Full Electronic)";
+  else if (/\babs\b/i.test(t)) d.trailer.brakes = "ABS";
+  
+  // Coupling
+  if (/ring\s*feeder|ringfeder/i.test(t)) d.trailer.coupling = "Ring Feeder";
+  else if (/jost\s*turntable/i.test(t)) d.trailer.coupling = "Jost Turntable";
+  else if (/holland\s*turntable/i.test(t)) d.trailer.coupling = "Holland Turntable";
+  
+  // Kingpin
+  if (/3\.?5.*jost/i.test(t) || /jost.*3\.?5/i.test(t)) d.trailer.kingpin = "3.5\" Jost";
+  else if (/2.*jost/i.test(t) || /jost.*2\"/i.test(t)) d.trailer.kingpin = "2\" Jost";
+  else if (/3\.?5.*holland/i.test(t) || /holland.*3\.?5/i.test(t)) d.trailer.kingpin = "3.5\" Holland";
+  else if (/2.*holland/i.test(t) || /holland.*2\"/i.test(t)) d.trailer.kingpin = "2\" Holland";
+  
+  // Tarp
+  if (/razor\s*electric/i.test(t)) d.trailer.tarp_type = "EziTarp Electric";
+  else if (/ezitarp/i.test(t)) d.trailer.tarp_type = "EziTarp Electric";
+  else if (/pulltarp/i.test(t)) d.trailer.tarp_type = "Pulltarp Electric";
+  else if (/aero\s*easy/i.test(t)) d.trailer.tarp_type = "Aero Easy Cover";
+  else if (/manual\s*pull/i.test(t)) d.trailer.tarp_type = "Manual Pull Over";
+  else if (/rollover.*mesh/i.test(t)) d.trailer.tarp_type = "Rollover Mesh";
+  else if (/rollover.*pvc/i.test(t)) d.trailer.tarp_type = "Rollover PVC";
+  
+  // Trailer type
+  if (/p\s*beam/i.test(t)) d.trailer.trailer_type = "P Beam";
+  else if (/i\s*beam\s*drop/i.test(t)) d.trailer.trailer_type = "I Beam Drop Deck";
+  else if (/i\s*beam/i.test(t)) d.trailer.trailer_type = "I Beam";
+  else if (/converter\s*dolly/i.test(t)) d.trailer.trailer_type = "Converter Dolly";
+}
+
+function sheetMaterial(matStr) {
+  var m = matStr.toLowerCase();
+  if (m.indexOf("hardox") >= 0) return "Hardox 450";
+  if (m.indexOf("bisalloy") >= 0) return "Bisalloy 400";
+  return "Aluminium";
+}
+
+function parseSheetSpecs(text, obj) {
+  // Detect overall material context for fallback
+  var ctxMat = /hardox/i.test(text) ? "Hardox 450" : (/alumin/i.test(text) ? "Aluminium" : "");
+
+  // Floor - try "Nmm material floor" then "floor: Nmm material" then "Nmm floor" (no material)
+  var fm = text.match(/(\d)\s*mm\s*(hardox|bisalloy|alumin)\w*\s*\d*\s*(?:floor|base)/i);
+  if (fm) obj.floor_sheets = fm[1] + "mm " + sheetMaterial(fm[2]);
+  else {
+    fm = text.match(/floor\s*(?:sheet)?[:\s]*(\d)\s*mm\s*(?:thick\s*)?(hardox|bisalloy|alumin)\w*/i);
+    if (fm) obj.floor_sheets = fm[1] + "mm " + sheetMaterial(fm[2]);
+    else {
+      fm = text.match(/(\d)\s*mm\s*floor/i);
+      if (fm && ctxMat) obj.floor_sheets = fm[1] + "mm " + ctxMat;
+    }
+  }
+  // Sides
+  var sm = text.match(/(\d)\s*mm\s*(hardox|bisalloy|alumin)\w*\s*\d*\s*(?:side)/i);
+  if (sm) obj.side_sheets = sm[1] + "mm " + sheetMaterial(sm[2]);
+  else {
+    sm = text.match(/side\s*(?:sheet)?[:\s]*(\d)\s*mm\s*(?:thick\s*)?(hardox|bisalloy|alumin)\w*/i);
+    if (sm) obj.side_sheets = sm[1] + "mm " + sheetMaterial(sm[2]);
+    else {
+      sm = text.match(/(\d)\s*mm\s*side/i);
+      if (sm && ctxMat) obj.side_sheets = sm[1] + "mm " + ctxMat;
+    }
+  }
+  // Front
+  var frm = text.match(/(\d)\s*mm\s*(?:thick\s*)?(hardox|bisalloy|alumin)\w*\s*\d*\s*(?:flat\s*)?(?:front)/i);
+  if (frm) obj.front_sheet = frm[1] + "mm " + sheetMaterial(frm[2]);
+  else {
+    frm = text.match(/front\s*(?:sheet)?[:\s]*(\d)\s*mm\s*(?:thick\s*)?(hardox|bisalloy|alumin)\w*/i);
+    if (frm) obj.front_sheet = frm[1] + "mm " + sheetMaterial(frm[2]);
+  }
+  // Tailgate
+  var tgm = text.match(/(\d)\s*mm\s*(hardox|bisalloy|alumin)\w*\s*\d*\s*(?:tailgate|tail\s*gate)/i);
+  if (tgm) obj.tailgate_sheet = tgm[1] + "mm " + sheetMaterial(tgm[2]);
+}
+
+function parseCommonFields(text, d) {
+  // Paint - try specific patterns first
+  // Pattern: "suit Truck cab - *Hino White" or "colour: White" or "painted White"
+  var pm = text.match(/suit\s*(?:truck\s*)?(?:cab)?\s*[-–—*]+\s*\*?([A-Za-z][A-Za-z\s]+?)(?:\.|,|$|\s{2})/i);
+  if (pm && pm[1].trim().length > 1 && pm[1].trim().length < 30) {
+    d.body_paint = pm[1].trim();
+  } else {
+    pm = text.match(/(?:colour|color)[:\s]+([A-Za-z][A-Za-z\s]+?)(?:\.|,|$|\s{2})/i);
+    if (pm && pm[1].trim().length > 1 && pm[1].trim().length < 30) d.body_paint = pm[1].trim();
+    else {
+      pm = text.match(/painted\s+(?:in\s+)?(?:\w+\s+)*?([A-Z][a-zA-Z]+\s*(?:White|Black|Grey|Gray|Red|Blue|Green|Yellow|Silver|Orange|Brown))/i);
+      if (pm) d.body_paint = pm[1].trim();
+    }
+  }
+  // Reject common non-colour words that regex may accidentally capture
+  if (d.body_paint) {
+    var paintReject = /^(cab|truck|trailer|body|suit|build|style|match|finish|system|primer|primed|epoxy|paint|ppg|2k|enamel)$/i;
+    if (paintReject.test(d.body_paint.trim())) d.body_paint = "";
+  }
+  // If "to suit cab" with no colour, set helpful placeholder
+  if (!d.body_paint && /to\s*suit\s*(?:truck\s*)?cab/i.test(text)) {
+    d.body_paint = "To suit cab";
+  }
+  // If "colour match to <brand>" pattern, set placeholder
+  if (!d.body_paint) {
+    var cm = text.match(/colou?r\s*match\s*(?:to\s*)?(\w+)/i);
+    if (cm) d.body_paint = "Colour match to " + cm[1];
+  }
+
+  // Lights
+  if (/narva.*led/i.test(text)) d.rear_lights = "Narva LED";
+  else if (/hella.*led/i.test(text)) d.rear_lights = "Hella LED";
+  else if (/led.*combo/i.test(text)) d.rear_lights = "LED Combo Tail Lights";
+  else if (/led.*tail/i.test(text) || /tail.*led/i.test(text)) d.rear_lights = "LED Combo Tail Lights";
+  
+  // Beacon
+  if (/led.*amber.*rotat/i.test(text)) d.beacon = "LED Amber Rotating";
+  else if (/led.*amber.*strobe/i.test(text)) d.beacon = "LED Amber Strobe";
+  else if (/led.*mini.*light\s*bar/i.test(text)) d.beacon = "LED Mini Light Bar";
+  
+  // Mudflaps
+  if (/rubber.*logo/i.test(text)) d.mudflap_type = "Rubber with Logo";
+  else if (/rubber.*black/i.test(text) || /black.*rubber/i.test(text)) d.mudflap_type = "Rubber Black";
+  else if (/poly.*plastic/i.test(text)) d.mudflap_type = "Poly Plastic";
+  else if (/anti.*spray/i.test(text)) d.mudflap_type = "Anti-Spray";
+  
+  // Tailgate type
+  if (/barn\s*door/i.test(text)) d.tailgate_type = "Barn Doors";
+  else if (/bi.*fold/i.test(text)) d.tailgate_type = "Bi-Fold";
+  else if (/drop\s*down/i.test(text)) d.tailgate_type = "Single Piece Drop Down";
+  else if (/swing\s*up/i.test(text)) d.tailgate_type = "Single Piece Swing Up";
+}
+
+function extractCustomerDealer(items, fullText, d) {
+  // Strategy: The first company name after "QUOTE" header = dealer
+  // "Invoice to" line = customer
+  var lines = [];
+  var currentLine = "";
+  var lastY = null;
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    var y = Math.round(item.transform ? item.transform[5] : 0);
+    if (lastY !== null && Math.abs(y - lastY) > 5) {
+      lines.push(currentLine.trim());
+      currentLine = "";
+    }
+    currentLine += item.str + " ";
+    lastY = y;
+  }
+  if (currentLine.trim()) lines.push(currentLine.trim());
+  
+  // Find dealer: first non-empty line after QUOTE that looks like a company name
+  var foundQuote = false;
+  for (var i = 0; i < lines.length; i++) {
+    if (/^\s*QUOTE\b/i.test(lines[i])) { foundQuote = true; continue; }
+    if (foundQuote && lines[i].length > 2 && !/^\s*(QU-|Date|Quote|Number|Page)/i.test(lines[i])) {
+      d.dealer = lines[i].replace(/\s+/g," ").trim();
+      break;
+    }
+  }
+  
+  // Find customer: "Invoice to" or "Attention"
+  var im = fullText.match(/invoice\s*to\s*[:\s]*([^\n,]+)/i);
+  if (im) d.customer = im[1].trim();
+  else {
+    var am = fullText.match(/attention\s*[:\s]*([^\n,]+)/i);
+    if (am) d.customer = am[1].trim();
+    else if (d.dealer) {
+      // Fallback: second company-like line after QUOTE
+      var afterDealer = false;
+      for (var i = 0; i < lines.length; i++) {
+        if (lines[i] === d.dealer) { afterDealer = true; continue; }
+        if (afterDealer && lines[i].length > 2 && !/^\s*(QU-|Date|Quote|Number|Page|ABN|Ph|Fax|Email)/i.test(lines[i])) {
+          d.customer = lines[i].replace(/\s+/g," ").trim();
+          break;
+        }
+      }
+    }
+  }
+  
+  // If only one found, use it for both
+  if (d.dealer && !d.customer) d.customer = d.dealer;
+  if (d.customer && !d.dealer) d.dealer = d.customer;
+}
+
+// =================== FORM POPULATION ===================
+function setVal(id, val) {
+  if (!val) return;
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.value = val;
+}
+
+function setCheck(id, val) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.checked = !!val;
+  if (el.checked && el.parentElement) el.parentElement.classList.add("checked");
+}
+
+function setSelectClosest(id, val) {
+  if (!val) return;
+  var el = document.getElementById(id);
+  if (!el) return;
+  var valLower = val.toLowerCase();
+  // Exact match first
+  for (var i = 0; i < el.options.length; i++) {
+    if (!el.options[i].value) continue;
+    if (el.options[i].value.toLowerCase() === valLower || el.options[i].text.toLowerCase() === valLower) {
+      el.value = el.options[i].value; return;
+    }
+  }
+  // Contains match
+  for (var i = 0; i < el.options.length; i++) {
+    if (!el.options[i].value) continue;
+    if (el.options[i].text.toLowerCase().indexOf(valLower) >= 0 || valLower.indexOf(el.options[i].text.toLowerCase()) >= 0) {
+      el.value = el.options[i].value; return;
+    }
+  }
+  // Numeric match (for dimensions like "7700mm" matching "7700mm")
+  var numMatch = valLower.match(/(\d+)/);
+  if (numMatch) {
+    var num = numMatch[1];
+    for (var i = 0; i < el.options.length; i++) {
+      if (!el.options[i].value) continue;
+      if (el.options[i].text.indexOf(num) >= 0) {
+        el.value = el.options[i].value; return;
+      }
+    }
+  }
+  // Word match
+  for (var i = 0; i < el.options.length; i++) {
+    if (!el.options[i].value) continue;
+    var words = valLower.split(/[\s\-\/]+/);
+    for (var w = 0; w < words.length; w++) {
+      if (words[w].length > 2 && el.options[i].text.toLowerCase().indexOf(words[w]) >= 0) {
+        el.value = el.options[i].value; return;
+      }
+    }
+  }
+  // No match found - add as custom option so value isn't lost
+  var opt = document.createElement("option");
+  opt.value = val;
+  opt.text = val;
+  el.appendChild(opt);
+  el.value = val;
+}
+
+function populateForm(d) {
+  // Set job type
+  if (d.job_type) {
+    selectJobType(d.job_type, null);
+  }
+  
+  // Common fields
+  setVal("f_customer", d.customer);
+  setVal("f_dealer", d.dealer);
+  setVal("f_quote_number", d.quote_number);
+  setVal("f_quote_lines", d.raw_lines);
+  
+  // Paint & lights
+  setVal("f_body_paint", d.body_paint);
+  setSelectClosest("f_rear_lights", d.rear_lights);
+  setSelectClosest("f_beacon", d.beacon);
+  setSelectClosest("f_mudflap_type", d.mudflap_type);
+  setSelectClosest("f_tailgate_type", d.tailgate_type);
+  
+  // Truck fields
+  var tr = d.truck || {};
+  if (d.job_type === "truck" || d.job_type === "both") {
+    setSelectClosest("f_truck_make", tr.make);
+    setVal("f_truck_model", tr.model);
+    setSelectClosest("f_material", tr.material);
+    setSelectClosest("f_body_length", tr.body_length);
+    setSelectClosest("f_body_width", tr.body_width);
+    setSelectClosest("f_body_height", tr.body_height);
+    setSelectClosest("f_oil_tank_type", tr.oil_tank_type);
+    setSelectClosest("f_oil_tank_location", tr.oil_tank_location);
+    setSelectClosest("f_pto_type", tr.pto_type);
+    setSelectClosest("f_tarp_type", tr.tarp_type);
+    setSelectClosest("f_floor_sheets", tr.floor_sheets);
+    setSelectClosest("f_side_sheets", tr.side_sheets);
+    setSelectClosest("f_front_sheet", tr.front_sheet);
+    setSelectClosest("f_tailgate_sheet", tr.tailgate_sheet);
+  }
+  
+  // Trailer fields
+  var tl = d.trailer || {};
+  if (d.job_type === "trailer") {
+    setSelectClosest("f_trailer_model", tl.model);
+    setSelectClosest("f_trailer_type", tl.trailer_type);
+    setSelectClosest("f_material", tl.material);
+    setSelectClosest("f_body_length", tl.body_length);
+    setSelectClosest("f_body_width", tl.body_width);
+    setSelectClosest("f_body_height", tl.body_height);
+    setSelectClosest("f_tarp_type", tl.tarp_type);
+    setSelectClosest("f_floor_sheets", tl.floor_sheets);
+    setSelectClosest("f_side_sheets", tl.side_sheets);
+    setSelectClosest("f_front_sheet", tl.front_sheet);
+    setSelectClosest("f_tailgate_sheet", tl.tailgate_sheet);
+  } else if (d.job_type === "both") {
+    setSelectClosest("f_trailer_model", tl.model);
+    setSelectClosest("f_trailer_type", tl.trailer_type);
+    setSelectClosest("f_t_material", tl.material);
+    setSelectClosest("f_t_body_length", tl.body_length);
+    setSelectClosest("f_t_body_width", tl.body_width);
+    setSelectClosest("f_t_body_height", tl.body_height);
+    setSelectClosest("f_t_tarp_type", tl.tarp_type);
+  }
+  
+  // Trailer running gear
+  if (d.job_type === "trailer" || d.job_type === "both") {
+    setSelectClosest("f_axle_make", tl.axle_make);
+    setSelectClosest("f_axle_type", tl.axle_type);
+    setSelectClosest("f_axle_rating", tl.axle_rating);
+    setSelectClosest("f_num_axles", tl.num_axles);
+    setSelectClosest("f_suspension", tl.suspension);
+    setSelectClosest("f_tyres", tl.tyres);
+    setSelectClosest("f_brakes", tl.brakes);
+    setSelectClosest("f_coupling_type", tl.coupling);
+    setSelectClosest("f_kingpin", tl.kingpin);
+  }
+  
+  // Auto-cascade chassis length/wheelbase
+  autoCascade();
+}
+
+// =================== UI HELPERS ===================
+function showAllCards() {
+  for (var i = 2; i <= 12; i++) {
+    var card = document.getElementById("card" + i);
+    if (card) {
+      card.classList.remove("hidden");
+      card.classList.add("fade-in");
+    }
+  }
+  applyModeVisibility();
+}
+
+function selectJobType(type, el) {
+  currentJobType = type;
+  // Update selection UI
+  var cards = document.querySelectorAll(".option-card");
+  for (var i = 0; i < cards.length; i++) cards[i].classList.remove("selected");
+  if (el) { el.classList.add("selected"); }
+  else {
+    var card = document.querySelector('.option-card[data-value="' + type + '"]');
+    if (card) card.classList.add("selected");
+  }
+  updateModeOptions(type);
+  applyModeVisibility();
+}
+
+function applyModeVisibility() {
+  var mode = currentJobType;
+  var isTruck = mode === "truck" || mode === "both";
+  var isTrailer = mode === "trailer" || mode === "both";
+  var isBoth = mode === "both";
+  
+  // Card 2: Order fields
+  var truckFields = document.getElementById("truckOrderFields");
+  var trailerFields = document.getElementById("trailerOrderFields");
+  if (truckFields) truckFields.classList.toggle("hidden", !isTruck);
+  if (trailerFields) trailerFields.classList.toggle("hidden", !isTrailer);
+  
+  // Card 3: Body dims labels and trailer section
+  var truckBodyLabel = document.getElementById("truckBodyDimsLabel");
+  if (truckBodyLabel) truckBodyLabel.classList.toggle("hidden", !isBoth);
+  var trailerBodySection = document.getElementById("trailerBodyDimsSection");
+  if (trailerBodySection) trailerBodySection.classList.toggle("hidden", !isBoth);
+  
+  // Card 5: Subframe/Chassis
+  var truckSubframe = document.getElementById("truckSubframeSection");
+  var trailerChassis = document.getElementById("trailerChassisSection");
+  var truckSubLabel = document.getElementById("truckSubframeLabel");
+  var trailerChLabel = document.getElementById("trailerChassisLabel");
+  if (truckSubframe) truckSubframe.classList.toggle("hidden", !isTruck);
+  if (trailerChassis) trailerChassis.classList.toggle("hidden", !isTrailer);
+  if (truckSubLabel) truckSubLabel.classList.toggle("hidden", !isBoth);
+  if (trailerChLabel) trailerChLabel.classList.toggle("hidden", !isBoth);
+  
+  // Card 7: Tarp labels + trailer tarp section
+  var truckTarpLabel = document.getElementById("truckTarpLabel");
+  if (truckTarpLabel) truckTarpLabel.classList.toggle("hidden", !isBoth);
+  var trailerTarpSection = document.getElementById("trailerTarpSection");
+  if (trailerTarpSection) trailerTarpSection.classList.toggle("hidden", !isBoth);
+  
+  // Card 8: Running Gear (trailer/both only)
+  var card8 = document.getElementById("card8");
+  if (card8) {
+    if (!isTrailer) card8.classList.add("hidden");
+  }
+}
+
+function toggle(el) {
+  var cb = el.querySelector("input[type=checkbox]");
+  if (cb) { cb.checked = !cb.checked; el.classList.toggle("checked", cb.checked); }
+}
+
+function showStatus(id, msg, type) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = "status " + type;
+}
+
+function showParsedSummary(d) {
+  var el = document.getElementById("parsedSummary");
+  if (!el) return;
+  el.classList.remove("hidden");
+  var tags = [];
+  if (d.job_type) tags.push("Type: " + d.job_type);
+  if (d.customer) tags.push("Customer: " + d.customer);
+  if (d.dealer) tags.push("Dealer: " + d.dealer);
+  if (d.quote_number) tags.push("Quote: " + d.quote_number);
+  if (d.truck && d.truck.make) tags.push("Truck: " + d.truck.make + (d.truck.model ? " " + d.truck.model : ""));
+  if (d.trailer && d.trailer.model) tags.push("Trailer: " + d.trailer.model.split("(")[0].trim());
+  el.innerHTML = '<div class="title">Parsed Data</div><div class="parsed-tags">' + tags.map(function(t){ return '<span class="parsed-tag">' + t + '</span>'; }).join("") + '</div>';
+}
+
+function resetForm() {
+  if (!confirm("Reset all fields?")) return;
+  var inputs = document.querySelectorAll(".form-input,.form-select,.form-textarea");
+  for (var i = 0; i < inputs.length; i++) {
+    if (inputs[i].type === "date") continue;
+    if (inputs[i].id === "f_revision") { inputs[i].value = "A"; continue; }
+    inputs[i].value = "";
+  }
+  var checks = document.querySelectorAll(".check-item input[type=checkbox]");
+  for (var i = 0; i < checks.length; i++) {
+    checks[i].checked = false;
+    if (checks[i].parentElement) checks[i].parentElement.classList.remove("checked");
+  }
+  dropZone.classList.remove("parsed");
+  dropZone.querySelector(".icon").innerHTML = "&#128196;";
+  dropZone.querySelector(".label").textContent = "Drop a Xero Quote PDF here";
+  dropZone.querySelector(".hint").textContent = "or click to browse";
+  document.getElementById("parsedSummary").classList.add("hidden");
+  document.getElementById("parseStatus").className = "status";
+  document.getElementById("generateStatus").className = "status";
+  selectJobType("trailer", null);
+}
+
+// =================== EXCEL GENERATION ===================
+function gv(id) { var el = document.getElementById(id); return el ? el.value || "" : ""; }
+function gc(id) { var el = document.getElementById(id); return el ? el.checked : false; }
+
+function collectFormData() {
+  return {
+    job_type: currentJobType,
+    customer: gv("f_customer"), dealer: gv("f_dealer"), quote_number: gv("f_quote_number"),
+    job_number: gv("f_job_number"), issue_date: gv("f_issue_date"), prepared_by: gv("f_prepared_by"),
+    sales_person: gv("f_sales_person"), revision: gv("f_revision"),
+    // Trailer order
+    trailer_model: gv("f_trailer_model"), trailer_type: gv("f_trailer_type"),
+    trailer_serial: gv("f_trailer_serial"), trailer_vin: gv("f_trailer_vin"),
+    // Truck order
+    truck_make: gv("f_truck_make"), truck_model: gv("f_truck_model"),
+    truck_vin: gv("f_truck_vin"), sales_drawing: gv("f_sales_drawing"),
+    // Body dims (truck or single trailer)
+    material: gv("f_material"), body_length: gv("f_body_length"),
+    body_width: gv("f_body_width"), body_height: gv("f_body_height"),
+    mainrunner_width: gv("f_mainrunner_width"), hoist_box_height: gv("f_hoist_box_height"),
+    hinged: gv("f_hinged"), cl_pivot: gv("f_cl_pivot"),
+    // Trailer body dims (both mode)
+    t_material: gv("f_t_material"), t_body_length: gv("f_t_body_length"),
+    t_body_width: gv("f_t_body_width"), t_body_height: gv("f_t_body_height"),
+    t_mainrunner_width: gv("f_t_mainrunner_width"), t_hoist_box_height: gv("f_t_hoist_box_height"),
+    t_hinged: gv("f_t_hinged"), t_cl_pivot: gv("f_t_cl_pivot"),
+    // Controls
+    pto: gv("f_pto"), ctrl_truck_hoist: gv("f_ctrl_truck_hoist"),
+    ctrl_trailer_hoist: gv("f_ctrl_trailer_hoist"), ctrl_truck_tailgate: gv("f_ctrl_truck_tailgate"),
+    ctrl_trailer_tailgate: gv("f_ctrl_trailer_tailgate"), ctrl_lockflap: gv("f_ctrl_lockflap"),
+    ctrl_truck_tarp: gv("f_ctrl_truck_tarp"), ctrl_trailer_tarp: gv("f_ctrl_trailer_tarp"),
+    // Subframe (truck)
+    subframe_length: gv("f_subframe_length"), subframe_width: gv("f_subframe_width"),
+    hoist_model: gv("f_hoist_model"), valve_bank: gv("f_valve_bank"),
+    oil_tank_type: gv("f_oil_tank_type"), oil_tank_location: gv("f_oil_tank_location"),
+    pto_type: gv("f_pto_type"), pump_type: gv("f_pump_type"),
+    // Chassis (trailer)
+    chassis_length: gv("f_chassis_length"), wheelbase: gv("f_wheelbase"),
+    drawbar_length: gv("f_drawbar_length"), t_hoist_model: gv("f_t_hoist_model"),
+    // Sheets
+    floor_sheets: gv("f_floor_sheets"), side_sheets: gv("f_side_sheets"),
+    front_sheet: gv("f_front_sheet"), tailgate_sheet: gv("f_tailgate_sheet"),
+    // Accessories
+    rope_rails: gc("f_rope_rails"), toolbox_lhs: gc("f_toolbox_lhs"), toolbox_rhs: gc("f_toolbox_rhs"),
+    water_cooler: gc("f_water_cooler"), ladder: gc("f_ladder"), tow_hitch: gc("f_tow_hitch"),
+    headboard: gc("f_headboard"), cab_guard: gc("f_cab_guard"), load_pegs: gc("f_load_pegs"),
+    underbody_toolbox: gc("f_underbody_toolbox"), grain_sides: gc("f_grain_sides"),
+    mesh_extensions: gc("f_mesh_extensions"), drop_sides: gc("f_drop_sides"),
+    side_pegs: gc("f_side_pegs"), rear_bumper: gc("f_rear_bumper"),
+    tailgate_type: gv("f_tailgate_type"), tailgate_lights: gv("f_tailgate_lights"),
+    // Tarp
+    tarp_type: gv("f_tarp_type"), tarp_make: gv("f_tarp_make"),
+    t_tarp_type: gv("f_t_tarp_type"), t_tarp_make: gv("f_t_tarp_make"),
+    // Running gear
+    axle_make: gv("f_axle_make"), axle_type: gv("f_axle_type"),
+    axle_rating: gv("f_axle_rating"), num_axles: gv("f_num_axles"),
+    suspension: gv("f_suspension"), tyres: gv("f_tyres"),
+    wheels: gv("f_wheels"), brakes: gv("f_brakes"),
+    spare_carrier: gv("f_spare_carrier"), landing_legs: gv("f_landing_legs"),
+    // Couplings
+    coupling_type: gv("f_coupling_type"), coupling_height: gv("f_coupling_height"),
+    kingpin: gv("f_kingpin"), pintle_hook: gv("f_pintle_hook"),
+    d_value: gv("f_d_value"), towbar_vertical: gv("f_towbar_vertical"),
+    towbar_type: gv("f_towbar_type"), pintle_eye_height: gv("f_pintle_eye_height"),
+    // Chassis accessories
+    mudguards: gc("f_mudguards"), spray_suppression: gc("f_spray_suppression"),
+    side_markers: gc("f_side_markers"), reflectors: gc("f_reflectors"),
+    air_reservoir: gc("f_air_reservoir"), water_tank: gc("f_water_tank"),
+    fuel_tank: gc("f_fuel_tank"), air_dryer: gc("f_air_dryer"),
+    belly_plates: gc("f_belly_plates"), chassis_toolbox: gc("f_chassis_toolbox"),
+    jockey_wheel: gc("f_jockey_wheel"), safety_chains: gc("f_safety_chains"),
+    // Paint/lights
+    body_paint: gv("f_body_paint"), chassis_paint: gv("f_chassis_paint"),
+    drawbar_paint: gv("f_drawbar_paint"), paint_code: gv("f_paint_code"),
+    rear_lights: gv("f_rear_lights"), side_marker_lights: gv("f_side_marker_lights"),
+    work_lights: gv("f_work_lights"), beacon: gv("f_beacon"),
+    mudflap_type: gv("f_mudflap_type"), mudflap_brackets: gv("f_mudflap_brackets"),
+    // Notes
+    notes: gv("f_notes"), quote_lines: gv("f_quote_lines")
+  };
+}
+
+// Cell helper functions
+var BLUE_FILL = {type:"pattern",pattern:"solid",fgColor:{argb:"FF1F4E79"}};
+var LIGHT_FILL = {type:"pattern",pattern:"solid",fgColor:{argb:"FFD9E2F3"}};
+var YELLOW_FILL = {type:"pattern",pattern:"solid",fgColor:{argb:"FFFFFF00"}};
+var WHITE_FILL = {type:"pattern",pattern:"solid",fgColor:{argb:"FFFFFFFF"}};
+var THIN_BORDER = {top:{style:"thin"},left:{style:"thin"},bottom:{style:"thin"},right:{style:"thin"}};
+
+function hdr(ws, row, col, text, span) {
+  span = span || 1;
+  var cell = ws.getCell(row, col);
+  cell.value = text;
+  cell.font = {bold:true, color:{argb:"FFFFFFFF"}, size:11};
+  cell.fill = BLUE_FILL;
+  cell.border = THIN_BORDER;
+  cell.alignment = {horizontal:"center", vertical:"middle"};
+  if (span > 1) ws.mergeCells(row, col, row, col + span - 1);
+}
+
+function lbl(ws, row, col, text) {
+  var cell = ws.getCell(row, col);
+  cell.value = text;
+  cell.font = {bold:true, size:10};
+  cell.fill = LIGHT_FILL;
+  cell.border = THIN_BORDER;
+  cell.alignment = {vertical:"middle"};
+}
+
+function val(ws, row, col, text, span) {
+  span = span || 1;
+  var cell = ws.getCell(row, col);
+  cell.value = text || "";
+  cell.font = {size:10};
+  cell.border = THIN_BORDER;
+  cell.alignment = {vertical:"middle", wrapText:true};
+  if (span > 1) ws.mergeCells(row, col, row, col + span - 1);
+}
+
+function yn(v) { return v ? "YES" : "NO"; }
+
+function sectionTitle(ws, row, col, text, span) {
+  span = span || 4;
+  hdr(ws, row, col, text, span);
+}
+
+function addHeaderBlock(ws, d, title) {
+  sectionTitle(ws, 1, 1, title, 4);
+  lbl(ws, 2, 1, "Customer"); val(ws, 2, 2, d.customer);
+  lbl(ws, 2, 3, "Dealer"); val(ws, 2, 4, d.dealer);
+  lbl(ws, 3, 1, "Job Number"); val(ws, 3, 2, d.job_number);
+  lbl(ws, 3, 3, "Quote Number"); val(ws, 3, 4, d.quote_number);
+  lbl(ws, 4, 1, "Issue Date"); val(ws, 4, 2, d.issue_date);
+  lbl(ws, 4, 3, "Revision"); val(ws, 4, 4, d.revision);
+  lbl(ws, 5, 1, "Prepared By"); val(ws, 5, 2, d.prepared_by);
+  lbl(ws, 5, 3, "Sales Person"); val(ws, 5, 4, d.sales_person);
+  return 6;
+}
+
+function setColWidths(ws, widths) {
+  widths.forEach(function(w, i) { ws.getColumn(i+1).width = w; });
+}
+
+async function generateExcel() {
+  try {
+    showStatus("generateStatus", "Generating Excel...", "info");
+    var d = collectFormData();
+    var wb = new ExcelJS.Workbook();
+    
+    if (d.job_type === "trailer") {
+      createTrailerSelectionSheet(wb, d);
+      createTrailerBodySheet(wb, d);
+      createTrailerChassisSheet(wb, d);
+      createTrailerFitoutSheet(wb, d);
+      createTrailerPaintSheet(wb, d);
+    } else if (d.job_type === "truck") {
+      createTruckSelectionSheet(wb, d);
+      createTruckBodySheet(wb, d);
+      createTruckSubframeSheet(wb, d);
+      createTruckFitoutSheet(wb, d);
+      createTruckPaintSheet(wb, d);
+      createTruckOrderSheet(wb, d);
+    } else {
+      // Both: truck sheets then trailer sheets (prefixed to avoid duplicate names)
+      createTruckSelectionSheet(wb, d, "Truck ");
+      createTruckBodySheet(wb, d, "Truck ");
+      createTruckSubframeSheet(wb, d);
+      createTruckFitoutSheet(wb, d, "Truck ");
+      createTruckPaintSheet(wb, d, "Truck ");
+      createTruckOrderSheet(wb, d);
+      createTrailerSelectionSheet(wb, d, "Trailer ");
+      createTrailerBodySheet(wb, d, "Trailer ");
+      createTrailerChassisSheet(wb, d);
+      createTrailerFitoutSheet(wb, d, "Trailer ");
+      createTrailerPaintSheet(wb, d, "Trailer ");
+    }
+    
+    var buf = await wb.xlsx.writeBuffer();
+    var blob = new Blob([buf], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var fn = (d.job_number || "JobSheet") + "_" + (d.customer || "Customer").replace(/[^a-zA-Z0-9]/g,"_") + ".xlsx";
+    a.href = url; a.download = fn; a.click();
+    URL.revokeObjectURL(url);
+    showStatus("generateStatus", "Excel generated: " + fn, "ok");
+  } catch(err) {
+    showStatus("generateStatus", "Generation error: " + err.message, "error");
+    console.error(err);
+  }
+}
+
+// =================== TRAILER SHEETS ===================
+function createTrailerSelectionSheet(wb, d, prefix) {
+  var ws = wb.addWorksheet((prefix || "") + "Selection");
+  setColWidths(ws, [22, 30, 22, 30]);
+  var r = addHeaderBlock(ws, d, "TRAILER SELECTION SHEET");
+  
+  // Trailer info
+  sectionTitle(ws, r, 1, "TRAILER DETAILS", 4); r++;
+  lbl(ws, r, 1, "Trailer Model"); val(ws, r, 2, d.trailer_model);
+  lbl(ws, r, 3, "Trailer Type"); val(ws, r, 4, d.trailer_type); r++;
+  lbl(ws, r, 1, "Trailer Serial"); val(ws, r, 2, d.trailer_serial);
+  lbl(ws, r, 3, "Trailer VIN"); val(ws, r, 4, d.trailer_vin); r++;
+  
+  // Body dims - use trailer-specific if both mode
+  var mat = d.job_type === "both" ? d.t_material : d.material;
+  var bl = d.job_type === "both" ? d.t_body_length : d.body_length;
+  var bw = d.job_type === "both" ? d.t_body_width : d.body_width;
+  var bh = d.job_type === "both" ? d.t_body_height : d.body_height;
+  var mr = d.job_type === "both" ? d.t_mainrunner_width : d.mainrunner_width;
+  var hbh = d.job_type === "both" ? d.t_hoist_box_height : d.hoist_box_height;
+  var hg = d.job_type === "both" ? d.t_hinged : d.hinged;
+  var cp = d.job_type === "both" ? d.t_cl_pivot : d.cl_pivot;
+  
+  sectionTitle(ws, r, 1, "BODY DIMENSIONS", 4); r++;
+  lbl(ws, r, 1, "Material"); val(ws, r, 2, mat);
+  lbl(ws, r, 3, "Body Length"); val(ws, r, 4, bl); r++;
+  lbl(ws, r, 1, "Body Width"); val(ws, r, 2, bw);
+  lbl(ws, r, 3, "Body Height"); val(ws, r, 4, bh); r++;
+  lbl(ws, r, 1, "Mainrunner Width"); val(ws, r, 2, mr);
+  lbl(ws, r, 3, "Hoist Box Height"); val(ws, r, 4, hbh); r++;
+  lbl(ws, r, 1, "Hinged"); val(ws, r, 2, hg);
+  lbl(ws, r, 3, "C/L Pivot to Rear"); val(ws, r, 4, cp); r++;
+  
+  // Chassis
+  sectionTitle(ws, r, 1, "CHASSIS", 4); r++;
+  lbl(ws, r, 1, "Chassis Length"); val(ws, r, 2, d.chassis_length);
+  lbl(ws, r, 3, "Wheelbase"); val(ws, r, 4, d.wheelbase); r++;
+  lbl(ws, r, 1, "Drawbar Length"); val(ws, r, 2, d.drawbar_length);
+  lbl(ws, r, 3, "Hoist Model"); val(ws, r, 4, d.t_hoist_model); r++;
+  
+  // Running gear
+  sectionTitle(ws, r, 1, "RUNNING GEAR", 4); r++;
+  lbl(ws, r, 1, "Axle Make"); val(ws, r, 2, d.axle_make);
+  lbl(ws, r, 3, "Axle Type"); val(ws, r, 4, d.axle_type); r++;
+  lbl(ws, r, 1, "Axle Rating"); val(ws, r, 2, d.axle_rating);
+  lbl(ws, r, 3, "No. of Axles"); val(ws, r, 4, d.num_axles); r++;
+  lbl(ws, r, 1, "Suspension"); val(ws, r, 2, d.suspension);
+  lbl(ws, r, 3, "Tyres"); val(ws, r, 4, d.tyres); r++;
+  lbl(ws, r, 1, "Wheels"); val(ws, r, 2, d.wheels);
+  lbl(ws, r, 3, "Brakes"); val(ws, r, 4, d.brakes); r++;
+  lbl(ws, r, 1, "Spare Carrier"); val(ws, r, 2, d.spare_carrier);
+  lbl(ws, r, 3, "Landing Legs"); val(ws, r, 4, d.landing_legs); r++;
+  
+  // Couplings
+  sectionTitle(ws, r, 1, "COUPLINGS", 4); r++;
+  lbl(ws, r, 1, "Coupling Type"); val(ws, r, 2, d.coupling_type);
+  lbl(ws, r, 3, "Coupling Height"); val(ws, r, 4, d.coupling_height); r++;
+  lbl(ws, r, 1, "Kingpin"); val(ws, r, 2, d.kingpin);
+  lbl(ws, r, 3, "Pintle Hook"); val(ws, r, 4, d.pintle_hook); r++;
+  lbl(ws, r, 1, "D Value (kN)"); val(ws, r, 2, d.d_value);
+  lbl(ws, r, 3, "Towbar Vertical"); val(ws, r, 4, d.towbar_vertical); r++;
+  
+  // Sheets
+  sectionTitle(ws, r, 1, "SHEET SPECS", 4); r++;
+  lbl(ws, r, 1, "Floor"); val(ws, r, 2, d.floor_sheets);
+  lbl(ws, r, 3, "Sides"); val(ws, r, 4, d.side_sheets); r++;
+  lbl(ws, r, 1, "Front"); val(ws, r, 2, d.front_sheet);
+  lbl(ws, r, 3, "Tailgate"); val(ws, r, 4, d.tailgate_sheet); r++;
+  
+  // Tarp
+  var tt = d.job_type === "both" ? d.t_tarp_type : d.tarp_type;
+  var tm = d.job_type === "both" ? d.t_tarp_make : d.tarp_make;
+  sectionTitle(ws, r, 1, "TARP", 4); r++;
+  lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, tt);
+  lbl(ws, r, 3, "Tarp Make/Model"); val(ws, r, 4, tm); r++;
+  
+  // Notes
+  sectionTitle(ws, r, 1, "NOTES", 4); r++;
+  val(ws, r, 1, d.notes, 4); r++;
+}
+
+function createTrailerBodySheet(wb, d, prefix) {
+  var ws = wb.addWorksheet((prefix || "") + "Body Job Sheet");
+  setColWidths(ws, [22, 30, 22, 30]);
+  var r = addHeaderBlock(ws, d, "TRAILER BODY JOB SHEET");
+  
+  var mat = d.job_type === "both" ? d.t_material : d.material;
+  var bl = d.job_type === "both" ? d.t_body_length : d.body_length;
+  var bw = d.job_type === "both" ? d.t_body_width : d.body_width;
+  var bh = d.job_type === "both" ? d.t_body_height : d.body_height;
+  var mr = d.job_type === "both" ? d.t_mainrunner_width : d.mainrunner_width;
+  var hbh = d.job_type === "both" ? d.t_hoist_box_height : d.hoist_box_height;
+  var hg = d.job_type === "both" ? d.t_hinged : d.hinged;
+  var cp = d.job_type === "both" ? d.t_cl_pivot : d.cl_pivot;
+  
+  sectionTitle(ws, r, 1, "BODY DIMENSIONS", 4); r++;
+  lbl(ws, r, 1, "Material"); val(ws, r, 2, mat);
+  lbl(ws, r, 3, "Body Length"); val(ws, r, 4, bl); r++;
+  lbl(ws, r, 1, "Body Width"); val(ws, r, 2, bw);
+  lbl(ws, r, 3, "Body Height"); val(ws, r, 4, bh); r++;
+  lbl(ws, r, 1, "Mainrunner Width"); val(ws, r, 2, mr);
+  lbl(ws, r, 3, "Hoist Box Height"); val(ws, r, 4, hbh); r++;
+  lbl(ws, r, 1, "Hinged"); val(ws, r, 2, hg);
+  lbl(ws, r, 3, "C/L Pivot to Rear"); val(ws, r, 4, cp); r++;
+  
+  sectionTitle(ws, r, 1, "SHEET SPECS", 4); r++;
+  lbl(ws, r, 1, "Floor"); val(ws, r, 2, d.floor_sheets);
+  lbl(ws, r, 3, "Sides"); val(ws, r, 4, d.side_sheets); r++;
+  lbl(ws, r, 1, "Front"); val(ws, r, 2, d.front_sheet);
+  lbl(ws, r, 3, "Tailgate"); val(ws, r, 4, d.tailgate_sheet); r++;
+  
+  sectionTitle(ws, r, 1, "ACCESSORIES", 4); r++;
+  lbl(ws, r, 1, "Tailgate Type"); val(ws, r, 2, d.tailgate_type);
+  lbl(ws, r, 3, "Tailgate Lights"); val(ws, r, 4, d.tailgate_lights); r++;
+  lbl(ws, r, 1, "Headboard"); val(ws, r, 2, yn(d.headboard));
+  lbl(ws, r, 3, "Cab Guard"); val(ws, r, 4, yn(d.cab_guard)); r++;
+  lbl(ws, r, 1, "Rope Rails"); val(ws, r, 2, yn(d.rope_rails));
+  lbl(ws, r, 3, "Load Pegs"); val(ws, r, 4, yn(d.load_pegs)); r++;
+  lbl(ws, r, 1, "Toolbox LHS"); val(ws, r, 2, yn(d.toolbox_lhs));
+  lbl(ws, r, 3, "Toolbox RHS"); val(ws, r, 4, yn(d.toolbox_rhs)); r++;
+  lbl(ws, r, 1, "Water Cooler"); val(ws, r, 2, yn(d.water_cooler));
+  lbl(ws, r, 3, "Ladder"); val(ws, r, 4, yn(d.ladder)); r++;
+  lbl(ws, r, 1, "Grain Sides"); val(ws, r, 2, yn(d.grain_sides));
+  lbl(ws, r, 3, "Mesh Extensions"); val(ws, r, 4, yn(d.mesh_extensions)); r++;
+  lbl(ws, r, 1, "Drop Sides"); val(ws, r, 2, yn(d.drop_sides));
+  lbl(ws, r, 3, "Side Pegs"); val(ws, r, 4, yn(d.side_pegs)); r++;
+  lbl(ws, r, 1, "Rear Bumper"); val(ws, r, 2, yn(d.rear_bumper)); r++;
+  
+  sectionTitle(ws, r, 1, "NOTES", 4); r++;
+  val(ws, r, 1, d.notes, 4); r++;
+}
+
+function createTrailerChassisSheet(wb, d) {
+  var ws = wb.addWorksheet("Chassis Job Sheet");
+  setColWidths(ws, [22, 30, 22, 30]);
+  var r = addHeaderBlock(ws, d, "TRAILER CHASSIS JOB SHEET");
+  
+  sectionTitle(ws, r, 1, "CHASSIS", 4); r++;
+  lbl(ws, r, 1, "Chassis Length"); val(ws, r, 2, d.chassis_length);
+  lbl(ws, r, 3, "Wheelbase"); val(ws, r, 4, d.wheelbase); r++;
+  lbl(ws, r, 1, "Drawbar Length"); val(ws, r, 2, d.drawbar_length);
+  lbl(ws, r, 3, "Hoist Model"); val(ws, r, 4, d.t_hoist_model); r++;
+  
+  sectionTitle(ws, r, 1, "RUNNING GEAR", 4); r++;
+  lbl(ws, r, 1, "Axle Make"); val(ws, r, 2, d.axle_make);
+  lbl(ws, r, 3, "Axle Type"); val(ws, r, 4, d.axle_type); r++;
+  lbl(ws, r, 1, "Axle Rating"); val(ws, r, 2, d.axle_rating);
+  lbl(ws, r, 3, "No. of Axles"); val(ws, r, 4, d.num_axles); r++;
+  lbl(ws, r, 1, "Suspension"); val(ws, r, 2, d.suspension);
+  lbl(ws, r, 3, "Tyres"); val(ws, r, 4, d.tyres); r++;
+  lbl(ws, r, 1, "Wheels"); val(ws, r, 2, d.wheels);
+  lbl(ws, r, 3, "Brakes"); val(ws, r, 4, d.brakes); r++;
+  lbl(ws, r, 1, "Spare Carrier"); val(ws, r, 2, d.spare_carrier);
+  lbl(ws, r, 3, "Landing Legs"); val(ws, r, 4, d.landing_legs); r++;
+  
+  sectionTitle(ws, r, 1, "COUPLINGS", 4); r++;
+  lbl(ws, r, 1, "Coupling Type"); val(ws, r, 2, d.coupling_type);
+  lbl(ws, r, 3, "Coupling Height"); val(ws, r, 4, d.coupling_height); r++;
+  lbl(ws, r, 1, "Kingpin"); val(ws, r, 2, d.kingpin);
+  lbl(ws, r, 3, "Pintle Hook"); val(ws, r, 4, d.pintle_hook); r++;
+  lbl(ws, r, 1, "D Value (kN)"); val(ws, r, 2, d.d_value);
+  lbl(ws, r, 3, "Towbar Vertical"); val(ws, r, 4, d.towbar_vertical); r++;
+  lbl(ws, r, 1, "Towbar Type"); val(ws, r, 2, d.towbar_type);
+  lbl(ws, r, 3, "Pintle Eye Height"); val(ws, r, 4, d.pintle_eye_height); r++;
+  
+  sectionTitle(ws, r, 1, "CHASSIS ACCESSORIES", 4); r++;
+  lbl(ws, r, 1, "Mudguards"); val(ws, r, 2, yn(d.mudguards));
+  lbl(ws, r, 3, "Spray Suppression"); val(ws, r, 4, yn(d.spray_suppression)); r++;
+  lbl(ws, r, 1, "Air Reservoir"); val(ws, r, 2, yn(d.air_reservoir));
+  lbl(ws, r, 3, "Air Dryer"); val(ws, r, 4, yn(d.air_dryer)); r++;
+  lbl(ws, r, 1, "Belly Plates"); val(ws, r, 2, yn(d.belly_plates));
+  lbl(ws, r, 3, "Chassis Toolbox"); val(ws, r, 4, yn(d.chassis_toolbox)); r++;
+  lbl(ws, r, 1, "Jockey Wheel"); val(ws, r, 2, yn(d.jockey_wheel));
+  lbl(ws, r, 3, "Safety Chains"); val(ws, r, 4, yn(d.safety_chains)); r++;
+  lbl(ws, r, 1, "Water Tank"); val(ws, r, 2, yn(d.water_tank));
+  lbl(ws, r, 3, "Fuel Tank"); val(ws, r, 4, yn(d.fuel_tank)); r++;
+  
+  sectionTitle(ws, r, 1, "NOTES", 4); r++;
+  val(ws, r, 1, d.notes, 4); r++;
+}
+
+function createTrailerFitoutSheet(wb, d, prefix) {
+  var ws = wb.addWorksheet((prefix || "") + "Fitout Job Sheet");
+  setColWidths(ws, [22, 30, 22, 30]);
+  var r = addHeaderBlock(ws, d, "TRAILER FITOUT JOB SHEET");
+  
+  sectionTitle(ws, r, 1, "CONTROLS", 4); r++;
+  lbl(ws, r, 1, "PTO"); val(ws, r, 2, d.pto);
+  lbl(ws, r, 3, "Truck Hoist"); val(ws, r, 4, d.ctrl_truck_hoist); r++;
+  lbl(ws, r, 1, "Trailer Hoist"); val(ws, r, 2, d.ctrl_trailer_hoist);
+  lbl(ws, r, 3, "Truck Tailgate"); val(ws, r, 4, d.ctrl_truck_tailgate); r++;
+  lbl(ws, r, 1, "Trailer Tailgate"); val(ws, r, 2, d.ctrl_trailer_tailgate);
+  lbl(ws, r, 3, "Trailer Lockflap"); val(ws, r, 4, d.ctrl_lockflap); r++;
+  lbl(ws, r, 1, "Truck Tarp"); val(ws, r, 2, d.ctrl_truck_tarp);
+  lbl(ws, r, 3, "Trailer Tarp"); val(ws, r, 4, d.ctrl_trailer_tarp); r++;
+  
+  var tt = d.job_type === "both" ? d.t_tarp_type : d.tarp_type;
+  var tm = d.job_type === "both" ? d.t_tarp_make : d.tarp_make;
+  sectionTitle(ws, r, 1, "TARP", 4); r++;
+  lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, tt);
+  lbl(ws, r, 3, "Tarp Make/Model"); val(ws, r, 4, tm); r++;
+  
+  sectionTitle(ws, r, 1, "ELECTRICAL", 4); r++;
+  lbl(ws, r, 1, "Rear Lights"); val(ws, r, 2, d.rear_lights);
+  lbl(ws, r, 3, "Side Markers"); val(ws, r, 4, d.side_marker_lights); r++;
+  lbl(ws, r, 1, "Work Lights"); val(ws, r, 2, d.work_lights);
+  lbl(ws, r, 3, "Beacon"); val(ws, r, 4, d.beacon); r++;
+  lbl(ws, r, 1, "Tailgate Lights"); val(ws, r, 2, d.tailgate_lights); r++;
+  
+  sectionTitle(ws, r, 1, "NOTES", 4); r++;
+  val(ws, r, 1, d.notes, 4); r++;
+}
+
+function createTrailerPaintSheet(wb, d, prefix) {
+  var ws = wb.addWorksheet((prefix || "") + "Paint Job Sheet");
+  setColWidths(ws, [22, 30, 22, 30]);
+  var r = addHeaderBlock(ws, d, "TRAILER PAINT JOB SHEET");
+  
+  sectionTitle(ws, r, 1, "PAINT", 4); r++;
+  lbl(ws, r, 1, "Body Paint"); val(ws, r, 2, d.body_paint);
+  lbl(ws, r, 3, "Chassis Paint"); val(ws, r, 4, d.chassis_paint); r++;
+  lbl(ws, r, 1, "Drawbar Paint"); val(ws, r, 2, d.drawbar_paint);
+  lbl(ws, r, 3, "Paint Code"); val(ws, r, 4, d.paint_code); r++;
+  
+  sectionTitle(ws, r, 1, "MUDFLAPS", 4); r++;
+  lbl(ws, r, 1, "Mudflap Type"); val(ws, r, 2, d.mudflap_type);
+  lbl(ws, r, 3, "Mudflap Brackets"); val(ws, r, 4, d.mudflap_brackets); r++;
+  
+  sectionTitle(ws, r, 1, "REFLECTORS & MARKERS", 4); r++;
+  lbl(ws, r, 1, "Side Markers"); val(ws, r, 2, yn(d.side_markers));
+  lbl(ws, r, 3, "Reflectors"); val(ws, r, 4, yn(d.reflectors)); r++;
+  
+  sectionTitle(ws, r, 1, "NOTES", 4); r++;
+  val(ws, r, 1, d.notes, 4); r++;
+}
+
+// =================== TRUCK SHEETS ===================
+function createTruckSelectionSheet(wb, d, prefix) {
+  var ws = wb.addWorksheet((prefix || "") + "Selection");
+  setColWidths(ws, [22, 30, 22, 30]);
+  var r = addHeaderBlock(ws, d, "RIGID BODY SELECTION SHEET");
+  
+  sectionTitle(ws, r, 1, "TRUCK DETAILS", 4); r++;
+  lbl(ws, r, 1, "Truck Make"); val(ws, r, 2, d.truck_make);
+  lbl(ws, r, 3, "Truck Model"); val(ws, r, 4, d.truck_model); r++;
+  lbl(ws, r, 1, "Truck VIN"); val(ws, r, 2, d.truck_vin);
+  lbl(ws, r, 3, "Sales Drawing"); val(ws, r, 4, d.sales_drawing); r++;
+  
+  sectionTitle(ws, r, 1, "BODY DIMENSIONS", 4); r++;
+  lbl(ws, r, 1, "Material"); val(ws, r, 2, d.material);
+  lbl(ws, r, 3, "Body Length"); val(ws, r, 4, d.body_length); r++;
+  lbl(ws, r, 1, "Body Width"); val(ws, r, 2, d.body_width);
+  lbl(ws, r, 3, "Body Height"); val(ws, r, 4, d.body_height); r++;
+  lbl(ws, r, 1, "Mainrunner Width"); val(ws, r, 2, d.mainrunner_width);
+  lbl(ws, r, 3, "Hoist Box Height"); val(ws, r, 4, d.hoist_box_height); r++;
+  lbl(ws, r, 1, "Hinged"); val(ws, r, 2, d.hinged);
+  lbl(ws, r, 3, "C/L Pivot to Rear"); val(ws, r, 4, d.cl_pivot); r++;
+  
+  sectionTitle(ws, r, 1, "SHEET SPECS", 4); r++;
+  lbl(ws, r, 1, "Floor"); val(ws, r, 2, d.floor_sheets);
+  lbl(ws, r, 3, "Sides"); val(ws, r, 4, d.side_sheets); r++;
+  lbl(ws, r, 1, "Front"); val(ws, r, 2, d.front_sheet);
+  lbl(ws, r, 3, "Tailgate"); val(ws, r, 4, d.tailgate_sheet); r++;
+  
+  sectionTitle(ws, r, 1, "SUBFRAME / HYDRAULICS", 4); r++;
+  lbl(ws, r, 1, "Subframe Length"); val(ws, r, 2, d.subframe_length);
+  lbl(ws, r, 3, "Subframe Width"); val(ws, r, 4, d.subframe_width); r++;
+  lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
+  lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, d.valve_bank); r++;
+  lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
+  lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
+  lbl(ws, r, 1, "PTO Type"); val(ws, r, 2, d.pto_type);
+  lbl(ws, r, 3, "Pump Type"); val(ws, r, 4, d.pump_type); r++;
+  
+  sectionTitle(ws, r, 1, "CONTROLS", 4); r++;
+  lbl(ws, r, 1, "PTO"); val(ws, r, 2, d.pto);
+  lbl(ws, r, 3, "Truck Hoist"); val(ws, r, 4, d.ctrl_truck_hoist); r++;
+  lbl(ws, r, 1, "Truck Tailgate"); val(ws, r, 2, d.ctrl_truck_tailgate);
+  lbl(ws, r, 3, "Truck Tarp"); val(ws, r, 4, d.ctrl_truck_tarp); r++;
+  
+  sectionTitle(ws, r, 1, "TARP", 4); r++;
+  lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);
+  lbl(ws, r, 3, "Tarp Make/Model"); val(ws, r, 4, d.tarp_make); r++;
+  
+  sectionTitle(ws, r, 1, "ACCESSORIES", 4); r++;
+  lbl(ws, r, 1, "Tailgate Type"); val(ws, r, 2, d.tailgate_type);
+  lbl(ws, r, 3, "Tailgate Lights"); val(ws, r, 4, d.tailgate_lights); r++;
+  lbl(ws, r, 1, "Headboard"); val(ws, r, 2, yn(d.headboard));
+  lbl(ws, r, 3, "Cab Guard"); val(ws, r, 4, yn(d.cab_guard)); r++;
+  lbl(ws, r, 1, "Rope Rails"); val(ws, r, 2, yn(d.rope_rails));
+  lbl(ws, r, 3, "Load Pegs"); val(ws, r, 4, yn(d.load_pegs)); r++;
+  lbl(ws, r, 1, "Toolbox LHS"); val(ws, r, 2, yn(d.toolbox_lhs));
+  lbl(ws, r, 3, "Toolbox RHS"); val(ws, r, 4, yn(d.toolbox_rhs)); r++;
+  
+  sectionTitle(ws, r, 1, "PAINT", 4); r++;
+  lbl(ws, r, 1, "Body Paint"); val(ws, r, 2, d.body_paint);
+  lbl(ws, r, 3, "Paint Code"); val(ws, r, 4, d.paint_code); r++;
+  
+  sectionTitle(ws, r, 1, "NOTES", 4); r++;
+  val(ws, r, 1, d.notes, 4); r++;
+}
+
+function createTruckBodySheet(wb, d, prefix) {
+  var ws = wb.addWorksheet((prefix || "") + "Body Job Sheet");
+  setColWidths(ws, [22, 30, 22, 30]);
+  var r = addHeaderBlock(ws, d, "RIGID BODY JOB SHEET");
+  
+  sectionTitle(ws, r, 1, "TRUCK DETAILS", 4); r++;
+  lbl(ws, r, 1, "Truck Make"); val(ws, r, 2, d.truck_make);
+  lbl(ws, r, 3, "Truck Model"); val(ws, r, 4, d.truck_model); r++;
+  lbl(ws, r, 1, "Truck VIN"); val(ws, r, 2, d.truck_vin); r++;
+  
+  sectionTitle(ws, r, 1, "BODY DIMENSIONS", 4); r++;
+  lbl(ws, r, 1, "Material"); val(ws, r, 2, d.material);
+  lbl(ws, r, 3, "Body Length"); val(ws, r, 4, d.body_length); r++;
+  lbl(ws, r, 1, "Body Width"); val(ws, r, 2, d.body_width);
+  lbl(ws, r, 3, "Body Height"); val(ws, r, 4, d.body_height); r++;
+  lbl(ws, r, 1, "Mainrunner Width"); val(ws, r, 2, d.mainrunner_width);
+  lbl(ws, r, 3, "Hoist Box Height"); val(ws, r, 4, d.hoist_box_height); r++;
+  lbl(ws, r, 1, "Hinged"); val(ws, r, 2, d.hinged);
+  lbl(ws, r, 3, "C/L Pivot to Rear"); val(ws, r, 4, d.cl_pivot); r++;
+  
+  sectionTitle(ws, r, 1, "SHEET SPECS", 4); r++;
+  lbl(ws, r, 1, "Floor"); val(ws, r, 2, d.floor_sheets);
+  lbl(ws, r, 3, "Sides"); val(ws, r, 4, d.side_sheets); r++;
+  lbl(ws, r, 1, "Front"); val(ws, r, 2, d.front_sheet);
+  lbl(ws, r, 3, "Tailgate"); val(ws, r, 4, d.tailgate_sheet); r++;
+  
+  sectionTitle(ws, r, 1, "ACCESSORIES", 4); r++;
+  lbl(ws, r, 1, "Tailgate Type"); val(ws, r, 2, d.tailgate_type);
+  lbl(ws, r, 3, "Tailgate Lights"); val(ws, r, 4, d.tailgate_lights); r++;
+  lbl(ws, r, 1, "Headboard"); val(ws, r, 2, yn(d.headboard));
+  lbl(ws, r, 3, "Cab Guard"); val(ws, r, 4, yn(d.cab_guard)); r++;
+  lbl(ws, r, 1, "Rope Rails"); val(ws, r, 2, yn(d.rope_rails));
+  lbl(ws, r, 3, "Load Pegs"); val(ws, r, 4, yn(d.load_pegs)); r++;
+  lbl(ws, r, 1, "Toolbox LHS"); val(ws, r, 2, yn(d.toolbox_lhs));
+  lbl(ws, r, 3, "Toolbox RHS"); val(ws, r, 4, yn(d.toolbox_rhs)); r++;
+  lbl(ws, r, 1, "Water Cooler"); val(ws, r, 2, yn(d.water_cooler));
+  lbl(ws, r, 3, "Ladder"); val(ws, r, 4, yn(d.ladder)); r++;
+  lbl(ws, r, 1, "Underbody Toolbox"); val(ws, r, 2, yn(d.underbody_toolbox));
+  lbl(ws, r, 3, "Rear Bumper"); val(ws, r, 4, yn(d.rear_bumper)); r++;
+  
+  sectionTitle(ws, r, 1, "NOTES", 4); r++;
+  val(ws, r, 1, d.notes, 4); r++;
+}
+
+function createTruckSubframeSheet(wb, d) {
+  var ws = wb.addWorksheet("Subframe Job Sheet");
+  setColWidths(ws, [22, 30, 22, 30]);
+  var r = addHeaderBlock(ws, d, "RIGID BODY SUBFRAME JOB SHEET");
+  
+  sectionTitle(ws, r, 1, "TRUCK DETAILS", 4); r++;
+  lbl(ws, r, 1, "Truck Make"); val(ws, r, 2, d.truck_make);
+  lbl(ws, r, 3, "Truck Model"); val(ws, r, 4, d.truck_model); r++;
+  lbl(ws, r, 1, "Truck VIN"); val(ws, r, 2, d.truck_vin); r++;
+  
+  sectionTitle(ws, r, 1, "SUBFRAME", 4); r++;
+  lbl(ws, r, 1, "Subframe Length"); val(ws, r, 2, d.subframe_length);
+  lbl(ws, r, 3, "Subframe Width"); val(ws, r, 4, d.subframe_width); r++;
+  
+  sectionTitle(ws, r, 1, "HYDRAULICS", 4); r++;
+  lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
+  lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, d.valve_bank); r++;
+  lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
+  lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
+  lbl(ws, r, 1, "PTO Type"); val(ws, r, 2, d.pto_type);
+  lbl(ws, r, 3, "Pump Type"); val(ws, r, 4, d.pump_type); r++;
+  
+  sectionTitle(ws, r, 1, "NOTES", 4); r++;
+  val(ws, r, 1, d.notes, 4); r++;
+}
+
+function createTruckFitoutSheet(wb, d, prefix) {
+  var ws = wb.addWorksheet((prefix || "") + "Fitout Job Sheet");
+  setColWidths(ws, [22, 30, 22, 30]);
+  var r = addHeaderBlock(ws, d, "RIGID BODY FITOUT JOB SHEET");
+  
+  sectionTitle(ws, r, 1, "TRUCK DETAILS", 4); r++;
+  lbl(ws, r, 1, "Truck Make"); val(ws, r, 2, d.truck_make);
+  lbl(ws, r, 3, "Truck Model"); val(ws, r, 4, d.truck_model); r++;
+  
+  sectionTitle(ws, r, 1, "CONTROLS", 4); r++;
+  lbl(ws, r, 1, "PTO"); val(ws, r, 2, d.pto);
+  lbl(ws, r, 3, "Truck Hoist"); val(ws, r, 4, d.ctrl_truck_hoist); r++;
+  lbl(ws, r, 1, "Truck Tailgate"); val(ws, r, 2, d.ctrl_truck_tailgate);
+  lbl(ws, r, 3, "Truck Tarp"); val(ws, r, 4, d.ctrl_truck_tarp); r++;
+  
+  sectionTitle(ws, r, 1, "TARP", 4); r++;
+  lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);
+  lbl(ws, r, 3, "Tarp Make/Model"); val(ws, r, 4, d.tarp_make); r++;
+  
+  sectionTitle(ws, r, 1, "ELECTRICAL", 4); r++;
+  lbl(ws, r, 1, "Rear Lights"); val(ws, r, 2, d.rear_lights);
+  lbl(ws, r, 3, "Side Markers"); val(ws, r, 4, d.side_marker_lights); r++;
+  lbl(ws, r, 1, "Work Lights"); val(ws, r, 2, d.work_lights);
+  lbl(ws, r, 3, "Beacon"); val(ws, r, 4, d.beacon); r++;
+  lbl(ws, r, 1, "Tailgate Lights"); val(ws, r, 2, d.tailgate_lights); r++;
+  
+  sectionTitle(ws, r, 1, "ACCESSORIES", 4); r++;
+  lbl(ws, r, 1, "Tow Hitch"); val(ws, r, 2, yn(d.tow_hitch));
+  lbl(ws, r, 3, "Underbody Toolbox"); val(ws, r, 4, yn(d.underbody_toolbox)); r++;
+  
+  sectionTitle(ws, r, 1, "NOTES", 4); r++;
+  val(ws, r, 1, d.notes, 4); r++;
+}
+
+function createTruckPaintSheet(wb, d, prefix) {
+  var ws = wb.addWorksheet((prefix || "") + "Paint Job Sheet");
+  setColWidths(ws, [22, 30, 22, 30]);
+  var r = addHeaderBlock(ws, d, "RIGID BODY PAINT JOB SHEET");
+  
+  sectionTitle(ws, r, 1, "TRUCK DETAILS", 4); r++;
+  lbl(ws, r, 1, "Truck Make"); val(ws, r, 2, d.truck_make);
+  lbl(ws, r, 3, "Truck Model"); val(ws, r, 4, d.truck_model); r++;
+  
+  sectionTitle(ws, r, 1, "PAINT", 4); r++;
+  lbl(ws, r, 1, "Body Paint"); val(ws, r, 2, d.body_paint);
+  lbl(ws, r, 3, "Paint Code"); val(ws, r, 4, d.paint_code); r++;
+  
+  sectionTitle(ws, r, 1, "MUDFLAPS", 4); r++;
+  lbl(ws, r, 1, "Mudflap Type"); val(ws, r, 2, d.mudflap_type);
+  lbl(ws, r, 3, "Mudflap Brackets"); val(ws, r, 4, d.mudflap_brackets); r++;
+  
+  sectionTitle(ws, r, 1, "NOTES", 4); r++;
+  val(ws, r, 1, d.notes, 4); r++;
+}
+
+function createTruckOrderSheet(wb, d) {
+  var ws = wb.addWorksheet("Truck Order Sheet");
+  setColWidths(ws, [22, 30, 22, 30]);
+  var r = addHeaderBlock(ws, d, "TRUCK ORDER SHEET");
+  
+  sectionTitle(ws, r, 1, "TRUCK DETAILS", 4); r++;
+  lbl(ws, r, 1, "Truck Make"); val(ws, r, 2, d.truck_make);
+  lbl(ws, r, 3, "Truck Model"); val(ws, r, 4, d.truck_model); r++;
+  lbl(ws, r, 1, "Truck VIN"); val(ws, r, 2, d.truck_vin);
+  lbl(ws, r, 3, "Sales Drawing"); val(ws, r, 4, d.sales_drawing); r++;
+  
+  sectionTitle(ws, r, 1, "BODY SUMMARY", 4); r++;
+  lbl(ws, r, 1, "Material"); val(ws, r, 2, d.material);
+  lbl(ws, r, 3, "Body Length"); val(ws, r, 4, d.body_length); r++;
+  lbl(ws, r, 1, "Body Width"); val(ws, r, 2, d.body_width);
+  lbl(ws, r, 3, "Body Height"); val(ws, r, 4, d.body_height); r++;
+  
+  sectionTitle(ws, r, 1, "HYDRAULICS SUMMARY", 4); r++;
+  lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
+  lbl(ws, r, 3, "Oil Tank Type"); val(ws, r, 4, d.oil_tank_type); r++;
+  lbl(ws, r, 1, "Oil Tank Location"); val(ws, r, 2, d.oil_tank_location);
+  lbl(ws, r, 3, "PTO Type"); val(ws, r, 4, d.pto_type); r++;
+  
+  sectionTitle(ws, r, 1, "TARP", 4); r++;
+  lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);
+  lbl(ws, r, 3, "Tarp Make/Model"); val(ws, r, 4, d.tarp_make); r++;
+  
+  sectionTitle(ws, r, 1, "PAINT", 4); r++;
+  lbl(ws, r, 1, "Body Paint"); val(ws, r, 2, d.body_paint);
+  lbl(ws, r, 3, "Paint Code"); val(ws, r, 4, d.paint_code); r++;
+  
+  sectionTitle(ws, r, 1, "QUOTE LINES", 4); r++;
+  val(ws, r, 1, d.quote_lines, 4);
+  ws.getRow(r).height = 200;
+}
+
+</script>
+</body>
+</html>

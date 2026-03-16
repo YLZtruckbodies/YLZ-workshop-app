@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --accent: #e2e2e2;
+  --accent-d: #b0b0b0;
+  --accent-glow: rgba(226,226,226,0.10);
+  --btn-primary: #2a2a2a;
+  --btn-primary-hover: #3a3a3a;
+  --dark: #000000;
+  --dark2: #111111;
+  --dark3: #1a1a1a;
+  --dark4: #222222;
+  --mid: #2a2a2a;
+  --mid2: #333333;
+  --text: #ffffff;
+  --text2: #c8c8c8;
+  --text3: #787878;
+  --green: #22d07a;
+  --green-bg: rgba(34,208,122,0.1);
+  --amber: #f5a623;
+  --amber-bg: rgba(245,166,35,0.1);
+  --blue: #3b9de8;
+  --blue-bg: rgba(59,157,232,0.1);
+  --red: #e84560;
+  --red-bg: rgba(232,69,96,0.1);
+  --purple: #9b6dff;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'League Spartan', sans-serif;
+  background: #000;
+  color: #fff;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--mid2); border-radius: 2px; }
+
+input, select, textarea {
+  font-family: 'League Spartan', sans-serif;
+}
