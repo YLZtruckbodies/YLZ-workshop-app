@@ -31,15 +31,15 @@ function PlaceholderImage({ name }: { name: string }) {
   return (
     <div style={{
       width: '100%',
-      aspectRatio: '4/3',
+      aspectRatio: '16/7',
       background: '#111',
-      borderRadius: 8,
+      borderRadius: 6,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       border: '1px dashed rgba(232,104,26,0.3)',
-      marginBottom: 16,
+      marginBottom: 12,
       gap: 8,
     }}>
       <div style={{ fontSize: 36, opacity: 0.3 }}>🚛</div>
@@ -60,10 +60,10 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
       onError={() => setError(true)}
       style={{
         width: '100%',
-        aspectRatio: '4/3',
+        aspectRatio: '16/7',
         objectFit: 'cover',
-        borderRadius: 8,
-        marginBottom: 16,
+        borderRadius: 6,
+        marginBottom: 12,
         display: 'block',
       }}
     />
@@ -152,8 +152,8 @@ export default function NewQuotePage() {
               </div>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                gap: 20,
+                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                gap: 16,
               }}>
                 {grouped['quick-quote'].map((t) => (
                   <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />
