@@ -58,9 +58,9 @@ export default function QuotesPage() {
       if (filter) params.set('status', filter)
       const res = await fetch(`/api/quotes?${params}`)
       const data = await res.json()
-      setQuotes(data)
+      if (Array.isArray(data)) setQuotes(data)
     } catch {
-      // silent
+      // silent — keep current quotes state
     }
     setLoading(false)
   }

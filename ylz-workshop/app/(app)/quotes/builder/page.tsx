@@ -804,9 +804,17 @@ function QuoteBuilderInner() {
 
       let id = savedId
       if (id) {
-        await fetch(`/api/quotes/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        const patchRes = await fetch(`/api/quotes/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        if (!patchRes.ok) {
+          const errBody = await patchRes.json().catch(() => ({}))
+          throw new Error(errBody.error || `Save failed (${patchRes.status})`)
+        }
       } else {
         const res = await fetch('/api/quotes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}))
+          throw new Error(errBody.error || `Save failed (${res.status})`)
+        }
         const created = await res.json()
         id = created.id
         setSavedId(id)
