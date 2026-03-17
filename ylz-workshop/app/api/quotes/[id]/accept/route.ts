@@ -212,6 +212,43 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     baseUrl: origin,
   })
 
+  // ── Notify Pete + Nathan of accepted quote ──
+  const apiKey = process.env.RESEND_API_KEY
+  if (apiKey) {
+    try {
+      const { Resend } = await import('resend')
+      const resend = new Resend(apiKey)
+      const fromEmail = process.env.FROM_EMAIL || 'noreply@ylztrucks.com.au'
+      const peteEmail = process.env.PETE_EMAIL || 'pete@ylztruckbodies.com.au'
+      const nathanEmail = process.env.NATHAN_EMAIL || 'nathan@ylztruckbodies.com.au'
+      const html = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;padding:32px">
+          <div style="background:#22c55e;padding:16px 24px;border-radius:6px 6px 0 0">
+            <span style="color:#fff;font-size:20px;font-weight:900;letter-spacing:1px">🎉 YLZ — Quote Accepted</span>
+          </div>
+          <div style="border:1px solid #eee;border-top:none;padding:24px;border-radius:0 0 6px 6px">
+            <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+              <tr><td style="padding:8px 0;color:#666;font-size:13px;width:160px">Quote</td><td style="font-weight:700;font-size:15px">${quote.quoteNumber}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px">Job Number</td><td style="font-weight:700;font-size:15px;color:#E8681A">${jobNumber}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px">Customer</td><td style="font-weight:600">${quote.customerName}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px">Build Type</td><td style="font-weight:600">${typeStr}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px">Prepared By</td><td>${quote.preparedBy}</td></tr>
+            </table>
+            <a href="${origin}/quotes/builder?id=${quote.id}" style="background:#E8681A;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;font-weight:700;font-size:13px">View Quote</a>
+          </div>
+        </div>
+      `
+      await resend.emails.send({
+        from: fromEmail,
+        to: [peteEmail, nathanEmail],
+        subject: `Quote Accepted: ${quote.quoteNumber} — ${quote.customerName} → ${jobNumber}`,
+        html,
+      })
+    } catch {
+      // graceful failure
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     job: { id: job.id, num: job.num },

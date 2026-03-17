@@ -2,6 +2,8 @@
 
 import { useSession } from 'next-auth/react'
 import { useJobs, advanceJob, updateJob, reorderJobs, syncFromMonday, createJob, useAllFiles, uploadFile, deleteFile, useDriveFiles, useJobTasks, createJobTask, updateJobTask, deleteJobTask, useJobActivity, useJobDependencies, createJobDependency, removeJobDependency } from '@/lib/hooks'
+import KanbanView from '@/components/jobs/KanbanView'
+import JobActivityFeed from '@/components/jobs/JobActivityFeed'
 import { STAGES, stageToBuildProgress, PROD_GROUPS, nextStage, stageIndex, deriveBtype } from '@/lib/jobTypes'
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { useUndo } from '@/lib/undo-context'
@@ -122,6 +124,20 @@ function timeAgo(dateStr: string): string {
   const days = Math.floor(hrs / 24)
   if (days < 7) return days + 'd ago'
   return date.toLocaleDateString('en-AU', { day: '2-digit', month: 'short' })
+}
+
+function dueDateColor(due: string): string {
+  if (!due || due.trim() === '') return 'var(--text3)'
+  const parts = due.split('/')
+  if (parts.length !== 3) return '#fff'
+  const [dd, mm, yyyy] = parts
+  const date = new Date(Number(yyyy), Number(mm) - 1, Number(dd))
+  if (isNaN(date.getTime())) return '#fff'
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const days = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  if (days < 0) return '#ef4444'   // overdue — red
+  if (days <= 14) return '#f59e0b' // within 2 weeks — amber
+  return '#22c55e'                  // > 2 weeks — green
 }
 
 function getStatusPillColor(value: string): string {
@@ -546,7 +562,7 @@ function DraggableJobRow({
         <EditableTextCell value={job.customer || ''} jobId={job.id} field="customer" onSave={onFieldSave} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }} />
 
         {/* Due */}
-        <EditableTextCell value={job.due || ''} jobId={job.id} field="due" onSave={onFieldSave} style={{ fontWeight: 600, color: job.due ? '#fff' : 'var(--text3)', whiteSpace: 'nowrap' }} />
+        <EditableTextCell value={job.due || ''} jobId={job.id} field="due" onSave={onFieldSave} style={{ fontWeight: 600, color: dueDateColor(job.due || ''), whiteSpace: 'nowrap' }} />
 
         {/* Status Columns */}
         <EditableStatusCell value={job.site || ''} jobId={job.id} field="site" onSave={onFieldSave} />
@@ -784,9 +800,34 @@ function DraggableJobRow({
             </div>
 
             {/* Tasks + Activity Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 380px', gap: 16, marginTop: 16 }}>
               <JobTasksPanel jobId={job.id} jobNum={job.num} user={user} />
               <JobActivityPanel jobId={job.id} />
+              {/* Rich activity feed with photos/notes */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: 400 }}>
+                <div style={{ padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.08)', fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                  <span>💬 Notes & Photos</span>
+                  {job.stage === 'Dispatch' && (
+                    <a
+                      href={`/signoff/${job.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: 9, fontWeight: 700, color: '#22d07a', textDecoration: 'none', letterSpacing: 0.8, border: '1px solid #22d07a44', borderRadius: 3, padding: '2px 8px' }}
+                    >
+                      ✍ Sign-off →
+                    </a>
+                  )}
+                </div>
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                  <JobActivityFeed
+                    jobId={job.id}
+                    jobNum={job.num}
+                    userId={user?.id || ''}
+                    userName={user?.name || ''}
+                    userColor={user?.color || '#E8681A'}
+                  />
+                </div>
+              </div>
             </div>
           </td>
         </tr>
@@ -922,6 +963,13 @@ export default function JobBoardPage() {
   const [stageFilter, setStageFilter] = useState('all')
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ finished: true })
   const [expandedJob, setExpandedJob] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>(() => {
+    if (typeof window !== 'undefined') {
+      try { return (localStorage.getItem('ylz-jobboard-view') as 'table' | 'kanban') || 'table' } catch {}
+    }
+    return 'table'
+  })
+  const [activityJobId, setActivityJobId] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<string | null>(null)
   const [showNewJobModal, setShowNewJobModal] = useState(false)
@@ -1754,13 +1802,76 @@ export default function JobBoardPage() {
           >
             Reset Columns
           </button>
-          <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}>
-            {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}>
+              {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
+            </span>
+            {/* View toggle */}
+            <div style={{ display: 'flex', border: '1px solid var(--border2)', borderRadius: 4, overflow: 'hidden' }}>
+              {(['table', 'kanban'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => {
+                    setViewMode(mode)
+                    try { localStorage.setItem('ylz-jobboard-view', mode) } catch {}
+                  }}
+                  style={{
+                    fontFamily: "'League Spartan', sans-serif",
+                    fontSize: 10, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase',
+                    padding: '5px 12px', cursor: 'pointer', border: 'none',
+                    background: viewMode === mode ? '#E8681A' : 'transparent',
+                    color: viewMode === mode ? '#fff' : 'var(--text3)',
+                    transition: '0.1s',
+                  }}
+                >
+                  {mode === 'table' ? '≡ Table' : '⬜ Kanban'}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
+        {/* Kanban View */}
+        {viewMode === 'kanban' && (
+          <div style={{ display: 'flex', gap: 0, minHeight: 0, height: 'calc(100vh - 280px)', overflow: 'hidden' }}>
+            <div style={{ flex: 1, overflowX: 'auto', paddingBottom: 8 }}>
+              <KanbanView
+                jobs={filteredJobs}
+                userId={user?.id || ''}
+                userName={user?.name || ''}
+                onJobClick={(job) => setActivityJobId(job.id)}
+              />
+            </div>
+            {/* Activity feed slide-in */}
+            {activityJobId && (() => {
+              const aJob = (jobs as any[])?.find((j: any) => j.id === activityJobId)
+              return (
+                <div style={{
+                  width: 360, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.1)',
+                  background: '#0a0a0a', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#E8681A' }}>{aJob?.num}</span>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{aJob?.customer}</span>
+                    <button onClick={() => setActivityJobId(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 4px' }}>×</button>
+                  </div>
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <JobActivityFeed
+                      jobId={activityJobId}
+                      jobNum={aJob?.num || ''}
+                      userId={user?.id || ''}
+                      userName={user?.name || ''}
+                      userColor={user?.color || '#E8681A'}
+                    />
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        )}
+
         {/* Grouped Tables with DnD */}
-        <DndContext
+        {viewMode === 'table' && <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragStart={handleDragStart}
@@ -1937,7 +2048,7 @@ export default function JobBoardPage() {
               </div>
             ) : null}
           </DragOverlay>
-        </DndContext>
+        </DndContext>}
       </div>
 
       {/* New Job Modal */}

@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+const HOURS_PER_WEEK = 35 // production capacity per week
+
 export async function GET() {
   const [jobs, workerJobs, workers] = await Promise.all([
     prisma.job.findMany({
       where: { stage: { not: 'Dispatch' } },
-      select: { stage: true, btype: true },
+      select: { stage: true, btype: true, estimatedHours: true },
     }),
     prisma.workerJob.findMany({ select: { workerId: true } }),
     prisma.worker.findMany({ select: { id: true, name: true, section: true, color: true } }),
@@ -33,5 +35,9 @@ export async function GET() {
     jobCount: workerCount[w.id] || 0,
   })).sort((a, b) => b.jobCount - a.jobCount)
 
-  return NextResponse.json({ stageBreakdown, workerLoad })
+  // Capacity
+  const totalHours = jobs.reduce((sum, j) => sum + (j.estimatedHours || 0), 0)
+  const weeksBooked = totalHours > 0 ? +(totalHours / HOURS_PER_WEEK).toFixed(1) : 0
+
+  return NextResponse.json({ stageBreakdown, workerLoad, totalHours, weeksBooked })
 }

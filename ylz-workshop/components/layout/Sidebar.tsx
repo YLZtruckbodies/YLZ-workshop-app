@@ -21,6 +21,7 @@ const BOARDS: NavItem[] = [
 
 const SALES: NavItem[] = [
   { key: 'quotes', label: 'Sales / Quoting', icon: '\uD83D\uDCB0', href: '/quotes' },
+  { key: 'customers', label: 'Customers', icon: '\uD83D\uDC65', href: '/customers' },
 ]
 
 const TOOLS: NavItem[] = [

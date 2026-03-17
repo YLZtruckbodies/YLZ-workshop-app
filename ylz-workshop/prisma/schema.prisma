@@ -49,6 +49,9 @@ model Job {
   sortOrder      Int      @default(0)
   estimatedHours Float    @default(0)
   startDate      String   @default("")
+  customerEmail  String   @default("")
+  customerPhone  String   @default("")
+  notifyOnAdvance Boolean @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -130,6 +133,8 @@ model JobNote {
   authorName String   @default("")
   type       String
   message    String
+  photoUrl   String   @default("")
+  photoName  String   @default("")
   createdAt  DateTime @default(now())
 
   @@index([jobId])
@@ -232,12 +237,14 @@ model JobFollowerCheck {
   id        String    @id @default(cuid())
   jobNum    String
   checkKey  String
+  stage     String    @default("")
   checked   Boolean   @default(false)
   checkedBy String    @default("")
   checkedAt DateTime?
 
   @@unique([jobNum, checkKey])
   @@index([jobNum])
+  @@index([stage])
 }
 
 model Quote {
@@ -262,6 +269,7 @@ model Quote {
   overridePrice Float?
   overrideBy    String?
   overrideNote  String?
+  declineReason String   @default("")
 
   preparedBy    String
   salesPerson   String   @default("")
@@ -479,4 +487,56 @@ model PartsOrderItem {
   order       PartsOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
+}
+
+// ─── Stage-Gated Checklists ───────────────────────────────────────────────────
+
+model ChecklistTemplate {
+  id          String   @id @default(cuid())
+  stage       String
+  label       String
+  description String   @default("")
+  required    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([stage])
+  @@index([active])
+}
+
+// ─── Digital Delivery Sign-off ────────────────────────────────────────────────
+
+model DeliverySignoff {
+  id           String   @id @default(cuid())
+  jobId        String
+  jobNum       String
+  customer     String   @default("")
+  signedBy     String
+  signerRole   String   @default("customer")
+  signatureUrl String
+  driverName   String   @default("")
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+
+  @@index([jobId])
+  @@index([jobNum])
+}
+
+// ─── Outbound Customer Messages ───────────────────────────────────────────────
+
+model OutboundMessage {
+  id        String   @id @default(cuid())
+  jobId     String
+  jobNum    String
+  channel   String
+  recipient String
+  subject   String   @default("")
+  body      String
+  status    String   @default("sent")
+  provider  String   @default("")
+  error     String   @default("")
+  sentAt    DateTime @default(now())
+
+  @@index([jobId])
 }

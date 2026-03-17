@@ -5,7 +5,7 @@ import { STAGE_COLORS } from '@/lib/constants'
 
 interface StageItem { stage: string; count: number }
 interface WorkerItem { id: string; name: string; section: string; color: string; jobCount: number }
-interface WorkloadData { stageBreakdown: StageItem[]; workerLoad: WorkerItem[] }
+interface WorkloadData { stageBreakdown: StageItem[]; workerLoad: WorkerItem[]; totalHours: number; weeksBooked: number }
 
 export default function WorkloadPage() {
   const [data, setData] = useState<WorkloadData | null>(null)
@@ -35,6 +35,36 @@ export default function WorkloadPage() {
       {loading ? (
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading...</div>
       ) : (
+        <>
+        {/* Capacity banner */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+          <div style={{ background: 'var(--dark2)', border: '1px solid var(--border)', borderTop: '3px solid #E8681A', borderRadius: 10, padding: '18px 20px' }}>
+            <div style={{ fontSize: 32, fontWeight: 800, color: '#E8681A', fontFamily: "'League Spartan', sans-serif" }}>
+              {data?.stageBreakdown.reduce((s, i) => s + i.count, 0) ?? 0}
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--text3)', marginTop: 4 }}>
+              Active Jobs
+            </div>
+          </div>
+          <div style={{ background: 'var(--dark2)', border: '1px solid var(--border)', borderTop: '3px solid #3b9de8', borderRadius: 10, padding: '18px 20px' }}>
+            <div style={{ fontSize: 32, fontWeight: 800, color: '#3b9de8', fontFamily: "'League Spartan', sans-serif" }}>
+              {data?.totalHours ?? 0}
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--text3)', marginTop: 4 }}>
+              Est. Hours in Queue
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>Based on estimated hours per job</div>
+          </div>
+          <div style={{ background: 'var(--dark2)', border: '1px solid var(--border)', borderTop: `3px solid ${(data?.weeksBooked ?? 0) > 8 ? '#ef4444' : (data?.weeksBooked ?? 0) > 4 ? '#f59e0b' : '#22c55e'}`, borderRadius: 10, padding: '18px 20px' }}>
+            <div style={{ fontSize: 32, fontWeight: 800, color: (data?.weeksBooked ?? 0) > 8 ? '#ef4444' : (data?.weeksBooked ?? 0) > 4 ? '#f59e0b' : '#22c55e', fontFamily: "'League Spartan', sans-serif" }}>
+              {data?.weeksBooked ?? 0} wks
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--text3)', marginTop: 4 }}>
+              Booked Out
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>@ 35 hrs/week capacity</div>
+          </div>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           {/* Stage Breakdown */}
           <div>
@@ -139,6 +169,7 @@ export default function WorkloadPage() {
             </div>
           </div>
         </div>
+        </>
       )}
     </div>
   )

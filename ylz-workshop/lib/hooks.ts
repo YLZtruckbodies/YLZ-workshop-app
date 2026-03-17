@@ -446,3 +446,72 @@ export async function deleteColdformDelivery(id: string): Promise<any> {
   if (!res.ok) throw new Error('Failed to delete delivery')
   return res.json()
 }
+
+// ── Kanban stage move ──
+export async function moveJobStage(jobId: string, stage: string, userId = '', userName = ''): Promise<any> {
+  const res = await fetch(`/api/jobs/${jobId}/stage`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stage, userId, userName }),
+  })
+  if (!res.ok) throw new Error('Failed to move job stage')
+  return res.json()
+}
+
+// ── Job photo upload ──
+export async function uploadJobPhoto(jobId: string, file: File, authorId: string, authorName: string, caption = ''): Promise<any> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('authorId', authorId)
+  formData.append('authorName', authorName)
+  formData.append('caption', caption)
+  const res = await fetch(`/api/jobs/${jobId}/photos`, { method: 'POST', body: formData })
+  if (!res.ok) throw new Error('Failed to upload photo')
+  return res.json()
+}
+
+// ── Checklist ──
+export function useJobChecklist(jobId: string | null, stage: string | null) {
+  return useSWR(
+    jobId && stage ? `/api/jobs/${jobId}/checklist?stage=${encodeURIComponent(stage)}` : null,
+    fetcher,
+    { refreshInterval: 10000 }
+  )
+}
+
+export async function updateChecklistItem(jobId: string, templateId: string, checked: boolean, checkedBy: string): Promise<any> {
+  const res = await fetch(`/api/jobs/${jobId}/checklist`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ templateId, checked, checkedBy }),
+  })
+  if (!res.ok) throw new Error('Failed to update checklist')
+  return res.json()
+}
+
+export function useChecklistTemplates(stage?: string) {
+  const query = stage ? `?stage=${encodeURIComponent(stage)}` : ''
+  return useSWR(`/api/checklist-templates${query}`, fetcher, { refreshInterval: 60000 })
+}
+
+// ── Delivery sign-offs ──
+export function useSignoffs(jobId: string | null) {
+  return useSWR(jobId ? `/api/signoffs?jobId=${jobId}` : null, fetcher, { refreshInterval: 30000 })
+}
+
+export async function createSignoff(data: {
+  jobId: string
+  signedBy: string
+  signerRole: string
+  signatureDataUrl: string
+  driverName?: string
+  notes?: string
+}): Promise<any> {
+  const res = await fetch('/api/signoffs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('Failed to create signoff')
+  return res.json()
+}

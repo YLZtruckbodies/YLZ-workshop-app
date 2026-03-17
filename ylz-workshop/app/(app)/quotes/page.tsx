@@ -13,6 +13,7 @@ interface Quote {
   total: number
   overridePrice: number | null
   preparedBy: string
+  sentAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -193,6 +194,9 @@ export default function QuotesPage() {
           {quotes.map((q) => {
             const sc = STATUS_COLORS[q.status] || STATUS_COLORS.draft
             const effectiveTotal = q.overridePrice || q.total
+            const isFollowUp = q.status === 'sent' && q.sentAt
+              ? (Date.now() - new Date(q.sentAt).getTime()) > 7 * 24 * 60 * 60 * 1000
+              : false
             return (
               <div
                 key={q.id}
@@ -217,7 +221,7 @@ export default function QuotesPage() {
                   ${fmt(effectiveTotal)}
                 </span>
                 <span style={{ color: 'var(--text3)' }}>{q.preparedBy}</span>
-                <span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{
                     fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
                     padding: '3px 8px', borderRadius: 4,
@@ -225,6 +229,17 @@ export default function QuotesPage() {
                   }}>
                     {q.status}
                   </span>
+                  {isFollowUp && (
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+                      padding: '2px 6px', borderRadius: 3,
+                      background: 'rgba(234,179,8,0.15)', color: '#eab308',
+                      border: '1px solid rgba(234,179,8,0.3)',
+                      animation: 'none',
+                    }}>
+                      Follow Up
+                    </span>
+                  )}
                 </span>
                 <span style={{ color: 'var(--text3)', fontSize: 11 }}>
                   {new Date(q.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' })}

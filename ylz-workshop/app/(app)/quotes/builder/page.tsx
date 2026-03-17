@@ -98,6 +98,8 @@ interface QuoteForm {
   // notes
   notes: string
   terms: string
+  // decline
+  declineReason: string
 }
 
 // ─── Options ──────────────────────────────────────────────────────────────────
@@ -327,6 +329,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     margin: 0, overhead: 0, discount: 0,
     useOverride: false, overridePrice: '', overrideNote: '',
     notes: '', terms: DEFAULT_TERMS,
+    declineReason: '',
   }
 }
 
@@ -537,6 +540,7 @@ function QuoteBuilderInner() {
   const [acceptResult, setAcceptResult] = useState<{ jobNum: string; jobId: string } | null>(null)
   const [saveError, setSaveError] = useState('')
   const [isQuickQuote, setIsQuickQuote] = useState(false)
+  const [declineModal, setDeclineModal] = useState(false)
   const [customerSuggestions, setCustomerSuggestions] = useState<string[]>([])
   const [dealerSuggestions, setDealerSuggestions] = useState<string[]>([])
 
@@ -577,6 +581,7 @@ function QuoteBuilderInner() {
           f.discount = quote.discount
           f.notes = quote.notes
           f.terms = quote.terms
+          f.declineReason = quote.declineReason || ''
           f.useOverride = !!quote.overridePrice
           f.overridePrice = quote.overridePrice ? String(quote.overridePrice) : ''
           f.overrideNote = quote.overrideNote || ''
@@ -786,6 +791,7 @@ function QuoteBuilderInner() {
         validDays: form.validDays,
         notes: form.notes,
         terms: form.terms,
+        declineReason: form.declineReason,
         lineItems: form.lineItems.map((item, i) => ({
           section: item.section,
           description: item.description,
@@ -931,7 +937,18 @@ function QuoteBuilderInner() {
               <input value={form.quoteNumber} onChange={(e) => set('quoteNumber', e.target.value)} style={inputStyle} />
             </Field>
             <Field label="Status">
-              <select value={form.status} onChange={(e) => set('status', e.target.value)} style={selectStyle}>
+              <select
+                value={form.status}
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (val === 'declined' && form.status !== 'declined') {
+                    setDeclineModal(true)
+                  } else {
+                    set('status', val)
+                  }
+                }}
+                style={selectStyle}
+              >
                 {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
               </select>
             </Field>
@@ -1675,6 +1692,47 @@ function QuoteBuilderInner() {
                 style={{ ...btnStyle('secondary'), borderColor: 'rgba(34,197,94,0.5)', background: 'rgba(34,197,94,0.15)', color: 'rgba(34,197,94,0.9)' }}
               >
                 {accepting ? 'Creating job…' : '✓ Confirm & Accept'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Decline reason modal ── */}
+      {declineModal && (
+        <Modal onClose={() => setDeclineModal(false)}>
+          <div style={{ padding: 32, maxWidth: 460 }}>
+            <div style={{ fontSize: 28, marginBottom: 12 }}>✕</div>
+            <h2 style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 8 }}>
+              Decline Quote?
+            </h2>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, marginBottom: 16 }}>
+              Record the reason this quote was declined. This helps track win/loss patterns.
+            </p>
+            <textarea
+              value={form.declineReason}
+              onChange={(e) => set('declineReason', e.target.value)}
+              rows={4}
+              placeholder="e.g. Price too high, went with competitor, project cancelled..."
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 6, color: '#fff', fontSize: 13, padding: '10px 12px',
+                resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, outline: 'none',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
+              <button onClick={() => setDeclineModal(false)} style={btnStyle('ghost')}>
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setDeclineModal(false)
+                  await handleSave('declined')
+                }}
+                style={{ ...btnStyle('secondary'), borderColor: 'rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: 'rgba(239,68,68,0.9)' }}
+              >
+                Confirm Decline
               </button>
             </div>
           </div>
