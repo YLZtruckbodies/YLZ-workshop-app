@@ -21,16 +21,21 @@ export default function EngineeringPage() {
       </div>
 
       {/* Tool Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
         {[
-          { label: 'Job Sheet Generator', icon: '📋', desc: 'Generate job sheets', href: '/engineering/job-sheets' },
+          { label: 'Job Sheet Generator', icon: '📋', desc: 'Generate job sheets from accepted quotes', href: '/engineering/job-sheets' },
+          { label: 'Manual Job Sheet Generator', icon: '🛠️', desc: 'Drag & drop builder — fill in fields manually and export', href: '/job-sheet-creator.html', external: true },
           { label: 'VIN Plate / EBS File / Axle Suspension Ordering', icon: '🏷️', desc: 'VIN plates, EBS files & suspension orders', href: '/engineering/vin-plates' },
           { label: 'MRP Ordering', icon: '📦', desc: 'Material requirements planning', href: '' },
           { label: 'Drawings', icon: '📐', desc: 'Engineering drawings & revisions', href: '' },
         ].map((tool) => (
           <button
             key={tool.label}
-            onClick={() => tool.href && router.push(tool.href)}
+            onClick={() => {
+              if (!tool.href) return
+              if ((tool as any).external) window.open(tool.href, '_blank')
+              else router.push(tool.href)
+            }}
             style={{
               background: 'var(--dark2)', border: '1px solid var(--border)', borderRadius: 8,
               padding: '20px 16px', cursor: tool.href ? 'pointer' : 'default',

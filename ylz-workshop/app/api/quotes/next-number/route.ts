@@ -7,10 +7,10 @@ export async function GET() {
     select: { quoteNumber: true },
   })
 
-  let nextNum = 1
+  let nextNum = 3000
   if (lastQuote?.quoteNumber) {
     const match = lastQuote.quoteNumber.match(/QU-(\d+)/)
-    if (match) nextNum = parseInt(match[1], 10) + 1
+    if (match) nextNum = Math.max(3000, parseInt(match[1], 10) + 1)
   }
 
   const quoteNumber = `QU-${String(nextNum).padStart(4, '0')}`

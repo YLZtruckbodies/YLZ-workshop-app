@@ -1,7 +1,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useJobs, useNotes, createNote } from '@/lib/hooks'
+import { useJobs, useNotes, createNote, useNotifications, markNotificationRead, markAllNotificationsRead } from '@/lib/hooks'
 import { useMemo, useState } from 'react'
 
 const TYPE_STYLES: Record<string, { bg: string; border: string; icon: string; label: string }> = {
@@ -41,6 +41,22 @@ export default function NotificationsPage() {
   const [formType, setFormType] = useState<'holdup' | 'update'>('holdup')
   const [formMessage, setFormMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [activeTab, setActiveTab] = useState<'holdups' | 'mine'>('holdups')
+
+  const { data: myNotifications, mutate: mutateNotifications } = useNotifications(user?.id || null)
+  const unreadCount = (myNotifications || []).filter((n: any) => !n.read).length
+
+  async function handleMarkAllRead() {
+    if (!user?.id) return
+    await markAllNotificationsRead(user.id)
+    mutateNotifications()
+  }
+
+  const NOTIF_TYPE_STYLES: Record<string, { color: string; icon: string }> = {
+    automation: { color: '#3b9de8', icon: '⚙️' },
+    mention: { color: '#a259ff', icon: '@' },
+    reminder: { color: '#f97316', icon: '⏰' },
+  }
 
   // Active jobs for dropdown
   const activeJobs = useMemo(() => {
@@ -132,6 +148,80 @@ export default function NotificationsPage() {
       <p style={{ color: 'var(--text3)', fontSize: 13, margin: '0 0 28px' }}>
         Flag issues, post updates, and track hold-ups on jobs
       </p>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
+        {[
+          { key: 'holdups', label: 'Hold-ups & Updates' },
+          { key: 'mine', label: `My Notifications${unreadCount > 0 ? ` (${unreadCount})` : ''}` },
+        ].map(t => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key as any)}
+            style={{
+              fontFamily: "'League Spartan', sans-serif",
+              fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+              padding: '8px 18px', borderRadius: 6, cursor: 'pointer',
+              border: `1px solid ${activeTab === t.key ? '#E8681A' : 'var(--border)'}`,
+              background: activeTab === t.key ? 'rgba(232,104,26,0.15)' : 'transparent',
+              color: activeTab === t.key ? '#E8681A' : 'var(--text3)',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'mine' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllRead}
+                style={{ fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 4, cursor: 'pointer', border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text3)' }}
+              >
+                Mark all read
+              </button>
+            )}
+          </div>
+          {(!myNotifications || myNotifications.length === 0) && (
+            <div style={{ textAlign: 'center', padding: 60, color: 'var(--text3)' }}>No notifications</div>
+          )}
+          {myNotifications?.map((n: any) => {
+            const style = NOTIF_TYPE_STYLES[n.type] || { color: '#888', icon: '·' }
+            return (
+              <div
+                key={n.id}
+                style={{
+                  padding: '14px 16px',
+                  background: n.read ? 'transparent' : 'rgba(232,104,26,0.06)',
+                  border: `1px solid ${n.read ? 'var(--border)' : 'rgba(232,104,26,0.2)'}`,
+                  borderRadius: 8,
+                  marginBottom: 8,
+                  display: 'flex',
+                  gap: 12,
+                  alignItems: 'flex-start',
+                  cursor: n.read ? 'default' : 'pointer',
+                }}
+                onClick={() => { if (!n.read) { markNotificationRead(n.id); mutateNotifications() } }}
+              >
+                <span style={{ fontSize: 16, flexShrink: 0 }}>{style.icon}</span>
+                <div style={{ flex: 1 }}>
+                  {n.jobNum && <div style={{ fontSize: 12, fontWeight: 700, color: '#E8681A', marginBottom: 2 }}>{n.jobNum}</div>}
+                  <div style={{ fontSize: 13, color: n.read ? 'var(--text3)' : '#fff' }}>{n.message}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+                    <span style={{ fontWeight: 700, color: style.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>{n.type}</span>
+                    {' · '}{timeAgo(n.createdAt)}
+                  </div>
+                </div>
+                {!n.read && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#E8681A', flexShrink: 0, marginTop: 4 }} />}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {activeTab === 'holdups' && <>
 
       {/* Active Hold-ups */}
       <section style={{ marginBottom: 32 }}>
@@ -525,6 +615,7 @@ export default function NotificationsPage() {
           ))
         )}
       </section>
+      </>}
     </div>
   )
 }

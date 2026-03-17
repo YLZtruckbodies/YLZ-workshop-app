@@ -4,8 +4,13 @@ import { prisma } from '@/lib/prisma'
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const date = searchParams.get('date')
+  const dates = searchParams.get('dates')
   const where: any = {}
-  if (date) where.date = date
+  if (dates) {
+    where.date = { in: dates.split(',') }
+  } else if (date) {
+    where.date = date
+  }
 
   const timesheets = await prisma.timesheet.findMany({
     where,

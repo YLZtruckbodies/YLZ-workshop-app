@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#1a1a1a"/>
+  <rect x="1" y="1" width="398" height="298" fill="none" stroke="#E8681A" stroke-width="2" stroke-dasharray="8,4"/>
+  <text x="200" y="130" font-family="Inter,sans-serif" font-size="14" font-weight="600" fill="rgba(255,255,255,0.3)" text-anchor="middle">PHOTO COMING SOON</text>
+  <text x="200" y="160" font-family="Inter,sans-serif" font-size="11" fill="rgba(255,255,255,0.2)" text-anchor="middle">Contact Pete to capture this image</text>
+  <rect x="180" y="180" width="40" height="30" fill="none" stroke="rgba(232,104,26,0.4)" stroke-width="1.5"/>
+  <circle cx="192" cy="192" r="5" fill="none" stroke="rgba(232,104,26,0.4)" stroke-width="1.5"/>
+  <polyline points="180,210 195,195 205,205 215,190 220,210" fill="none" stroke="rgba(232,104,26,0.4)" stroke-width="1.5"/>
+</svg>

@@ -261,6 +261,101 @@ export function useSyncLogs() {
   return useSWR('/api/sheets/sync', fetcher, { refreshInterval: 30000 })
 }
 
+// ── Activity Log ──
+export function useJobActivity(jobId: string | null) {
+  return useSWR(jobId ? `/api/jobs/${jobId}/activity` : null, fetcher, { refreshInterval: 15000 })
+}
+
+// ── Job Tasks ──
+export function useJobTasks(jobId: string | null) {
+  return useSWR(jobId ? `/api/jobs/${jobId}/tasks` : null, fetcher, { refreshInterval: 10000 })
+}
+
+export async function createJobTask(jobId: string, data: { title: string; assignedTo?: string; dueDate?: string }): Promise<any> {
+  const res = await fetch(`/api/jobs/${jobId}/tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('Failed to create task')
+  return res.json()
+}
+
+export async function updateJobTask(jobId: string, taskId: string, data: any): Promise<any> {
+  const res = await fetch(`/api/jobs/${jobId}/tasks/${taskId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('Failed to update task')
+  return res.json()
+}
+
+export async function deleteJobTask(jobId: string, taskId: string): Promise<any> {
+  const res = await fetch(`/api/jobs/${jobId}/tasks/${taskId}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('Failed to delete task')
+  return res.json()
+}
+
+// ── Notifications ──
+export function useNotifications(userId: string | null, unreadOnly = false) {
+  const query = new URLSearchParams()
+  if (userId) query.set('userId', userId)
+  if (unreadOnly) query.set('unreadOnly', 'true')
+  return useSWR(userId ? `/api/notifications?${query}` : null, fetcher, { refreshInterval: 15000 })
+}
+
+export async function markNotificationRead(id: string): Promise<any> {
+  const res = await fetch(`/api/notifications/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ read: true }),
+  })
+  if (!res.ok) throw new Error('Failed to mark notification read')
+  return res.json()
+}
+
+export async function markAllNotificationsRead(userId: string): Promise<any> {
+  const res = await fetch('/api/notifications/mark-all-read', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId }),
+  })
+  if (!res.ok) throw new Error('Failed to mark all read')
+  return res.json()
+}
+
+export async function createNotification(data: { userId: string; jobId?: string; jobNum?: string; type: string; message: string }): Promise<any> {
+  const res = await fetch('/api/notifications', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('Failed to create notification')
+  return res.json()
+}
+
+// ── Job Dependencies ──
+export function useJobDependencies(jobId: string | null) {
+  return useSWR(jobId ? `/api/jobs/${jobId}/dependencies` : null, fetcher, { refreshInterval: 30000 })
+}
+
+export async function createJobDependency(jobId: string, blockedById: string): Promise<any> {
+  const res = await fetch(`/api/jobs/${jobId}/dependencies`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ blockedById }),
+  })
+  if (!res.ok) throw new Error('Failed to create dependency')
+  return res.json()
+}
+
+export async function removeJobDependency(jobId: string, blockedById: string): Promise<any> {
+  const res = await fetch(`/api/jobs/${jobId}/dependencies?blockedById=${encodeURIComponent(blockedById)}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('Failed to remove dependency')
+  return res.json()
+}
+
 // Coldform hooks
 export function useColdformKits() {
   return useSWR('/api/coldform/kits', fetcher, { refreshInterval: 30000 })

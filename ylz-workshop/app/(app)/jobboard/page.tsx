@@ -1,7 +1,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useJobs, advanceJob, updateJob, reorderJobs, syncFromMonday, createJob, useAllFiles, uploadFile, deleteFile, useDriveFiles } from '@/lib/hooks'
+import { useJobs, advanceJob, updateJob, reorderJobs, syncFromMonday, createJob, useAllFiles, uploadFile, deleteFile, useDriveFiles, useJobTasks, createJobTask, updateJobTask, deleteJobTask, useJobActivity, useJobDependencies, createJobDependency, removeJobDependency } from '@/lib/hooks'
 import { STAGES, stageToBuildProgress, PROD_GROUPS, nextStage, stageIndex, deriveBtype } from '@/lib/jobTypes'
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { useUndo } from '@/lib/undo-context'
@@ -443,6 +443,7 @@ function DraggableJobRow({
   isExpanded,
   onToggleExpand,
   onAdvance,
+  onDelete,
   onFieldSave,
   fileCount,
   jobFiles,
@@ -459,6 +460,7 @@ function DraggableJobRow({
   isExpanded: boolean
   onToggleExpand: () => void
   onAdvance: (id: string) => void
+  onDelete: (id: string, num: string) => void
   onFieldSave: (jobId: string, field: string, newVal: string, oldVal: string) => void
   fileCount: number
   jobFiles: any[]
@@ -582,30 +584,56 @@ function DraggableJobRow({
 
         {/* Actions */}
         <td style={{ padding: '8px 10px' }}>
-          {canAdvanceJob && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onAdvance(job.id) }}
-              style={{
-                fontFamily: "'League Spartan', sans-serif",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: 0.6,
-                textTransform: 'uppercase',
-                padding: '4px 10px',
-                borderRadius: 3,
-                cursor: 'pointer',
-                border: '1px solid rgba(255,255,255,0.2)',
-                background: 'rgba(255,255,255,0.06)',
-                color: 'var(--accent)',
-                whiteSpace: 'nowrap',
-                transition: '0.15s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--btn-primary)'; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'var(--accent)' }}
-            >
-              &rarr; Advance
-            </button>
-          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {canAdvanceJob && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onAdvance(job.id) }}
+                style={{
+                  fontFamily: "'League Spartan', sans-serif",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 0.6,
+                  textTransform: 'uppercase',
+                  padding: '4px 10px',
+                  borderRadius: 3,
+                  cursor: 'pointer',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  background: 'rgba(255,255,255,0.06)',
+                  color: 'var(--accent)',
+                  whiteSpace: 'nowrap',
+                  transition: '0.15s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--btn-primary)'; e.currentTarget.style.color = '#fff' }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'var(--accent)' }}
+              >
+                &rarr; Advance
+              </button>
+            )}
+            {user?.fullAdmin && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(job.id, job.num) }}
+                style={{
+                  fontFamily: "'League Spartan', sans-serif",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 0.6,
+                  textTransform: 'uppercase',
+                  padding: '4px 10px',
+                  borderRadius: 3,
+                  cursor: 'pointer',
+                  border: '1px solid rgba(255,80,80,0.25)',
+                  background: 'rgba(255,80,80,0.06)',
+                  color: 'rgba(255,80,80,0.6)',
+                  whiteSpace: 'nowrap',
+                  transition: '0.15s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,80,80,0.15)'; e.currentTarget.style.color = '#ff5050' }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,80,80,0.06)'; e.currentTarget.style.color = 'rgba(255,80,80,0.6)' }}
+              >
+                Delete
+              </button>
+            )}
+          </div>
         </td>
       </tr>
 
@@ -669,18 +697,25 @@ function DraggableJobRow({
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
                   {jobFiles.map((file: any) => {
                     const isDrive = file.source === 'drive'
-                    const icon = FILE_TYPE_ICONS[file.fileType] || '\u{1F4CE}'
+                    const isGenerated = file.fileType === 'generated/jsheet'
+                    const jobIdFromPath = isGenerated ? file.filePath?.replace('jsheet:', '') : null
+                    const icon = isGenerated ? '📋' : (FILE_TYPE_ICONS[file.fileType] || '\u{1F4CE}')
                     const isImage = file.fileType?.startsWith('image/')
                     const isPdf = file.fileType === 'application/pdf'
-                    const fileUrl = isDrive ? `/api/drive-files/${file.id}` : `/api/files/${file.id}`
+                    const fileUrl = isGenerated ? `/jsheet/${jobIdFromPath}` : (isDrive ? `/api/drive-files/${file.id}` : `/api/files/${file.id}`)
                     return (
                       <div
                         key={(isDrive ? 'drive-' : '') + file.id}
-                        style={{ background: 'var(--dark3)', border: `1px solid ${isDrive ? 'rgba(66,133,244,0.3)' : 'var(--border)'}`, borderRadius: 6, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, transition: '0.15s', position: 'relative' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = isDrive ? 'rgba(66,133,244,0.5)' : 'rgba(255,255,255,0.2)' }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = isDrive ? 'rgba(66,133,244,0.3)' : 'var(--border)' }}
+                        style={{ background: isGenerated ? 'rgba(232,104,26,0.06)' : 'var(--dark3)', border: `1px solid ${isGenerated ? 'rgba(232,104,26,0.4)' : isDrive ? 'rgba(66,133,244,0.3)' : 'var(--border)'}`, borderRadius: 6, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, transition: '0.15s', position: 'relative' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = isGenerated ? '#E8681A' : isDrive ? 'rgba(66,133,244,0.5)' : 'rgba(255,255,255,0.2)' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = isGenerated ? 'rgba(232,104,26,0.4)' : isDrive ? 'rgba(66,133,244,0.3)' : 'var(--border)' }}
                       >
-                        {isDrive && (
+                        {isGenerated && (
+                          <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 8, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 3, background: 'rgba(232,104,26,0.15)', color: '#E8681A', border: '1px solid rgba(232,104,26,0.3)' }}>
+                            Generated
+                          </div>
+                        )}
+                        {isDrive && !isGenerated && (
                           <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 8, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 3, background: 'rgba(66,133,244,0.15)', color: '#4285f4', border: '1px solid rgba(66,133,244,0.3)' }}>
                             Drive
                           </div>
@@ -690,7 +725,7 @@ function DraggableJobRow({
                             <img src={fileUrl} alt={file.fileName} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                           </div>
                         ) : (
-                          <div style={{ width: '100%', height: 60, borderRadius: 4, background: isDrive ? 'rgba(66,133,244,0.06)' : 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+                          <div style={{ width: '100%', height: 60, borderRadius: 4, background: isGenerated ? 'rgba(232,104,26,0.08)' : isDrive ? 'rgba(66,133,244,0.06)' : 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
                             {icon}
                           </div>
                         )}
@@ -699,10 +734,11 @@ function DraggableJobRow({
                             {file.fileName}
                           </div>
                           <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2, display: 'flex', gap: 8 }}>
-                            <span>{formatFileSize(file.fileSize)}</span>
+                            {!isGenerated && <span>{formatFileSize(file.fileSize)}</span>}
+                            {isGenerated && <span style={{ color: 'rgba(232,104,26,0.8)' }}>Body · Fitout · Paint</span>}
                             {file.createdAt && <><span>&bull;</span><span>{timeAgo(file.createdAt)}</span></>}
                           </div>
-                          {file.uploadedBy && <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 1 }}>by {file.uploadedBy}</div>}
+                          {file.uploadedBy && !isGenerated && <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 1 }}>by {file.uploadedBy}</div>}
                         </div>
                         <div style={{ display: 'flex', gap: 6, marginTop: 'auto' }}>
                           <a
@@ -710,11 +746,11 @@ function DraggableJobRow({
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            style={{ flex: 1, fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', textAlign: 'center', padding: '5px 8px', borderRadius: 3, background: isDrive ? 'rgba(66,133,244,0.08)' : 'rgba(255,255,255,0.06)', border: `1px solid ${isDrive ? 'rgba(66,133,244,0.3)' : 'var(--border2)'}`, color: isDrive ? '#4285f4' : 'var(--text2)', textDecoration: 'none', cursor: 'pointer', transition: '0.15s' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = isDrive ? 'rgba(66,133,244,0.15)' : 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = isDrive ? '#5a9cf5' : '#fff' }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = isDrive ? 'rgba(66,133,244,0.08)' : 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = isDrive ? '#4285f4' : 'var(--text2)' }}
+                            style={{ flex: 1, fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', textAlign: 'center', padding: '5px 8px', borderRadius: 3, background: isGenerated ? 'rgba(232,104,26,0.12)' : isDrive ? 'rgba(66,133,244,0.08)' : 'rgba(255,255,255,0.06)', border: `1px solid ${isGenerated ? 'rgba(232,104,26,0.4)' : isDrive ? 'rgba(66,133,244,0.3)' : 'var(--border2)'}`, color: isGenerated ? '#E8681A' : isDrive ? '#4285f4' : 'var(--text2)', textDecoration: 'none', cursor: 'pointer', transition: '0.15s' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = isGenerated ? 'rgba(232,104,26,0.2)' : isDrive ? 'rgba(66,133,244,0.15)' : 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = isGenerated ? '#ff8c4a' : isDrive ? '#5a9cf5' : '#fff' }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = isGenerated ? 'rgba(232,104,26,0.12)' : isDrive ? 'rgba(66,133,244,0.08)' : 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = isGenerated ? '#E8681A' : isDrive ? '#4285f4' : 'var(--text2)' }}
                           >
-                            {isPdf || isImage ? 'View' : 'Download'}
+                            {isGenerated ? 'View / Print' : isPdf || isImage ? 'View' : 'Download'}
                           </a>
                           {!isDrive && (user?.canEdit || user?.fullAdmin) && (
                             <button
@@ -746,10 +782,129 @@ function DraggableJobRow({
                 </div>
               )}
             </div>
+
+            {/* Tasks + Activity Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+              <JobTasksPanel jobId={job.id} jobNum={job.num} user={user} />
+              <JobActivityPanel jobId={job.id} />
+            </div>
           </td>
         </tr>
       )}
     </>
+  )
+}
+
+// ── Job Tasks Panel ─────────────────────────────────
+function JobTasksPanel({ jobId, jobNum, user }: { jobId: string; jobNum: string; user: any }) {
+  const { data: tasks, mutate } = useJobTasks(jobId)
+  const [newTitle, setNewTitle] = useState('')
+  const [adding, setAdding] = useState(false)
+
+  async function handleAdd() {
+    if (!newTitle.trim()) return
+    await createJobTask(jobId, { title: newTitle.trim() })
+    setNewTitle('')
+    setAdding(false)
+    mutate()
+  }
+
+  async function handleToggle(task: any) {
+    await updateJobTask(jobId, task.id, { completed: !task.completed, completedBy: user?.name || '' })
+    mutate()
+  }
+
+  async function handleDelete(taskId: string) {
+    await deleteJobTask(jobId, taskId)
+    mutate()
+  }
+
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text3)' }}>
+          ✓ Tasks ({tasks?.length || 0})
+        </span>
+        <button
+          onClick={() => setAdding(a => !a)}
+          style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 3, cursor: 'pointer', border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text3)' }}
+        >
+          + Add
+        </button>
+      </div>
+
+      {adding && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          <input
+            autoFocus
+            value={newTitle}
+            onChange={e => setNewTitle(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') setAdding(false) }}
+            placeholder="Task title..."
+            style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border2)', borderRadius: 4, color: '#fff', fontSize: 12, padding: '5px 10px', outline: 'none', fontFamily: 'inherit' }}
+          />
+          <button onClick={handleAdd} style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: 'none', background: '#E8681A', color: '#fff' }}>Save</button>
+          <button onClick={() => setAdding(false)} style={{ fontSize: 10, padding: '4px 8px', borderRadius: 3, cursor: 'pointer', border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text3)' }}>✕</button>
+        </div>
+      )}
+
+      {(!tasks || tasks.length === 0) && !adding && (
+        <div style={{ fontSize: 11, color: 'var(--text3)', fontStyle: 'italic' }}>No tasks yet</div>
+      )}
+
+      {tasks?.map((task: any) => (
+        <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+          <input
+            type="checkbox"
+            checked={task.completed}
+            onChange={() => handleToggle(task)}
+            style={{ width: 14, height: 14, cursor: 'pointer', accentColor: '#E8681A', flexShrink: 0 }}
+          />
+          <span style={{ flex: 1, fontSize: 12, color: task.completed ? 'var(--text3)' : 'var(--text2)', textDecoration: task.completed ? 'line-through' : 'none' }}>
+            {task.title}
+          </span>
+          {task.assignedTo && (
+            <span style={{ fontSize: 10, color: 'var(--text3)' }}>{task.assignedTo}</span>
+          )}
+          {(user?.canEdit || user?.fullAdmin) && (
+            <button onClick={() => handleDelete(task.id)} style={{ fontSize: 10, color: 'rgba(255,80,80,0.5)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>✕</button>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── Job Activity Panel ──────────────────────────────
+function JobActivityPanel({ jobId }: { jobId: string }) {
+  const { data: activity } = useJobActivity(jobId)
+
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 10 }}>
+        📋 Activity Log
+      </div>
+      {(!activity || activity.length === 0) && (
+        <div style={{ fontSize: 11, color: 'var(--text3)', fontStyle: 'italic' }}>No activity recorded yet</div>
+      )}
+      {activity?.map((a: any) => (
+        <div key={a.id} style={{ display: 'flex', gap: 8, padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'flex-start' }}>
+          <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#E8681A', marginTop: 5, flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, color: 'var(--text2)' }}>
+              <span style={{ color: 'var(--text3)' }}>{a.field}</span>
+              {a.fromValue && a.toValue && (
+                <span> <em style={{ color: 'var(--text3)', textDecoration: 'line-through' }}>{a.fromValue}</em> → <em style={{ color: '#fff' }}>{a.toValue}</em></span>
+              )}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 1 }}>
+              {a.userName && <span>{a.userName} · </span>}
+              {new Date(a.createdAt).toLocaleString('en-AU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -921,10 +1076,27 @@ export default function JobBoardPage() {
   const handleAdvance = async (jobId: string) => {
     if (!user?.canAdvance) return
     try {
-      await advanceJob(jobId)
+      await fetch(`/api/jobs/${jobId}/advance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _userId: user?.id || '', _userName: user?.name || '' }),
+      })
       mutate()
     } catch (e) {
       console.error('Failed to advance:', e)
+    }
+  }
+
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; num: string } | null>(null)
+
+  const handleDeleteJob = async (jobId: string) => {
+    try {
+      await fetch(`/api/jobs/${jobId}`, { method: 'DELETE' })
+      mutate()
+    } catch (e) {
+      console.error('Failed to delete job:', e)
+    } finally {
+      setDeleteConfirm(null)
     }
   }
 
@@ -938,13 +1110,13 @@ export default function JobBoardPage() {
       false
     )
     try {
-      await updateJob(jobId, { [field]: newVal })
+      await updateJob(jobId, { [field]: newVal, _userId: user?.id || '', _userName: user?.name || '' })
       mutate()
       // Push undo
       pushUndo({
         label: `Edit ${field}`,
         execute: async () => {
-          await updateJob(jobId, { [field]: oldVal })
+          await updateJob(jobId, { [field]: oldVal, _userId: user?.id || '', _userName: user?.name || '' })
           mutate()
         },
       })
@@ -1324,7 +1496,14 @@ export default function JobBoardPage() {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <button
-            onClick={() => setShowNewJobModal(true)}
+            onClick={async () => {
+              try {
+                const res = await fetch('/api/job-master/next-number')
+                const { jobNumber } = await res.json()
+                setNewJob((prev: any) => ({ ...prev, num: jobNumber }))
+              } catch {}
+              setShowNewJobModal(true)
+            }}
             style={{
               fontFamily: "'League Spartan', sans-serif",
               fontSize: 12,
@@ -1712,6 +1891,7 @@ export default function JobBoardPage() {
                                 isExpanded={expandedJob === job.id}
                                 onToggleExpand={() => setExpandedJob(expandedJob === job.id ? null : job.id)}
                                 onAdvance={handleAdvance}
+                                onDelete={(id, num) => setDeleteConfirm({ id, num })}
                                 onFieldSave={handleFieldSave}
                                 fileCount={(filesByJob[job.id] || []).length}
                                 jobFiles={filesByJob[job.id] || []}
@@ -1904,6 +2084,60 @@ export default function JobBoardPage() {
                 }}
               >
                 {savingJob ? 'Creating...' : 'Create Job'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteConfirm && (
+        <div
+          onClick={() => setDeleteConfirm(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'var(--dark2)', border: '1px solid rgba(255,80,80,0.3)',
+              borderRadius: 8, padding: '32px 36px', maxWidth: 420, width: '90%',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+            }}
+          >
+            <div style={{ fontSize: 28, marginBottom: 12 }}>🗑</div>
+            <h2 style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 10 }}>
+              Delete Job {deleteConfirm.num}?
+            </h2>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: 28 }}>
+              This will permanently delete job <strong style={{ color: '#fff' }}>{deleteConfirm.num}</strong> and all associated data.
+              <br /><br />
+              <strong style={{ color: 'rgba(255,80,80,0.9)' }}>This cannot be undone.</strong>
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                style={{
+                  fontFamily: "'League Spartan', sans-serif", fontSize: 12, fontWeight: 700,
+                  letterSpacing: 0.5, textTransform: 'uppercase', padding: '10px 20px',
+                  borderRadius: 5, cursor: 'pointer',
+                  border: '1px solid var(--border)', background: 'transparent', color: 'rgba(255,255,255,0.5)',
+                }}
+              >
+                No, Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteJob(deleteConfirm.id)}
+                style={{
+                  fontFamily: "'League Spartan', sans-serif", fontSize: 12, fontWeight: 700,
+                  letterSpacing: 0.5, textTransform: 'uppercase', padding: '10px 20px',
+                  borderRadius: 5, cursor: 'pointer',
+                  border: '1px solid rgba(255,80,80,0.5)', background: 'rgba(255,80,80,0.15)', color: '#ff5050',
+                }}
+              >
+                Yes, Delete Job
               </button>
             </div>
           </div>

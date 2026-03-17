@@ -91,9 +91,9 @@ export default function LoginPage() {
           }}
         >
           <img
-            src="https://img1.wsimg.com/isteam/ip/2e61a5b7-b3da-4c50-9fcd-d4ac43131a83/Untitled%20design%20(7).png/:/rs=h:80,cg:true,m/qt=q:95"
+            src="/images/ylz-logo.webp"
             alt="YLZ"
-            style={{ height: 40, filter: 'brightness(0) invert(1)', marginBottom: 12 }}
+            style={{ height: 72, objectFit: 'contain', marginBottom: 12 }}
           />
           <div
             style={{

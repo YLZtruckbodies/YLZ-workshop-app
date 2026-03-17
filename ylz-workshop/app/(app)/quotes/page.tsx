@@ -30,6 +30,21 @@ export default function QuotesPage() {
   const [quotes, setQuotes] = useState<Quote[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
+  const [copying, setCopying] = useState<string | null>(null)
+
+  async function handleCopy(e: React.MouseEvent, quoteId: string) {
+    e.stopPropagation()
+    setCopying(quoteId)
+    try {
+      const res = await fetch(`/api/quotes/${quoteId}/copy`, { method: 'POST' })
+      const data = await res.json()
+      if (data.id) {
+        await fetchQuotes()
+        router.push(`/quotes/builder?id=${data.id}`)
+      }
+    } catch {}
+    setCopying(null)
+  }
 
   useEffect(() => {
     fetchQuotes()
@@ -69,7 +84,7 @@ export default function QuotesPage() {
           </div>
         </div>
         <button
-          onClick={() => router.push('/quotes/builder')}
+          onClick={() => router.push('/quotes/new')}
           style={{
             fontFamily: "'League Spartan', sans-serif",
             fontSize: 13,
@@ -132,7 +147,7 @@ export default function QuotesPage() {
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>No quotes yet</div>
           <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 20 }}>Create your first quote to get started</div>
           <button
-            onClick={() => router.push('/quotes/builder')}
+            onClick={() => router.push('/quotes/new')}
             style={{
               fontFamily: "'League Spartan', sans-serif",
               fontSize: 12,
@@ -184,7 +199,7 @@ export default function QuotesPage() {
                 onClick={() => router.push(`/quotes/builder?id=${q.id}`)}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '100px 1fr 150px 120px 120px 100px 80px',
+                  gridTemplateColumns: '100px 1fr 150px 120px 120px 100px 80px 90px',
                   gap: 16,
                   padding: '14px 20px',
                   borderBottom: '1px solid rgba(255,255,255,0.04)',
@@ -213,6 +228,29 @@ export default function QuotesPage() {
                 </span>
                 <span style={{ color: 'var(--text3)', fontSize: 11 }}>
                   {new Date(q.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' })}
+                </span>
+                <span>
+                  <button
+                    onClick={(e) => handleCopy(e, q.id)}
+                    disabled={copying === q.id}
+                    title="Copy to new quote"
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid var(--border2)',
+                      borderRadius: 4,
+                      color: copying === q.id ? 'var(--text3)' : 'var(--text2)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: '3px 10px',
+                      cursor: copying === q.id ? 'default' : 'pointer',
+                      letterSpacing: 0.3,
+                      transition: '0.15s',
+                    }}
+                    onMouseEnter={(e) => { if (copying !== q.id) { e.currentTarget.style.borderColor = '#E8681A'; e.currentTarget.style.color = '#E8681A' } }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.color = 'var(--text2)' }}
+                  >
+                    {copying === q.id ? '...' : 'Copy'}
+                  </button>
                 </span>
               </div>
             )

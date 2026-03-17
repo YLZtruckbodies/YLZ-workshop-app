@@ -41,14 +41,16 @@ model Job {
   mrp       String   @default("")
   parts     String   @default("")
   ebs       String   @default("")
-  notes     String   @default("")
-  make      String   @default("")
-  po        String   @default("")
-  dims      String   @default("")
-  vin       String   @default("")
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  notes          String   @default("")
+  make           String   @default("")
+  po             String   @default("")
+  dims           String   @default("")
+  vin            String   @default("")
+  sortOrder      Int      @default(0)
+  estimatedHours Float    @default(0)
+  startDate      String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Worker {
@@ -324,4 +326,157 @@ model ProductTemplate {
 
   @@index([category])
   @@index([active])
+}
+
+// ─── MRPeasy Integration Cache ───────────────────────────────────────────────
+
+model MrpeasyProduct {
+  id          String   @id // MRPeasy internal ID
+  sku         String   @unique
+  name        String
+  description String   @default("")
+  category    String   @default("") // assembly | component | raw-material
+  unitCost    Float    @default(0)
+  unit        String   @default("each")
+  lastSyncAt  DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bomItems    MrpeasyBomItem[] @relation("BomAssembly")
+  usedIn      MrpeasyBomItem[] @relation("BomComponent")
+
+  @@index([category])
+  @@index([sku])
+}
+
+model MrpeasyBomItem {
+  id            String @id @default(cuid())
+  assemblyId    String
+  componentId   String
+  quantity      Float  @default(1)
+  unit          String @default("each")
+
+  assembly      MrpeasyProduct @relation("BomAssembly",  fields: [assemblyId],  references: [id])
+  component     MrpeasyProduct @relation("BomComponent", fields: [componentId], references: [id])
+
+  @@index([assemblyId])
+  @@index([componentId])
+}
+
+model MrpeasySyncLog {
+  id         String   @id @default(cuid())
+  type       String   // products | bom | full
+  status     String   // success | failed | partial
+  itemCount  Int      @default(0)
+  errorMsg   String   @default("")
+  syncedAt   DateTime @default(now())
+
+  @@index([syncedAt])
+}
+
+// ─── Parts Ordering ───────────────────────────────────────────────────────────
+
+model PartsOrder {
+  id           String           @id @default(cuid())
+  jobId        String
+  jobNum       String           @default("")
+  quoteId      String?
+  status       String           @default("draft") // draft | sent | partial | complete
+  supplier     String           @default("")
+  orderDate    String           @default("")
+  expectedDate String           @default("")
+  notes        String           @default("")
+  items        PartsOrderItem[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([jobId])
+  @@index([status])
+}
+
+model JobMaster {
+  id          String   @id @default(cuid())
+  jobNumber   String   @unique
+  jobType     String   @default("")
+  customer    String   @default("")
+  completed   Boolean  @default(false)
+  invoiced    String   @default("")
+  dimensions  String   @default("")
+  notes       String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([jobNumber])
+}
+
+model JobActivity {
+  id        String   @id @default(cuid())
+  jobId     String
+  userId    String   @default("")
+  userName  String   @default("")
+  field     String
+  fromValue String   @default("")
+  toValue   String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+  @@index([createdAt])
+}
+
+model JobTask {
+  id          String    @id @default(cuid())
+  jobId       String
+  title       String
+  assignedTo  String    @default("")
+  dueDate     String    @default("")
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  completedBy String    @default("")
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([jobId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  jobId     String    @default("")
+  jobNum    String    @default("")
+  type      String
+  message   String
+  read      Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model JobDependency {
+  id          String   @id @default(cuid())
+  jobId       String
+  blockedById String
+  createdAt   DateTime @default(now())
+
+  @@unique([jobId, blockedById])
+  @@index([jobId])
+  @@index([blockedById])
+}
+
+model PartsOrderItem {
+  id          String     @id @default(cuid())
+  orderId     String
+  partNumber  String     @default("")
+  description String
+  quantity    Float      @default(1)
+  unit        String     @default("each")
+  unitCost    Float?
+  totalCost   Float?
+  status      String     @default("ordered") // ordered | received | backordered
+  order       PartsOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
 }

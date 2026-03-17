@@ -23,8 +23,42 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(jobs)
 }
 
+function btypeToJobType(btype: string): string {
+  if (btype === 'ally-trailer' || btype === 'hardox-trailer') return 'TRAILER'
+  if (btype === 'wheelbase') return 'WHEELBASE'
+  if (btype === 'dolly') return 'CONVERTER DOLLY'
+  return 'TRUCK'
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const job = await prisma.job.create({ data: body })
+
+  // Upsert into JobMaster so it stays in sync
+  await prisma.jobMaster.upsert({
+    where: { jobNumber: job.num },
+    update: {
+      jobType: btypeToJobType(job.btype || ''),
+      customer: job.customer || '',
+    },
+    create: {
+      jobNumber: job.num,
+      jobType: btypeToJobType(job.btype || ''),
+      customer: job.customer || '',
+    },
+  })
+
+  // Auto-create generated job sheet attachment record
+  await prisma.jobFile.create({
+    data: {
+      jobId: job.id,
+      fileName: `Job Sheets — ${job.num}.pdf`,
+      fileType: 'generated/jsheet',
+      filePath: `jsheet:${job.id}`,
+      fileSize: 0,
+      uploadedBy: 'system',
+    },
+  })
+
   return NextResponse.json(job, { status: 201 })
 }

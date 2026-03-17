@@ -32,7 +32,7 @@ const SCREEN_OPTIONS = [
   { key: 'cashflow', label: 'Cashflow & Deliveries' },
   { key: 'coldform', label: 'Coldform' },
   { key: 'reports', label: 'Reports' },
-  { key: 'sales', label: 'Sales' },
+  { key: 'quotes', label: 'Sales / Quoting' },
   { key: 'engineering', label: 'Engineering' },
   { key: 'repairs', label: 'Repairs / Warranty' },
 ]

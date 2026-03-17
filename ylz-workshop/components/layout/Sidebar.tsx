@@ -19,6 +19,10 @@ const BOARDS: NavItem[] = [
   { key: 'production', label: 'Production Board', icon: '\uD83C\uDFED', href: '/production' },
 ]
 
+const SALES: NavItem[] = [
+  { key: 'quotes', label: 'Sales / Quoting', icon: '\uD83D\uDCB0', href: '/quotes' },
+]
+
 const TOOLS: NavItem[] = [
   { key: 'floor', label: 'Workshop Floor', icon: '\uD83D\uDD27', href: '/floor' },
   { key: 'timesheet', label: 'Time Logging', icon: '\u23F1', href: '/timesheet' },
@@ -35,6 +39,7 @@ export default function Sidebar() {
     items.filter((item) => access.includes(item.key))
 
   const visibleBoards = filterByAccess(BOARDS)
+  const visibleSales = filterByAccess(SALES)
   const visibleTools = filterByAccess(TOOLS)
 
   return (
@@ -66,6 +71,19 @@ export default function Sidebar() {
             Boards
           </div>
           {visibleBoards.map((item) => {
+            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+            return (
+              <SidebarItem key={item.key} item={item} active={!!isActive} />
+            )
+          })}
+        </>
+      )}
+
+      {/* SALES section */}
+      {visibleSales.length > 0 && (
+        <>
+          <div style={{ height: '12px' }} />
+          {visibleSales.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
             return (
               <SidebarItem key={item.key} item={item} active={!!isActive} />

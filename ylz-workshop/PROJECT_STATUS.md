@@ -1,67 +1,113 @@
-# YLZ Workshop - Project Status
+# YLZ Workshop — Project Status
+*Last updated: March 2026*
 
-## Current State: Production Management System (LIVE)
-The app is a working production management dashboard deployed on Vercel.
-It tracks jobs from engineering through to dispatch with scheduling, timesheets, QA, and deliveries.
+## Current Phase: AWAITING IMPLEMENTATION APPROVAL
 
-## What Works Today
-- Full job lifecycle tracking (7 stages)
-- Worker scheduling with auto-chaining
-- Timesheet logging and CSV export
-- QA checklists (37 items across 6 phases)
-- Delivery/invoice tracking with payment status
-- Monday.com job sync
-- Google Sheets schedule sync
-- Google Drive job file access
-- Job Sheet Creator (PDF quote > Excel job sheets)
-- VIN Plate Generator (batch PDF plates)
-- Analytics dashboard with charts
-- Coldform kit/chassis inventory
-- Repairs/warranty tracking
+Discovery complete. Questionnaire answered. Implementation plan presented to Nathan.
+Waiting for go-ahead to begin building.
 
-## What's Missing for Quoting & Production Workflow
+Pricing numbers (sent to Pete separately) still outstanding — will seed templates when received.
+All other information is sufficient to begin implementation.
 
-### HIGH PRIORITY - Core Quoting
-- [ ] Visual product configurator (image cards)
-- [ ] Quick quote templates for repeat builds
-- [ ] Pricing engine with margin/overhead rules
-- [ ] Quote document generation (PDF)
-- [ ] Historical pricing memory
-- [ ] MRPeasy cost data integration
+---
 
-### HIGH PRIORITY - Production Documents
-- [ ] BOM generation from build config
-- [ ] Parts order forms
-- [ ] Work orders from quotes
-- [ ] MRP export for Liz
-- [ ] Handover/delivery sheets
+## Confirmed Facts (from Nathan/Pete questionnaire)
 
-### MEDIUM PRIORITY - Compliance & Integration
-- [ ] ABS/compliance output generation
-- [ ] MRPeasy API integration (cost sync)
-- [ ] Sales module persistence (currently client-side only)
+| Topic | Answer |
+|-------|--------|
+| V.Orlandi | Italian branded tow coupling (not a hoist) |
+| CT on job sheet | Chris (surname TBC) |
+| PS = salesperson | Pete S (sales manager) |
+| Pricing visible to | Pete, Nathan, Sales team, Wendy |
+| Quote approval | Pete OR Nathan must approve before sending |
+| Quote delivery | Either — system email or manual download |
+| Auto on quote accept | Job board + MRPeasy MO + Email job sheet to workshop |
+| Job starting stage | Requires Engineering |
+| Job sheet generation | Engineer reviews first (not auto) |
+| Combo job sheets | Two separate (truck + trailer) |
+| Engineering fields | Stay on job sheet, NOT in configurator |
+| Truck brand vs price | Brand doesn't change price — dimensions only |
+| Truck dims at quote | Sometimes known, sometimes TBD |
+| Templates | 3 current; system must support more without rebuild |
+| Customer/dealer entry | Standard list + free text for new |
+| Drawing number | Field on job, populated later (not system-generated) |
+| Section sign-offs | Yes — each production section needs sign-off on job sheet |
+| BOM in MRPeasy | Already set up for 3 builds ✅ |
+| Hardox plate supplier | SSAB |
+| Hoist supplier | TES (Binnotto hoists) |
+| Tarp supplier | Camelliri Tarps |
+| Axle supplier | SAF |
+| Parts order form | Covers both raw materials + purchased components |
+| MRPeasy import | Liz imports a form (does not create from scratch) |
+| VIN/compliance timing | During fabrication, when serial number assigned |
+| Engineer's cert | Third-party — CVC (Commercial Vehicle Compliance) |
+| Weight cert | Weighbridge (physical weighing) |
+| VIN plate generator | Already built — link to it, don't duplicate |
+| Handover sheet timing | Prepared in advance |
+| Handover contents | Customer details, full spec, warranty info |
+| Warranty period | 2 years on workmanship |
+| Monday.com plan | Replace eventually with this system |
+| #1 time-saver | Auto job + MRPeasy MO on quote acceptance |
+| Go-live target | ASAP |
 
-### LOWER PRIORITY - Enhancement
-- [ ] Image library management
-- [ ] Reports module
-- [ ] Drawings management
-- [ ] Email integration for quotes
+---
 
-## Database Extensions Needed
-- Quote model (config, pricing, status, versions)
-- QuoteLineItem (options with pricing)
-- PricingRule (material costs, labour rates, margins)
-- PricingHistory (historical price memory)
-- BOM / BOMItem (bill of materials)
-- BuildRecord (source of truth for all outputs)
-- ProductTemplate (quick quote configs)
-- ProductOption (configurator options)
-- ImageAsset (product image library)
+## Still Awaiting
 
-## Technical Approach
-- Extend existing Next.js app (NOT rebuild)
-- Add Prisma models via migration
-- New pages under existing route groups
-- Reuse auth, middleware, component patterns
-- Standalone HTML tools for complex generators (proven pattern)
-- MRPeasy integration via cached API sync
+| Item | Who | Notes |
+|------|-----|-------|
+| Base prices (3 templates) | Pete | Sent separately |
+| Standard sheet specs (Hardox tipper) | Pete | In pricing email |
+| Lead times | Pete | In pricing email |
+| Payment terms | Pete | In pricing email |
+| Hoist model name (Binnotto range) | Nathan | For JSC dropdown update |
+| Camelliri tarp model names | Nathan | For JSC dropdown update |
+| MRPeasy import format (Liz) | Liz | For BOM export format |
+| CVC cert format/fields | Nathan | For compliance output |
+| CT's full surname | Nathan | Minor |
+
+---
+
+## What Is Live (Production)
+- Job Board, Job Stages, Keith's Schedule, Floor, Timesheets
+- QA, Deliveries/Cashflow, Analytics, Coldform, Repairs
+- Notifications, Monday.com sync, Google Sheets, Google Drive
+- Job Sheet Creator, VIN Plate Generator, Quote API
+
+## What Is Partially Built
+- Quote Builder HTML (80%) — configurator working, pricing not wired
+- Product Templates (50%) — API/DB ready, no seed data, no UI
+
+## What Will Be Built (Implementation Plan)
+
+### Sprint 1 — Foundation
+- Update suppliers/options in JSC (Binnotto, Camelliri, SAF)
+- Seed Quick Quote templates (prices TBC from Pete)
+- Add MRPeasy cache DB models
+- Image directory structure + placeholders
+
+### Sprint 2 — Configurator
+- Image-card product selection page
+- Guided configurator (sales-facing fields only, 12 sections)
+- Pricing display + historical lookup
+- Manual override with approval flag
+
+### Sprint 3 — Documents
+- Quote PDF (jsPDF, YLZ letterhead)
+- Auto job sheet Excel (ExcelJS, existing templates)
+- Work order
+- Parts order form (Liz import format)
+- BOM/MRP export CSV
+- Handover sheet
+
+### Sprint 4 — Integrations
+- Quote acceptance → auto job creation
+- Quote acceptance → MRPeasy manufacturing order
+- Quote acceptance → email job sheet to workshop
+- Monday.com item creation (temporary)
+
+### Sprint 5 — Compliance & Polish
+- Link VIN plate generator from job record
+- CVC compliance output (format TBC)
+- Quote revision tracking
+- Email quotes to customers via Resend
