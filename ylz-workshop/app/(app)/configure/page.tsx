@@ -41,7 +41,7 @@ const COLOR_SWATCHES = [
   '#e2e2e2', '#22d07a', '#3b9de8', '#a78bfa', '#f5a623', '#e84560', '#8aaec6', '#9b6dff',
 ]
 
-const TABS = ['Users & Access', 'Sections', 'Checklists', 'Supervisors', 'Job Flows', 'Staff', 'System']
+const TABS = ['Users & Access', 'Sections', 'Checklists', 'Supervisors', 'Job Flows', 'Staff', 'Templates', 'System']
 
 function SeedButton() {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
@@ -73,6 +73,95 @@ function SeedButton() {
         {state === 'loading' ? 'Seeding…' : state === 'done' ? '✓ Done' : 'Reseed Now'}
       </button>
       {msg && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>{msg}</div>}
+    </div>
+  )
+}
+
+interface ProductTemplate {
+  id: string
+  name: string
+  category: string
+  imagePath: string
+}
+
+function TemplatesTab() {
+  const [templates, setTemplates] = useState<ProductTemplate[]>([])
+  const [editing, setEditing] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState<Record<string, boolean>>({})
+  const [saved, setSaved] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    fetch('/api/templates').then(r => r.json()).then(setTemplates)
+  }, [])
+
+  async function saveImage(id: string) {
+    setSaving(s => ({ ...s, [id]: true }))
+    await fetch(`/api/templates/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imagePath: editing[id] }),
+    })
+    setTemplates(ts => ts.map(t => t.id === id ? { ...t, imagePath: editing[id] } : t))
+    setSaving(s => ({ ...s, [id]: false }))
+    setSaved(s => ({ ...s, [id]: true }))
+    setTimeout(() => setSaved(s => ({ ...s, [id]: false })), 2000)
+  }
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    'quick-quote': 'Quick Quote',
+    'truck-body': 'Truck Body',
+    'trailer': 'Trailer',
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 20 }}>
+        Paste any public image URL to update the photo shown in the quote builder. Use images from your website, Dropbox, Google Drive (share link), or anywhere publicly accessible.
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {templates.map(t => {
+          const imgSrc = editing[t.id] !== undefined ? editing[t.id] : t.imagePath
+          return (
+            <div key={t.id} style={{ display: 'flex', gap: 16, alignItems: 'center', background: '#111', borderRadius: 6, border: '1px solid var(--border)', padding: 14 }}>
+              {/* Preview */}
+              <div style={{ width: 90, height: 66, flexShrink: 0, borderRadius: 4, overflow: 'hidden', background: '#1a1a1a', border: '1px solid var(--border)' }}>
+                {imgSrc
+                  ? <img src={imgSrc} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => (e.currentTarget.style.display = 'none')} />
+                  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, opacity: 0.2 }}>🚛</div>
+                }
+              </div>
+              {/* Info + input */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{t.name}</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>{CATEGORY_LABELS[t.category] || t.category}</div>
+                <input
+                  value={editing[t.id] !== undefined ? editing[t.id] : t.imagePath}
+                  onChange={e => setEditing(ed => ({ ...ed, [t.id]: e.target.value }))}
+                  placeholder="Paste image URL…"
+                  style={{
+                    width: '100%', background: '#0a0a0a', border: '1px solid var(--border2)',
+                    borderRadius: 4, color: '#fff', padding: '7px 10px', fontSize: 12,
+                  }}
+                />
+              </div>
+              {/* Save button */}
+              <button
+                onClick={() => saveImage(t.id)}
+                disabled={saving[t.id] || editing[t.id] === undefined || editing[t.id] === t.imagePath}
+                style={{
+                  background: saved[t.id] ? '#22d07a' : '#E8681A',
+                  color: '#fff', border: 'none', borderRadius: 4,
+                  padding: '8px 16px', fontWeight: 700, fontSize: 12,
+                  cursor: saving[t.id] ? 'wait' : 'pointer', whiteSpace: 'nowrap',
+                  opacity: (!saving[t.id] && editing[t.id] !== undefined && editing[t.id] !== t.imagePath) ? 1 : 0.4,
+                }}
+              >
+                {saved[t.id] ? '✓ Saved' : saving[t.id] ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -767,6 +856,11 @@ export default function ConfigurePage() {
                 )
               })}
             </div>
+          </div>
+        ) : activeTab === 'Templates' ? (
+          <div style={{ background: 'var(--dark2)', border: '1px solid var(--border)', borderRadius: 4, padding: 24 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 16 }}>Quote Template Photos</div>
+            <TemplatesTab />
           </div>
         ) : activeTab === 'System' ? (
           <div style={{ background: 'var(--dark2)', border: '1px solid var(--border)', borderRadius: 4, padding: 24 }}>
