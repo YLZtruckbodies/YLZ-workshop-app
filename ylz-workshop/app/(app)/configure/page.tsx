@@ -41,7 +41,41 @@ const COLOR_SWATCHES = [
   '#e2e2e2', '#22d07a', '#3b9de8', '#a78bfa', '#f5a623', '#e84560', '#8aaec6', '#9b6dff',
 ]
 
-const TABS = ['Users & Access', 'Sections', 'Checklists', 'Supervisors', 'Job Flows', 'Staff']
+const TABS = ['Users & Access', 'Sections', 'Checklists', 'Supervisors', 'Job Flows', 'Staff', 'System']
+
+function SeedButton() {
+  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [msg, setMsg] = useState('')
+  async function run() {
+    setState('loading')
+    try {
+      const r = await fetch('/api/templates/seed', { method: 'POST' })
+      const d = await r.json()
+      setMsg(d.message || 'Done')
+      setState('done')
+    } catch {
+      setMsg('Failed — try again')
+      setState('error')
+    }
+  }
+  return (
+    <div style={{ textAlign: 'right' }}>
+      <button
+        onClick={run}
+        disabled={state === 'loading'}
+        style={{
+          background: state === 'done' ? '#22d07a' : state === 'error' ? '#e84560' : '#E8681A',
+          color: '#fff', border: 'none', borderRadius: 4,
+          padding: '10px 20px', fontWeight: 700, fontSize: 13,
+          cursor: state === 'loading' ? 'wait' : 'pointer', whiteSpace: 'nowrap',
+        }}
+      >
+        {state === 'loading' ? 'Seeding…' : state === 'done' ? '✓ Done' : 'Reseed Now'}
+      </button>
+      {msg && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>{msg}</div>}
+    </div>
+  )
+}
 
 interface UserForm {
   id?: string
@@ -732,6 +766,17 @@ export default function ConfigurePage() {
                   </div>
                 )
               })}
+            </div>
+          </div>
+        ) : activeTab === 'System' ? (
+          <div style={{ background: 'var(--dark2)', border: '1px solid var(--border)', borderRadius: 4, padding: 24 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 20 }}>System Tools</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', background: '#111', borderRadius: 6, border: '1px solid var(--border)' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Reseed Quote Templates</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)' }}>Reloads all product templates and image paths into the database. Use after a code update.</div>
+              </div>
+              <SeedButton />
             </div>
           </div>
         ) : (
