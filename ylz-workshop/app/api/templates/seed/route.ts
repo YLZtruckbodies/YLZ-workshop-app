@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 const SEED_TEMPLATES = [
-  // ─── QUICK QUOTE TEMPLATES (confirmed pricing March 2026) ───
+  // ─── QUICK QUOTE TEMPLATES ───────────────────────────────────────────────────
   {
     name: '10m3 Hardox Tipper Body',
     category: 'quick-quote',
@@ -42,6 +42,28 @@ const SEED_TEMPLATES = [
     sortOrder: 1,
   },
   {
+    name: 'Alloy Tipper Body',
+    category: 'quick-quote',
+    description: 'Standard alloy tipper truck body. Includes Razor PVC/MESH electric tarp and electric hand controller.',
+    imagePath: '/images/truck-bodies/alloy-tipper.jpg',
+    configuration: {
+      buildType: 'truck-body',
+      templateType: 'quick-quote',
+      material: 'Aluminium',
+      tarpSystem: 'Razor PVC/MESH Electric',
+      controls: 'Electric hand controller',
+      leadTimeWeeks: 5,
+      paymentTerms: '30% deposit or dealer PO',
+      standardNotes: [
+        'Dimensions may vary ±25mm to suit specific truck chassis at no extra cost',
+        'Lead time 5 weeks from deposit',
+        '30% deposit required to confirm order, or dealer purchase order',
+      ],
+    },
+    basePrice: 0,
+    sortOrder: 2,
+  },
+  {
     name: 'Alloy Truck + Dog Combo 19m3',
     category: 'quick-quote',
     description: 'Standard 19m3 alloy tipper truck body + 4-axle SAF air ride dog trailer. Includes Razor PVC/MESH electric tarp on both truck and trailer. PBS rated 56.5T GCM.',
@@ -78,7 +100,7 @@ const SEED_TEMPLATES = [
       ],
     },
     basePrice: 180000,
-    sortOrder: 2,
+    sortOrder: 3,
   },
   {
     name: 'Alloy Truck + Dog Combo 20m3',
@@ -117,9 +139,76 @@ const SEED_TEMPLATES = [
       ],
     },
     basePrice: 181750,
-    sortOrder: 3,
+    sortOrder: 4,
   },
-
+  {
+    name: 'Alloy Truck + 3 Axle Dog',
+    category: 'quick-quote',
+    description: 'Standard alloy tipper truck body + 3-axle SAF air ride dog trailer. Includes Razor PVC/MESH electric tarp on both truck and trailer.',
+    imagePath: '/images/combos/alloy-truck-dog.jpg',
+    configuration: {
+      buildType: 'truck-and-trailer',
+      templateType: 'quick-quote',
+      truckConfig: {
+        material: 'Aluminium',
+        tarpSystem: 'Razor PVC/MESH Electric',
+        controls: 'Electric hand controller',
+      },
+      trailerConfig: {
+        trailerModel: 'DT-3 (3-Axle Dog)',
+        trailerType: 'P Beam',
+        material: 'Aluminium',
+        axleMake: 'SAF',
+        axleCount: 3,
+        axleType: 'Drum or Disc (customer choice)',
+        suspension: 'SAF Air Ride',
+        tarpSystem: 'Razor PVC/MESH Electric',
+      },
+      leadTimeWeeks: 5,
+      paymentTerms: '30% deposit or dealer PO',
+      standardNotes: [
+        'Drum or disc brake axles available — please specify at order (no price difference)',
+        'Lead time 5 weeks from deposit',
+        '30% deposit required to confirm order, or dealer purchase order',
+      ],
+    },
+    basePrice: 0,
+    sortOrder: 5,
+  },
+  {
+    name: 'Alloy Truck + 5 Axle Dog',
+    category: 'quick-quote',
+    description: 'Standard alloy tipper truck body + 5-axle SAF air ride dog trailer. Includes Razor PVC/MESH electric tarp on both truck and trailer.',
+    imagePath: '/images/combos/alloy-truck-dog.jpg',
+    configuration: {
+      buildType: 'truck-and-trailer',
+      templateType: 'quick-quote',
+      truckConfig: {
+        material: 'Aluminium',
+        tarpSystem: 'Razor PVC/MESH Electric',
+        controls: 'Electric hand controller',
+      },
+      trailerConfig: {
+        trailerModel: 'DT-5 (5-Axle Dog)',
+        trailerType: 'P Beam',
+        material: 'Aluminium',
+        axleMake: 'SAF',
+        axleCount: 5,
+        axleType: 'Drum or Disc (customer choice)',
+        suspension: 'SAF Air Ride',
+        tarpSystem: 'Razor PVC/MESH Electric',
+      },
+      leadTimeWeeks: 5,
+      paymentTerms: '30% deposit or dealer PO',
+      standardNotes: [
+        'Drum or disc brake axles available — please specify at order (no price difference)',
+        'Lead time 5 weeks from deposit',
+        '30% deposit required to confirm order, or dealer purchase order',
+      ],
+    },
+    basePrice: 0,
+    sortOrder: 6,
+  },
   {
     name: 'Hardox Truck + 3 Axle Dog',
     category: 'quick-quote',
@@ -156,7 +245,7 @@ const SEED_TEMPLATES = [
       ],
     },
     basePrice: 0,
-    sortOrder: 4,
+    sortOrder: 7,
   },
   {
     name: 'Hardox Truck + 4 Axle Dog 19m3',
@@ -195,7 +284,7 @@ const SEED_TEMPLATES = [
       ],
     },
     basePrice: 0,
-    sortOrder: 5,
+    sortOrder: 8,
   },
   {
     name: 'Hardox Truck + 4 Axle Dog 20m3',
@@ -234,76 +323,7 @@ const SEED_TEMPLATES = [
       ],
     },
     basePrice: 0,
-    sortOrder: 6,
-  },
-
-  {
-    name: 'Alloy Truck + 3 Axle Dog',
-    category: 'quick-quote',
-    description: 'Standard alloy tipper truck body + 3-axle SAF air ride dog trailer. Includes Razor PVC/MESH electric tarp on both truck and trailer.',
-    imagePath: '/images/combos/alloy-truck-dog.jpg',
-    configuration: {
-      buildType: 'truck-and-trailer',
-      templateType: 'quick-quote',
-      truckConfig: {
-        material: 'Aluminium',
-        tarpSystem: 'Razor PVC/MESH Electric',
-        controls: 'Electric hand controller',
-      },
-      trailerConfig: {
-        trailerModel: 'DT-3 (3-Axle Dog)',
-        trailerType: 'P Beam',
-        material: 'Aluminium',
-        axleMake: 'SAF',
-        axleCount: 3,
-        axleType: 'Drum or Disc (customer choice)',
-        suspension: 'SAF Air Ride',
-        tarpSystem: 'Razor PVC/MESH Electric',
-      },
-      leadTimeWeeks: 5,
-      paymentTerms: '30% deposit or dealer PO',
-      standardNotes: [
-        'Drum or disc brake axles available — please specify at order (no price difference)',
-        'Lead time 5 weeks from deposit',
-        '30% deposit required to confirm order, or dealer purchase order',
-      ],
-    },
-    basePrice: 0,
-    sortOrder: 7,
-  },
-  {
-    name: 'Alloy Truck + 5 Axle Dog',
-    category: 'quick-quote',
-    description: 'Standard alloy tipper truck body + 5-axle SAF air ride dog trailer. Includes Razor PVC/MESH electric tarp on both truck and trailer.',
-    imagePath: '/images/combos/alloy-truck-dog.jpg',
-    configuration: {
-      buildType: 'truck-and-trailer',
-      templateType: 'quick-quote',
-      truckConfig: {
-        material: 'Aluminium',
-        tarpSystem: 'Razor PVC/MESH Electric',
-        controls: 'Electric hand controller',
-      },
-      trailerConfig: {
-        trailerModel: 'DT-5 (5-Axle Dog)',
-        trailerType: 'P Beam',
-        material: 'Aluminium',
-        axleMake: 'SAF',
-        axleCount: 5,
-        axleType: 'Drum or Disc (customer choice)',
-        suspension: 'SAF Air Ride',
-        tarpSystem: 'Razor PVC/MESH Electric',
-      },
-      leadTimeWeeks: 5,
-      paymentTerms: '30% deposit or dealer PO',
-      standardNotes: [
-        'Drum or disc brake axles available — please specify at order (no price difference)',
-        'Lead time 5 weeks from deposit',
-        '30% deposit required to confirm order, or dealer purchase order',
-      ],
-    },
-    basePrice: 0,
-    sortOrder: 8,
+    sortOrder: 9,
   },
   {
     name: 'Hardox Truck + 5 Axle Dog',
@@ -341,10 +361,10 @@ const SEED_TEMPLATES = [
       ],
     },
     basePrice: 0,
-    sortOrder: 9,
+    sortOrder: 10,
   },
 
-  // ─── CONFIGURE BUILD TEMPLATES (starting points for custom builds) ───
+  // ─── CONFIGURE BUILD TEMPLATES (starting points for custom builds) ───────────
   {
     name: 'Hardox Tipper Body — Custom',
     category: 'truck-body',
@@ -361,7 +381,7 @@ const SEED_TEMPLATES = [
       tarpSystem: 'Razor PVC/MESH Electric',
     },
     basePrice: 0,
-    sortOrder: 7,
+    sortOrder: 1,
   },
   {
     name: 'Alloy Tipper Body — Custom',
@@ -374,7 +394,7 @@ const SEED_TEMPLATES = [
       tarpSystem: 'Razor PVC/MESH Electric',
     },
     basePrice: 0,
-    sortOrder: 8,
+    sortOrder: 2,
   },
   {
     name: '3-Axle Dog Trailer — Custom',
@@ -391,7 +411,7 @@ const SEED_TEMPLATES = [
       tarpSystem: 'Razor PVC/MESH Electric',
     },
     basePrice: 0,
-    sortOrder: 9,
+    sortOrder: 1,
   },
   {
     name: '4-Axle Dog Trailer — Custom',
@@ -408,7 +428,7 @@ const SEED_TEMPLATES = [
       tarpSystem: 'Razor PVC/MESH Electric',
     },
     basePrice: 0,
-    sortOrder: 10,
+    sortOrder: 2,
   },
   {
     name: '5-Axle Dog Trailer — Custom',
@@ -425,7 +445,7 @@ const SEED_TEMPLATES = [
       tarpSystem: 'Razor PVC/MESH Electric',
     },
     basePrice: 0,
-    sortOrder: 11,
+    sortOrder: 3,
   },
   {
     name: '2-Axle Semi Trailer — Custom',
@@ -442,7 +462,7 @@ const SEED_TEMPLATES = [
       tarpSystem: 'Razor PVC/MESH Electric',
     },
     basePrice: 0,
-    sortOrder: 12,
+    sortOrder: 4,
   },
   {
     name: '3-Axle Semi Trailer — Custom',
@@ -459,7 +479,7 @@ const SEED_TEMPLATES = [
       tarpSystem: 'Razor PVC/MESH Electric',
     },
     basePrice: 0,
-    sortOrder: 13,
+    sortOrder: 5,
   },
   {
     name: 'Convertor Dolly — Custom',
@@ -473,7 +493,7 @@ const SEED_TEMPLATES = [
       material: 'Steel',
     },
     basePrice: 0,
-    sortOrder: 14,
+    sortOrder: 6,
   },
 ]
 
