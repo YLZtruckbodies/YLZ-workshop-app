@@ -132,35 +132,46 @@ export default function NewQuotePage() {
       ) : (
         <>
           {/* Quick Quote section */}
-          {grouped['quick-quote'] && (
-            <section style={{ marginBottom: 48 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                <div style={{
-                  fontFamily: "'League Spartan', sans-serif",
-                  fontSize: 13, fontWeight: 800, letterSpacing: 2,
-                  textTransform: 'uppercase', color: '#fff',
-                }}>
-                  ⚡ Quick Quote
+          {grouped['quick-quote'] && (() => {
+            const hardox = grouped['quick-quote'].filter(t => t.name.toLowerCase().startsWith('hardox') || t.name.includes('10m3 Hardox'))
+            const alloy  = grouped['quick-quote'].filter(t => t.name.toLowerCase().startsWith('alloy'))
+            const rowGrid = (count: number) => ({
+              display: 'grid',
+              gridTemplateColumns: `repeat(${count}, 1fr)`,
+              gap: 14,
+            })
+            return (
+              <section style={{ marginBottom: 48 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                  <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#fff' }}>
+                    ⚡ Quick Quote
+                  </div>
+                  <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
+                    Fixed-price standard builds — ready in seconds
+                  </div>
                 </div>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-                <div style={{
-                  fontSize: 11, color: 'rgba(255,255,255,0.3)',
-                  fontStyle: 'italic',
-                }}>
-                  Fixed-price standard builds — ready in seconds
-                </div>
-              </div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                gap: 16,
-              }}>
-                {grouped['quick-quote'].map((t) => (
-                  <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />
-                ))}
-              </div>
-            </section>
-          )}
+
+                {hardox.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: '#E8681A', marginBottom: 10 }}>Hardox</div>
+                    <div style={{ ...rowGrid(hardox.length), marginBottom: 20 }}>
+                      {hardox.map(t => <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />)}
+                    </div>
+                  </>
+                )}
+
+                {alloy.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>Alloy</div>
+                    <div style={rowGrid(alloy.length)}>
+                      {alloy.map(t => <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />)}
+                    </div>
+                  </>
+                )}
+              </section>
+            )
+          })()}
 
           {/* Configure Build section */}
           <section style={{ marginBottom: 48 }}>
