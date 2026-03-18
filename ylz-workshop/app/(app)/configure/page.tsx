@@ -31,6 +31,7 @@ const SCREEN_OPTIONS = [
   { key: 'timesheet', label: 'Time Logging' },
   { key: 'cashflow', label: 'Cashflow & Deliveries' },
   { key: 'coldform', label: 'Coldform' },
+  { key: 'mrp-tools', label: 'MRP Tools' },
   { key: 'reports', label: 'Reports' },
   { key: 'quotes', label: 'Sales / Quoting' },
   { key: 'engineering', label: 'Engineering' },

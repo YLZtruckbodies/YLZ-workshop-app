@@ -35,6 +35,7 @@ const NAV_ITEMS = [
   { key: 'timesheet', label: 'Time Logging', icon: '⏱', section: 'TOOLS' },
   { key: 'cashflow', label: 'Cashflow & Deliveries', icon: '💰', section: 'TOOLS' },
   { key: 'coldform', label: 'Coldform', icon: '🔩', section: 'TOOLS' },
+  { key: 'mrp-tools', label: 'MRP Tools', icon: '⚙️', section: 'TOOLS' },
   { key: 'reports', label: 'Reports', icon: '📋', section: 'TOOLS' },
   { key: 'quotes', label: 'Sales / Quoting', icon: '💲', section: 'TOOLS' },
   { key: 'engineering', label: 'Engineering', icon: '📐', section: 'TOOLS' },
