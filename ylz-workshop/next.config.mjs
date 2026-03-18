@@ -11,6 +11,13 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['pdf-parse', 'pdf-lib'],
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      const existing = Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)
+      config.externals = [...existing, 'pdf-lib', 'pdf-parse']
+    }
+    return config
+  },
 };
 
 export default nextConfig;
