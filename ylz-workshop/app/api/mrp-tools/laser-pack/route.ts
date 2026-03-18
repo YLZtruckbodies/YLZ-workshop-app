@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>
 import { parseMO } from '@/lib/parseMO'
-import { generateLaserSheet, type DrawingMap } from '@/lib/generateSheet'
+import { generateLaserSheet } from '@/lib/generateSheet'
+import { fetchPartDrawings } from '@/lib/drive'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -27,19 +28,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const drawings: DrawingMap = new Map()
-    const drawingFiles = formData.getAll('drawing') as File[]
-    for (const df of drawingFiles) {
-      const partMatch = df.name.match(/(\d{3}-\d{2}-\d{3})/)
-      if (partMatch) {
-        const bytes = new Uint8Array(await df.arrayBuffer())
-        drawings.set(partMatch[1], bytes)
-      }
-    }
+    const parts = mo.laserParts.length > 0 ? mo.laserParts : mo.parts
+    const partNumbers = parts.map(p => p.partNumber)
+
+    // Auto-fetch drawings from Google Drive YLZparts folder
+    const drawings = await fetchPartDrawings(partNumbers)
 
     const pdfBytes = await generateLaserSheet(mo, drawings)
 
-    const parts = mo.laserParts.length > 0 ? mo.laserParts : mo.parts
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
@@ -52,7 +48,7 @@ export async function POST(req: NextRequest) {
           date:          mo.date,
           totalParts:    mo.parts.length,
           laserParts:    mo.laserParts.length,
-          partNumbers:   parts.map(p => p.partNumber),
+          partNumbers,
           drawingsFound: Array.from(drawings.keys()),
         }),
       },

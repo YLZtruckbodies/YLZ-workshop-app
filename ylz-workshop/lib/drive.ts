@@ -3,6 +3,9 @@ import { google, drive_v3 } from 'googleapis'
 // Job Sheets parent folder ID in Google Drive
 const JOB_SHEETS_FOLDER_ID = '10ZvynBY7AOABRU4q_D_SmSrAFN0OkzMI'
 
+// YLZparts drawings folder ID
+const PARTS_FOLDER_ID = '0AMEx2pR1R5dwUk9PVA'
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 let driveClient: drive_v3.Drive | null = null
@@ -168,4 +171,35 @@ export async function downloadDriveFile(fileId: string): Promise<{
     mimeType,
     fileName,
   }
+}
+
+/**
+ * Search the YLZparts folder for PDFs matching the given part numbers.
+ * Returns a Map<partNumber, Uint8Array> of found drawings.
+ */
+export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<string, Uint8Array>> {
+  const drive = await getDriveClient()
+  const result = new Map<string, Uint8Array>()
+
+  await Promise.all(partNumbers.map(async (pn) => {
+    try {
+      const res = await drive.files.list({
+        q: `'${PARTS_FOLDER_ID}' in parents and name contains '${pn}' and mimeType = 'application/pdf' and trashed = false`,
+        fields: 'files(id, name)',
+        pageSize: 1,
+      })
+      const file = res.data.files?.[0]
+      if (!file?.id) return
+
+      const dl = await drive.files.get(
+        { fileId: file.id, alt: 'media' },
+        { responseType: 'arraybuffer' }
+      )
+      result.set(pn, new Uint8Array(dl.data as ArrayBuffer))
+    } catch {
+      // Drawing not found or download failed — skip, placeholder will be used
+    }
+  }))
+
+  return result
 }
