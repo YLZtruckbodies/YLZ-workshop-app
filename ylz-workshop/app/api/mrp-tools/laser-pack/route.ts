@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const drawings = await fetchPartDrawings(partNumbers)
     const pdfBuffer = await generateLaserSheet(mo, drawings)
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
