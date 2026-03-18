@@ -1,48 +1,42 @@
-// Use require() inline so Next.js/webpack does not statically bundle pdf-lib
 /* eslint-disable @typescript-eslint/no-require-imports */
-
 import type { MOData, MOPart } from './parseMO'
 
-export type DrawingMap = Map<string, Uint8Array>
+// DrawingMap: part number → JPEG thumbnail Buffer (from Google Drive)
+export type DrawingMap = Map<string, Buffer>
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-const A4W    = 595.28
-const A4H    = 841.89
-const ML     = 36
-const MR     = 36
+// ── Layout constants (A4, points, top-left origin) ────────────────────────────
+const A4W   = 595.28
+const A4H   = 841.89
+const ML    = 36
+const MR    = 36
 const USABLE = A4W - ML - MR
 
-const CARD_GAP = 10
-const CARD_W   = (USABLE - CARD_GAP) / 2
-const CARD_H   = 130
-const THUMB_W  = 115
-const THUMB_H  = 105
-const GROUP_HDR_H = 32
-const HEADER_H    = 170
+const CARD_GAP    = 10
+const CARD_W      = (USABLE - CARD_GAP) / 2
+const CARD_H      = 130
+const THUMB_W     = 115
+const THUMB_H     = 105
+const GROUP_HDR_H = 30
+const HEADER_H    = 112
 
-export async function generateLaserSheet(mo: MOData, drawings: DrawingMap = new Map()): Promise<Uint8Array> {
-  // Lazy require — keeps pdf-lib out of the webpack bundle
-  // Indirect eval require — webpack cannot statically analyse this, so pdf-lib is never bundled
-  // eslint-disable-next-line no-eval
-  const { PDFDocument, rgb, StandardFonts } = (0, eval)('require')('pdf-lib')
+// ── Brand colours ─────────────────────────────────────────────────────────────
+const COPPER  = '#7a3a1e'
+const BLACK   = '#0a0a0a'
+const WHITE   = '#ffffff'
+const LGREY   = '#ededed'
+const DGREY   = '#595959'
+const TEXTBLK = '#141414'
+const MGREY   = '#999999'
 
-  // Colours
-  const COPPER  = rgb(0.478, 0.227, 0.118)
-  const BLACK   = rgb(0.039, 0.039, 0.039)
-  const WHITE   = rgb(1, 1, 1)
-  const LGREY   = rgb(0.93, 0.93, 0.93)
-  const DGREY   = rgb(0.35, 0.35, 0.35)
-  const TEXTBLK = rgb(0.08, 0.08, 0.08)
-  const MGREY   = rgb(0.6, 0.6, 0.6)
+export async function generateLaserSheet(mo: MOData, drawings: DrawingMap = new Map()): Promise<Buffer> {
+  const PDFDocument = require('pdfkit')
 
-  const doc  = await PDFDocument.create()
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold)
-  const reg  = await doc.embedFont(StandardFonts.Helvetica)
+  const doc = new PDFDocument({ size: 'A4', margin: 0, autoFirstPage: true })
 
   const parts     = mo.laserParts.length > 0 ? mo.laserParts : mo.parts
   const hasFilter = mo.laserParts.length > 0
 
-  // Group parts by material
+  // Group by material
   const groups = new Map<string, MOPart[]>()
   for (const part of parts) {
     const key = part.material || 'Unknown Material'
@@ -50,147 +44,153 @@ export async function generateLaserSheet(mo: MOData, drawings: DrawingMap = new 
     groups.get(key)!.push(part)
   }
 
-  let curPage: any = null
-  let curY = 0
+  const chunks: Buffer[] = []
+  doc.on('data', (b: Buffer) => chunks.push(b))
+
+  let curY      = 0
+  let firstPage = true
 
   const newPage = () => {
-    const p = doc.addPage([A4W, A4H])
-    drawPageHeader(p, bold, reg, mo, hasFilter, rgb, COPPER, BLACK, WHITE, MGREY, TEXTBLK)
-    curY = A4H - HEADER_H
-    curPage = p
+    if (!firstPage) doc.addPage({ size: 'A4', margin: 0 })
+    firstPage = false
+    drawHeader(doc, mo, hasFilter)
+    curY = HEADER_H
   }
 
-  const ensureSpace = (needed: number) => {
-    if (!curPage || curY - needed < 50) newPage()
+  const ensureSpace = (h: number) => {
+    if (curY + h > A4H - 40) newPage()
   }
 
   newPage()
 
   for (const [material, mParts] of Array.from(groups)) {
     ensureSpace(GROUP_HDR_H + CARD_H + 10)
-    drawGroupHeader(curPage, bold, material, curY, BLACK, WHITE, COPPER)
-    curY -= GROUP_HDR_H + 6
+    drawGroupHeader(doc, material, curY)
+    curY += GROUP_HDR_H + 6
 
     for (let i = 0; i < mParts.length; i += 2) {
       ensureSpace(CARD_H + 10)
-      const leftPart  = mParts[i]
-      const rightPart = mParts[i + 1] ?? null
-
-      await drawCard(doc, curPage, bold, reg, leftPart,  ML,              curY, drawings, rgb, COPPER, BLACK, WHITE, LGREY, DGREY, TEXTBLK, MGREY)
-      if (rightPart) {
-        await drawCard(doc, curPage, bold, reg, rightPart, ML + CARD_W + CARD_GAP, curY, drawings, rgb, COPPER, BLACK, WHITE, LGREY, DGREY, TEXTBLK, MGREY)
+      drawCard(doc, mParts[i],        ML,              curY, drawings)
+      if (mParts[i + 1]) {
+        drawCard(doc, mParts[i + 1],  ML + CARD_W + CARD_GAP, curY, drawings)
       }
-      curY -= CARD_H + 8
+      curY += CARD_H + 8
     }
-    curY -= 10
+    curY += 10
   }
 
-  // Page numbers
-  const total = doc.getPageCount()
-  if (total > 1) {
-    const pages = doc.getPages()
-    for (let i = 0; i < pages.length; i++) {
-      pages[i].drawText(`${i + 1} / ${total}`, {
-        x: A4W - MR - 30, y: A4H - 18, size: 7.5, font: reg, color: MGREY,
-      })
-    }
-  }
-
-  return doc.save()
-}
-
-function drawPageHeader(page: any, bold: any, reg: any, mo: MOData, filtered: boolean, rgb: any, COPPER: any, BLACK: any, WHITE: any, MGREY: any, TEXTBLK: any) {
-  page.drawRectangle({ x: 0, y: A4H - 62, width: A4W, height: 62, color: BLACK })
-  page.drawText('COLD FORM',      { x: ML, y: A4H - 24, size: 16,  font: bold, color: WHITE })
-  page.drawText('LASER CUT PACK', { x: ML, y: A4H - 40, size: 8.5, font: reg,  color: rgb(0.65, 0.65, 0.65) })
-  page.drawRectangle({ x: 0, y: A4H - 65, width: A4W, height: 3, color: COPPER })
-
-  const dy  = A4H - 90
-  const col = [ML, 185, 330, 430]
-
-  labelVal(page, bold, reg, col[0], dy, 'MO NUMBER', mo.moNumber, 13,  MGREY, TEXTBLK)
-  labelVal(page, bold, reg, col[1], dy, 'PRODUCT',   truncate(mo.product, 26), 8.5, MGREY, TEXTBLK)
-  labelVal(page, bold, reg, col[2], dy, 'DATE',      mo.date,     10, MGREY, TEXTBLK)
-  labelVal(page, bold, reg, col[3], dy, 'QTY',       mo.quantity, 10, MGREY, TEXTBLK)
-
-  if (filtered) {
-    page.drawText('LASER CUT PARTS ONLY', { x: col[1], y: dy - 28, size: 7, font: bold, color: COPPER })
-  }
-
-  page.drawLine({
-    start: { x: ML, y: dy - 36 },
-    end:   { x: A4W - MR, y: dy - 36 },
-    thickness: 0.75, color: COPPER,
+  return new Promise<Buffer>((resolve, reject) => {
+    doc.on('end',   () => resolve(Buffer.concat(chunks)))
+    doc.on('error', reject)
+    doc.end()
   })
 }
 
-function drawGroupHeader(page: any, bold: any, material: string, y: number, BLACK: any, WHITE: any, COPPER: any) {
-  page.drawRectangle({ x: ML, y: y - GROUP_HDR_H + 8, width: USABLE, height: GROUP_HDR_H - 2, color: BLACK })
-  page.drawRectangle({ x: ML, y: y - GROUP_HDR_H + 6, width: 3,      height: GROUP_HDR_H - 2, color: COPPER })
-  page.drawText(material.toUpperCase(), { x: ML + 10, y: y - 16, size: 9, font: bold, color: WHITE })
+// ── Page header ───────────────────────────────────────────────────────────────
+function drawHeader(doc: any, mo: MOData, filtered: boolean) {
+  doc.rect(0, 0, A4W, 62).fill(BLACK)
+  doc.font('Helvetica-Bold').fontSize(16).fillColor(WHITE)
+    .text('COLD FORM',      ML, 18, { lineBreak: false })
+  doc.font('Helvetica').fontSize(8.5).fillColor('#a6a6a6')
+    .text('LASER CUT PACK', ML, 36, { lineBreak: false })
+
+  doc.rect(0, 62, A4W, 3).fill(COPPER)
+
+  const dy  = 72
+  const col = [ML, 185, 330, 430]
+
+  labelVal(doc, col[0], dy, 'MO NUMBER', mo.moNumber,              13)
+  labelVal(doc, col[1], dy, 'PRODUCT',   truncate(mo.product, 26), 8.5)
+  labelVal(doc, col[2], dy, 'DATE',      mo.date,                  10)
+  labelVal(doc, col[3], dy, 'QTY',       mo.quantity,              10)
+
+  if (filtered) {
+    doc.font('Helvetica-Bold').fontSize(7).fillColor(COPPER)
+      .text('LASER CUT PARTS ONLY', col[1], dy + 30, { lineBreak: false })
+  }
+
+  doc.moveTo(ML, 108).lineTo(A4W - MR, 108).lineWidth(0.75).stroke(COPPER)
 }
 
-async function drawCard(
-  doc: any, page: any, bold: any, reg: any,
-  part: MOPart, x: number, y: number, drawings: DrawingMap,
-  rgb: any, COPPER: any, BLACK: any, WHITE: any, LGREY: any, DGREY: any, TEXTBLK: any, MGREY: any,
-) {
-  const cardBottom = y - CARD_H
+// ── Group header ──────────────────────────────────────────────────────────────
+function drawGroupHeader(doc: any, material: string, y: number) {
+  doc.rect(ML, y, USABLE, GROUP_HDR_H).fill(BLACK)
+  doc.rect(ML, y, 3, GROUP_HDR_H).fill(COPPER)
+  doc.font('Helvetica-Bold').fontSize(9).fillColor(WHITE)
+    .text(material.toUpperCase(), ML + 10, y + 10, { lineBreak: false })
+}
 
-  page.drawRectangle({ x, y: cardBottom, width: CARD_W, height: CARD_H, color: LGREY })
-  page.drawRectangle({ x, y: cardBottom, width: CARD_W, height: CARD_H, borderColor: rgb(0.78, 0.78, 0.78), borderWidth: 0.75 })
-  page.drawRectangle({ x, y: y - 3, width: CARD_W, height: 3, color: COPPER })
+// ── Card ──────────────────────────────────────────────────────────────────────
+function drawCard(doc: any, part: MOPart, x: number, y: number, drawings: DrawingMap) {
+  // Background + border
+  doc.rect(x, y, CARD_W, CARD_H).fill(LGREY)
+  doc.rect(x, y, CARD_W, CARD_H).lineWidth(0.75).stroke('#c8c8c8')
+
+  // Copper top accent
+  doc.rect(x, y, CARD_W, 3).fill(COPPER)
 
   const PAD    = 8
   const thumbX = x + PAD
-  const thumbY = y - PAD - THUMB_H
+  const thumbY = y + PAD + 3
 
-  const drawingBytes = drawings.get(part.partNumber)
-  if (drawingBytes) {
+  // Thumbnail
+  const img = drawings.get(part.partNumber)
+  if (img) {
     try {
-      const embedded = await doc.embedPdf(drawingBytes, [0])
-      const ep    = embedded[0]
-      const scale = Math.min(THUMB_W / ep.width, THUMB_H / ep.height)
-      const tw    = ep.width  * scale
-      const th    = ep.height * scale
-      const tx    = thumbX + (THUMB_W - tw) / 2
-      const ty    = thumbY + (THUMB_H - th) / 2
-      page.drawPage(ep, { x: tx, y: ty, width: tw, height: th })
+      doc.image(img, thumbX, thumbY, {
+        fit:    [THUMB_W, THUMB_H],
+        align:  'center',
+        valign: 'center',
+      })
     } catch {
-      drawThumbPlaceholder(page, reg, thumbX, thumbY, THUMB_W, THUMB_H, 'Drawing error', rgb)
+      drawPlaceholder(doc, thumbX, thumbY)
     }
   } else {
-    drawThumbPlaceholder(page, reg, thumbX, thumbY, THUMB_W, THUMB_H, 'No drawing', rgb)
+    drawPlaceholder(doc, thumbX, thumbY)
   }
 
-  page.drawRectangle({ x: thumbX, y: thumbY, width: THUMB_W, height: THUMB_H, borderColor: rgb(0.7, 0.7, 0.7), borderWidth: 0.5 })
+  // Thumbnail border
+  doc.rect(thumbX, thumbY, THUMB_W, THUMB_H).lineWidth(0.5).stroke('#b3b3b3')
 
+  // Part details (right of thumbnail)
   const detailX = thumbX + THUMB_W + PAD
   const detailW = CARD_W - THUMB_W - PAD * 3
-  const detailY = y - PAD - 4
+  const detailY = y + PAD + 4
 
-  page.drawText(part.partNumber,           { x: detailX, y: detailY,      size: 10,  font: bold, color: TEXTBLK })
-  page.drawText(truncate(part.description, 22), { x: detailX, y: detailY - 16, size: 8, font: reg,  color: DGREY })
+  doc.font('Helvetica-Bold').fontSize(10).fillColor(TEXTBLK)
+    .text(part.partNumber, detailX, detailY, { lineBreak: false })
+  doc.font('Helvetica').fontSize(8).fillColor(DGREY)
+    .text(truncate(part.description, 22), detailX, detailY + 16, { lineBreak: false })
 
-  page.drawRectangle({ x: detailX, y: detailY - 42, width: detailW, height: 18, color: BLACK })
-  page.drawText(`QTY  ${part.quantity.replace(' EACH', '')}`, { x: detailX + 4, y: detailY - 35, size: 8.5, font: bold, color: WHITE })
+  // Qty badge
+  doc.rect(detailX, detailY + 34, detailW, 18).fill(BLACK)
+  doc.font('Helvetica-Bold').fontSize(8.5).fillColor(WHITE)
+    .text(`QTY  ${part.quantity.replace(' EACH', '')}`, detailX + 4, detailY + 39, { lineBreak: false })
 
-  page.drawText(part.thickness.toUpperCase(), { x: detailX, y: detailY - 66, size: 18,  font: bold, color: COPPER })
-  page.drawText('THICK',                      { x: detailX, y: detailY - 80, size: 6.5, font: reg,  color: MGREY })
+  // Thickness callout
+  doc.font('Helvetica-Bold').fontSize(18).fillColor(COPPER)
+    .text(part.thickness.toUpperCase(), detailX, detailY + 62, { lineBreak: false })
+  doc.font('Helvetica').fontSize(6.5).fillColor(MGREY)
+    .text('THICK', detailX, detailY + 83, { lineBreak: false })
 }
 
-function drawThumbPlaceholder(page: any, reg: any, x: number, y: number, w: number, h: number, msg: string, rgb: any) {
-  page.drawRectangle({ x, y, width: w, height: h, color: rgb(0.88, 0.88, 0.88) })
-  page.drawLine({ start: { x, y }, end: { x: x + w, y: y + h }, thickness: 0.5, color: rgb(0.75, 0.75, 0.75) })
-  page.drawLine({ start: { x: x + w, y }, end: { x, y: y + h }, thickness: 0.5, color: rgb(0.75, 0.75, 0.75) })
-  page.drawText(msg, { x: x + 4, y: y + 6, size: 6, font: reg, color: rgb(0.55, 0.55, 0.55) })
+// ── Thumbnail placeholder ─────────────────────────────────────────────────────
+function drawPlaceholder(doc: any, x: number, y: number) {
+  doc.rect(x, y, THUMB_W, THUMB_H).fill('#e0e0e0')
+  doc.moveTo(x, y).lineTo(x + THUMB_W, y + THUMB_H).lineWidth(0.5).stroke('#bfbfbf')
+  doc.moveTo(x + THUMB_W, y).lineTo(x, y + THUMB_H).lineWidth(0.5).stroke('#bfbfbf')
+  doc.font('Helvetica').fontSize(7).fillColor('#8c8c8c')
+    .text('No drawing', x + 4, y + THUMB_H - 14, { lineBreak: false })
 }
 
-function labelVal(page: any, bold: any, reg: any, x: number, y: number, label: string, value: string, size: number, MGREY: any, TEXTBLK: any) {
-  page.drawText(label, { x, y: y + 2,  size: 6.5, font: bold, color: MGREY })
-  page.drawText(value, { x, y: y - 12, size,      font: bold, color: TEXTBLK })
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function labelVal(doc: any, x: number, y: number, label: string, value: string, size: number) {
+  doc.font('Helvetica-Bold').fontSize(6.5).fillColor(MGREY)
+    .text(label, x, y, { lineBreak: false })
+  doc.font('Helvetica-Bold').fontSize(size).fillColor(TEXTBLK)
+    .text(value, x, y + 14, { lineBreak: false })
 }
 
 function truncate(s: string, max: number): string {
-  return s.length > max ? s.slice(0, max - 1) + '...' : s
+  return s.length > max ? s.slice(0, max - 1) + '…' : s
 }

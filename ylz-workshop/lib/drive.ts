@@ -175,29 +175,43 @@ export async function downloadDriveFile(fileId: string): Promise<{
 
 /**
  * Search the YLZparts folder for PDFs matching the given part numbers.
- * Returns a Map<partNumber, Uint8Array> of found drawings.
+ * Returns a Map<partNumber, Buffer> of JPEG thumbnail images from Google Drive.
  */
-export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<string, Uint8Array>> {
+export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<string, Buffer>> {
   const drive = await getDriveClient()
-  const result = new Map<string, Uint8Array>()
+  const result = new Map<string, Buffer>()
+
+  // Get OAuth access token for fetching thumbnail URLs
+  let accessToken: string | null = null
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const auth = (drive as any)._options.auth
+    const tokenRes = await auth.getAccessToken()
+    accessToken = tokenRes.token
+  } catch { /* fall through — thumbnails will be skipped */ }
 
   await Promise.all(partNumbers.map(async (pn) => {
     try {
       const res = await drive.files.list({
         q: `'${PARTS_FOLDER_ID}' in parents and name contains '${pn}' and mimeType = 'application/pdf' and trashed = false`,
-        fields: 'files(id, name)',
+        fields: 'files(id, name, thumbnailLink)',
         pageSize: 1,
       })
       const file = res.data.files?.[0]
-      if (!file?.id) return
+      if (!file) return
 
-      const dl = await drive.files.get(
-        { fileId: file.id, alt: 'media' },
-        { responseType: 'arraybuffer' }
-      )
-      result.set(pn, new Uint8Array(dl.data as ArrayBuffer))
+      if (file.thumbnailLink && accessToken) {
+        // Request a larger thumbnail (=s400 instead of default =s220)
+        const thumbUrl = file.thumbnailLink.replace(/=s\d+$/, '=s400')
+        const thumbRes = await fetch(thumbUrl, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        if (thumbRes.ok) {
+          result.set(pn, Buffer.from(await thumbRes.arrayBuffer()))
+        }
+      }
     } catch {
-      // Drawing not found or download failed — skip, placeholder will be used
+      // Drawing not found or download failed — skip, placeholder will be shown
     }
   }))
 

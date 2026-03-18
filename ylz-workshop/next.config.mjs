@@ -9,10 +9,10 @@ const nextConfig = {
     ],
   },
   experimental: {
-    serverComponentsExternalPackages: ['pdf-parse', 'pdf-lib'],
+    serverComponentsExternalPackages: ['pdf-parse', 'pdfkit'],
   },
   webpack: (config) => {
-    config.externals.push('pdf-lib', 'pdf-parse')
+    config.externals.push('pdf-parse', 'pdfkit')
     return config
   },
 };

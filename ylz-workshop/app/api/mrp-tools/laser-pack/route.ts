@@ -6,29 +6,6 @@ import { fetchPartDrawings } from '@/lib/drive'
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
-// Polyfill DOMMatrix for Node.js 18 (pdf-lib requires it, Node 19+ has it natively)
-if (typeof globalThis.DOMMatrix === 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(globalThis as any).DOMMatrix = class DOMMatrix {
-    a = 1; b = 0; c = 0; d = 1; e = 0; f = 0
-    m11 = 1; m12 = 0; m13 = 0; m14 = 0
-    m21 = 0; m22 = 1; m23 = 0; m24 = 0
-    m31 = 0; m32 = 0; m33 = 1; m34 = 0
-    m41 = 0; m42 = 0; m43 = 0; m44 = 1
-    is2D = true; isIdentity = true
-    constructor(init?: number[]) {
-      if (Array.isArray(init) && init.length === 6) {
-        this.a = this.m11 = init[0]
-        this.b = this.m12 = init[1]
-        this.c = this.m21 = init[2]
-        this.d = this.m22 = init[3]
-        this.e = this.m41 = init[4]
-        this.f = this.m42 = init[5]
-      }
-    }
-  }
-}
-
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
@@ -40,7 +17,6 @@ export async function POST(req: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // Require inside the handler to avoid pdf-parse test-file check at module load
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>
     const parsed = await pdfParse(buffer)
@@ -53,15 +29,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const parts = mo.laserParts.length > 0 ? mo.laserParts : mo.parts
+    const parts      = mo.laserParts.length > 0 ? mo.laserParts : mo.parts
     const partNumbers = parts.map(p => p.partNumber)
 
-    // Auto-fetch drawings from Google Drive YLZparts folder
     const drawings = await fetchPartDrawings(partNumbers)
+    const pdfBuffer = await generateLaserSheet(mo, drawings)
 
-    const pdfBytes = await generateLaserSheet(mo, drawings)
-
-    return new NextResponse(Buffer.from(pdfBytes), {
+    return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
@@ -80,7 +54,7 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('Laser pack error:', err)
-    const message = err instanceof Error ? `${err.message} — ${err.stack?.split('\n')[1]?.trim() ?? ''}` : 'Failed to process PDF.'
+    const message = err instanceof Error ? err.message : 'Failed to process PDF.'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
