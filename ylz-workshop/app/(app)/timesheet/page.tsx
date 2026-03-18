@@ -393,7 +393,7 @@ export default function TimesheetPage() {
     if (!workers) return []
     const ts = weekTimesheets || []
     const sectionOrder = ['hardox', 'alloy', 'chassis', 'paint', 'fitout', 'trailerfit', 'subfit', 'other']
-    const sections: Record<string, { workerName: string; color: string; section: string; days: { totalHours: number; normalHrs: number; otHrs: number; status: string | null }[]; weekNormal: number; weekOT: number }[]> = {}
+    const sections: Record<string, { workerName: string; color: string; section: string; days: { totalHours: number; normalHrs: number; otHrs: number; status: string | null; workSections: string[] }[]; weekNormal: number; weekOT: number }[]> = {}
 
     for (const w of workers as any[]) {
       const sec = w.section || 'other'
@@ -401,7 +401,7 @@ export default function TimesheetPage() {
       const days = weekDates.map((d) => {
         const entries = ts.filter((t: any) => t.workerName === w.name && t.date === d)
         const statusEntry = entries.find((t: any) => t.startTime === 'LEAVE' || t.startTime === 'SICK')
-        if (statusEntry) return { totalHours: 0, normalHrs: 0, otHrs: 0, status: statusEntry.startTime as string }
+        if (statusEntry) return { totalHours: 0, normalHrs: 0, otHrs: 0, status: statusEntry.startTime as string, workSections: [] }
         const ordRaw = entries.filter((t: any) => !['overtime','early_ot'].includes(t.section)).reduce((s: number, t: any) => s + (t.hours || 0), 0)
         const otBlockHrs = entries.filter((t: any) => ['overtime','early_ot'].includes(t.section)).reduce((s: number, t: any) => s + (t.hours || 0), 0)
         // Apply 30-min break deduction for any day >= 5h ordinary raw (standard full/part day)
@@ -409,7 +409,8 @@ export default function TimesheetPage() {
         const normalHrs = Math.min(Math.max(0, ordRaw - breakDeduction), ORDINARY_CAP)
         const otHrs = otBlockHrs // excess ordinary is absorbed, not added to OT
         const totalHours = normalHrs + otHrs
-        return { totalHours, normalHrs, otHrs, status: null }
+        const workSections = [...new Set(entries.map((t: any) => t.workSection).filter(Boolean))] as string[]
+        return { totalHours, normalHrs, otHrs, status: null, workSections }
       })
       const weekNormal = days.reduce((sum, d) => sum + d.normalHrs, 0)
       const weekOT = days.reduce((sum, d) => sum + d.otHrs, 0)
@@ -1231,6 +1232,24 @@ export default function TimesheetPage() {
                                         {day.otHrs > 0 && (
                                           <div style={{ fontSize: 10, fontWeight: 700, color: '#f5a623', marginTop: 1 }}>
                                             +{Math.round(day.otHrs * 10) / 10} OT
+                                          </div>
+                                        )}
+                                        {day.workSections.length > 0 && (
+                                          <div style={{ display: 'flex', justifyContent: 'center', gap: 3, marginTop: 4, flexWrap: 'wrap' }}>
+                                            {day.workSections.map((ws) => (
+                                              <span
+                                                key={ws}
+                                                title={SECTION_LABELS[ws] || ws}
+                                                style={{
+                                                  display: 'inline-block',
+                                                  width: 7,
+                                                  height: 7,
+                                                  borderRadius: '50%',
+                                                  background: SECTION_COLORS[ws] || '#787878',
+                                                  flexShrink: 0,
+                                                }}
+                                              />
+                                            ))}
                                           </div>
                                         )}
                                       </div>

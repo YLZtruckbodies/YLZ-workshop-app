@@ -9,10 +9,20 @@ export async function POST(req: NextRequest) {
     orderBy: { createdAt: 'asc' },
   })
 
+  const SECTION_LABELS: Record<string, string> = {
+    alloy: 'Alloy Fabrication',
+    hardox: 'Hardox / Steel Fab',
+    chassis: 'Chassis',
+    fitout: 'Fitout',
+    trailerfit: 'Trailer Fitout',
+    subfit: 'Subframe Fitout',
+    paint: 'Paint',
+  }
+
   // Generate CSV
-  const header = 'Date,Worker,Job Number,Section,Start Time,End Time,Hours'
+  const header = 'Date,Worker,Job Number,Block,Work Section,Start Time,End Time,Hours'
   const rows = timesheets.map(
-    (t) => `${t.date},${t.workerName},${t.jobNum},${t.section},${t.startTime},${t.endTime},${t.hours}`
+    (t) => `${t.date},${t.workerName},${t.jobNum},${t.section},${SECTION_LABELS[t.workSection] || t.workSection || ''},${t.startTime},${t.endTime},${t.hours}`
   )
   const csv = [header, ...rows].join('\n')
 
