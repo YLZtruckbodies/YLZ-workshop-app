@@ -22,7 +22,8 @@ const HEADER_H    = 170
 
 export async function generateLaserSheet(mo: MOData, drawings: DrawingMap = new Map()): Promise<Uint8Array> {
   // Lazy require — keeps pdf-lib out of the webpack bundle
-  const { PDFDocument, rgb, StandardFonts } = require('pdf-lib')
+  // webpackIgnore prevents Next.js from bundling pdf-lib (must load at runtime)
+  const { PDFDocument, rgb, StandardFonts } = require(/* webpackIgnore: true */ 'pdf-lib')
 
   // Colours
   const COPPER  = rgb(0.478, 0.227, 0.118)

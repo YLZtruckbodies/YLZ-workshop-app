@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('Laser pack error:', err)
-    const message = err instanceof Error ? err.message : 'Failed to process PDF.'
+    const message = err instanceof Error ? `${err.message} — ${err.stack?.split('\n')[1]?.trim() ?? ''}` : 'Failed to process PDF.'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
