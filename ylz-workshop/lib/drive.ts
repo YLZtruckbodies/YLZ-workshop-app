@@ -194,15 +194,15 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
     try {
       const res = await drive.files.list({
         q: `'${PARTS_FOLDER_ID}' in parents and name contains '${pn}' and mimeType = 'application/pdf' and trashed = false`,
-        fields: 'files(id, name, thumbnailLink)',
+        fields: 'files(id, name)',
         pageSize: 1,
       })
       const file = res.data.files?.[0]
-      if (!file) return
+      if (!file?.id) return
 
-      if (file.thumbnailLink && accessToken) {
-        // Request a larger thumbnail (=s400 instead of default =s220)
-        const thumbUrl = file.thumbnailLink.replace(/=s\d+$/, '=s400')
+      if (accessToken) {
+        // Use Google's thumbnail endpoint — works for PDFs in Drive with OAuth token
+        const thumbUrl = `https://drive.google.com/thumbnail?id=${file.id}&sz=s400`
         const thumbRes = await fetch(thumbUrl, {
           headers: { Authorization: `Bearer ${accessToken}` },
         })
