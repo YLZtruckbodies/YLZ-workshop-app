@@ -22,8 +22,9 @@ const HEADER_H    = 170
 
 export async function generateLaserSheet(mo: MOData, drawings: DrawingMap = new Map()): Promise<Uint8Array> {
   // Lazy require — keeps pdf-lib out of the webpack bundle
-  // webpackIgnore prevents Next.js from bundling pdf-lib (must load at runtime)
-  const { PDFDocument, rgb, StandardFonts } = require(/* webpackIgnore: true */ 'pdf-lib')
+  // Indirect eval require — webpack cannot statically analyse this, so pdf-lib is never bundled
+  // eslint-disable-next-line no-eval
+  const { PDFDocument, rgb, StandardFonts } = (0, eval)('require')('pdf-lib')
 
   // Colours
   const COPPER  = rgb(0.478, 0.227, 0.118)
