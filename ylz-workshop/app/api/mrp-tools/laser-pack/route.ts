@@ -13,7 +13,9 @@ export const runtime = 'nodejs'
 export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
+  let step = 'init'
   try {
+    step = 'read-form'
     const formData = await req.formData()
     const file = formData.get('pdf') as File | null
 
@@ -21,8 +23,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Please upload a valid PDF file.' }, { status: 400 })
     }
 
+    step = 'read-buffer'
     const buffer = Buffer.from(await file.arrayBuffer())
+
+    step = 'pdf-parse'
     const parsed = await pdfParse(buffer)
+
+    step = 'parse-mo'
     const mo = parseMO(parsed.text)
 
     if (mo.moNumber === 'Unknown') {
@@ -35,7 +42,10 @@ export async function POST(req: NextRequest) {
     const parts       = mo.laserParts.length > 0 ? mo.laserParts : mo.parts
     const partNumbers = parts.map(p => p.partNumber)
 
+    step = 'fetch-drawings'
     const drawings  = await fetchPartDrawings(partNumbers)
+
+    step = 'generate-sheet'
     const pdfBuffer = await generateLaserSheet(mo, drawings)
 
     return new NextResponse(pdfBuffer as unknown as BodyInit, {
@@ -58,8 +68,8 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('Laser pack error:', err)
     const message = err instanceof Error
-      ? `${err.message} — ${err.stack?.split('\n')[1]?.trim() ?? ''}`
-      : 'Failed to process PDF.'
+      ? `[step:${step}] ${err.message}`
+      : `[step:${step}] Failed to process PDF.`
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
