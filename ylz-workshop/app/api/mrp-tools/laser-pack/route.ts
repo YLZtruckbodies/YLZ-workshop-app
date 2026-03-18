@@ -1,15 +1,10 @@
-// !! Polyfills MUST be the first import — pdfjs-dist (inside pdf-parse) needs
-//    DOMMatrix/DOMPoint at module-init time, before any other code runs.
-import '@/lib/node-polyfills'
-
 import { NextRequest, NextResponse } from 'next/server'
-// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-const pdfParse = require('pdf-parse') as (buf: Buffer, opts?: object) => Promise<{ text: string }>
-import { parseMO } from '@/lib/parseMO'
+import { extractPdfText }   from '@/lib/extractPdfText'
+import { parseMO }          from '@/lib/parseMO'
 import { generateLaserSheet } from '@/lib/generateSheet'
 import { fetchPartDrawings } from '@/lib/drive'
 
-export const runtime = 'nodejs'
+export const runtime    = 'nodejs'
 export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
@@ -26,11 +21,11 @@ export async function POST(req: NextRequest) {
     step = 'read-buffer'
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    step = 'pdf-parse'
-    const parsed = await pdfParse(buffer)
+    step = 'extract-text'
+    const text = await extractPdfText(buffer)
 
     step = 'parse-mo'
-    const mo = parseMO(parsed.text)
+    const mo = parseMO(text)
 
     if (mo.moNumber === 'Unknown') {
       return NextResponse.json(
@@ -66,10 +61,10 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (err) {
-    console.error('Laser pack error:', err)
+    console.error(`Laser pack error at step [${step}]:`, err)
     const message = err instanceof Error
-      ? `[step:${step}] ${err.message}`
-      : `[step:${step}] Failed to process PDF.`
+      ? `[${step}] ${err.message}`
+      : `[${step}] Failed to process PDF.`
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

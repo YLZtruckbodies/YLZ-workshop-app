@@ -109,3 +109,5 @@ if (typeof globalThis.DOMPoint === 'undefined') {
     }
   }
 }
+
+export {} // makes this file a module
