@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
+import PDFDocument from 'pdfkit'
 import type { MOData, MOPart } from './parseMO'
 
 // DrawingMap: part number → JPEG thumbnail Buffer (from Google Drive)
@@ -29,8 +29,6 @@ const TEXTBLK = '#141414'
 const MGREY   = '#999999'
 
 export async function generateLaserSheet(mo: MOData, drawings: DrawingMap = new Map()): Promise<Buffer> {
-  const PDFDocument = require('pdfkit')
-
   const doc = new PDFDocument({ size: 'A4', margin: 0, autoFirstPage: true })
 
   const parts     = mo.laserParts.length > 0 ? mo.laserParts : mo.parts
