@@ -6,6 +6,26 @@ import { fetchPartDrawings } from '@/lib/drive'
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
+// DOMMatrix polyfill for Node.js 18 — required by pdfjs-dist inside pdf-parse v2
+if (typeof globalThis.DOMMatrix === 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(globalThis as any).DOMMatrix = class DOMMatrix {
+    a = 1; b = 0; c = 0; d = 1; e = 0; f = 0
+    m11 = 1; m12 = 0; m13 = 0; m14 = 0
+    m21 = 0; m22 = 1; m23 = 0; m24 = 0
+    m31 = 0; m32 = 0; m33 = 1; m34 = 0
+    m41 = 0; m42 = 0; m43 = 0; m44 = 1
+    is2D = true; isIdentity = true
+    constructor(init?: number[]) {
+      if (Array.isArray(init) && init.length === 6) {
+        this.a = this.m11 = init[0]; this.b = this.m12 = init[1]
+        this.c = this.m21 = init[2]; this.d = this.m22 = init[3]
+        this.e = this.m41 = init[4]; this.f = this.m42 = init[5]
+      }
+    }
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
