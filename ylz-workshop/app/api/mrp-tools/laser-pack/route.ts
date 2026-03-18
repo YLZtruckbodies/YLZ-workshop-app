@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>
 import { parseMO } from '@/lib/parseMO'
 import { generateLaserSheet } from '@/lib/generateSheet'
 import { fetchPartDrawings } from '@/lib/drive'
@@ -18,8 +16,12 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
+
+    // Require inside the handler to avoid pdf-parse test-file check at module load
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>
     const parsed = await pdfParse(buffer)
-    const mo     = parseMO(parsed.text)
+    const mo = parseMO(parsed.text)
 
     if (mo.moNumber === 'Unknown') {
       return NextResponse.json(
@@ -55,6 +57,7 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('Laser pack error:', err)
-    return NextResponse.json({ error: 'Failed to process PDF.' }, { status: 500 })
+    const message = err instanceof Error ? err.message : 'Failed to process PDF.'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

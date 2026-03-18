@@ -86,8 +86,10 @@ function LaserPackTool() {
       const res = await fetch('/api/mrp-tools/laser-pack', { method: 'POST', body: fd })
 
       if (!res.ok) {
-        const j = await res.json()
-        throw new Error(j.error ?? 'Something went wrong.')
+        const text = await res.text()
+        let message = 'Something went wrong.'
+        try { message = JSON.parse(text).error ?? message } catch { /* HTML error page */ }
+        throw new Error(message)
       }
 
       const moData = res.headers.get('X-MO-Data')
