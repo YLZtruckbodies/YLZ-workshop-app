@@ -10,6 +10,7 @@ interface BlockState {
   job: string
   start: string
   end: string
+  workSection: string
 }
 
 // Standard day: 07:00–15:15 with 30-min unpaid break = 7.6 ordinary hours
@@ -58,7 +59,7 @@ function calcHours(start: string, end: string): number {
 function emptyBlocks(): Record<string, BlockState> {
   const b: Record<string, BlockState> = {}
   DEFAULT_BLOCKS.forEach((d) => {
-    b[d.key] = { job: '', start: d.start, end: d.end }
+    b[d.key] = { job: '', start: d.start, end: d.end, workSection: '' }
   })
   return b
 }
@@ -152,6 +153,7 @@ export default function TimesheetPage() {
       setDayStatus('working')
       return
     }
+    const defaultSection = (workers as any[])?.find((w: any) => w.name === selectedWorker)?.section || ''
     const workerEntries = (timesheets as any[]).filter((t) => t.workerName === selectedWorker)
     const statusEntry = workerEntries.find((t) => t.startTime === 'LEAVE' || t.startTime === 'SICK')
     if (statusEntry) {
@@ -161,14 +163,21 @@ export default function TimesheetPage() {
     }
     setDayStatus('working')
     const filled = emptyBlocks()
+    // Pre-fill all blocks with worker's assigned section
+    DEFAULT_BLOCKS.forEach((d) => { filled[d.key].workSection = defaultSection })
     for (const entry of workerEntries) {
       const block = DEFAULT_BLOCKS.find((b) => b.key === entry.section)
       if (block) {
-        filled[block.key] = { job: entry.jobNum, start: entry.startTime, end: entry.endTime }
+        filled[block.key] = {
+          job: entry.jobNum,
+          start: entry.startTime,
+          end: entry.endTime,
+          workSection: entry.workSection || defaultSection,
+        }
       }
     }
     setBlocks(filled)
-  }, [selectedWorker, timesheets])
+  }, [selectedWorker, timesheets, workers])
 
   function updateBlock(key: string, field: keyof BlockState, value: string) {
     setBlocks((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }))
@@ -218,6 +227,7 @@ export default function TimesheetPage() {
           workerName: selectedWorker,
           jobNum: block.job.trim().toUpperCase().replace(/\s+/g, ''),
           section: b.key,
+          workSection: block.workSection || '',
           date,
           startTime: block.start,
           endTime: block.end,
@@ -643,7 +653,7 @@ export default function TimesheetPage() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '120px 110px 110px 60px 1fr',
+                  gridTemplateColumns: '120px 110px 110px 60px 1fr 160px',
                   gap: 12,
                   padding: '0 16px 8px',
                 }}
@@ -653,6 +663,7 @@ export default function TimesheetPage() {
                 <span style={colHeaderStyle}>Finish</span>
                 <span style={colHeaderStyle}>Hours</span>
                 <span style={colHeaderStyle}>Job Number</span>
+                <span style={colHeaderStyle}>Section</span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -665,7 +676,7 @@ export default function TimesheetPage() {
                       key={b.key}
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: '120px 110px 110px 60px 1fr',
+                        gridTemplateColumns: '120px 110px 110px 60px 1fr 160px',
                         alignItems: 'center',
                         gap: 12,
                         padding: '8px 16px',
@@ -749,6 +760,34 @@ export default function TimesheetPage() {
                             <option key={o.value} value={o.value}>{o.label}</option>
                           ))}
                         </optgroup>
+                      </select>
+                      <select
+                        value={block.workSection}
+                        onChange={(e) => updateBlock(b.key, 'workSection', e.target.value)}
+                        disabled={!selectedWorker}
+                        style={{
+                          ...inputStyle,
+                          fontFamily: "'League Spartan', sans-serif",
+                          fontWeight: 700,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                          color: block.workSection ? '#fff' : 'var(--text3)',
+                          opacity: selectedWorker ? 1 : 0.4,
+                          cursor: 'pointer',
+                          appearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'right 10px center',
+                          paddingRight: 30,
+                          borderLeft: block.workSection
+                            ? `3px solid ${SECTION_COLORS[block.workSection] || 'var(--border)'}`
+                            : '1px solid var(--border2)',
+                        }}
+                      >
+                        <option value="">Section...</option>
+                        {Object.entries(SECTION_LABELS).map(([key, label]) => (
+                          <option key={key} value={key}>{label}</option>
+                        ))}
                       </select>
                     </div>
                   )

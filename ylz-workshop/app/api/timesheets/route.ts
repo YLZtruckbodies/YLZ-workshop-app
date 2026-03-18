@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
           where: { id: existing.id },
           data: {
             jobNum: entry.jobNum,
+            workSection: entry.workSection || '',
             startTime: entry.startTime,
             endTime: entry.endTime,
             hours: entry.hours,

@@ -104,16 +104,17 @@ model Tarp {
 }
 
 model Timesheet {
-  id         String   @id @default(cuid())
-  workerName String
-  jobNum     String
-  section    String
-  date       String
-  hours      Float
-  startTime  String   @default("")
-  endTime    String   @default("")
-  createdBy  String
-  createdAt  DateTime @default(now())
+  id          String   @id @default(cuid())
+  workerName  String
+  jobNum      String
+  section     String
+  workSection String   @default("")
+  date        String
+  hours       Float
+  startTime   String   @default("")
+  endTime     String   @default("")
+  createdBy   String
+  createdAt   DateTime @default(now())
 }
 
 model CompletedOrder {
