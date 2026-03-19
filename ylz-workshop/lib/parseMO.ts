@@ -23,7 +23,11 @@ export function parseMO(text: string): MOData {
   const full  = lines.join('\n')
 
   // ── Header ────────────────────────────────────────────────────────────────
-  const moNumber = extract(full, /Number:\s*(MO-[\w]+)/) ?? 'Unknown'
+  // Try "Number:   MO-xxx" first, then fall back to bare "MO-xxx" anywhere in text
+  // (Vercel's pdfjs text extraction can split label/value onto adjacent lines)
+  const moNumber = extract(full, /Number:\s*(MO-[\w-]+)/)
+    ?? extract(full, /\b(MO-[\w-]+)\b/)
+    ?? 'Unknown'
   const product  = extract(full, /Product:\s*([^\n]+)/)  ?? 'Unknown'
   const quantity = extract(full, /Quantity:\s*([^\n]+)/)  ?? ''
   const date     = extract(full, /(\d{2}\/\d{2}\/\d{4})/) ?? ''

@@ -27,11 +27,10 @@ export async function POST(req: NextRequest) {
     step = 'parse-mo'
     const mo = parseMO(text)
 
+    // If we still can't find the MO number, log the extracted text to help debug
+    // but don't hard-fail — generate the sheet anyway with a fallback label
     if (mo.moNumber === 'Unknown') {
-      return NextResponse.json(
-        { error: 'Could not read MO number — make sure this is an MRPeasy Manufacturing Order PDF.' },
-        { status: 422 }
-      )
+      console.warn('parseMO: could not extract MO number. Extracted text preview:', text.substring(0, 500))
     }
 
     const parts       = mo.laserParts.length > 0 ? mo.laserParts : mo.parts
