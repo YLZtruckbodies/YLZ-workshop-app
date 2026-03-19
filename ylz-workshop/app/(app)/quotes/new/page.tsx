@@ -31,21 +31,16 @@ function PlaceholderImage({ name }: { name: string }) {
   return (
     <div style={{
       width: '100%',
-      aspectRatio: '16/7',
-      background: '#111',
-      borderRadius: 6,
+      aspectRatio: '16/5',
+      background: '#0a0a0a',
+      borderRadius: 5,
       display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      border: '1px dashed rgba(232,104,26,0.3)',
-      marginBottom: 12,
-      gap: 8,
+      border: '1px dashed rgba(232,104,26,0.25)',
+      marginBottom: 8,
     }}>
-      <div style={{ fontSize: 36, opacity: 0.3 }}>🚛</div>
-      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', textAlign: 'center', padding: '0 12px', lineHeight: 1.4 }}>
-        Photo coming soon
-      </div>
+      <div style={{ fontSize: 22, opacity: 0.2 }}>🚛</div>
     </div>
   )
 }
@@ -60,10 +55,10 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
       onError={() => setError(true)}
       style={{
         width: '100%',
-        aspectRatio: '16/7',
+        aspectRatio: '16/5',
         objectFit: 'cover',
-        borderRadius: 6,
-        marginBottom: 12,
+        borderRadius: 5,
+        marginBottom: 8,
         display: 'block',
       }}
     />
@@ -137,11 +132,10 @@ export default function NewQuotePage() {
             const hardox   = grouped['quick-quote'].filter(t => !isTrailerOnly(t) && (t.name.toLowerCase().startsWith('hardox') || t.name.includes('10m3 Hardox')))
             const alloy    = grouped['quick-quote'].filter(t => !isTrailerOnly(t) && t.name.toLowerCase().startsWith('alloy'))
             const trailers = grouped['quick-quote'].filter(isTrailerOnly)
-            // BUG-08: use minmax so cards don't force the grid wider than viewport
-            const rowGrid = (count: number) => ({
+            const rowGrid = (count: number, max = 4) => ({
               display: 'grid',
-              gridTemplateColumns: `repeat(${Math.min(count, 4)}, minmax(0, 1fr))`,
-              gap: 14,
+              gridTemplateColumns: `repeat(${Math.min(count, max)}, minmax(0, 1fr))`,
+              gap: 10,
               overflowX: 'auto' as const,
             })
             return (
@@ -159,7 +153,7 @@ export default function NewQuotePage() {
                 {hardox.length > 0 && (
                   <>
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: '#E8681A', marginBottom: 10 }}>Hardox</div>
-                    <div style={{ ...rowGrid(hardox.length), marginBottom: 20 }}>
+                    <div style={{ ...rowGrid(hardox.length, 6), marginBottom: 16 }}>
                       {hardox.map(t => <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />)}
                     </div>
                   </>
@@ -265,12 +259,12 @@ function QuickQuoteCard({
       style={{
         background: hovered ? '#1a1a1a' : '#111',
         border: `2px solid ${hovered ? '#E8681A' : 'rgba(255,255,255,0.1)'}`,
-        borderRadius: 12,
-        padding: 20,
+        borderRadius: 10,
+        padding: 14,
         cursor: 'pointer',
         transition: 'all 0.18s',
-        transform: hovered ? 'translateY(-3px)' : 'none',
-        boxShadow: hovered ? '0 8px 32px rgba(232,104,26,0.15)' : 'none',
+        transform: hovered ? 'translateY(-2px)' : 'none',
+        boxShadow: hovered ? '0 6px 24px rgba(232,104,26,0.12)' : 'none',
         position: 'relative',
       }}
     >
@@ -289,24 +283,27 @@ function QuickQuoteCard({
 
       <div style={{
         fontFamily: "'League Spartan', sans-serif",
-        fontSize: 17, fontWeight: 800, letterSpacing: 0.5,
-        color: '#fff', marginBottom: 6, paddingRight: 80,
+        fontSize: 14, fontWeight: 800, letterSpacing: 0.3,
+        color: '#fff', marginBottom: 4, paddingRight: 70, lineHeight: 1.3,
       }}>
         {template.name}
       </div>
 
-      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 14, lineHeight: 1.5 }}>
+      <div style={{
+        fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 10, lineHeight: 1.4,
+        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+      }}>
         {template.description}
       </div>
 
       {/* Tags */}
       {tags.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
           {tags.map((tag) => (
             <span key={tag} style={{
-              fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 4,
-              background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 3,
+              background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)',
+              border: '1px solid rgba(255,255,255,0.08)',
             }}>
               {tag}
             </span>
@@ -317,7 +314,7 @@ function QuickQuoteCard({
       {/* Pricing */}
       <div style={{
         borderTop: '1px solid rgba(255,255,255,0.08)',
-        paddingTop: 14,
+        paddingTop: 10,
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'space-between',
@@ -330,7 +327,7 @@ function QuickQuoteCard({
             {template.basePrice > 0 && (
               <div style={{
                 fontFamily: "'League Spartan', sans-serif",
-                fontSize: 26, fontWeight: 800, color: '#E8681A', lineHeight: 1,
+                fontSize: 22, fontWeight: 800, color: '#E8681A', lineHeight: 1,
               }}>
                 ${fmt(template.basePrice)}
               </div>
@@ -352,7 +349,7 @@ function QuickQuoteCard({
               <>
                 <div style={{
                   fontFamily: "'League Spartan', sans-serif",
-                  fontSize: 26, fontWeight: 800, color: '#E8681A', lineHeight: 1,
+                  fontSize: 22, fontWeight: 800, color: '#E8681A', lineHeight: 1,
                 }}>
                   ${fmt(template.basePrice)}
                 </div>
