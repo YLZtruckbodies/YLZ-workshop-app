@@ -111,7 +111,7 @@ export default function JobFollowerPage() {
   const [checks, setChecks] = useState<CheckMap>({})
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [printMode, setPrintMode] = useState(false)
+  const [, setPrintMode] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
 
   // Active jobs (issued / goahead) for the selector
@@ -496,7 +496,7 @@ function PhaseCard({
   phase,
   checks,
   onToggle,
-  userName,
+  userName: _userName,
 }: {
   phase: typeof FOLLOWER_PHASES[0]
   checks: CheckMap

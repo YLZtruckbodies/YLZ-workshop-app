@@ -128,7 +128,7 @@ function statusColor(status: string): { bg: string; text: string } {
 /* ── Main Component ────────────────────────────────────────────── */
 
 export default function KeithSchedulePage() {
-  const { data: session } = useSession()
+  useSession()
   const { data: workers = [], isLoading: wLoad } = useWorkers()
   const { data: jobs = [], isLoading: jLoad } = useJobs()
   const { data: tarps = [], isLoading: tLoad } = useTarps()

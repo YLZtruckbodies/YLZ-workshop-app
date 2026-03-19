@@ -1,7 +1,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useJobs, advanceJob, updateJob, reorderJobs, syncFromMonday, createJob, useAllFiles, uploadFile, deleteFile, useDriveFiles, useJobTasks, createJobTask, updateJobTask, deleteJobTask, useJobActivity, useJobDependencies, createJobDependency, removeJobDependency } from '@/lib/hooks'
+import { useJobs, updateJob, reorderJobs, syncFromMonday, createJob, useAllFiles, uploadFile, deleteFile, useDriveFiles, useJobTasks, createJobTask, updateJobTask, deleteJobTask, useJobActivity } from '@/lib/hooks'
 import KanbanView from '@/components/jobs/KanbanView'
 import JobActivityFeed from '@/components/jobs/JobActivityFeed'
 import { STAGES, stageToBuildProgress, PROD_GROUPS, nextStage, stageIndex, deriveBtype } from '@/lib/jobTypes'
@@ -22,7 +22,6 @@ import {
 import { useSortable, SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 
 // ── Types ──────────────────────────────────────────
-type GroupKey = 'issued' | 'goahead' | 'pending' | 'stock' | 'finished'
 
 const FILTER_TABS: { key: string; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -95,15 +94,6 @@ const FILE_TYPE_ICONS: Record<string, string> = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '\u{1F4DD}',
 }
 
-const STAGE_COLORS: Record<string, string> = {
-  'Requires Engineering': '#f97316',
-  'Ready to Start': '#06b6d4',
-  Fab: '#3b9de8',
-  Paint: '#a259ff',
-  Fitout: '#f5a623',
-  QC: '#3b9de8',
-  Dispatch: '#22d07a',
-}
 
 // ── Helpers ────────────────────────────────────────
 function formatFileSize(bytes: number): string {
@@ -467,9 +457,9 @@ function DraggableJobRow({
   uploading,
   onUpload,
   onDeleteFile,
-  onFileDrop,
-  dragOverFile,
-  setDragOverFile,
+  onFileDrop: _onFileDrop,
+  dragOverFile: _dragOverFile,
+  setDragOverFile: _setDragOverFile,
 }: {
   job: any
   user: any
@@ -837,7 +827,7 @@ function DraggableJobRow({
 }
 
 // ── Job Tasks Panel ─────────────────────────────────
-function JobTasksPanel({ jobId, jobNum, user }: { jobId: string; jobNum: string; user: any }) {
+function JobTasksPanel({ jobId, jobNum: _jobNum, user }: { jobId: string; jobNum: string; user: any }) {
   const { data: tasks, mutate } = useJobTasks(jobId)
   const [newTitle, setNewTitle] = useState('')
   const [adding, setAdding] = useState(false)
@@ -1172,7 +1162,7 @@ export default function JobBoardPage() {
       console.error('Failed to save field:', e)
       mutate() // revert
     }
-  }, [mutate, pushUndo])
+  }, [mutate, pushUndo, user?.id, user?.name])
 
   const handleSync = async () => {
     if (!confirm('Sync jobs from Monday.com? This will update existing jobs and create new ones.')) return
@@ -1360,7 +1350,7 @@ export default function JobBoardPage() {
       setNewJob({ num: '', type: '', customer: '', dealer: '', due: '', prodGroup: 'pending' })
       setJobMessage('Job created')
       setTimeout(() => setJobMessage(''), 3000)
-    } catch (err: any) {
+    } catch {
       setJobMessage('Failed to create job')
     }
     setSavingJob(false)
