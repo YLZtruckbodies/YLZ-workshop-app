@@ -4,7 +4,7 @@ import { google, drive_v3 } from 'googleapis'
 const JOB_SHEETS_FOLDER_ID = '10ZvynBY7AOABRU4q_D_SmSrAFN0OkzMI'
 
 // YLZparts drawings folder ID
-const PARTS_FOLDER_ID = '0AMEx2pR1R5dwUk9PVA'
+const PARTS_FOLDER_ID = '15mg2nsgwGNDJH8mMxS7dDhmZpKIFCLAl'
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
