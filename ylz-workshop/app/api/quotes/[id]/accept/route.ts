@@ -188,6 +188,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     },
   })
 
+  // ── Create Delivery record for Cashflow tracking ──
+  await prisma.delivery.create({
+    data: {
+      jobId: job.id,
+      jobNum: jobNumber,
+      customer: quote.customerName,
+      type: typeStr,
+      invoiceAmount: quote.overridePrice ?? quote.total,
+      paymentStatus: 'pending',
+    },
+  })
+
   // ── Create draft PartsOrder for Liz ──
   const lineItemDescs = quote.lineItems.map((li) => li.description).filter(Boolean).join(', ')
   const partsOrder = await prisma.partsOrder.create({

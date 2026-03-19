@@ -33,7 +33,7 @@ export default function JobSheetsPage() {
   const [quotes, setQuotes] = useState<Quote[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('accepted')
 
   useEffect(() => {
     fetch('/api/quotes')
@@ -81,7 +81,7 @@ export default function JobSheetsPage() {
           Job Sheet Creator
         </h1>
         <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, marginBottom: 20 }}>
-          Select a quote to generate a pre-filled job sheet ready to print.
+          Generate job sheets for accepted quotes. Use the filter to view other statuses.
         </div>
 
         {/* Filters */}
