@@ -133,11 +133,13 @@ export default function NewQuotePage() {
         <>
           {/* Quick Quote section */}
           {grouped['quick-quote'] && (() => {
-            const hardox = grouped['quick-quote'].filter(t => t.name.toLowerCase().startsWith('hardox') || t.name.includes('10m3 Hardox'))
-            const alloy  = grouped['quick-quote'].filter(t => t.name.toLowerCase().startsWith('alloy'))
+            const isTrailerOnly = (t: Template) => (t.configuration as Record<string, unknown>).buildType === 'trailer'
+            const hardox   = grouped['quick-quote'].filter(t => !isTrailerOnly(t) && (t.name.toLowerCase().startsWith('hardox') || t.name.includes('10m3 Hardox')))
+            const alloy    = grouped['quick-quote'].filter(t => !isTrailerOnly(t) && t.name.toLowerCase().startsWith('alloy'))
+            const trailers = grouped['quick-quote'].filter(isTrailerOnly)
             const rowGrid = (count: number) => ({
               display: 'grid',
-              gridTemplateColumns: `repeat(${count}, 1fr)`,
+              gridTemplateColumns: `repeat(${Math.min(count, 4)}, 1fr)`,
               gap: 14,
             })
             return (
@@ -164,8 +166,17 @@ export default function NewQuotePage() {
                 {alloy.length > 0 && (
                   <>
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>Alloy</div>
-                    <div style={rowGrid(alloy.length)}>
+                    <div style={{ ...rowGrid(alloy.length), marginBottom: trailers.length > 0 ? 20 : 0 }}>
                       {alloy.map(t => <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />)}
+                    </div>
+                  </>
+                )}
+
+                {trailers.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>Trailer Only</div>
+                    <div style={rowGrid(trailers.length)}>
+                      {trailers.map(t => <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />)}
                     </div>
                   </>
                 )}
