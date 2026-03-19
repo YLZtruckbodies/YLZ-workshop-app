@@ -35,6 +35,8 @@ export async function GET(req: NextRequest) {
     where.OR = [
       { num: { contains: q, mode: 'insensitive' } },
       { description: { contains: q, mode: 'insensitive' } },
+      { customerName: { contains: q, mode: 'insensitive' } },
+      { assignedTo: { contains: q, mode: 'insensitive' } },
     ]
   }
 
@@ -58,6 +60,11 @@ export async function POST(req: NextRequest) {
       dateReported: body.dateReported || '',
       dateCompleted: body.dateCompleted || '',
       createdBy: body.createdBy || '',
+      customerName: body.customerName || '',
+      repairCost: parseFloat(body.repairCost) || 0,
+      partsRequired: body.partsRequired || '',
+      bookingDate: body.bookingDate || '',
+      assignedTo: body.assignedTo || '',
     },
   })
   return NextResponse.json(repair, { status: 201 })

@@ -59,7 +59,8 @@ export default function VinPlatesPage() {
             width: '100%',
             height: '100%',
             border: 'none',
-            background: '#000',
+            background: '#fff',
+            filter: 'invert(1) hue-rotate(180deg)',
           }}
           title="VIN Plate Generator"
         />

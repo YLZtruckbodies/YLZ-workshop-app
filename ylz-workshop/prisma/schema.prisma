@@ -219,6 +219,11 @@ model RepairJob {
   dateReported  String   @default("")
   dateCompleted String   @default("")
   createdBy     String   @default("")
+  customerName  String   @default("")
+  repairCost    Float    @default(0)
+  partsRequired String   @default("")
+  bookingDate   String   @default("")
+  assignedTo    String   @default("")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }

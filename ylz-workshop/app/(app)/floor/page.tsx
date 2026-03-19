@@ -592,7 +592,7 @@ function CompactJobRow({
         </button>
 
         {/* Advance */}
-        {nextStageName && user?.canAdvance && allDone && (
+        {nextStageName && user?.canAdvance && (
           <button
             onClick={() => onAdvance(job.id, job.num, stage)}
             style={{
@@ -702,7 +702,7 @@ function TableJobRow({
           </div>
         </td>
         <td style={{ padding: '6px 10px' }}>
-          {nxt && user?.canAdvance && allDone && (
+          {nxt && user?.canAdvance && (
             <button
               onClick={(e) => { e.stopPropagation(); onAdvance(job.id, job.num, section.stage) }}
               style={{

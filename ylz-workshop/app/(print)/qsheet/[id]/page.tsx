@@ -167,19 +167,24 @@ export default function JobSheetPrintPage({ params }: { params: { id: string } }
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/quotes/${params.id}`)
-      .then((r) => r.json())
-      .then(async (data) => {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
+    fetch(`/api/quotes/${params.id}`, { signal: controller.signal })
+      .then((r) => { if (!r.ok) throw new Error(`${r.status}`); return r.json() })
+      .then((data) => {
+        clearTimeout(timeout)
         setQuote(data)
-        if (data.jobId) {
-          try {
-            const jr = await fetch(`/api/jobs/${data.jobId}`)
-            if (jr.ok) { const job = await jr.json(); setJobNum(job.num) }
-          } catch { /* silent */ }
-        }
         setLoading(false)
+        // Fetch job number in background — doesn't block render
+        if (data.jobId) {
+          fetch(`/api/jobs/${data.jobId}`)
+            .then((jr) => jr.ok ? jr.json() : null)
+            .then((job) => { if (job?.num) setJobNum(job.num) })
+            .catch(() => {})
+        }
       })
-      .catch(() => setLoading(false))
+      .catch(() => { clearTimeout(timeout); setLoading(false) })
+    return () => { clearTimeout(timeout); controller.abort() }
   }, [params.id])
 
   useEffect(() => {

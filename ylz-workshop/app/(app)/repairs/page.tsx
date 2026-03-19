@@ -13,6 +13,11 @@ interface RepairForm {
   status: RepairStatus
   dateReported: string
   dateCompleted: string
+  customerName: string
+  repairCost: number
+  partsRequired: string
+  bookingDate: string
+  assignedTo: string
 }
 
 const emptyForm = (): RepairForm => ({
@@ -21,6 +26,11 @@ const emptyForm = (): RepairForm => ({
   status: 'Open',
   dateReported: '',
   dateCompleted: '',
+  customerName: '',
+  repairCost: 0,
+  partsRequired: '',
+  bookingDate: '',
+  assignedTo: '',
 })
 
 const TYPE_COLORS: Record<string, string> = {
@@ -82,6 +92,11 @@ export default function RepairsPage() {
       status: r.status,
       dateReported: r.dateReported,
       dateCompleted: r.dateCompleted,
+      customerName: r.customerName || '',
+      repairCost: r.repairCost || 0,
+      partsRequired: r.partsRequired || '',
+      bookingDate: r.bookingDate || '',
+      assignedTo: r.assignedTo || '',
     })
     setModalOpen(true)
   }
@@ -209,17 +224,19 @@ export default function RepairsPage() {
               <tr>
                 <th style={thStyle}>Number</th>
                 <th style={thStyle}>Type</th>
+                <th style={thStyle}>Customer</th>
                 <th style={thStyle}>Description</th>
+                <th style={thStyle}>Assigned</th>
                 <th style={thStyle}>Status</th>
-                <th style={thStyle}>Date Reported</th>
-                <th style={thStyle}>Date Completed</th>
+                <th style={thStyle}>Booking</th>
+                <th style={thStyle}>Reported</th>
                 <th style={{ ...thStyle, width: 60 }}></th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: 40, textAlign: 'center', fontSize: 12, color: 'var(--text3)' }}>
+                  <td colSpan={9} style={{ padding: 40, textAlign: 'center', fontSize: 12, color: 'var(--text3)' }}>
                     {repairs ? 'No entries found' : 'Loading...'}
                   </td>
                 </tr>
@@ -240,19 +257,25 @@ export default function RepairsPage() {
                     <td style={tdStyle}>
                       <span style={badgeStyle(TYPE_COLORS[r.type] || '#888')}>{r.type}</span>
                     </td>
-                    <td style={{ ...tdStyle, maxWidth: 300 }}>
+                    <td style={{ ...tdStyle, maxWidth: 160 }}>
+                      <span style={{ fontSize: 12, color: 'var(--text2)' }}>{r.customerName || '—'}</span>
+                    </td>
+                    <td style={{ ...tdStyle, maxWidth: 260 }}>
                       <span style={{ fontSize: 13, color: 'var(--text2)' }}>
                         {r.description || '—'}
                       </span>
                     </td>
                     <td style={tdStyle}>
+                      <span style={{ fontSize: 12, color: 'var(--text3)' }}>{r.assignedTo || '—'}</span>
+                    </td>
+                    <td style={tdStyle}>
                       <span style={badgeStyle(STATUS_COLORS[r.status] || '#888')}>{r.status}</span>
                     </td>
                     <td style={tdStyle}>
-                      <span style={{ fontSize: 12, color: 'var(--text3)' }}>{r.dateReported || '—'}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text3)' }}>{r.bookingDate || '—'}</span>
                     </td>
                     <td style={tdStyle}>
-                      <span style={{ fontSize: 12, color: 'var(--text3)' }}>{r.dateCompleted || '—'}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text3)' }}>{r.dateReported || '—'}</span>
                     </td>
                     <td style={tdStyle}>
                       <button
@@ -359,7 +382,62 @@ export default function RepairsPage() {
                 </select>
               </div>
 
+              <div>
+                <label style={labelStyle}>Customer / Company</label>
+                <input
+                  type="text"
+                  placeholder="e.g. CMV Dandenong"
+                  value={form.customerName}
+                  onChange={(e) => setForm({ ...form, customerName: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+
               <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={labelStyle}>Booking Date</label>
+                  <input
+                    type="text"
+                    placeholder="dd/mm/yy"
+                    value={form.bookingDate}
+                    onChange={(e) => setForm({ ...form, bookingDate: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={labelStyle}>Assigned To</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Ben"
+                    value={form.assignedTo}
+                    onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Parts Required</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Hinge x2, latch x1"
+                  value={form.partsRequired}
+                  onChange={(e) => setForm({ ...form, partsRequired: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={labelStyle}>Repair Cost (ex GST)</label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={form.repairCost || ''}
+                    onChange={(e) => setForm({ ...form, repairCost: parseFloat(e.target.value) || 0 })}
+                    style={inputStyle}
+                  />
+                </div>
                 <div style={{ flex: 1 }}>
                   <label style={labelStyle}>Date Reported</label>
                   <input
@@ -370,19 +448,20 @@ export default function RepairsPage() {
                     style={inputStyle}
                   />
                 </div>
-                {form.status === 'Complete' && (
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Date Completed</label>
-                    <input
-                      type="text"
-                      placeholder="dd/mm/yy"
-                      value={form.dateCompleted}
-                      onChange={(e) => setForm({ ...form, dateCompleted: e.target.value })}
-                      style={inputStyle}
-                    />
-                  </div>
-                )}
               </div>
+
+              {form.status === 'Complete' && (
+                <div>
+                  <label style={labelStyle}>Date Completed</label>
+                  <input
+                    type="text"
+                    placeholder="dd/mm/yy"
+                    value={form.dateCompleted}
+                    onChange={(e) => setForm({ ...form, dateCompleted: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
