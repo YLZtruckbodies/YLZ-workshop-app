@@ -211,7 +211,8 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
         pageSize: 5,
         supportsAllDrives: true,
         includeItemsFromAllDrives: true,
-        corpora: 'allDrives',
+        corpora: 'drive',
+        driveId: PARTS_SHARED_DRIVE_ID,
       })
 
       const pdfFile = res.data.files?.[0]
