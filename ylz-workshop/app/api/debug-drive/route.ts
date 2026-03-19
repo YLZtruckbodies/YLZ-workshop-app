@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDriveClient } from '@/lib/drive'
+import { getDriveClient, getDriveAccessToken } from '@/lib/drive'
 
 const PARTS_SHARED_DRIVE_ID = '0AMEx2pR1R5dwUk9PVA'
 const PARTS_CONTAINER_ID = '1eAs6Dv4F8DdcvNIFWuggfR1YZzHwPZNo'
@@ -15,15 +15,11 @@ export async function GET(req: NextRequest) {
     log.push('✅ Drive client initialised')
 
     // Get access token
-    let accessToken: string | null = null
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const auth = (drive as any)._options.auth
-      const tokenRes = await auth.getAccessToken()
-      accessToken = tokenRes.token
-      log.push(`✅ Access token obtained (${accessToken?.slice(0, 20)}...)`)
-    } catch (e) {
-      log.push(`❌ Failed to get access token: ${e}`)
+    const accessToken = await getDriveAccessToken()
+    if (accessToken) {
+      log.push(`✅ Access token obtained (${accessToken.slice(0, 20)}...)`)
+    } else {
+      log.push(`❌ Failed to get access token`)
     }
 
     const sharedDriveParams = {

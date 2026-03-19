@@ -4,13 +4,14 @@ import { google, drive_v3 } from 'googleapis'
 const JOB_SHEETS_FOLDER_ID = '10ZvynBY7AOABRU4q_D_SmSrAFN0OkzMI'
 
 // YLZparts Shared Drive — root drive ID and parts container folder ID
-// Structure: [container] / [part-number folder] / PDF / [drawing.pdf]
+// Structure: [PARTS_CONTAINER_ID] / [part-number folder] / PDF / [drawing.pdf]
 const PARTS_SHARED_DRIVE_ID = '0AMEx2pR1R5dwUk9PVA'
 const PARTS_CONTAINER_ID = '1eAs6Dv4F8DdcvNIFWuggfR1YZzHwPZNo'
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 let driveClient: drive_v3.Drive | null = null
+let oauthClient: InstanceType<typeof google.auth.OAuth2> | null = null
 
 export async function getDriveClient(): Promise<drive_v3.Drive> {
   if (driveClient) return driveClient
@@ -25,11 +26,22 @@ export async function getDriveClient(): Promise<drive_v3.Drive> {
     )
   }
 
-  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret)
-  oauth2Client.setCredentials({ refresh_token: refreshToken })
+  oauthClient = new google.auth.OAuth2(clientId, clientSecret)
+  oauthClient.setCredentials({ refresh_token: refreshToken })
 
-  driveClient = google.drive({ version: 'v3', auth: oauth2Client })
+  driveClient = google.drive({ version: 'v3', auth: oauthClient })
   return driveClient
+}
+
+export async function getDriveAccessToken(): Promise<string | null> {
+  await getDriveClient() // ensure oauthClient is initialised
+  if (!oauthClient) return null
+  try {
+    const tokenRes = await oauthClient.getAccessToken()
+    return tokenRes.token ?? null
+  } catch {
+    return null
+  }
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -176,26 +188,16 @@ export async function downloadDriveFile(fileId: string): Promise<{
 }
 
 /**
- * Search the YLZparts Shared Drive for PDFs matching the given part numbers.
- * Returns a Map<partNumber, Buffer> of thumbnail images from Google Drive.
+ * Search Parts - YLZ (Shared with me) for PDFs matching the given part numbers.
+ * Returns a Map<partNumber, Buffer> of JPEG images (first page of each drawing).
  *
  * Folder structure: [PARTS_CONTAINER_ID] / [part-number] / PDF / drawing.pdf
- * All lookups use Shared Drive params with PARTS_SHARED_DRIVE_ID.
  */
 export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<string, Buffer>> {
   const drive = await getDriveClient()
   const result = new Map<string, Buffer>()
 
-  // Get OAuth access token for fetching thumbnail URLs
-  let accessToken: string | null = null
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const auth = (drive as any)._options.auth
-    const tokenRes = await auth.getAccessToken()
-    accessToken = tokenRes.token
-  } catch { /* fall through — thumbnails will be skipped */ }
-
-  const sharedDriveParams = {
+  const driveParams = {
     supportsAllDrives: true,
     includeItemsFromAllDrives: true,
     corpora: 'drive' as const,
@@ -204,17 +206,15 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
 
   await Promise.all(partNumbers.map(async (pn) => {
     try {
-      // Step 1: Find the part-number folder inside the parts container.
-      // Use contains so folders with revision suffixes (e.g. "12345 Rev B") are found.
-      // Order by name desc so the latest revision (Z > A) is first.
+      // Step 1: Find the part-number subfolder inside the container
       const partFolderRes = await drive.files.list({
         q: `'${PARTS_CONTAINER_ID}' in parents and name contains '${pn}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
         fields: 'files(id, name)',
         orderBy: 'name desc',
         pageSize: 10,
-        ...sharedDriveParams,
+        ...driveParams,
       })
-      // Pick the folder whose name starts with the part number — latest revision first
+      // Prefer exact name match; fall back to first result (latest revision desc)
       const partFolder = partFolderRes.data.files?.find(f => f.name?.startsWith(pn))
         ?? partFolderRes.data.files?.[0]
       if (!partFolder?.id) return
@@ -224,33 +224,38 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
         q: `'${partFolder.id}' in parents and name = 'PDF' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
         fields: 'files(id, name)',
         pageSize: 1,
-        ...sharedDriveParams,
+        ...driveParams,
       })
       const pdfFolder = pdfFolderRes.data.files?.[0]
       if (!pdfFolder?.id) return
 
-      // Step 3: Find the PDF file inside the PDF subfolder
+      // Step 3: Find the PDF file inside the PDF subfolder.
+      // Sort by name desc so the latest revision (e.g. Rev B > Rev A) comes first.
       const pdfFileRes = await drive.files.list({
         q: `'${pdfFolder.id}' in parents and mimeType = 'application/pdf' and trashed = false`,
         fields: 'files(id, name)',
-        pageSize: 1,
-        ...sharedDriveParams,
+        orderBy: 'name desc',
+        pageSize: 5,
+        ...driveParams,
       })
       const pdfFile = pdfFileRes.data.files?.[0]
       if (!pdfFile?.id) return
 
-      if (accessToken) {
-        // Use Google's thumbnail endpoint — works for PDFs in Drive with OAuth token
-        const thumbUrl = `https://drive.google.com/thumbnail?id=${pdfFile.id}&sz=s400`
-        const thumbRes = await fetch(thumbUrl, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-        if (thumbRes.ok) {
-          result.set(pn, Buffer.from(await thumbRes.arrayBuffer()))
-        }
+      // Fetch a JPEG thumbnail via Google's thumbnail endpoint.
+      // sz=s800 gives a high enough resolution for the laser pack cards.
+      // canvas is unavailable on Vercel Lambda, so we rely on Drive's own rendering.
+      const accessToken = await getDriveAccessToken()
+      if (!accessToken) return
+
+      const thumbUrl = `https://drive.google.com/thumbnail?id=${pdfFile.id}&sz=s800`
+      const thumbRes = await fetch(thumbUrl, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      if (thumbRes.ok) {
+        result.set(pn, Buffer.from(await thumbRes.arrayBuffer()))
       }
     } catch {
-      // Drawing not found or download failed — skip, placeholder will be shown
+      // Drawing not found or render failed — placeholder will be shown
     }
   }))
 
