@@ -113,23 +113,63 @@ function groupBySection(items: LineItem[]): Array<{ section: string; items: Line
 export default function QuotePrintPage({ params }: { params: { id: string } }) {
   const [quote, setQuote] = useState<Quote | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [printReady, setPrintReady] = useState(false)
+
+  function loadQuote() {
+    setLoading(true)
+    setError(null)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
+    fetch(`/api/quotes/${params.id}`, { signal: controller.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error(`Server error ${r.status}`)
+        return r.json()
+      })
+      .then((data) => {
+        clearTimeout(timeout)
+        if (data.error) throw new Error(data.error)
+        setQuote(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        clearTimeout(timeout)
+        setError(err.name === 'AbortError' ? 'Request timed out — check your connection and try again.' : (err.message || 'Failed to load quote'))
+        setLoading(false)
+      })
+  }
+
+  useEffect(() => { loadQuote() }, [params.id])
 
   useEffect(() => {
-    fetch(`/api/quotes/${params.id}`)
-      .then((r) => r.json())
-      .then((data) => { setQuote(data); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [params.id])
-
-  useEffect(() => {
-    if (quote) {
+    if (quote && printReady) {
       const t = setTimeout(() => window.print(), 600)
       return () => clearTimeout(t)
     }
-  }, [quote])
+  }, [quote, printReady])
 
-  if (loading) return <div style={{ fontFamily: 'sans-serif', padding: 40, color: '#666' }}>Loading…</div>
-  if (!quote) return <div style={{ fontFamily: 'sans-serif', padding: 40, color: '#c00' }}>Quote not found</div>
+  if (loading) return (
+    <div style={{ fontFamily: 'sans-serif', padding: 40, color: '#666', textAlign: 'center' }}>
+      <div style={{ marginBottom: 8 }}>Loading quote…</div>
+      <div style={{ fontSize: 12, color: '#999' }}>Connecting to server</div>
+    </div>
+  )
+
+  if (error || !quote) return (
+    <div style={{ fontFamily: 'sans-serif', padding: 40, textAlign: 'center' }}>
+      <div style={{ color: '#c00', fontWeight: 700, marginBottom: 8 }}>
+        {error || 'Quote not found'}
+      </div>
+      {error && (
+        <button
+          onClick={loadQuote}
+          style={{ background: '#E8681A', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: 4, cursor: 'pointer', fontWeight: 700 }}
+        >
+          Retry
+        </button>
+      )}
+    </div>
+  )
 
   const effectiveTotal = quote.overridePrice ?? quote.total
   const gst            = effectiveTotal * 0.1
@@ -283,7 +323,7 @@ export default function QuotePrintPage({ params }: { params: { id: string } }) {
       <div className="print-bar">
         <a href={`/quotes/builder?id=${params.id}`}>← Back to quote</a>
         <span style={{ fontSize: 14, fontWeight: 700 }}>{quote.quoteNumber} — {customerLine}</span>
-        <button onClick={() => window.print()}>Print / Save PDF</button>
+        <button onClick={() => { setPrintReady(true); setTimeout(() => window.print(), 100) }}>Print / Save PDF</button>
       </div>
 
       <div className="page">
