@@ -7,8 +7,10 @@
  * returns empty text — causing all MO fields to parse as Unknown/empty.
  */
 
+// Use the internal lib directly — pdf-parse/index.js reads a test PDF at load
+// time which crashes Next.js static page collection during build on Vercel.
 // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-const pdfParse = require('pdf-parse') as (dataBuffer: Buffer) => Promise<{ text: string; numpages: number }>
+const pdfParse = require('pdf-parse/lib/pdf-parse.js') as (dataBuffer: Buffer) => Promise<{ text: string; numpages: number }>
 
 export async function extractPdfText(buffer: Buffer): Promise<string> {
   const result = await pdfParse(buffer)
