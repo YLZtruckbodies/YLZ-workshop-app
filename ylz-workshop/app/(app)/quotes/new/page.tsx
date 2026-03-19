@@ -137,10 +137,12 @@ export default function NewQuotePage() {
             const hardox   = grouped['quick-quote'].filter(t => !isTrailerOnly(t) && (t.name.toLowerCase().startsWith('hardox') || t.name.includes('10m3 Hardox')))
             const alloy    = grouped['quick-quote'].filter(t => !isTrailerOnly(t) && t.name.toLowerCase().startsWith('alloy'))
             const trailers = grouped['quick-quote'].filter(isTrailerOnly)
+            // BUG-08: use minmax so cards don't force the grid wider than viewport
             const rowGrid = (count: number) => ({
               display: 'grid',
-              gridTemplateColumns: `repeat(${Math.min(count, 4)}, 1fr)`,
+              gridTemplateColumns: `repeat(${Math.min(count, 4)}, minmax(0, 1fr))`,
               gap: 14,
+              overflowX: 'auto' as const,
             })
             return (
               <section style={{ marginBottom: 48 }}>

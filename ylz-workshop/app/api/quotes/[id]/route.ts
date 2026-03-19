@@ -19,6 +19,30 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const body = await req.json()
     const { lineItems, ...quoteData } = body
 
+    // BUG-02: server-side guard — block sending a $0 or nameless quote
+    if (body.status === 'sent') {
+      const total = body.overridePrice ?? body.total ?? 0
+      const name = (body.customerName || '').trim().toLowerCase()
+      if (total === 0) {
+        return NextResponse.json({ error: 'Cannot mark as Sent: quote total is $0' }, { status: 422 })
+      }
+      if (!name || name === 'tbc') {
+        return NextResponse.json({ error: 'Cannot mark as Sent: customer name is required' }, { status: 422 })
+      }
+    }
+
+    // BUG-05: set acceptedAt when transitioning to accepted (if not already set)
+    let acceptedAtPatch: { acceptedAt: Date } | Record<string, never> = {}
+    if (body.status === 'accepted') {
+      const existing = await prisma.quote.findUnique({
+        where: { id: params.id },
+        select: { acceptedAt: true },
+      })
+      if (!existing?.acceptedAt) {
+        acceptedAtPatch = { acceptedAt: new Date() }
+      }
+    }
+
     // If lineItems provided, delete old and recreate
     if (lineItems) {
       await prisma.quoteLineItem.deleteMany({ where: { quoteId: params.id } })
@@ -28,6 +52,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       where: { id: params.id },
       data: {
         ...quoteData,
+        ...acceptedAtPatch,
         lineItems: lineItems?.length
           ? { create: lineItems }
           : undefined,
