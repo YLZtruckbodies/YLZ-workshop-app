@@ -671,7 +671,7 @@ export default function TimesheetPage() {
                 {DEFAULT_BLOCKS.map((b) => {
                   const block = blocks[b.key]
                   const hrs = block.job.trim() ? calcHours(block.start, block.end) : 0
-                  const isOT = b.key === 'overtime'
+                  const isOT = b.key === 'overtime' || b.key === 'early_ot'
                   return (
                     <div
                       key={b.key}
@@ -908,10 +908,11 @@ export default function TimesheetPage() {
                       <thead>
                         <tr>
                           <th style={thStyle}>Worker</th>
+                          <th style={{ ...thStyle, color: '#f5a623' }}>Early OT</th>
                           <th style={thStyle}>Morning</th>
                           <th style={thStyle}>Midday</th>
                           <th style={thStyle}>Afternoon</th>
-                          <th style={thStyle}>Overtime</th>
+                          <th style={{ ...thStyle, color: '#f5a623' }}>Late OT</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -940,7 +941,7 @@ export default function TimesheetPage() {
                               </div>
                             </td>
                             {w.status ? (
-                              <td colSpan={4} style={{ padding: '10px 16px', textAlign: 'center' }}>
+                              <td colSpan={5} style={{ padding: '10px 16px', textAlign: 'center' }}>
                                 <span
                                   style={{
                                     fontSize: 11,
@@ -958,19 +959,27 @@ export default function TimesheetPage() {
                               </td>
                             ) : (
                               <>
+                                {/* Early OT */}
+                                <td style={{ padding: '10px 16px', borderLeft: '1px solid rgba(245,166,35,0.15)' }}>
+                                  {w.periods.early_ot ? (
+                                    <div>
+                                      <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#f5a623' }}>
+                                        {w.periods.early_ot.job}
+                                      </span>
+                                      <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 6 }}>
+                                        {w.periods.early_ot.hours}h
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>—</span>
+                                  )}
+                                </td>
+                                {/* Ordinary periods */}
                                 {['morning', 'midday', 'afternoon'].map((pk) => (
                                   <td key={pk} style={{ padding: '10px 16px' }}>
                                     {w.periods[pk] ? (
                                       <div>
-                                        <span
-                                          style={{
-                                            fontFamily: "'League Spartan', sans-serif",
-                                            fontSize: 13,
-                                            fontWeight: 700,
-                                            letterSpacing: 1,
-                                            color: '#fff',
-                                          }}
-                                        >
+                                        <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#fff' }}>
                                           {w.periods[pk].job}
                                         </span>
                                         <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 6 }}>
@@ -982,18 +991,11 @@ export default function TimesheetPage() {
                                     )}
                                   </td>
                                 ))}
-                                <td style={{ padding: '10px 16px' }}>
+                                {/* Late OT */}
+                                <td style={{ padding: '10px 16px', borderLeft: '1px solid rgba(245,166,35,0.15)' }}>
                                   {w.periods.overtime ? (
                                     <div>
-                                      <span
-                                        style={{
-                                          fontFamily: "'League Spartan', sans-serif",
-                                          fontSize: 13,
-                                          fontWeight: 700,
-                                          letterSpacing: 1,
-                                          color: '#f5a623',
-                                        }}
-                                      >
+                                      <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#f5a623' }}>
                                         {w.periods.overtime.job}
                                       </span>
                                       <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 6 }}>
