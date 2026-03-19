@@ -216,7 +216,7 @@ function DriveBrowserTool() {
       {/* Search results label */}
       {isSearching && (
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
-          Search results for <span style={{ color: '#fff', fontWeight: 600 }}>"{searchQuery}"</span>
+          Search results for <span style={{ color: '#fff', fontWeight: 600 }}>&ldquo;{searchQuery}&rdquo;</span>
           {' '}— {items.length} result{items.length !== 1 ? 's' : ''} ·{' '}
           <button onClick={clearSearch} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E8681A', fontSize: 12, padding: 0 }}>
             Back to folder
