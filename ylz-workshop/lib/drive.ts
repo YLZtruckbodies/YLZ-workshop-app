@@ -204,14 +204,19 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
 
   await Promise.all(partNumbers.map(async (pn) => {
     try {
-      // Step 1: Find the part-number folder inside the parts container
+      // Step 1: Find the part-number folder inside the parts container.
+      // Use contains so folders with revision suffixes (e.g. "12345 Rev B") are found.
+      // Order by name desc so the latest revision (Z > A) is first.
       const partFolderRes = await drive.files.list({
-        q: `'${PARTS_CONTAINER_ID}' in parents and name = '${pn}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+        q: `'${PARTS_CONTAINER_ID}' in parents and name contains '${pn}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
         fields: 'files(id, name)',
-        pageSize: 1,
+        orderBy: 'name desc',
+        pageSize: 10,
         ...sharedDriveParams,
       })
-      const partFolder = partFolderRes.data.files?.[0]
+      // Pick the folder whose name starts with the part number — latest revision first
+      const partFolder = partFolderRes.data.files?.find(f => f.name?.startsWith(pn))
+        ?? partFolderRes.data.files?.[0]
       if (!partFolder?.id) return
 
       // Step 2: Find the PDF subfolder inside the part folder
