@@ -192,26 +192,16 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
 
   await Promise.all(partNumbers.map(async (pn) => {
     try {
-      // Step 1: find the subfolder inside YLZ Parts whose name contains the part number
-      const folderRes = await drive.files.list({
-        q: `'${PARTS_FOLDER_ID}' in parents and name contains '${pn}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+      // Search across all drives by part number in filename
+      const res = await drive.files.list({
+        q: `name contains '${pn}' and mimeType = 'application/pdf' and trashed = false`,
         fields: 'files(id, name)',
         pageSize: 1,
         supportsAllDrives: true,
         includeItemsFromAllDrives: true,
+        corpora: 'allDrives',
       })
-      const folder = folderRes.data.files?.[0]
-      if (!folder?.id) return
-
-      // Step 2: find the first PDF inside that subfolder
-      const fileRes = await drive.files.list({
-        q: `'${folder.id}' in parents and mimeType = 'application/pdf' and trashed = false`,
-        fields: 'files(id, name)',
-        pageSize: 1,
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true,
-      })
-      const file = fileRes.data.files?.[0]
+      const file = res.data.files?.[0]
       if (!file?.id) return
 
       if (accessToken) {
