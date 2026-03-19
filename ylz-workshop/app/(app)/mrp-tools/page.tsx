@@ -85,8 +85,12 @@ function DriveBrowserTool() {
   const [breadcrumb, setBreadcrumb]   = useState<BreadcrumbEntry[]>([
     { id: PARTS_ROOT_FOLDER_ID, name: 'YLZparts' },
   ])
+  const [searchInput, setSearchInput] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
 
   const currentFolder = breadcrumb[breadcrumb.length - 1]
+  const isSearching = searchQuery.length > 0
 
   const loadFolder = useCallback(async (folderId: string) => {
     setLoading(true)
@@ -102,13 +106,47 @@ function DriveBrowserTool() {
     }
   }, [])
 
-  useEffect(() => { loadFolder(currentFolder.id) }, [currentFolder.id, loadFolder])
+  const runSearch = useCallback(async (q: string) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/drive-browse?q=${encodeURIComponent(q)}`)
+      if (!res.ok) throw new Error(`${res.status}`)
+      setItems(await res.json())
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Search failed')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isSearching) {
+      runSearch(searchQuery)
+    } else {
+      loadFolder(currentFolder.id)
+    }
+  }, [currentFolder.id, searchQuery, isSearching, loadFolder, runSearch])
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const q = searchInput.trim()
+    if (q) setSearchQuery(q)
+  }
+
+  const clearSearch = () => {
+    setSearchInput('')
+    setSearchQuery('')
+    searchRef.current?.focus()
+  }
 
   const navigateInto = (item: BrowseItem) => {
+    clearSearch()
     setBreadcrumb(prev => [...prev, { id: item.id, name: item.name }])
   }
 
   const navigateTo = (index: number) => {
+    clearSearch()
     setBreadcrumb(prev => prev.slice(0, index + 1))
   }
 
@@ -127,40 +165,101 @@ function DriveBrowserTool() {
         Browse the YLZparts Google Drive. Click folders to navigate, click files to open in Drive.
       </div>
 
-      {/* Breadcrumb */}
-      <div style={{
-        display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4,
-        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 6, padding: '8px 14px', fontSize: 12,
-      }}>
-        {breadcrumb.map((crumb, i) => (
-          <span key={crumb.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {i > 0 && <span style={{ color: 'rgba(255,255,255,0.2)' }}>›</span>}
+      {/* Search bar */}
+      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8 }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <input
+            ref={searchRef}
+            type="text"
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            placeholder="Search by name — e.g. 100-01-001"
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              background: 'rgba(255,255,255,0.05)',
+              border: `1px solid ${isSearching ? '#E8681A' : 'rgba(255,255,255,0.12)'}`,
+              borderRadius: 6, padding: '10px 36px 10px 14px',
+              fontSize: 13, color: '#fff', outline: 'none',
+            }}
+          />
+          {(searchInput || isSearching) && (
             <button
-              onClick={() => navigateTo(i)}
-              disabled={i === breadcrumb.length - 1}
+              type="button"
+              onClick={clearSearch}
               style={{
-                background: 'none', border: 'none', cursor: i === breadcrumb.length - 1 ? 'default' : 'pointer',
-                color: i === breadcrumb.length - 1 ? '#fff' : '#E8681A',
-                fontWeight: i === breadcrumb.length - 1 ? 700 : 400,
-                fontSize: 12, padding: 0,
+                position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'rgba(255,255,255,0.4)', fontSize: 16, lineHeight: 1, padding: 0,
               }}
             >
-              {crumb.name}
+              ×
             </button>
-          </span>
-        ))}
+          )}
+        </div>
         <button
-          onClick={() => loadFolder(currentFolder.id)}
-          title="Refresh"
+          type="submit"
+          disabled={!searchInput.trim()}
           style={{
-            marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer',
-            color: 'rgba(255,255,255,0.3)', fontSize: 14, padding: '0 4px',
+            padding: '10px 18px', borderRadius: 6, border: 'none',
+            fontFamily: "'League Spartan', sans-serif",
+            fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+            background: searchInput.trim() ? '#E8681A' : 'rgba(255,255,255,0.08)',
+            color: searchInput.trim() ? '#fff' : 'rgba(255,255,255,0.3)',
+            cursor: searchInput.trim() ? 'pointer' : 'not-allowed',
+            transition: '0.15s', whiteSpace: 'nowrap',
           }}
         >
-          ↻
+          Search
         </button>
-      </div>
+      </form>
+
+      {/* Search results label */}
+      {isSearching && (
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+          Search results for <span style={{ color: '#fff', fontWeight: 600 }}>"{searchQuery}"</span>
+          {' '}— {items.length} result{items.length !== 1 ? 's' : ''} ·{' '}
+          <button onClick={clearSearch} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E8681A', fontSize: 12, padding: 0 }}>
+            Back to folder
+          </button>
+        </div>
+      )}
+
+      {/* Breadcrumb — hidden during search */}
+      {!isSearching && (
+        <div style={{
+          display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4,
+          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 6, padding: '8px 14px', fontSize: 12,
+        }}>
+          {breadcrumb.map((crumb, i) => (
+            <span key={crumb.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {i > 0 && <span style={{ color: 'rgba(255,255,255,0.2)' }}>›</span>}
+              <button
+                onClick={() => navigateTo(i)}
+                disabled={i === breadcrumb.length - 1}
+                style={{
+                  background: 'none', border: 'none', cursor: i === breadcrumb.length - 1 ? 'default' : 'pointer',
+                  color: i === breadcrumb.length - 1 ? '#fff' : '#E8681A',
+                  fontWeight: i === breadcrumb.length - 1 ? 700 : 400,
+                  fontSize: 12, padding: 0,
+                }}
+              >
+                {crumb.name}
+              </button>
+            </span>
+          ))}
+          <button
+            onClick={() => loadFolder(currentFolder.id)}
+            title="Refresh"
+            style={{
+              marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer',
+              color: 'rgba(255,255,255,0.3)', fontSize: 14, padding: '0 4px',
+            }}
+          >
+            ↻
+          </button>
+        </div>
+      )}
 
       {error && (
         <div style={{

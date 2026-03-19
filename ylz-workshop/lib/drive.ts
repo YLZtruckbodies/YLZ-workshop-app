@@ -277,6 +277,34 @@ export interface BrowseItem {
 }
 
 /**
+ * Search across the entire YLZparts Shared Drive by name.
+ */
+export async function searchDrive(query: string): Promise<BrowseItem[]> {
+  const drive = await getDriveClient()
+
+  const safe = query.replace(/'/g, "\\'")
+  const res = await drive.files.list({
+    q: `name contains '${safe}' and trashed = false`,
+    fields: 'files(id, name, mimeType, modifiedTime, webViewLink, parents)',
+    orderBy: 'folder,name',
+    pageSize: 50,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
+    corpora: 'drive',
+    driveId: PARTS_SHARED_DRIVE_ID_PUBLIC,
+  })
+
+  return (res.data.files || []).map(f => ({
+    id: f.id!,
+    name: f.name!,
+    mimeType: f.mimeType || 'application/octet-stream',
+    isFolder: f.mimeType === 'application/vnd.google-apps.folder',
+    webViewLink: f.webViewLink || undefined,
+    modifiedTime: f.modifiedTime || undefined,
+  }))
+}
+
+/**
  * List the contents of a folder inside the YLZparts Shared Drive.
  */
 export async function browseDriveFolder(folderId: string): Promise<BrowseItem[]> {
