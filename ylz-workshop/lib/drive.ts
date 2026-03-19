@@ -196,6 +196,11 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
         q: `'${PARTS_FOLDER_ID}' in parents and name contains '${pn}' and mimeType = 'application/pdf' and trashed = false`,
         fields: 'files(id, name)',
         pageSize: 1,
+        // MRP-01: PARTS_FOLDER_ID is a Shared Drive root — these params are required
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+        corpora: 'drive',
+        driveId: PARTS_FOLDER_ID,
       })
       const file = res.data.files?.[0]
       if (!file?.id) return

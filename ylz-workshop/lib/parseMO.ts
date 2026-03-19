@@ -37,7 +37,8 @@ export function parseMO(text: string): MOData {
   const laserSet = new Set<string>()
   let curOpPart: string | null = null
   for (const line of opsText.split('\n').map(l => l.trim())) {
-    const m = line.match(/^([1-7]\d{2}-\d{2}-\d{3})\b/)
+    // MRP-03: use \b instead of ^ so part numbers aren't missed when preceded by whitespace/content
+    const m = line.match(/\b([1-7]\d{2}-\d{2}-\d{3})\b/)
     if (m) { curOpPart = m[1]; continue }
     if (curOpPart && LASER_OPS.some(op => line.toUpperCase().includes(op))) {
       laserSet.add(curOpPart)
@@ -70,8 +71,8 @@ export function parseMO(text: string): MOData {
       l.length > 3
     ) ?? ''
 
-    // Quantity
-    const qtyMatch = chunk.match(/(\d+)\s+EACH/)
+    // Quantity — MRP-05: accept EA, PCS, PC, UNIT in addition to EACH
+    const qtyMatch = chunk.match(/(\d+)\s+(?:EACH|EA|PCS|PC|UNIT)/i)
     const qty = qtyMatch ? `${qtyMatch[1]} EACH` : ''
 
     // Material — find stock code line then read next descriptive line

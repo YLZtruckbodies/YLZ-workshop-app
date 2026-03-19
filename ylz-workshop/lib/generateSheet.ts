@@ -165,11 +165,19 @@ function drawCard(doc: any, part: MOPart, x: number, y: number, drawings: Drawin
   doc.font('Helvetica-Bold').fontSize(8.5).fillColor(WHITE)
     .text(`QTY  ${part.quantity.replace(' EACH', '')}`, detailX + 4, detailY + 39, { lineBreak: false })
 
-  // Thickness callout
-  doc.font('Helvetica-Bold').fontSize(18).fillColor(COPPER)
-    .text(part.thickness.toUpperCase(), detailX, detailY + 62, { lineBreak: false })
-  doc.font('Helvetica').fontSize(6.5).fillColor(MGREY)
-    .text('THICK', detailX, detailY + 83, { lineBreak: false })
+  // Thickness callout — MRP-02: show dash + CHECK DRAWING for unknown thickness
+  const thicknessKnown = part.thickness && part.thickness.toLowerCase() !== 'unknown'
+  if (thicknessKnown) {
+    doc.font('Helvetica-Bold').fontSize(18).fillColor(COPPER)
+      .text(part.thickness.toUpperCase(), detailX, detailY + 62, { lineBreak: false })
+    doc.font('Helvetica').fontSize(6.5).fillColor(MGREY)
+      .text('THICK', detailX, detailY + 83, { lineBreak: false })
+  } else {
+    doc.font('Helvetica-Bold').fontSize(18).fillColor(MGREY)
+      .text('—', detailX, detailY + 62, { lineBreak: false })
+    doc.font('Helvetica').fontSize(6.5).fillColor(MGREY)
+      .text('CHECK DRAWING', detailX, detailY + 83, { lineBreak: false })
+  }
 }
 
 // ── Thumbnail placeholder ─────────────────────────────────────────────────────

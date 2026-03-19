@@ -38,7 +38,19 @@ export async function POST(req: NextRequest) {
     const partNumbers = parts.map(p => p.partNumber)
 
     step = 'fetch-drawings'
-    const drawings  = await fetchPartDrawings(partNumbers)
+    // MRP-04: if Google credentials aren't configured, skip drawings gracefully
+    let drawings: Awaited<ReturnType<typeof fetchPartDrawings>>
+    const hasGoogleCreds = !!(
+      process.env.GOOGLE_CLIENT_ID &&
+      process.env.GOOGLE_CLIENT_SECRET &&
+      process.env.GOOGLE_REFRESH_TOKEN
+    )
+    if (hasGoogleCreds) {
+      drawings = await fetchPartDrawings(partNumbers)
+    } else {
+      console.warn('Google credentials not configured — skipping part drawings')
+      drawings = new Map()
+    }
 
     step = 'generate-sheet'
     const pdfBuffer = await generateLaserSheet(mo, drawings)
