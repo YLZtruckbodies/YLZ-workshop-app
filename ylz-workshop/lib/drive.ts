@@ -205,17 +205,18 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
   }
 
   await Promise.all(partNumbers.map(async (pn) => {
+    const basePn = stripRevision(pn)
     try {
       // Step 1: Find the part-number subfolder inside the container
       const partFolderRes = await drive.files.list({
-        q: `'${PARTS_CONTAINER_ID}' in parents and name contains '${pn}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+        q: `'${PARTS_CONTAINER_ID}' in parents and name contains '${basePn}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
         fields: 'files(id, name)',
         orderBy: 'name desc',
         pageSize: 10,
         ...driveParams,
       })
       // Prefer exact name match; fall back to first result (latest revision desc)
-      const partFolder = partFolderRes.data.files?.find(f => f.name?.startsWith(pn))
+      const partFolder = partFolderRes.data.files?.find(f => f.name?.startsWith(basePn))
         ?? partFolderRes.data.files?.[0]
       if (!partFolder?.id) return
 
@@ -267,6 +268,14 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
 export const PARTS_SHARED_DRIVE_ID_PUBLIC = '0AMEx2pR1R5dwUk9PVA'
 export const PARTS_ROOT_FOLDER_ID = '1eAs6Dv4F8DdcvNIFWuggfR1YZzHwPZNo'
 
+/**
+ * Strip MRPeasy revision suffix from a part number before searching Drive.
+ * MRPeasy formats revisions as "100-01-001.A" — Drive folders are "100-01-001".
+ */
+function stripRevision(pn: string): string {
+  return pn.replace(/\.[a-zA-Z]$/, '').trim()
+}
+
 export interface BrowseItem {
   id: string
   name: string
@@ -282,7 +291,7 @@ export interface BrowseItem {
 export async function searchDrive(query: string): Promise<BrowseItem[]> {
   const drive = await getDriveClient()
 
-  const safe = query.replace(/'/g, "\\'")
+  const safe = stripRevision(query).replace(/'/g, "\\'")
   const res = await drive.files.list({
     q: `name contains '${safe}' and trashed = false`,
     fields: 'files(id, name, mimeType, modifiedTime, webViewLink, parents)',
