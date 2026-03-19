@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
         overridePrice: true,
         preparedBy: true,
         sentAt: true,
+        acceptedAt: true,
         createdAt: true,
         updatedAt: true,
       },

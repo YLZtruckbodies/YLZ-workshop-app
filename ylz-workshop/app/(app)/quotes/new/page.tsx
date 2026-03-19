@@ -322,27 +322,41 @@ function QuickQuoteCard({
       }}>
         {isTruckAndTrailer && truckCfg && trailerCfg ? (
           <div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 4 }}>From</div>
-            <div style={{
-              fontFamily: "'League Spartan', sans-serif",
-              fontSize: 26, fontWeight: 800, color: '#E8681A', lineHeight: 1,
-            }}>
-              ${fmt(template.basePrice)}
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 4 }}>
+              {template.basePrice > 0 ? 'From' : 'Price on application'}
             </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
-              ex GST &mdash; truck ${fmt(Number(truckCfg.price))} + trailer ${fmt(Number(trailerCfg.price))}
-            </div>
+            {template.basePrice > 0 && (
+              <div style={{
+                fontFamily: "'League Spartan', sans-serif",
+                fontSize: 26, fontWeight: 800, color: '#E8681A', lineHeight: 1,
+              }}>
+                ${fmt(template.basePrice)}
+              </div>
+            )}
+            {template.basePrice > 0 && truckCfg.price && trailerCfg.price ? (
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
+                ex GST &mdash; truck ${fmt(Number(truckCfg.price))} + trailer ${fmt(Number(trailerCfg.price))}
+              </div>
+            ) : template.basePrice > 0 ? (
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>ex GST</div>
+            ) : null}
           </div>
         ) : (
           <div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 4 }}>From</div>
-            <div style={{
-              fontFamily: "'League Spartan', sans-serif",
-              fontSize: 26, fontWeight: 800, color: '#E8681A', lineHeight: 1,
-            }}>
-              ${fmt(template.basePrice)}
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 4 }}>
+              {template.basePrice > 0 ? 'From' : 'Price on application'}
             </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>ex GST</div>
+            {template.basePrice > 0 && (
+              <>
+                <div style={{
+                  fontFamily: "'League Spartan', sans-serif",
+                  fontSize: 26, fontWeight: 800, color: '#E8681A', lineHeight: 1,
+                }}>
+                  ${fmt(template.basePrice)}
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>ex GST</div>
+              </>
+            )}
           </div>
         )}
 

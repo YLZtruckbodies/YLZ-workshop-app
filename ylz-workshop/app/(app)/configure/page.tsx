@@ -48,6 +48,8 @@ function SeedButton() {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [msg, setMsg] = useState('')
   async function run() {
+    // BUG-11: Confirm before seeding
+    if (!confirm('This will overwrite all template data including any custom image paths. Are you sure?')) return
     setState('loading')
     try {
       const r = await fetch('/api/templates/seed', { method: 'POST' })
@@ -82,12 +84,16 @@ interface ProductTemplate {
   id: string
   name: string
   category: string
+  description: string
   imagePath: string
+  basePrice: number
 }
+
+type TemplateEdits = Record<string, { imagePath?: string; name?: string; description?: string; basePrice?: string }>
 
 function TemplatesTab() {
   const [templates, setTemplates] = useState<ProductTemplate[]>([])
-  const [editing, setEditing] = useState<Record<string, string>>({})
+  const [editing, setEditing] = useState<TemplateEdits>({})
   const [saving, setSaving] = useState<Record<string, boolean>>({})
   const [saved, setSaved] = useState<Record<string, boolean>>({})
 
@@ -95,17 +101,43 @@ function TemplatesTab() {
     fetch('/api/templates').then(r => r.json()).then(setTemplates)
   }, [])
 
-  async function saveImage(id: string) {
-    setSaving(s => ({ ...s, [id]: true }))
-    await fetch(`/api/templates/${id}`, {
+  function field<K extends keyof TemplateEdits[string]>(id: string, key: K, fallback: string) {
+    return editing[id]?.[key] !== undefined ? (editing[id][key] as string) : fallback
+  }
+
+  function setField<K extends keyof TemplateEdits[string]>(id: string, key: K, val: string) {
+    setEditing(ed => ({ ...ed, [id]: { ...ed[id], [key]: val } }))
+  }
+
+  function isDirty(t: ProductTemplate) {
+    const e = editing[t.id]
+    if (!e) return false
+    return (
+      (e.imagePath !== undefined && e.imagePath !== t.imagePath) ||
+      (e.name !== undefined && e.name !== t.name) ||
+      (e.description !== undefined && e.description !== t.description) ||
+      (e.basePrice !== undefined && e.basePrice !== String(t.basePrice))
+    )
+  }
+
+  async function saveTemplate(t: ProductTemplate) {
+    if (!isDirty(t)) return
+    setSaving(s => ({ ...s, [t.id]: true }))
+    const e = editing[t.id] || {}
+    const patch: Record<string, unknown> = {}
+    if (e.imagePath !== undefined)   patch.imagePath   = e.imagePath
+    if (e.name !== undefined)        patch.name        = e.name
+    if (e.description !== undefined) patch.description = e.description
+    if (e.basePrice !== undefined)   patch.basePrice   = parseFloat(e.basePrice) || 0
+    await fetch(`/api/templates/${t.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imagePath: editing[id] }),
+      body: JSON.stringify(patch),
     })
-    setTemplates(ts => ts.map(t => t.id === id ? { ...t, imagePath: editing[id] } : t))
-    setSaving(s => ({ ...s, [id]: false }))
-    setSaved(s => ({ ...s, [id]: true }))
-    setTimeout(() => setSaved(s => ({ ...s, [id]: false })), 2000)
+    setTemplates(ts => ts.map(tmpl => tmpl.id === t.id ? { ...tmpl, ...patch, basePrice: patch.basePrice as number ?? tmpl.basePrice } : tmpl))
+    setSaving(s => ({ ...s, [t.id]: false }))
+    setSaved(s => ({ ...s, [t.id]: true }))
+    setTimeout(() => setSaved(s => ({ ...s, [t.id]: false })), 2000)
   }
 
   const CATEGORY_LABELS: Record<string, string> = {
@@ -114,51 +146,78 @@ function TemplatesTab() {
     'trailer': 'Trailer',
   }
 
+  const inputSm: React.CSSProperties = {
+    width: '100%', background: '#0a0a0a', border: '1px solid var(--border2)',
+    borderRadius: 4, color: '#fff', padding: '7px 10px', fontSize: 12,
+  }
+
   return (
     <div>
       <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 20 }}>
-        Paste any public image URL to update the photo shown in the quote builder. Use images from your website, Dropbox, Google Drive (share link), or anywhere publicly accessible.
+        Edit template names, descriptions, base prices, and photos. Changes take effect immediately without a reseed.
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {templates.map(t => {
-          const imgSrc = editing[t.id] !== undefined ? editing[t.id] : t.imagePath
+          const imgSrc = field(t.id, 'imagePath', t.imagePath)
+          const dirty = isDirty(t)
           return (
-            <div key={t.id} style={{ display: 'flex', gap: 16, alignItems: 'center', background: '#111', borderRadius: 6, border: '1px solid var(--border)', padding: 14 }}>
-              {/* Preview */}
-              <div style={{ width: 90, height: 66, flexShrink: 0, borderRadius: 4, overflow: 'hidden', background: '#1a1a1a', border: '1px solid var(--border)' }}>
-                {imgSrc
-                  ? <img src={imgSrc} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => (e.currentTarget.style.display = 'none')} />
-                  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, opacity: 0.2 }}>🚛</div>
-                }
-              </div>
-              {/* Info + input */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{t.name}</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>{CATEGORY_LABELS[t.category] || t.category}</div>
-                <input
-                  value={editing[t.id] !== undefined ? editing[t.id] : t.imagePath}
-                  onChange={e => setEditing(ed => ({ ...ed, [t.id]: e.target.value }))}
-                  placeholder="Paste image URL…"
+            <div key={t.id} style={{ background: '#111', borderRadius: 6, border: `1px solid ${dirty ? 'rgba(232,104,26,0.4)' : 'var(--border)'}`, padding: 16 }}>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                {/* Image preview */}
+                <div style={{ width: 90, height: 66, flexShrink: 0, borderRadius: 4, overflow: 'hidden', background: '#1a1a1a', border: '1px solid var(--border)' }}>
+                  {imgSrc
+                    ? <img src={imgSrc} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => (e.currentTarget.style.display = 'none')} />
+                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, opacity: 0.2 }}>🚛</div>
+                  }
+                </div>
+                {/* Fields */}
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: 1, textTransform: 'uppercase' }}>{CATEGORY_LABELS[t.category] || t.category}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Name</div>
+                      <input value={field(t.id, 'name', t.name)} onChange={e => setField(t.id, 'name', e.target.value)} style={inputSm} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Base Price ($)</div>
+                      <input
+                        type="number"
+                        value={field(t.id, 'basePrice', String(t.basePrice))}
+                        onChange={e => setField(t.id, 'basePrice', e.target.value)}
+                        style={inputSm}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Description</div>
+                    <textarea
+                      value={field(t.id, 'description', t.description)}
+                      onChange={e => setField(t.id, 'description', e.target.value)}
+                      rows={2}
+                      style={{ ...inputSm, resize: 'vertical', lineHeight: 1.5 }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Photo URL</div>
+                    <input value={imgSrc} onChange={e => setField(t.id, 'imagePath', e.target.value)} placeholder="Paste image URL…" style={inputSm} />
+                  </div>
+                </div>
+                {/* Save button */}
+                <button
+                  onClick={() => saveTemplate(t)}
+                  disabled={saving[t.id] || !dirty}
                   style={{
-                    width: '100%', background: '#0a0a0a', border: '1px solid var(--border2)',
-                    borderRadius: 4, color: '#fff', padding: '7px 10px', fontSize: 12,
+                    background: saved[t.id] ? '#22d07a' : '#E8681A',
+                    color: '#fff', border: 'none', borderRadius: 4,
+                    padding: '8px 16px', fontWeight: 700, fontSize: 12,
+                    cursor: saving[t.id] || !dirty ? 'default' : 'pointer', whiteSpace: 'nowrap',
+                    opacity: dirty && !saving[t.id] ? 1 : 0.4, alignSelf: 'flex-start', marginTop: 20,
                   }}
-                />
+                >
+                  {saved[t.id] ? '✓ Saved' : saving[t.id] ? 'Saving…' : 'Save'}
+                </button>
               </div>
-              {/* Save button */}
-              <button
-                onClick={() => saveImage(t.id)}
-                disabled={saving[t.id] || editing[t.id] === undefined || editing[t.id] === t.imagePath}
-                style={{
-                  background: saved[t.id] ? '#22d07a' : '#E8681A',
-                  color: '#fff', border: 'none', borderRadius: 4,
-                  padding: '8px 16px', fontWeight: 700, fontSize: 12,
-                  cursor: saving[t.id] ? 'wait' : 'pointer', whiteSpace: 'nowrap',
-                  opacity: (!saving[t.id] && editing[t.id] !== undefined && editing[t.id] !== t.imagePath) ? 1 : 0.4,
-                }}
-              >
-                {saved[t.id] ? '✓ Saved' : saving[t.id] ? 'Saving…' : 'Save'}
-              </button>
             </div>
           )
         })}

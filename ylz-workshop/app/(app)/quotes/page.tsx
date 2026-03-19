@@ -18,6 +18,12 @@ interface Quote {
   updatedAt: string
 }
 
+const BUILD_TYPE_LABELS: Record<string, string> = {
+  'truck-body': 'Truck Body',
+  'trailer': 'Trailer',
+  'truck-and-trailer': 'Truck + Trailer',
+}
+
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   draft: { bg: 'rgba(255,255,255,0.06)', text: 'rgba(255,255,255,0.5)', border: 'rgba(255,255,255,0.15)' },
   sent: { bg: 'rgba(59,130,246,0.1)', text: 'rgba(59,130,246,0.9)', border: 'rgba(59,130,246,0.3)' },
@@ -216,7 +222,7 @@ export default function QuotesPage() {
               >
                 <span style={{ fontWeight: 700, color: '#E8681A' }}>{q.quoteNumber}</span>
                 <span style={{ fontWeight: 500 }}>{q.customerName}</span>
-                <span style={{ color: 'var(--text2)', fontSize: 12 }}>{q.buildType}</span>
+                <span style={{ color: 'var(--text2)', fontSize: 12 }}>{BUILD_TYPE_LABELS[q.buildType] || q.buildType}</span>
                 <span style={{ fontWeight: 600, fontFamily: "'League Spartan', sans-serif" }}>
                   ${fmt(effectiveTotal)}
                 </span>

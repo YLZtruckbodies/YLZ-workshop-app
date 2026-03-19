@@ -560,6 +560,8 @@ function QuoteBuilderInner() {
   const [saveError, setSaveError] = useState('')
   const [isQuickQuote, setIsQuickQuote] = useState(false)
   const [declineModal, setDeclineModal] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [specWarning, setSpecWarning] = useState<string | null>(null)
   const [customerSuggestions, setCustomerSuggestions] = useState<string[]>([])
   const [dealerSuggestions, setDealerSuggestions] = useState<string[]>([])
 
@@ -785,6 +787,22 @@ function QuoteBuilderInner() {
   async function handleSave(nextStatus?: string) {
     setSaving(true)
     setSaveError('')
+
+    // BUG-02 / BUG-13: validate before marking as Sent
+    if (nextStatus === 'sent') {
+      const name = form.customerName.trim().toLowerCase()
+      if (!name || name === 'tbc') {
+        setSaveError('Customer name is required before marking as Sent — "TBC" is not accepted.')
+        setSaving(false)
+        return
+      }
+      if (effectiveTotal === 0 || form.lineItems.length === 0) {
+        setSaveError('Add at least one line item with a price before marking as Sent.')
+        setSaving(false)
+        return
+      }
+    }
+
     try {
       const cfg = buildConfiguration(form)
       const buildTypeLabel = BUILD_TYPES.find((b) => b.value === form.buildType)?.label.replace(/[^\w\s+]/g, '').trim() || form.buildType
@@ -868,6 +886,20 @@ function QuoteBuilderInner() {
     setAcceptModal(false)
   }
 
+  // BUG-04: Delete draft quote
+  async function handleDelete() {
+    if (!savedId) return
+    if (!confirm('Delete this draft quote? This cannot be undone.')) return
+    setDeleting(true)
+    try {
+      await fetch(`/api/quotes/${savedId}`, { method: 'DELETE' })
+      router.push('/quotes')
+    } catch {
+      setSaveError('Failed to delete quote')
+    }
+    setDeleting(false)
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────────────────
@@ -916,6 +948,17 @@ function QuoteBuilderInner() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {saveError && <span style={{ fontSize: 12, color: '#f87171' }}>{saveError}</span>}
+          {/* BUG-04: Delete draft */}
+          {savedId && form.status === 'draft' && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              style={{ ...btnStyle('ghost'), color: 'rgba(239,68,68,0.7)', borderColor: 'rgba(239,68,68,0.3)' }}
+              title="Delete this draft quote"
+            >
+              {deleting ? '…' : 'Delete Draft'}
+            </button>
+          )}
           {savedId && (
             <>
               <button
@@ -956,6 +999,17 @@ function QuoteBuilderInner() {
 
       {/* ── Scrollable content ── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px', maxWidth: 1100, width: '100%', margin: '0 auto' }}>
+
+        {/* BUG-10: Sent/accepted warning banner */}
+        {savedId && (form.status === 'sent' || form.status === 'accepted') && (
+          <div style={{
+            background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',
+            borderRadius: 8, padding: '10px 16px', marginBottom: 20,
+            fontSize: 12, color: '#eab308', display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            ⚠ This quote has already been <strong>{form.status}</strong>. Saving changes will not automatically notify the customer.
+          </div>
+        )}
 
         {/* ── Section: Customer ── */}
         <SectionCard title="Customer Details" icon="👤">
@@ -1369,7 +1423,23 @@ function QuoteBuilderInner() {
           {/* Generate spec button */}
           <div style={{ marginBottom: 16 }}>
             <button
-              onClick={handleGenerateSpec}
+              onClick={() => {
+                handleGenerateSpec()
+                // BUG-15: warn about unfilled engineering fields
+                const hasTrk = form.buildType === 'truck-body' || form.buildType === 'truck-and-trailer'
+                const hasTrl = form.buildType === 'trailer' || form.buildType === 'truck-and-trailer'
+                const missing: string[] = []
+                if (hasTrk) {
+                  if (!form.truckBodyLength) missing.push('Truck Body Length')
+                  if (!form.truckBodyWidth)  missing.push('Truck Body Width')
+                  if (!form.chassisMake)     missing.push('Chassis Make/Model')
+                }
+                if (hasTrl) {
+                  if (!form.trailerBodyLength) missing.push('Trailer Body Length')
+                  if (!form.trailerBodyWidth)  missing.push('Trailer Body Width')
+                }
+                setSpecWarning(missing.length > 0 ? `Unfilled fields will appear as dashes: ${missing.join(', ')}` : null)
+              }}
               style={{
                 fontFamily: "'League Spartan', sans-serif",
                 fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
@@ -1378,13 +1448,18 @@ function QuoteBuilderInner() {
                 background: 'rgba(232,104,26,0.08)',
                 color: '#E8681A',
               }}
-              title="Auto-fill line item descriptions from the configuration fields above"
+              title="Auto-fill line item descriptions from the configuration fields above. Fill in Engineering fields first for best results."
             >
               ⚡ Generate Spec Descriptions
             </button>
             <span style={{ marginLeft: 10, fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
-              Fills in spec text from your configuration — you can edit after
+              Fills in spec text from your configuration — fill Engineering fields first
             </span>
+            {specWarning && (
+              <div style={{ marginTop: 8, fontSize: 11, color: '#eab308', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: 4, padding: '6px 10px' }}>
+                ⚠ {specWarning}
+              </div>
+            )}
           </div>
 
           {/* Line items table */}

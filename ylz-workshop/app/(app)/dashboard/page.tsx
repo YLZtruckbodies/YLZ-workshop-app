@@ -56,33 +56,42 @@ export default function DashboardPage() {
 
   // Fetch recent activity and revenue
   useEffect(() => {
-    fetch('/api/search?q= ').catch(() => {})
-    // Fetch activity from a few recent jobs (latest 5)
-    if (jobs && jobs.length > 0) {
-      const recent = [...jobs].sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5)
-      Promise.all(recent.map((j: any) => fetch(`/api/jobs/${j.id}/activity`).then(r => r.json()).catch(() => [])))
-        .then(results => {
-          const all = results.flat().map((a: any, _: any) => {
-            const job = recent.find((j: any) => j.id === a.jobId)
-            return { ...a, jobNum: job?.num || '' }
-          })
-          all.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          setActivity(all.slice(0, 10))
-        })
-    }
+    // BUG-06: Show recent quote activity instead of empty job activity logs
+    fetch('/api/quotes?limit=10')
+      .then(r => r.json())
+      .then((quotes: any[]) => {
+        if (Array.isArray(quotes)) {
+          const events = quotes.slice(0, 10).map((q: any) => ({
+            id: q.id,
+            type: 'quote',
+            quoteNumber: q.quoteNumber,
+            customerName: q.customerName,
+            status: q.status,
+            buildType: q.buildType,
+            createdAt: q.updatedAt || q.createdAt,
+          }))
+          events.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          setActivity(events)
+        }
+      })
+      .catch(() => {})
     // Fetch revenue
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
     fetch(`/api/quotes?status=accepted`)
       .then(r => r.json())
       .then((quotes: any[]) => {
+        const start = new Date(monthStart)
         const total = quotes
-          .filter((q: any) => q.acceptedAt && new Date(q.acceptedAt) >= new Date(monthStart))
+          .filter((q: any) => {
+            const d = q.acceptedAt ? new Date(q.acceptedAt) : (q.updatedAt ? new Date(q.updatedAt) : null)
+            return d && d >= start
+          })
           .reduce((sum: number, q: any) => sum + (q.overridePrice || q.total || 0), 0)
         setRevenueThisMonth(total)
       })
       .catch(() => {})
-  }, [jobs])
+  }, [])
 
   if (!jobs) {
     return <div style={{ padding: 32, color: 'var(--text3)', fontSize: 14 }}>Loading dashboard...</div>
@@ -148,26 +157,27 @@ export default function DashboardPage() {
             {activity.length === 0 && (
               <div style={{ padding: '20px 16px', fontSize: 12, color: 'var(--text3)' }}>No recent activity</div>
             )}
-            {activity.map((a: any) => (
-              <div key={a.id} style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#E8681A', marginTop: 5, flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: 'var(--text2)' }}>
-                    <span style={{ color: '#E8681A', fontWeight: 700 }}>{a.jobNum}</span>
-                    {' · '}
-                    <span style={{ color: 'var(--text3)' }}>{a.field}</span>
-                    {' changed'}
-                    {a.fromValue && a.toValue && (
-                      <span style={{ color: 'var(--text3)' }}> from <em style={{ color: 'var(--text2)' }}>{a.fromValue}</em> to <em style={{ color: '#fff' }}>{a.toValue}</em></span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>
-                    {a.userName && <span>{a.userName} · </span>}
-                    {new Date(a.createdAt).toLocaleString('en-AU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+            {activity.map((a: any) => {
+              const statusColor: Record<string, string> = { draft: '#888', sent: '#3b82f6', accepted: '#22c55e', declined: '#ef4444', expired: '#eab308' }
+              const sc = statusColor[a.status] || '#888'
+              return (
+                <div key={a.id} style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: sc, marginTop: 5, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: 'var(--text2)' }}>
+                      <span style={{ color: '#E8681A', fontWeight: 700 }}>{a.quoteNumber}</span>
+                      {' · '}
+                      <span>{a.customerName}</span>
+                      {' · '}
+                      <span style={{ color: sc, fontWeight: 600, textTransform: 'capitalize' }}>{a.status}</span>
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>
+                      {a.buildType} · {new Date(a.createdAt).toLocaleString('en-AU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>
