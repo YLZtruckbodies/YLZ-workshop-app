@@ -207,8 +207,9 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
       const res = await drive.files.list({
         // No mimeType filter — files may be stored with wrong MIME type despite .pdf extension.
         // Filter to .pdf by name in code instead.
+        // Request thumbnailLink — Drive returns a pre-authenticated URL, no Bearer token needed.
         q: `name contains '${basePn}' and trashed = false`,
-        fields: 'files(id, name)',
+        fields: 'files(id, name, thumbnailLink)',
         orderBy: 'name desc',
         pageSize: 10,
         supportsAllDrives: true,
@@ -221,9 +222,14 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
       const pdfFile = res.data.files?.find(f => f.name?.toLowerCase().endsWith('.pdf'))
       if (!pdfFile?.id) return
 
-      const thumbUrl = `https://drive.google.com/thumbnail?id=${pdfFile.id}&sz=s800`
+      // Prefer the API-provided thumbnailLink (pre-authenticated, works for Shared Drive).
+      // Fall back to the manual thumbnail endpoint if thumbnailLink is absent.
+      const thumbUrl = pdfFile.thumbnailLink
+        ? pdfFile.thumbnailLink.replace(/=s\d+$/, '=s800')  // bump to s800 resolution
+        : `https://drive.google.com/thumbnail?id=${pdfFile.id}&sz=s800`
+
       const thumbRes = await fetch(thumbUrl, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: pdfFile.thumbnailLink ? {} : { Authorization: `Bearer ${accessToken}` },
       })
       if (thumbRes.ok) {
         result.set(pn, Buffer.from(await thumbRes.arrayBuffer()))
