@@ -4,7 +4,12 @@
  * Uses the legacy build which works in any Node.js environment.
  */
 
-// Tell pdfjs-dist there is no worker — text extraction runs in the main thread.
+// Explicitly require the worker so Next.js file tracing includes it in the
+// Vercel deployment bundle, and so it's already in the require cache when
+// pdfjs-dist tries to load it via require('./pdf.worker.js') internally.
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+require('pdfjs-dist/legacy/build/pdf.worker.js')
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
 const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js') as typeof import('pdfjs-dist')
 pdfjsLib.GlobalWorkerOptions.workerSrc = ''
