@@ -205,17 +205,20 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
       // Single global search — finds the PDF regardless of which drive or folder it lives in.
       // Sort name desc so the latest revision (e.g. 100-05-004.B.pdf > 100-05-004.A.pdf) wins.
       const res = await drive.files.list({
-        q: `name contains '${basePn}' and mimeType = 'application/pdf' and trashed = false`,
+        // No mimeType filter — files may be stored with wrong MIME type despite .pdf extension.
+        // Filter to .pdf by name in code instead.
+        q: `name contains '${basePn}' and trashed = false`,
         fields: 'files(id, name)',
         orderBy: 'name desc',
-        pageSize: 5,
+        pageSize: 10,
         supportsAllDrives: true,
         includeItemsFromAllDrives: true,
         corpora: 'drive',
         driveId: PARTS_SHARED_DRIVE_ID,
       })
 
-      const pdfFile = res.data.files?.[0]
+      // Pick the first result whose name ends with .pdf (case-insensitive)
+      const pdfFile = res.data.files?.find(f => f.name?.toLowerCase().endsWith('.pdf'))
       if (!pdfFile?.id) return
 
       const thumbUrl = `https://drive.google.com/thumbnail?id=${pdfFile.id}&sz=s800`
