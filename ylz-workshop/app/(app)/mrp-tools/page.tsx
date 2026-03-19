@@ -93,7 +93,15 @@ function LaserPackTool() {
       }
 
       const moData = res.headers.get('X-MO-Data')
-      if (moData) setResult(JSON.parse(moData))
+      if (moData) {
+        const parsed = JSON.parse(moData)
+        setResult(parsed)
+        // Debug: surface extracted text if MO number wasn't found
+        if (parsed.moNumber === 'Unknown') {
+          const debugText = res.headers.get('X-Debug-Text')
+          if (debugText) setError(`Debug — extracted text: "${decodeURIComponent(debugText)}"`)
+        }
+      }
       setPdfBlob(await res.blob())
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unknown error.')

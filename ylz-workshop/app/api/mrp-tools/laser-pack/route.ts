@@ -69,6 +69,8 @@ export async function POST(req: NextRequest) {
           partNumbers,
           drawingsFound: Array.from(drawings.keys()),
         }),
+        // Debug: first 200 chars of extracted text — remove once parsing is confirmed working
+        'X-Debug-Text': encodeURIComponent(text.substring(0, 200)),
       },
     })
   } catch (err) {

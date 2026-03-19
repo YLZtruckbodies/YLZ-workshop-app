@@ -3,8 +3,10 @@ import { google, drive_v3 } from 'googleapis'
 // Job Sheets parent folder ID in Google Drive
 const JOB_SHEETS_FOLDER_ID = '10ZvynBY7AOABRU4q_D_SmSrAFN0OkzMI'
 
-// YLZparts drawings folder ID
-const PARTS_FOLDER_ID = '15mg2nsgwGNDJH8mMxS7dDhmZpKIFCLAl'
+// YLZparts Shared Drive — root drive ID and parts container folder ID
+// Structure: [container] / [part-number folder] / PDF / [drawing.pdf]
+const PARTS_SHARED_DRIVE_ID = '0AMEx2pR1R5dwUk9PVA'
+const PARTS_CONTAINER_ID = '1eAs6Dv4F8DdcvNIFWuggfR1YZzHwPZNo'
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -174,8 +176,11 @@ export async function downloadDriveFile(fileId: string): Promise<{
 }
 
 /**
- * Search the YLZparts folder for PDFs matching the given part numbers.
- * Returns a Map<partNumber, Buffer> of JPEG thumbnail images from Google Drive.
+ * Search the YLZparts Shared Drive for PDFs matching the given part numbers.
+ * Returns a Map<partNumber, Buffer> of thumbnail images from Google Drive.
+ *
+ * Folder structure: [PARTS_CONTAINER_ID] / [part-number] / PDF / drawing.pdf
+ * All lookups use Shared Drive params with PARTS_SHARED_DRIVE_ID.
  */
 export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<string, Buffer>> {
   const drive = await getDriveClient()
@@ -190,23 +195,48 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
     accessToken = tokenRes.token
   } catch { /* fall through — thumbnails will be skipped */ }
 
+  const sharedDriveParams = {
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
+    corpora: 'drive' as const,
+    driveId: PARTS_SHARED_DRIVE_ID,
+  }
+
   await Promise.all(partNumbers.map(async (pn) => {
     try {
-      // Search across all drives by part number in filename
-      const res = await drive.files.list({
-        q: `name contains '${pn}' and mimeType = 'application/pdf' and trashed = false`,
+      // Step 1: Find the part-number folder inside the parts container
+      const partFolderRes = await drive.files.list({
+        q: `'${PARTS_CONTAINER_ID}' in parents and name = '${pn}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
         fields: 'files(id, name)',
         pageSize: 1,
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true,
-        corpora: 'allDrives',
+        ...sharedDriveParams,
       })
-      const file = res.data.files?.[0]
-      if (!file?.id) return
+      const partFolder = partFolderRes.data.files?.[0]
+      if (!partFolder?.id) return
+
+      // Step 2: Find the PDF subfolder inside the part folder
+      const pdfFolderRes = await drive.files.list({
+        q: `'${partFolder.id}' in parents and name = 'PDF' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+        fields: 'files(id, name)',
+        pageSize: 1,
+        ...sharedDriveParams,
+      })
+      const pdfFolder = pdfFolderRes.data.files?.[0]
+      if (!pdfFolder?.id) return
+
+      // Step 3: Find the PDF file inside the PDF subfolder
+      const pdfFileRes = await drive.files.list({
+        q: `'${pdfFolder.id}' in parents and mimeType = 'application/pdf' and trashed = false`,
+        fields: 'files(id, name)',
+        pageSize: 1,
+        ...sharedDriveParams,
+      })
+      const pdfFile = pdfFileRes.data.files?.[0]
+      if (!pdfFile?.id) return
 
       if (accessToken) {
         // Use Google's thumbnail endpoint — works for PDFs in Drive with OAuth token
-        const thumbUrl = `https://drive.google.com/thumbnail?id=${file.id}&sz=s400`
+        const thumbUrl = `https://drive.google.com/thumbnail?id=${pdfFile.id}&sz=s400`
         const thumbRes = await fetch(thumbUrl, {
           headers: { Authorization: `Bearer ${accessToken}` },
         })
