@@ -82,6 +82,7 @@ function buildTruckRows(c: Record<string, any>, prefix = '', label = 'Truck Body
   rows.push(<SpecRow key={`${prefix}-paint`} label="Paint Colour" value={c.paintColour} />)
   rows.push(<SpecRow key={`${prefix}-floor`} label="Floor Sheet" value={c.floorSheet} />)
   rows.push(<SpecRow key={`${prefix}-side`} label="Side Sheet" value={c.sideSheet} />)
+  rows.push(<SpecRow key={`${prefix}-front`} label="Front Sheet" value={c.frontSheet} />)
 
   rows.push(<SectionHeader key={`${prefix}-hoist-hdr`} title={`${label} — Hoist & Controls`} />)
   rows.push(<SpecRow key={`${prefix}-hoist`} label="Hoist Model" value={c.hoist !== 'None' ? c.hoist : null} />)
@@ -118,6 +119,7 @@ function buildTrailerRows(c: Record<string, any>, prefix = '') {
   rows.push(<SectionHeader key={`${prefix}-chassis-hdr`} title="Trailer — Chassis" />)
   rows.push(<SpecRow key={`${prefix}-chassislen`} label="Chassis Length (mm)" value={c.chassisLength} />)
   rows.push(<SpecRow key={`${prefix}-wb`} label="Wheelbase (mm)" value={c.wheelbase} />)
+  rows.push(<SpecRow key={`${prefix}-drawbar`} label="Drawbar Length (mm)" value={c.drawbarLength} />)
 
   rows.push(<SectionHeader key={`${prefix}-body-hdr`} title="Trailer — Body Dimensions" />)
   rows.push(<SpecRow key={`${prefix}-tmat`} label="Material" value={c.material} />)
@@ -129,6 +131,11 @@ function buildTrailerRows(c: Record<string, any>, prefix = '') {
   rows.push(<SpecRow key={`${prefix}-runner`} label="Main Runner Width (mm)" value={c.mainRunnerWidth} />)
   rows.push(<SpecRow key={`${prefix}-cap`} label="Capacity" value={c.bodyCapacity ? `${c.bodyCapacity} m³` : null} />)
   rows.push(<SpecRow key={`${prefix}-paint`} label="Paint Colour" value={c.paintColour} />)
+  rows.push(<SpecRow key={`${prefix}-floor`} label="Floor Sheet" value={c.floorSheet} />)
+  rows.push(<SpecRow key={`${prefix}-side`} label="Side Sheet" value={c.sideSheet} />)
+
+  rows.push(<SectionHeader key={`${prefix}-hoist-hdr`} title="Trailer — Hoist" />)
+  rows.push(<SpecRow key={`${prefix}-hoist`} label="Hoist Model" value={c.hoist !== 'None' ? c.hoist : null} />)
 
   rows.push(<SectionHeader key={`${prefix}-weights-hdr`} title="Trailer — Weights" />)
   rows.push(<SpecRow key={`${prefix}-gtm`} label="GTM" value={c.gtm ? `${fmtNum(c.gtm)} kg` : null} />)
@@ -237,7 +244,7 @@ export default function JobSheetPrintPage({ params }: { params: { id: string } }
 
         .signoff { margin-top: 14px; }
         .signoff-title { font-size: 7pt; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #E8681A; border-bottom: 1px solid rgba(232,104,26,0.3); padding-bottom: 4px; margin-bottom: 10px; }
-        .signoff-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .signoff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .signoff-cell { border: 1px solid #ddd; border-radius: 4px; padding: 10px 12px; }
         .signoff-cell .stage { font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-bottom: 10px; }
         .signoff-cell .line { border-bottom: 1px solid #ccc; margin-bottom: 8px; height: 22px; }
@@ -362,7 +369,7 @@ export default function JobSheetPrintPage({ params }: { params: { id: string } }
         <div className="signoff">
           <div className="signoff-title">Workshop Sign-Off</div>
           <div className="signoff-grid">
-            {['Fabrication', 'Paint', 'Fitout', 'QA / Final'].map((stage) => (
+            {['Sub-frame & Hoist Mount', 'Body Fabrication', 'Hydraulics & Coupling', 'Tarp & Electrical', 'Paint', 'QA Sign-off'].map((stage) => (
               <div key={stage} className="signoff-cell">
                 <div className="stage">{stage}</div>
                 <div className="line" />

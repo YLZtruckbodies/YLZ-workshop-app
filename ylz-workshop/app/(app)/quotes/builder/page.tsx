@@ -82,11 +82,17 @@ interface QuoteForm {
   // engineering extras — trailer
   trailerSerial: string
   trailerVin: string
+  trailerFloorSheet: string
+  trailerSideSheet: string
+  trailerHoist: string
+  trailerDrawbarLength: string
   trailerMainRunnerWidth: string
   trailerChassisLength: string
   trailerWheelbase: string
   trailerTailgateLights: string
   trailerLockFlap: string
+  // engineering extras — truck
+  truckFrontSheet: string
   // pricing
   lineItems: LineItem[]
   margin: number
@@ -322,7 +328,9 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None',
     truckPto: 'None', truckHydTankType: 'Split & Supply Tank',
     truckHydTankLocation: 'Behind Cab', truckDValue: '', truckCouplingLoad: '',
-    trailerSerial: '', trailerVin: '', trailerMainRunnerWidth: '',
+    truckFrontSheet: '',
+    trailerSerial: '', trailerVin: '', trailerFloorSheet: '', trailerSideSheet: '',
+    trailerHoist: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
     trailerChassisLength: '', trailerWheelbase: '',
     trailerTailgateLights: 'None', trailerLockFlap: 'No',
     lineItems: [],
@@ -390,6 +398,10 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerPaintColour = trc.paintColour || ''
     form.trailerSerial = trc.serial || ''
     form.trailerVin = trc.vin || ''
+    form.trailerFloorSheet = trc.floorSheet || ''
+    form.trailerSideSheet = trc.sideSheet || ''
+    form.trailerHoist = trc.hoist || ''
+    form.trailerDrawbarLength = trc.drawbarLength || ''
     form.trailerMainRunnerWidth = trc.mainRunnerWidth || ''
     form.trailerChassisLength = trc.chassisLength || getChassisLength(trc.bodyLength || '')
     form.trailerWheelbase = trc.wheelbase || ''
@@ -461,6 +473,10 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerPaintColour = cfg.paintColour || ''
     form.trailerSerial = cfg.serial || ''
     form.trailerVin = cfg.vin || ''
+    form.trailerFloorSheet = cfg.floorSheet || ''
+    form.trailerSideSheet = cfg.sideSheet || ''
+    form.trailerHoist = cfg.hoist || ''
+    form.trailerDrawbarLength = cfg.drawbarLength || ''
     form.trailerMainRunnerWidth = cfg.mainRunnerWidth || ''
     form.trailerChassisLength = cfg.chassisLength || getChassisLength(cfg.bodyLength || '')
     form.trailerWheelbase = cfg.wheelbase || ''
@@ -478,7 +494,8 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
   const cfg: Record<string, unknown> = { buildType: form.buildType }
   const truckData = {
     material: form.truckMaterial, floorSheet: form.truckFloorSheet,
-    sideSheet: form.truckSideSheet, hoist: form.truckHoist,
+    sideSheet: form.truckSideSheet, frontSheet: form.truckFrontSheet,
+    hoist: form.truckHoist,
     tarpSystem: form.truckTarp, coupling: form.truckCoupling,
     controls: form.truckControls, hydraulics: form.truckHydraulics,
     chassisMake: form.chassisMake, chassisModel: form.chassisModel,
@@ -498,6 +515,8 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     axleCount: form.trailerAxleCount, axleType: form.trailerAxleType,
     suspension: form.trailerSuspension, tarpSystem: form.trailerTarp,
     pbsRating: form.trailerPbs,
+    floorSheet: form.trailerFloorSheet, sideSheet: form.trailerSideSheet,
+    hoist: form.trailerHoist, drawbarLength: form.trailerDrawbarLength,
     bodyLength: form.trailerBodyLength, bodyWidth: form.trailerBodyWidth,
     bodyHeight: form.trailerBodyHeight, bodyCapacity: form.trailerBodyCapacity,
     gtm: form.trailerGtm, gcm: form.trailerGcm,
@@ -1032,7 +1051,7 @@ function QuoteBuilderInner() {
             icon="🚛"
             style={{ marginTop: 20 }}
           >
-            <div style={grid(3)}>
+            <div style={grid(4)}>
               <Field label="Body Material">
                 <select value={form.truckMaterial} onChange={(e) => onMaterialChange(e.target.value)} style={selectStyle}>
                   {MATERIALS.map((m) => <option key={m}>{m}</option>)}
@@ -1043,6 +1062,9 @@ function QuoteBuilderInner() {
               </Field>
               <Field label="Side Sheet">
                 <input value={form.truckSideSheet} onChange={(e) => set('truckSideSheet', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Front Sheet">
+                <input value={form.truckFrontSheet} onChange={(e) => set('truckFrontSheet', e.target.value)} placeholder="e.g. 5mm Hardox 500" style={inputStyle} />
               </Field>
             </div>
             <div style={{ ...grid(3), marginTop: 16 }}>
@@ -1121,14 +1143,25 @@ function QuoteBuilderInner() {
                 </select>
               </Field>
             </div>
-            <div style={{ ...grid(3), marginTop: 16 }}>
+            <div style={{ ...grid(4), marginTop: 16 }}>
+              <Field label="Floor Sheet">
+                <input value={form.trailerFloorSheet} onChange={(e) => set('trailerFloorSheet', e.target.value)} placeholder="e.g. 8mm Aluminium" style={inputStyle} />
+              </Field>
+              <Field label="Side Sheet">
+                <input value={form.trailerSideSheet} onChange={(e) => set('trailerSideSheet', e.target.value)} placeholder="e.g. 5mm Aluminium" style={inputStyle} />
+              </Field>
+              <Field label="Hoist Model">
+                <input value={form.trailerHoist} onChange={(e) => set('trailerHoist', e.target.value)} placeholder="e.g. Binotto 4-stage" style={inputStyle} />
+              </Field>
+              <Field label="PBS Rating">
+                <input value={form.trailerPbs} onChange={(e) => set('trailerPbs', e.target.value)} placeholder="e.g. 56.5T GCM" style={inputStyle} />
+              </Field>
+            </div>
+            <div style={{ ...grid(2), marginTop: 16 }}>
               <Field label="Tarp System">
                 <select value={form.trailerTarp} onChange={(e) => set('trailerTarp', e.target.value)} style={selectStyle}>
                   {TARPS.map((t) => <option key={t}>{t}</option>)}
                 </select>
-              </Field>
-              <Field label="PBS Rating">
-                <input value={form.trailerPbs} onChange={(e) => set('trailerPbs', e.target.value)} placeholder="e.g. 56.5T GCM" style={inputStyle} />
               </Field>
             </div>
           </SectionCard>
@@ -1297,6 +1330,9 @@ function QuoteBuilderInner() {
                 </Field>
                 <Field label="Wheelbase (mm)">
                   <input value={form.trailerWheelbase} onChange={(e) => set('trailerWheelbase', e.target.value)} placeholder="e.g. 6380" style={inputStyle} />
+                </Field>
+                <Field label="Drawbar Length (mm)">
+                  <input value={form.trailerDrawbarLength} onChange={(e) => set('trailerDrawbarLength', e.target.value)} placeholder="e.g. 2400" style={inputStyle} />
                 </Field>
               </div>
               {/* Row 5: lighting + lock flap */}
