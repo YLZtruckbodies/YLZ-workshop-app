@@ -1,6 +1,22 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+
+interface BrowseItem {
+  id: string
+  name: string
+  mimeType: string
+  isFolder: boolean
+  webViewLink?: string
+  modifiedTime?: string
+}
+
+interface BreadcrumbEntry {
+  id: string
+  name: string
+}
+
+const PARTS_ROOT_FOLDER_ID = '1eAs6Dv4F8DdcvNIFWuggfR1YZzHwPZNo'
 
 interface MOSummary {
   moNumber:     string
@@ -13,7 +29,7 @@ interface MOSummary {
   drawingsFound: string[]
 }
 
-const TOOLS = ['Laser Pack Generator'] as const
+const TOOLS = ['Laser Pack Generator', 'Drive Browser'] as const
 type Tool = (typeof TOOLS)[number]
 
 export default function MRPToolsPage() {
@@ -57,6 +73,162 @@ export default function MRPToolsPage() {
       </div>
 
       {activeTool === 'Laser Pack Generator' && <LaserPackTool />}
+      {activeTool === 'Drive Browser' && <DriveBrowserTool />}
+    </div>
+  )
+}
+
+function DriveBrowserTool() {
+  const [items, setItems]             = useState<BrowseItem[]>([])
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState<string | null>(null)
+  const [breadcrumb, setBreadcrumb]   = useState<BreadcrumbEntry[]>([
+    { id: PARTS_ROOT_FOLDER_ID, name: 'YLZparts' },
+  ])
+
+  const currentFolder = breadcrumb[breadcrumb.length - 1]
+
+  const loadFolder = useCallback(async (folderId: string) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/drive-browse?folderId=${folderId}`)
+      if (!res.ok) throw new Error(`${res.status}`)
+      setItems(await res.json())
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to load folder')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadFolder(currentFolder.id) }, [currentFolder.id, loadFolder])
+
+  const navigateInto = (item: BrowseItem) => {
+    setBreadcrumb(prev => [...prev, { id: item.id, name: item.name }])
+  }
+
+  const navigateTo = (index: number) => {
+    setBreadcrumb(prev => prev.slice(0, index + 1))
+  }
+
+  const folders = items.filter(i => i.isFolder)
+  const files   = items.filter(i => !i.isFolder)
+
+  const fileIcon = (mimeType: string) => {
+    if (mimeType === 'application/pdf') return '📄'
+    if (mimeType.startsWith('image/')) return '🖼️'
+    return '📎'
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 700 }}>
+      <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
+        Browse the YLZparts Google Drive. Click folders to navigate, click files to open in Drive.
+      </div>
+
+      {/* Breadcrumb */}
+      <div style={{
+        display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4,
+        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 6, padding: '8px 14px', fontSize: 12,
+      }}>
+        {breadcrumb.map((crumb, i) => (
+          <span key={crumb.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {i > 0 && <span style={{ color: 'rgba(255,255,255,0.2)' }}>›</span>}
+            <button
+              onClick={() => navigateTo(i)}
+              disabled={i === breadcrumb.length - 1}
+              style={{
+                background: 'none', border: 'none', cursor: i === breadcrumb.length - 1 ? 'default' : 'pointer',
+                color: i === breadcrumb.length - 1 ? '#fff' : '#E8681A',
+                fontWeight: i === breadcrumb.length - 1 ? 700 : 400,
+                fontSize: 12, padding: 0,
+              }}
+            >
+              {crumb.name}
+            </button>
+          </span>
+        ))}
+        <button
+          onClick={() => loadFolder(currentFolder.id)}
+          title="Refresh"
+          style={{
+            marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer',
+            color: 'rgba(255,255,255,0.3)', fontSize: 14, padding: '0 4px',
+          }}
+        >
+          ↻
+        </button>
+      </div>
+
+      {error && (
+        <div style={{
+          background: 'rgba(232,68,96,0.1)', border: '1px solid rgba(232,68,96,0.3)',
+          borderRadius: 6, padding: '10px 14px', fontSize: 13, color: '#e84560',
+        }}>
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ padding: '32px 0', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+          Loading…
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {items.length === 0 && (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+              Empty folder
+            </div>
+          )}
+
+          {/* Folders first */}
+          {folders.map(item => (
+            <button
+              key={item.id}
+              onClick={() => navigateInto(item)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 6, padding: '10px 14px',
+                cursor: 'pointer', textAlign: 'left', width: '100%',
+                transition: '0.12s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(232,104,26,0.08)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+            >
+              <span style={{ fontSize: 16, flexShrink: 0 }}>📁</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', flex: 1 }}>{item.name}</span>
+              <span style={{ fontSize: 18, color: 'rgba(255,255,255,0.2)' }}>›</span>
+            </button>
+          ))}
+
+          {/* Files */}
+          {files.map(item => (
+            <a
+              key={item.id}
+              href={item.webViewLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 6, padding: '10px 14px',
+                textDecoration: 'none', transition: '0.12s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+            >
+              <span style={{ fontSize: 16, flexShrink: 0 }}>{fileIcon(item.mimeType)}</span>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', flex: 1 }}>{item.name}</span>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>↗ Open</span>
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

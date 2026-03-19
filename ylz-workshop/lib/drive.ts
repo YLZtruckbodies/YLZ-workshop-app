@@ -261,3 +261,44 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
 
   return result
 }
+
+// ── Drive Browser ─────────────────────────────────────────────────────────────
+
+export const PARTS_SHARED_DRIVE_ID_PUBLIC = '0AMEx2pR1R5dwUk9PVA'
+export const PARTS_ROOT_FOLDER_ID = '1eAs6Dv4F8DdcvNIFWuggfR1YZzHwPZNo'
+
+export interface BrowseItem {
+  id: string
+  name: string
+  mimeType: string
+  isFolder: boolean
+  webViewLink?: string
+  modifiedTime?: string
+}
+
+/**
+ * List the contents of a folder inside the YLZparts Shared Drive.
+ */
+export async function browseDriveFolder(folderId: string): Promise<BrowseItem[]> {
+  const drive = await getDriveClient()
+
+  const res = await drive.files.list({
+    q: `'${folderId}' in parents and trashed = false`,
+    fields: 'files(id, name, mimeType, modifiedTime, webViewLink)',
+    orderBy: 'folder,name',
+    pageSize: 200,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
+    corpora: 'drive',
+    driveId: PARTS_SHARED_DRIVE_ID_PUBLIC,
+  })
+
+  return (res.data.files || []).map(f => ({
+    id: f.id!,
+    name: f.name!,
+    mimeType: f.mimeType || 'application/octet-stream',
+    isFolder: f.mimeType === 'application/vnd.google-apps.folder',
+    webViewLink: f.webViewLink || undefined,
+    modifiedTime: f.modifiedTime || undefined,
+  }))
+}
