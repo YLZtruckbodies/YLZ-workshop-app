@@ -188,65 +188,34 @@ export async function downloadDriveFile(fileId: string): Promise<{
 }
 
 /**
- * Search Parts - YLZ (Shared with me) for PDFs matching the given part numbers.
- * Returns a Map<partNumber, Buffer> of JPEG images (first page of each drawing).
- *
- * Folder structure: [PARTS_CONTAINER_ID] / [part-number] / PDF / drawing.pdf
+ * Search ALL Google Drive (all drives + shared with me) for PDFs matching the given part numbers.
+ * Trial mode: broad global search rather than scoped folder traversal.
+ * Returns a Map<partNumber, Buffer> of JPEG thumbnail images.
  */
 export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<string, Buffer>> {
   const drive = await getDriveClient()
   const result = new Map<string, Buffer>()
 
-  const driveParams = {
-    supportsAllDrives: true,
-    includeItemsFromAllDrives: true,
-    corpora: 'drive' as const,
-    driveId: PARTS_SHARED_DRIVE_ID,
-  }
+  const accessToken = await getDriveAccessToken()
+  if (!accessToken) return result
 
   await Promise.all(partNumbers.map(async (pn) => {
     const basePn = stripRevision(pn)
     try {
-      // Step 1: Find the part-number subfolder inside the container
-      const partFolderRes = await drive.files.list({
-        q: `'${PARTS_CONTAINER_ID}' in parents and name contains '${basePn}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
-        fields: 'files(id, name)',
-        orderBy: 'name desc',
-        pageSize: 10,
-        ...driveParams,
-      })
-      // Prefer exact name match; fall back to first result (latest revision desc)
-      const partFolder = partFolderRes.data.files?.find(f => f.name?.startsWith(basePn))
-        ?? partFolderRes.data.files?.[0]
-      if (!partFolder?.id) return
-
-      // Step 2: Find the PDF subfolder inside the part folder
-      const pdfFolderRes = await drive.files.list({
-        q: `'${partFolder.id}' in parents and name = 'PDF' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
-        fields: 'files(id, name)',
-        pageSize: 1,
-        ...driveParams,
-      })
-      const pdfFolder = pdfFolderRes.data.files?.[0]
-      if (!pdfFolder?.id) return
-
-      // Step 3: Find the PDF file inside the PDF subfolder.
-      // Sort by name desc so the latest revision (e.g. Rev B > Rev A) comes first.
-      const pdfFileRes = await drive.files.list({
-        q: `'${pdfFolder.id}' in parents and mimeType = 'application/pdf' and trashed = false`,
+      // Single global search — finds the PDF regardless of which drive or folder it lives in.
+      // Sort name desc so the latest revision (e.g. 100-05-004.B.pdf > 100-05-004.A.pdf) wins.
+      const res = await drive.files.list({
+        q: `name contains '${basePn}' and mimeType = 'application/pdf' and trashed = false`,
         fields: 'files(id, name)',
         orderBy: 'name desc',
         pageSize: 5,
-        ...driveParams,
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+        corpora: 'allDrives',
       })
-      const pdfFile = pdfFileRes.data.files?.[0]
-      if (!pdfFile?.id) return
 
-      // Fetch a JPEG thumbnail via Google's thumbnail endpoint.
-      // sz=s800 gives a high enough resolution for the laser pack cards.
-      // canvas is unavailable on Vercel Lambda, so we rely on Drive's own rendering.
-      const accessToken = await getDriveAccessToken()
-      if (!accessToken) return
+      const pdfFile = res.data.files?.[0]
+      if (!pdfFile?.id) return
 
       const thumbUrl = `https://drive.google.com/thumbnail?id=${pdfFile.id}&sz=s800`
       const thumbRes = await fetch(thumbUrl, {
@@ -256,7 +225,7 @@ export async function fetchPartDrawings(partNumbers: string[]): Promise<Map<stri
         result.set(pn, Buffer.from(await thumbRes.arrayBuffer()))
       }
     } catch {
-      // Drawing not found or render failed — placeholder will be shown
+      // Not found or thumbnail failed — placeholder shown on card
     }
   }))
 
