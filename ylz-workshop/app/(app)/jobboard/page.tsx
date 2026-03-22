@@ -460,6 +460,7 @@ function DraggableJobRow({
   onFileDrop: _onFileDrop,
   dragOverFile: _dragOverFile,
   setDragOverFile: _setDragOverFile,
+  onContextMenu,
 }: {
   job: any
   user: any
@@ -477,6 +478,7 @@ function DraggableJobRow({
   onFileDrop: (e: React.DragEvent, jobId: string) => void
   dragOverFile: string | null
   setDragOverFile: (id: string | null) => void
+  onContextMenu: (e: React.MouseEvent, job: any) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({
     id: job.id,
@@ -504,6 +506,7 @@ function DraggableJobRow({
         ref={setNodeRef}
         style={style}
         onClick={onToggleExpand}
+        onContextMenu={(e) => onContextMenu(e, job)}
         onMouseEnter={(e) => {
           if (!isDragging && !isExpanded) e.currentTarget.style.background = 'var(--dark3)'
         }}
@@ -967,6 +970,7 @@ export default function JobBoardPage() {
   const [dragOverJob, setDragOverJob] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overGroupId, setOverGroupId] = useState<string | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; jobId: string; job: any } | null>(null)
 
   // Column resize state
   const [colWidths, setColWidths] = useState<number[]>(() => {
@@ -987,6 +991,14 @@ export default function JobBoardPage() {
   useEffect(() => {
     try { localStorage.setItem(COL_WIDTHS_KEY, JSON.stringify(colWidths)) } catch {}
   }, [colWidths])
+
+  // Close context menu on outside click
+  useEffect(() => {
+    if (!contextMenu) return
+    const close = () => setContextMenu(null)
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [contextMenu])
 
   // Column resize handlers
   const onResizeStart = useCallback((idx: number, e: React.MouseEvent) => {
@@ -1124,6 +1136,34 @@ export default function JobBoardPage() {
       console.error('Failed to advance:', e)
     }
   }
+
+  const handleMoveGroup = useCallback(async (jobId: string, newGroup: string) => {
+    mutate((current: any) => current?.map((j: any) => j.id === jobId ? { ...j, prodGroup: newGroup } : j), false)
+    try {
+      await updateJob(jobId, { prodGroup: newGroup, _userId: user?.id || '', _userName: user?.name || '' })
+      mutate()
+    } catch (e) {
+      console.error('Failed to move group:', e)
+      mutate()
+    }
+    setContextMenu(null)
+  }, [mutate, user?.id, user?.name])
+
+  const handleMoveStage = useCallback(async (jobId: string, newStage: string) => {
+    mutate((current: any) => current?.map((j: any) => j.id === jobId ? { ...j, stage: newStage } : j), false)
+    try {
+      await fetch(`/api/jobs/${jobId}/stage`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage: newStage, userId: user?.id || '', userName: user?.name || '' }),
+      })
+      mutate()
+    } catch (e) {
+      console.error('Failed to move stage:', e)
+      mutate()
+    }
+    setContextMenu(null)
+  }, [mutate, user?.id, user?.name])
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; num: string } | null>(null)
 
@@ -2003,6 +2043,7 @@ export default function JobBoardPage() {
                                 onFileDrop={handleFileDrop}
                                 dragOverFile={dragOverJob}
                                 setDragOverFile={setDragOverJob}
+                                onContextMenu={(e, j) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, jobId: j.id, job: j }) }}
                               />
                             ))
                           )}
@@ -2188,6 +2229,73 @@ export default function JobBoardPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Right-click context menu */}
+      {contextMenu && (
+        <div
+          onMouseDown={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            left: contextMenu.x,
+            top: contextMenu.y,
+            zIndex: 1000,
+            background: '#1a1a1a',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 6,
+            padding: '6px 0',
+            minWidth: 240,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+            fontSize: 13,
+          }}
+        >
+          <div style={{ padding: '4px 14px 8px', fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>
+            {contextMenu.job.num} — Move to Group
+          </div>
+          {PROD_GROUPS.map((g) => (
+            <button
+              key={g.key}
+              onClick={() => handleMoveGroup(contextMenu.jobId, g.key)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                width: '100%', padding: '8px 14px', background: 'none', border: 'none',
+                color: contextMenu.job.prodGroup === g.key ? '#fff' : 'rgba(255,255,255,0.65)',
+                cursor: 'pointer', fontSize: 13, textAlign: 'left', fontFamily: 'inherit',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'none' }}
+            >
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: g.color, flexShrink: 0 }} />
+              {g.label}
+              {contextMenu.job.prodGroup === g.key && <span style={{ marginLeft: 'auto', color: '#E8681A', fontSize: 12 }}>✓</span>}
+            </button>
+          ))}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '6px 0' }} />
+          <div style={{ padding: '4px 14px 8px', fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>
+            Move to Stage
+          </div>
+          {STAGES.map((s) => {
+            const info = stageToBuildProgress(s)
+            return (
+              <button
+                key={s}
+                onClick={() => handleMoveStage(contextMenu.jobId, s)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  width: '100%', padding: '8px 14px', background: 'none', border: 'none',
+                  color: contextMenu.job.stage === s ? '#fff' : 'rgba(255,255,255,0.65)',
+                  cursor: 'pointer', fontSize: 13, textAlign: 'left', fontFamily: 'inherit',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'none' }}
+              >
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: info.color, flexShrink: 0 }} />
+                {s}
+                {contextMenu.job.stage === s && <span style={{ marginLeft: 'auto', color: '#E8681A', fontSize: 12 }}>✓</span>}
+              </button>
+            )
+          })}
         </div>
       )}
 

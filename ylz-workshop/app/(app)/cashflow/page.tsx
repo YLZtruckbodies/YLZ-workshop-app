@@ -32,7 +32,7 @@ export default function CashflowDeliveriesPage() {
   const [editingJobId, setEditingJobId] = useState<string | null>(null)
   const [editData, setEditData] = useState<any>({})
   const [approving, setApproving] = useState<string | null>(null)
-  const [tab, setTab] = useState<'qc' | 'dispatched'>('qc')
+  const [tab, setTab] = useState<'qc' | 'finished' | 'dispatched'>('qc')
 
   const user = session?.user as any
   const canEdit = user?.canEdit || user?.fullAdmin
@@ -40,6 +40,7 @@ export default function CashflowDeliveriesPage() {
   const merged = useMemo(() => data?.merged || [], [data])
 
   const qcJobs = useMemo(() => merged.filter((m: any) => m.job.stage === 'QC'), [merged])
+  const finishedJobs = useMemo(() => merged.filter((m: any) => m.job.prodGroup === 'finished' && m.job.stage !== 'QC' && m.job.stage !== 'Dispatch'), [merged])
   const dispatchedJobs = useMemo(() => merged.filter((m: any) => m.job.stage === 'Dispatch'), [merged])
 
   const totals = useMemo(() => {
@@ -163,6 +164,9 @@ export default function CashflowDeliveriesPage() {
         <button onClick={() => setTab('qc')} style={tabStyle(tab === 'qc')}>
           Awaiting Approval ({qcJobs.length})
         </button>
+        <button onClick={() => setTab('finished')} style={tabStyle(tab === 'finished')}>
+          Finished / Ready to Invoice ({finishedJobs.length})
+        </button>
         <button onClick={() => setTab('dispatched')} style={tabStyle(tab === 'dispatched')}>
           Dispatched / Delivered ({dispatchedJobs.length})
         </button>
@@ -246,6 +250,81 @@ export default function CashflowDeliveriesPage() {
                                   </button>
                                 )}
                               </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Finished / Ready to Invoice */}
+      {tab === 'finished' && (
+        <div style={{ background: 'var(--surface1)', border: '1px solid var(--border2)', borderRadius: 6, overflow: 'hidden' }}>
+          {finishedJobs.length === 0 ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+              No finished jobs waiting to be invoiced. Jobs appear here when moved to the &quot;Finished / Ready to Invoice&quot; group on the job board.
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1100 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border2)' }}>
+                    {['Job', 'Customer', 'Type', 'Stage', 'Invoice #', 'Invoice Amt', 'Deposit', 'Dep. Paid', 'Delivery', 'Payment Due', 'Notes', 'Actions'].map((h) => (
+                      <th key={h} style={thStyle}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {finishedJobs.map(({ job, delivery }: any) => {
+                    const isEditing = editingJobId === job.id
+                    return (
+                      <tr key={job.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={cellStyle}>
+                          <span style={{ color: '#22d07a', fontWeight: 700, fontSize: 14 }}>{job.num}</span>
+                          <div style={{ fontSize: 10, color: '#22d07a', fontWeight: 600, marginTop: 2 }}>FINISHED</div>
+                        </td>
+                        <td style={cellStyle}>{job.customer || '\u2014'}</td>
+                        <td style={cellStyle}><span style={{ fontSize: 12, color: 'var(--text2)' }}>{job.type}</span></td>
+                        <td style={cellStyle}><span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{job.stage}</span></td>
+                        {isEditing ? (
+                          <>
+                            <td style={cellStyle}><input value={editData.invoiceNum} onChange={(e) => setEditData({ ...editData, invoiceNum: e.target.value })} style={editInputStyle} placeholder="INV-001" /></td>
+                            <td style={cellStyle}><input type="number" value={editData.invoiceAmount || ''} onChange={(e) => setEditData({ ...editData, invoiceAmount: e.target.value })} style={editInputStyle} placeholder="0" /></td>
+                            <td style={cellStyle}><input type="number" value={editData.depositAmount || ''} onChange={(e) => setEditData({ ...editData, depositAmount: e.target.value })} style={editInputStyle} placeholder="0" /></td>
+                            <td style={cellStyle}><input type="checkbox" checked={editData.depositPaid} onChange={(e) => setEditData({ ...editData, depositPaid: e.target.checked })} /></td>
+                            <td style={cellStyle}><input value={editData.deliveryDate} onChange={(e) => setEditData({ ...editData, deliveryDate: e.target.value })} style={editInputStyle} placeholder="dd/mm/yy" /></td>
+                            <td style={cellStyle}><input value={editData.paymentDue} onChange={(e) => setEditData({ ...editData, paymentDue: e.target.value })} style={editInputStyle} placeholder="dd/mm/yy" /></td>
+                            <td style={cellStyle}><input value={editData.notes} onChange={(e) => setEditData({ ...editData, notes: e.target.value })} style={editInputStyle} placeholder="Notes" /></td>
+                            <td style={cellStyle}>
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                <button onClick={() => saveDetails(job.id, job.num, job.customer, job.type)} style={btnStyle('#22d07a')}>Save</button>
+                                <button onClick={() => setEditingJobId(null)} style={btnStyle('var(--text3)')}>Cancel</button>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td style={cellStyle}>{delivery?.invoiceNum || <span style={{ color: 'var(--text3)' }}>{'\u2014'}</span>}</td>
+                            <td style={{ ...cellStyle, fontWeight: 600 }}>{delivery?.invoiceAmount ? formatCurrency(delivery.invoiceAmount) : <span style={{ color: 'var(--text3)' }}>{'\u2014'}</span>}</td>
+                            <td style={cellStyle}>{delivery?.depositAmount ? formatCurrency(delivery.depositAmount) : <span style={{ color: 'var(--text3)' }}>{'\u2014'}</span>}</td>
+                            <td style={cellStyle}><Pill yes={delivery?.depositPaid} /></td>
+                            <td style={cellStyle}>{delivery?.deliveryDate || <span style={{ color: 'var(--text3)' }}>{'\u2014'}</span>}</td>
+                            <td style={cellStyle}>{delivery?.paymentDue || <span style={{ color: 'var(--text3)' }}>{'\u2014'}</span>}</td>
+                            <td style={{ ...cellStyle, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <span style={{ color: 'var(--text3)' }}>{delivery?.notes || '\u2014'}</span>
+                            </td>
+                            <td style={cellStyle}>
+                              {canEdit && (
+                                <button onClick={() => startEdit(job.id, delivery)} style={btnStyle('#3b9de8')}>
+                                  {delivery ? 'Edit' : 'Add Details'}
+                                </button>
+                              )}
                             </td>
                           </>
                         )}

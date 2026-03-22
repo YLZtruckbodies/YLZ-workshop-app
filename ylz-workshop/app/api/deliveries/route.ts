@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const [jobs, deliveries] = await Promise.all([
       prisma.job.findMany({
-        where: { stage: { in: ['QC', 'Dispatch'] } },
+        where: { OR: [{ stage: { in: ['QC', 'Dispatch'] } }, { prodGroup: 'finished' }] },
         orderBy: { updatedAt: 'desc' },
       }),
       prisma.delivery.findMany({
