@@ -91,8 +91,22 @@ interface QuoteForm {
   trailerWheelbase: string
   trailerTailgateLights: string
   trailerLockFlap: string
-  // engineering extras — truck
-  truckFrontSheet: string
+  // truck body extras
+  truckBrakeCoupling: string
+  truckLadderType: string
+  truckLadderPosition: string
+  truckSpreaderChain: string
+  truckCatMarkers: string
+  truckReflectors: string
+  truckCamera: string
+  truckVibrator: string
+  // tarp breakdown (replaces single truckTarp dropdown in UI)
+  truckTarpMaterial: string
+  truckTarpColour: string
+  truckTarpType: string
+  truckTarpBowSize: string
+  truckTarpStyle: string
+  truckTarpLocation: string
   // pricing
   lineItems: LineItem[]
   margin: number
@@ -125,6 +139,22 @@ const TAILGATE_TYPES = ['Fixed', '2 Way', 'Single Drop', 'Bi-fold', 'No Tailgate
 const TAILGATE_LIGHTS = ['None', '4 Per Side Round LED', 'LED Strip', 'LED Cluster', 'Reverse Light Only', 'Other']
 const HYD_TANK_TYPES = ['Split & Supply Tank', 'Separate Tank', 'Customer Supplied', 'None']
 const HYD_TANK_LOCATIONS = ['Behind Cab', 'Under Body', 'Sub-frame Mounted', 'Other']
+const BRAKE_COUPLINGS = ['Duomatic', 'Triomatic', 'Duomatic & Triomatic', 'None']
+const LADDER_TYPES = [
+  '3-Step Pull out ladder c/w rungs',
+  '2-Step Pull out ladder c/w rungs',
+  'Fixed ladder',
+  'No Ladder',
+]
+const LADDER_POSITIONS = [
+  'Driverside Front', 'Nearside Front',
+  'Driverside Rear', 'Nearside Rear',
+  'Both Sides Front',
+]
+const TARP_MATERIALS = ['PVC', 'Mesh', 'PVC or Mesh (customer choice)', 'None']
+const TARP_TYPES = ['Hoop Type', 'Roll Type']
+const TARP_STYLES = ['Razor Electric', 'Roll Rite', 'EziTarp Electric', 'Pulltarp Manual', 'Other']
+const TARP_LOCATIONS = ['Standard Out Front', 'Internal Through Top Rail', 'Rear Mounted', 'Other']
 
 // Chassis length lookup — body length → chassis length
 const CHASSIS_LENGTH_MAP: Record<number, number> = {
@@ -213,7 +243,7 @@ function generateTruckBodySpec(form: QuoteForm): string {
     if (form.chassisModel) lines.push(`CHASSIS MODEL: ${form.chassisModel}`)
   }
   lines.push('')
-  lines.push(`${isAlloy ? 'Aluminium' : 'Hardox 500'} truck body ${L}L x ${W}W x ${H}H mm (Internal)`)
+  lines.push(`${isAlloy ? 'Aluminium' : form.truckMaterial} truck body ${L}L x ${W}W x ${H}H mm (Internal)`)
   if (form.truckBodyCapacity) lines.push(`Body capacity: ${form.truckBodyCapacity}m³`)
   if (form.truckGvm) lines.push(`GVM: ${fmtDim(form.truckGvm)}kg`)
   lines.push('')
@@ -231,10 +261,31 @@ function generateTruckBodySpec(form: QuoteForm): string {
   lines.push('')
   if (form.truckHoist !== 'None') lines.push(`${form.truckHoist} hydraulic hoist`)
   if (form.truckCoupling !== 'None') lines.push(`${form.truckCoupling} coupling`)
+  if (form.truckBrakeCoupling && form.truckBrakeCoupling !== 'None') lines.push(`${form.truckBrakeCoupling} brake coupling`)
   if (form.truckControls !== 'None') lines.push(form.truckControls)
   if (form.truckHydraulics !== 'None') lines.push(form.truckHydraulics)
   lines.push('')
-  if (form.truckTarp !== 'None') lines.push(`${form.truckTarp} tarp system`)
+  // Tarp
+  if (form.truckTarpMaterial && form.truckTarpMaterial !== 'None') {
+    const tarpParts = [form.truckTarpMaterial]
+    if (form.truckTarpColour) tarpParts.push(form.truckTarpColour)
+    tarpParts.push(form.truckTarpType || 'Hoop Type')
+    if (form.truckTarpStyle) tarpParts.push(form.truckTarpStyle)
+    if (form.truckTarpBowSize) tarpParts.push(`${form.truckTarpBowSize} bow`)
+    if (form.truckTarpLocation) tarpParts.push(form.truckTarpLocation)
+    lines.push(`Tarp: ${tarpParts.join(' — ')}`)
+  }
+  // Ladder
+  if (form.truckLadderType && form.truckLadderType !== 'No Ladder') {
+    lines.push(`${form.truckLadderType} — ${form.truckLadderPosition || 'Driverside Front'}`)
+  }
+  // Spreader chain
+  if (form.truckSpreaderChain === 'Yes') lines.push('Spreader chain included')
+  // Extras
+  if (form.truckCatMarkers === 'Yes') lines.push('Rear CAT markers')
+  if (form.truckReflectors) lines.push(`Reflectors: ${form.truckReflectors}`)
+  if (form.truckCamera && form.truckCamera !== 'No') lines.push(`Camera: ${form.truckCamera}`)
+  if (form.truckVibrator === 'Yes') lines.push('Vibrator fitted')
   lines.push('LED lighting throughout')
   if (form.truckPaintColour) lines.push(`Paint: ${form.truckPaintColour}`)
 
@@ -270,9 +321,10 @@ function generateTrailerSpec(form: QuoteForm): string {
   } else {
     lines.push(`${form.trailerMaterial} construction throughout`)
     lines.push(`${form.trailerType} frame construction with flat top deck`)
-    lines.push(`${L} x ${W}mm floor ${form.trailerMaterial === 'Hardox 500' ? '6mm Hardox 500 plate' : '6mm plate'}`)
-    lines.push(`Side walls - ${form.trailerMaterial === 'Hardox 500' ? '5mm Hardox 500' : '5mm plate'}`)
-    lines.push(`End walls - ${form.trailerMaterial === 'Hardox 500' ? '5mm Hardox 500' : '5mm plate'}`)
+    const isHardox = form.trailerMaterial.startsWith('Hardox')
+    lines.push(`${L} x ${W}mm floor ${isHardox ? `6mm ${form.trailerMaterial} plate` : '6mm plate'}`)
+    lines.push(`Side walls - ${isHardox ? `5mm ${form.trailerMaterial}` : '5mm plate'}`)
+    lines.push(`End walls - ${isHardox ? `5mm ${form.trailerMaterial}` : '5mm plate'}`)
   }
   lines.push('Sub frame - 150 x 75 RHS box section')
   lines.push('')
@@ -328,7 +380,20 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None',
     truckPto: 'None', truckHydTankType: 'Split & Supply Tank',
     truckHydTankLocation: 'Behind Cab', truckDValue: '', truckCouplingLoad: '',
-    truckFrontSheet: '',
+    truckBrakeCoupling: 'Duomatic',
+    truckLadderType: '3-Step Pull out ladder c/w rungs',
+    truckLadderPosition: 'Driverside Front',
+    truckSpreaderChain: 'No',
+    truckCatMarkers: 'Yes',
+    truckReflectors: '',
+    truckCamera: 'No',
+    truckVibrator: 'No',
+    truckTarpMaterial: 'PVC',
+    truckTarpColour: '',
+    truckTarpType: 'Hoop Type',
+    truckTarpBowSize: '',
+    truckTarpStyle: 'Razor Electric',
+    truckTarpLocation: 'Standard Out Front',
     trailerSerial: '', trailerVin: '', trailerFloorSheet: '', trailerSideSheet: '',
     trailerHoist: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
     trailerChassisLength: '', trailerWheelbase: '',
@@ -494,7 +559,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
   const cfg: Record<string, unknown> = { buildType: form.buildType }
   const truckData = {
     material: form.truckMaterial, floorSheet: form.truckFloorSheet,
-    sideSheet: form.truckSideSheet, frontSheet: form.truckFrontSheet,
+    sideSheet: form.truckSideSheet,
     hoist: form.truckHoist,
     tarpSystem: form.truckTarp, coupling: form.truckCoupling,
     controls: form.truckControls, hydraulics: form.truckHydraulics,
@@ -664,11 +729,15 @@ function QuoteBuilderInner() {
 
   function onMaterialChange(material: string) {
     const sheets = defaultSheets(material)
+    const isHardox = material.startsWith('Hardox')
     setForm((f) => ({
       ...f,
       truckMaterial: material,
       truckFloorSheet: sheets.floor,
       truckSideSheet: sheets.side,
+      // Auto-default ladder for Hardox builds
+      truckLadderType: isHardox ? '3-Step Pull out ladder c/w rungs' : f.truckLadderType,
+      truckLadderPosition: isHardox ? 'Driverside Front' : f.truckLadderPosition,
     }))
   }
 
@@ -1135,7 +1204,8 @@ function QuoteBuilderInner() {
             icon="🚛"
             style={{ marginTop: 20 }}
           >
-            <div style={grid(4)}>
+            {/* Row 1: Material + sheets */}
+            <div style={grid(3)}>
               <Field label="Body Material">
                 <select value={form.truckMaterial} onChange={(e) => onMaterialChange(e.target.value)} style={selectStyle}>
                   {MATERIALS.map((m) => <option key={m}>{m}</option>)}
@@ -1147,19 +1217,12 @@ function QuoteBuilderInner() {
               <Field label="Side Sheet">
                 <input value={form.truckSideSheet} onChange={(e) => set('truckSideSheet', e.target.value)} style={inputStyle} />
               </Field>
-              <Field label="Front Sheet">
-                <input value={form.truckFrontSheet} onChange={(e) => set('truckFrontSheet', e.target.value)} placeholder="e.g. 5mm Hardox 500" style={inputStyle} />
-              </Field>
             </div>
-            <div style={{ ...grid(3), marginTop: 16 }}>
+            {/* Row 2: Hoist + couplings + controls + hydraulics */}
+            <div style={{ ...grid(4), marginTop: 16 }}>
               <Field label="Hoist">
                 <select value={form.truckHoist} onChange={(e) => set('truckHoist', e.target.value)} style={selectStyle}>
                   {HOISTS.map((h) => <option key={h}>{h}</option>)}
-                </select>
-              </Field>
-              <Field label="Tarp System">
-                <select value={form.truckTarp} onChange={(e) => set('truckTarp', e.target.value)} style={selectStyle}>
-                  {TARPS.map((t) => <option key={t}>{t}</option>)}
                 </select>
               </Field>
               <Field label="Coupling">
@@ -1167,16 +1230,92 @@ function QuoteBuilderInner() {
                   {COUPLINGS.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </Field>
-            </div>
-            <div style={{ ...grid(2), marginTop: 16 }}>
+              <Field label="Brake Coupling">
+                <select value={form.truckBrakeCoupling} onChange={(e) => set('truckBrakeCoupling', e.target.value)} style={selectStyle}>
+                  {BRAKE_COUPLINGS.map((c) => <option key={c}>{c}</option>)}
+                </select>
+              </Field>
               <Field label="Controls">
                 <select value={form.truckControls} onChange={(e) => set('truckControls', e.target.value)} style={selectStyle}>
                   {CONTROLS.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </Field>
+            </div>
+            <div style={{ ...grid(2), marginTop: 16 }}>
               <Field label="Hydraulics">
                 <select value={form.truckHydraulics} onChange={(e) => set('truckHydraulics', e.target.value)} style={selectStyle}>
                   {HYDRAULICS.map((h) => <option key={h}>{h}</option>)}
+                </select>
+              </Field>
+            </div>
+            {/* Tarp section */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Tarp</div>
+            <div style={grid(4)}>
+              <Field label="Tarp Material">
+                <select value={form.truckTarpMaterial} onChange={(e) => set('truckTarpMaterial', e.target.value)} style={selectStyle}>
+                  {TARP_MATERIALS.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </Field>
+              <Field label="Tarp Colour">
+                <input value={form.truckTarpColour} onChange={(e) => set('truckTarpColour', e.target.value)} placeholder="e.g. Black" style={inputStyle} />
+              </Field>
+              <Field label="Tarp Type">
+                <select value={form.truckTarpType} onChange={(e) => set('truckTarpType', e.target.value)} style={selectStyle}>
+                  {TARP_TYPES.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </Field>
+              <Field label="Bow Size">
+                <input value={form.truckTarpBowSize} onChange={(e) => set('truckTarpBowSize', e.target.value)} placeholder="e.g. 50mm" style={inputStyle} />
+              </Field>
+            </div>
+            <div style={{ ...grid(2), marginTop: 16 }}>
+              <Field label="Tarp Style">
+                <select value={form.truckTarpStyle} onChange={(e) => set('truckTarpStyle', e.target.value)} style={selectStyle}>
+                  {TARP_STYLES.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </Field>
+              <Field label="Tarp Location">
+                <select value={form.truckTarpLocation} onChange={(e) => set('truckTarpLocation', e.target.value)} style={selectStyle}>
+                  {TARP_LOCATIONS.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </Field>
+            </div>
+            {/* Body extras */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Body Extras</div>
+            <div style={grid(4)}>
+              <Field label="Ladder Type">
+                <select value={form.truckLadderType} onChange={(e) => set('truckLadderType', e.target.value)} style={selectStyle}>
+                  {LADDER_TYPES.map((l) => <option key={l}>{l}</option>)}
+                </select>
+              </Field>
+              <Field label="Ladder Position">
+                <select value={form.truckLadderPosition} onChange={(e) => set('truckLadderPosition', e.target.value)} style={selectStyle}>
+                  {LADDER_POSITIONS.map((l) => <option key={l}>{l}</option>)}
+                </select>
+              </Field>
+              <Field label="Spreader Chain">
+                <select value={form.truckSpreaderChain} onChange={(e) => set('truckSpreaderChain', e.target.value)} style={selectStyle}>
+                  {['Yes', 'No'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Rear CAT Markers">
+                <select value={form.truckCatMarkers} onChange={(e) => set('truckCatMarkers', e.target.value)} style={selectStyle}>
+                  {['Yes', 'No'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+            </div>
+            <div style={{ ...grid(3), marginTop: 16 }}>
+              <Field label="Reflectors">
+                <input value={form.truckReflectors} onChange={(e) => set('truckReflectors', e.target.value)} placeholder="e.g. 4 x Side Reflectors" style={inputStyle} />
+              </Field>
+              <Field label="Camera">
+                <input value={form.truckCamera} onChange={(e) => set('truckCamera', e.target.value)} placeholder="e.g. Rear reversing camera" style={inputStyle} />
+              </Field>
+              <Field label="Vibrator">
+                <select value={form.truckVibrator} onChange={(e) => set('truckVibrator', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
                 </select>
               </Field>
             </div>
@@ -1203,7 +1342,7 @@ function QuoteBuilderInner() {
               </Field>
               <Field label="Material">
                 <select value={form.trailerMaterial} onChange={(e) => set('trailerMaterial', e.target.value)} style={selectStyle}>
-                  {['Aluminium', 'Steel', 'Hardox 500'].map((m) => <option key={m}>{m}</option>)}
+                  {['Aluminium', 'Steel', 'Hardox 500', 'Hardox 450'].map((m) => <option key={m}>{m}</option>)}
                 </select>
               </Field>
             </div>
