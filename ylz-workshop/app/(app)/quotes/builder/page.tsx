@@ -556,7 +556,9 @@ function QuoteBuilderInner() {
   const [saving, setSaving] = useState(false)
   const [accepting, setAccepting] = useState(false)
   const [acceptModal, setAcceptModal] = useState(false)
-  const [acceptResult, setAcceptResult] = useState<{ jobNum: string; jobId: string } | null>(null)
+  const [acceptMode, setAcceptMode] = useState<'new' | 'existing'>('new')
+  const [existingJobNum, setExistingJobNum] = useState('')
+  const [acceptResult, setAcceptResult] = useState<{ jobNum: string; jobId: string; isExisting?: boolean } | null>(null)
   const [saveError, setSaveError] = useState('')
   const [isQuickQuote, setIsQuickQuote] = useState(false)
   const [declineModal, setDeclineModal] = useState(false)
@@ -792,12 +794,12 @@ function QuoteBuilderInner() {
     if (nextStatus === 'sent') {
       const name = form.customerName.trim().toLowerCase()
       if (!name || name === 'tbc') {
-        setSaveError('Customer name is required before marking as Sent — "TBC" is not accepted.')
+        setSaveError('Customer name is required to mark as Sent — use "Save Draft" to save without sending.')
         setSaving(false)
         return
       }
       if (effectiveTotal === 0 || form.lineItems.length === 0) {
-        setSaveError('Add at least one line item with a price before marking as Sent.')
+        setSaveError('Quote has no pricing — add line items before marking as Sent. Use "Save Draft" to save without sending.')
         setSaving(false)
         return
       }
@@ -871,19 +873,38 @@ function QuoteBuilderInner() {
     if (!savedId) return
     setAccepting(true)
     try {
-      const res = await fetch(`/api/quotes/${savedId}/accept`, { method: 'POST' })
+      const body: Record<string, string> = {}
+      if (acceptMode === 'existing' && existingJobNum.trim()) {
+        body.existingJobNum = existingJobNum.trim()
+      }
+      const res = await fetch(`/api/quotes/${savedId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
       const data = await res.json()
       if (!res.ok) {
         setSaveError(data.error || 'Accept failed')
       } else {
         setForm((f) => ({ ...f, status: 'accepted' }))
-        setAcceptResult({ jobNum: data.job.num, jobId: data.job.id })
+        setAcceptResult({ jobNum: data.job.num, jobId: data.job.id, isExisting: data.isExisting })
       }
     } catch (e: any) {
       setSaveError(e.message || 'Accept failed')
     }
     setAccepting(false)
     setAcceptModal(false)
+  }
+
+  async function handleRevise() {
+    if (!savedId) return
+    try {
+      const res = await fetch(`/api/quotes/${savedId}/copy`, { method: 'POST' })
+      const data = await res.json()
+      if (data.id) router.push(`/quotes/builder?id=${data.id}`)
+    } catch {
+      setSaveError('Failed to create revision')
+    }
   }
 
   // BUG-04: Delete draft quote
@@ -977,9 +998,18 @@ function QuoteBuilderInner() {
               </button>
             </>
           )}
+          {savedId && (
+            <button
+              onClick={handleRevise}
+              style={btnStyle('ghost')}
+              title="Create a revised copy of this quote"
+            >
+              ↗ Revise
+            </button>
+          )}
           {savedId && (form.status === 'draft' || form.status === 'sent') && (
             <button
-              onClick={() => setAcceptModal(true)}
+              onClick={() => { setAcceptMode('new'); setExistingJobNum(''); setAcceptModal(true) }}
               disabled={saving || accepting}
               style={{ ...btnStyle('secondary'), borderColor: 'rgba(34,197,94,0.5)', background: 'rgba(34,197,94,0.1)', color: 'rgba(34,197,94,0.9)' }}
             >
@@ -1786,19 +1816,79 @@ function QuoteBuilderInner() {
       {/* ── Accept confirmation modal ── */}
       {acceptModal && (
         <Modal onClose={() => setAcceptModal(false)}>
-          <div style={{ padding: 32, maxWidth: 460 }}>
+          <div style={{ padding: 32, maxWidth: 480 }}>
             <div style={{ fontSize: 28, marginBottom: 12 }}>✓</div>
-            <h2 style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 8 }}>
+            <h2 style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 16 }}>
               Accept Quote?
             </h2>
+
+            {/* Job assignment toggle */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>
+                Job Assignment
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                <button
+                  onClick={() => setAcceptMode('new')}
+                  style={{
+                    fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+                    padding: '8px 16px', borderRadius: 4, cursor: 'pointer', minHeight: 36,
+                    border: acceptMode === 'new' ? '1.5px solid rgba(34,197,94,0.6)' : '1px solid rgba(255,255,255,0.15)',
+                    background: acceptMode === 'new' ? 'rgba(34,197,94,0.12)' : 'transparent',
+                    color: acceptMode === 'new' ? 'rgba(34,197,94,0.9)' : 'rgba(255,255,255,0.5)',
+                  }}
+                >
+                  + Create New Job
+                </button>
+                <button
+                  onClick={() => setAcceptMode('existing')}
+                  style={{
+                    fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+                    padding: '8px 16px', borderRadius: 4, cursor: 'pointer', minHeight: 36,
+                    border: acceptMode === 'existing' ? '1.5px solid rgba(232,104,26,0.6)' : '1px solid rgba(255,255,255,0.15)',
+                    background: acceptMode === 'existing' ? 'rgba(232,104,26,0.12)' : 'transparent',
+                    color: acceptMode === 'existing' ? '#E8681A' : 'rgba(255,255,255,0.5)',
+                  }}
+                >
+                  Link to Existing Job
+                </button>
+              </div>
+              {acceptMode === 'existing' && (
+                <div>
+                  <input
+                    autoFocus
+                    value={existingJobNum}
+                    onChange={(e) => setExistingJobNum(e.target.value.toUpperCase())}
+                    placeholder="e.g. YLZ 1050"
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      background: '#0a0a0a', border: '1px solid rgba(232,104,26,0.4)',
+                      borderRadius: 4, color: '#fff', fontSize: 14, fontWeight: 600,
+                      padding: '10px 12px', outline: 'none', fontFamily: 'inherit',
+                      letterSpacing: 1,
+                    }}
+                  />
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 6 }}>
+                    The quote will be linked to this job. No new job will be created.
+                  </div>
+                </div>
+              )}
+            </div>
+
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, marginBottom: 8 }}>
               This will:
             </p>
             <ul style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, paddingLeft: 20, marginBottom: 24 }}>
               <li>Mark quote <strong style={{ color: '#fff' }}>{form.quoteNumber}</strong> as Accepted</li>
-              <li>Create a new Job on the Production Board</li>
-              <li>Stage the job at <strong style={{ color: '#fff' }}>Requires Engineering</strong></li>
-              <li>Create a draft Parts Order for Liz</li>
+              {acceptMode === 'new' ? (
+                <>
+                  <li>Create a new Job on the Production Board</li>
+                  <li>Stage the job at <strong style={{ color: '#fff' }}>Requires Engineering</strong></li>
+                  <li>Create a draft Parts Order for Liz</li>
+                </>
+              ) : (
+                <li>Link this quote to job <strong style={{ color: '#E8681A' }}>{existingJobNum || '…'}</strong></li>
+              )}
               <li>Send workshop notification email (if configured)</li>
             </ul>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
@@ -1807,10 +1897,10 @@ function QuoteBuilderInner() {
               </button>
               <button
                 onClick={handleAccept}
-                disabled={accepting}
+                disabled={accepting || (acceptMode === 'existing' && !existingJobNum.trim())}
                 style={{ ...btnStyle('secondary'), borderColor: 'rgba(34,197,94,0.5)', background: 'rgba(34,197,94,0.15)', color: 'rgba(34,197,94,0.9)' }}
               >
-                {accepting ? 'Creating job…' : '✓ Confirm & Accept'}
+                {accepting ? 'Processing…' : '✓ Confirm & Accept'}
               </button>
             </div>
           </div>
@@ -1867,8 +1957,11 @@ function QuoteBuilderInner() {
               Quote Accepted!
             </h2>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, marginBottom: 20 }}>
-              Job <strong style={{ color: '#E8681A', fontSize: 16 }}>{acceptResult.jobNum}</strong> has been created on the Production Board at{' '}
-              <strong style={{ color: '#fff' }}>Requires Engineering</strong>.
+              {acceptResult.isExisting ? (
+                <>Quote linked to existing job <strong style={{ color: '#E8681A', fontSize: 16 }}>{acceptResult.jobNum}</strong>.</>
+              ) : (
+                <>Job <strong style={{ color: '#E8681A', fontSize: 16 }}>{acceptResult.jobNum}</strong> has been created on the Production Board at{' '}<strong style={{ color: '#fff' }}>Requires Engineering</strong>.</>
+              )}
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
               <button

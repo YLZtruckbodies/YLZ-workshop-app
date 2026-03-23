@@ -114,6 +114,9 @@ async function sendWorkshopEmail(opts: {
 // ─── Accept endpoint ──────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const body = await req.json().catch(() => ({}))
+  const existingJobNum: string | null = body.existingJobNum?.trim() || null
+
   const quote = await prisma.quote.findUnique({
     where: { id: params.id },
     include: { lineItems: true },
@@ -126,97 +129,117 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Quote already accepted', jobId: quote.jobId }, { status: 409 })
   }
 
-  const cfg = quote.configuration as Record<string, any>
-  const jobNumber = await nextJobNumber()
   const typeStr = jobTypeString(quote as any)
   const btype = deriveBtype(typeStr)
+  const origin = req.headers.get('origin') || req.headers.get('x-forwarded-host') || 'http://localhost:3000'
 
-  // ── Extract chassis make/model from config ──
-  const chassisMake  = cfg.chassisMake  || cfg.truckConfig?.chassisMake  || ''
-  const chassisModel = cfg.chassisModel || cfg.truckConfig?.chassisModel || ''
-  const makeStr = [chassisMake, chassisModel].filter(Boolean).join(' ')
+  let job: { id: string; num: string }
+  let isExisting = false
+  let partsOrderId: string | null = null
 
-  // ── Create job on Kanban ──
-  const job = await prisma.job.create({
-    data: {
-      num: jobNumber,
-      type: typeStr,
-      customer: quote.customerName,
-      dealer: quote.dealerName,
-      stage: 'Requires Engineering',
-      prodGroup: 'pending',
-      btype,
-      make: makeStr,
-      notes: quote.notes || '',
-      sortOrder: 0,
-    },
-  })
+  if (existingJobNum) {
+    // ── Link to existing job ──
+    const found = await prisma.job.findFirst({
+      where: { num: { equals: existingJobNum, mode: 'insensitive' } },
+    })
+    if (!found) {
+      return NextResponse.json({ error: `Job "${existingJobNum}" not found` }, { status: 404 })
+    }
+    job = found
+    isExisting = true
 
-  // ── Upsert Job Sheet Master ──
-  await prisma.jobMaster.upsert({
-    where: { jobNumber: job.num },
-    update: {
-      jobType: btypeToJobMasterType(btype),
-      customer: quote.customerName,
-    },
-    create: {
-      jobNumber: job.num,
-      jobType: btypeToJobMasterType(btype),
-      customer: quote.customerName,
-    },
-  })
+    // Upsert delivery — update invoice amount for the revised quote
+    const existingDelivery = await prisma.delivery.findFirst({ where: { jobId: job.id } })
+    if (existingDelivery) {
+      await prisma.delivery.update({
+        where: { id: existingDelivery.id },
+        data: { invoiceAmount: quote.overridePrice ?? quote.total },
+      })
+    } else {
+      await prisma.delivery.create({
+        data: {
+          jobId: job.id,
+          jobNum: job.num,
+          customer: quote.customerName,
+          type: typeStr,
+          invoiceAmount: quote.overridePrice ?? quote.total,
+          paymentStatus: 'pending',
+        },
+      })
+    }
+  } else {
+    // ── Create new job ──
+    const cfg = quote.configuration as Record<string, any>
+    const jobNumber = await nextJobNumber()
+    const chassisMake  = cfg.chassisMake  || cfg.truckConfig?.chassisMake  || ''
+    const chassisModel = cfg.chassisModel || cfg.truckConfig?.chassisModel || ''
+    const makeStr = [chassisMake, chassisModel].filter(Boolean).join(' ')
 
-  // ── Auto-create generated job sheet attachment ──
-  await prisma.jobFile.create({
-    data: {
-      jobId: job.id,
-      fileName: `Job Sheets — ${job.num}.pdf`,
-      fileType: 'generated/jsheet',
-      filePath: `jsheet:${job.id}`,
-      fileSize: 0,
-      uploadedBy: 'system',
-    },
-  })
+    job = await prisma.job.create({
+      data: {
+        num: jobNumber,
+        type: typeStr,
+        customer: quote.customerName,
+        dealer: quote.dealerName,
+        stage: 'Requires Engineering',
+        prodGroup: 'pending',
+        btype,
+        make: makeStr,
+        notes: quote.notes || '',
+        sortOrder: 0,
+      },
+    })
+
+    await prisma.jobMaster.upsert({
+      where: { jobNumber: job.num },
+      update: { jobType: btypeToJobMasterType(btype), customer: quote.customerName },
+      create: { jobNumber: job.num, jobType: btypeToJobMasterType(btype), customer: quote.customerName },
+    })
+
+    await prisma.jobFile.create({
+      data: {
+        jobId: job.id,
+        fileName: `Job Sheets — ${job.num}.pdf`,
+        fileType: 'generated/jsheet',
+        filePath: `jsheet:${job.id}`,
+        fileSize: 0,
+        uploadedBy: 'system',
+      },
+    })
+
+    await prisma.delivery.create({
+      data: {
+        jobId: job.id,
+        jobNum: job.num,
+        customer: quote.customerName,
+        type: typeStr,
+        invoiceAmount: quote.overridePrice ?? quote.total,
+        paymentStatus: 'pending',
+      },
+    })
+
+    const partsOrder = await prisma.partsOrder.create({
+      data: {
+        jobId: job.id,
+        jobNum: job.num,
+        quoteId: quote.id,
+        status: 'draft',
+        notes: `Auto-created from quote ${quote.quoteNumber}. Review and send to suppliers.\n\nBuild: ${typeStr}\nCustomer: ${quote.customerName}`,
+      },
+    })
+    partsOrderId = partsOrder.id
+  }
 
   // ── Update quote status + link to job ──
-  const updatedQuote = await prisma.quote.update({
+  await prisma.quote.update({
     where: { id: params.id },
-    data: {
-      status: 'accepted',
-      acceptedAt: new Date(),
-      jobId: job.id,
-    },
-  })
-
-  // ── Create Delivery record for Cashflow tracking ──
-  await prisma.delivery.create({
-    data: {
-      jobId: job.id,
-      jobNum: jobNumber,
-      customer: quote.customerName,
-      type: typeStr,
-      invoiceAmount: quote.overridePrice ?? quote.total,
-      paymentStatus: 'pending',
-    },
-  })
-
-  // ── Create draft PartsOrder for Liz ──
-  const lineItemDescs = quote.lineItems.map((li) => li.description).filter(Boolean).join(', ')
-  const partsOrder = await prisma.partsOrder.create({
-    data: {
-      jobId: job.id,
-      jobNum: jobNumber,
-      quoteId: quote.id,
-      status: 'draft',
-      notes: `Auto-created from quote ${quote.quoteNumber}. Review and send to suppliers.\n\nBuild: ${typeStr}\nCustomer: ${quote.customerName}`,
-    },
+    data: { status: 'accepted', acceptedAt: new Date(), jobId: job.id },
   })
 
   // ── Send workshop email ──
-  const origin = req.headers.get('origin') || req.headers.get('x-forwarded-host') || 'http://localhost:3000'
   const emailResult = await sendWorkshopEmail({
     quoteNumber: quote.quoteNumber,
-    jobNumber,
+    jobNumber: job.num,
     customer: quote.customerName,
     buildType: typeStr,
     quoteId: quote.id,
@@ -224,7 +247,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     baseUrl: origin,
   })
 
-  // ── Notify Pete + Nathan of accepted quote ──
+  // ── Notify Pete + Nathan ──
   const apiKey = process.env.RESEND_API_KEY
   if (apiKey) {
     try {
@@ -241,7 +264,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           <div style="border:1px solid #eee;border-top:none;padding:24px;border-radius:0 0 6px 6px">
             <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
               <tr><td style="padding:8px 0;color:#666;font-size:13px;width:160px">Quote</td><td style="font-weight:700;font-size:15px">${quote.quoteNumber}</td></tr>
-              <tr><td style="padding:8px 0;color:#666;font-size:13px">Job Number</td><td style="font-weight:700;font-size:15px;color:#E8681A">${jobNumber}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px">Job Number</td><td style="font-weight:700;font-size:15px;color:#E8681A">${job.num}${isExisting ? ' (existing)' : ''}</td></tr>
               <tr><td style="padding:8px 0;color:#666;font-size:13px">Customer</td><td style="font-weight:600">${quote.customerName}</td></tr>
               <tr><td style="padding:8px 0;color:#666;font-size:13px">Build Type</td><td style="font-weight:600">${typeStr}</td></tr>
               <tr><td style="padding:8px 0;color:#666;font-size:13px">Prepared By</td><td>${quote.preparedBy}</td></tr>
@@ -253,7 +276,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       await resend.emails.send({
         from: fromEmail,
         to: [peteEmail, nathanEmail],
-        subject: `Quote Accepted: ${quote.quoteNumber} — ${quote.customerName} → ${jobNumber}`,
+        subject: `Quote Accepted: ${quote.quoteNumber} — ${quote.customerName} → ${job.num}`,
         html,
       })
     } catch {
@@ -264,7 +287,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json({
     ok: true,
     job: { id: job.id, num: job.num },
-    partsOrderId: partsOrder.id,
+    isExisting,
+    partsOrderId,
     email: emailResult,
   }, { status: 200 })
 }
