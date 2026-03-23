@@ -274,6 +274,7 @@ function EditableStatusCell({
   onSave: (jobId: string, field: string, newVal: string, oldVal: string) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState({ x: 0, y: 0 })
   const ref = useRef<HTMLTableCellElement>(null)
 
   useEffect(() => {
@@ -285,30 +286,40 @@ function EditableStatusCell({
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect()
+      setPos({ x: rect.left, y: rect.bottom + 2 })
+    }
+    setOpen((v) => !v)
+  }
+
   return (
     <td
       ref={ref}
-      style={{ padding: '8px 10px', position: 'relative', cursor: 'pointer' }}
-      onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
+      style={{ padding: '8px 10px', cursor: 'pointer' }}
+      onClick={handleClick}
     >
       <StatusPill value={value} />
       {open && (
         <div
           style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            zIndex: 100,
-            background: 'var(--dark2)',
-            border: '1px solid var(--border)',
+            position: 'fixed',
+            left: pos.x,
+            top: pos.y,
+            zIndex: 9999,
+            background: '#1a1a1a',
+            border: '1px solid rgba(255,255,255,0.15)',
             borderRadius: 4,
             padding: 4,
-            minWidth: 130,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            minWidth: 140,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
             display: 'flex',
             flexDirection: 'column',
             gap: 2,
           }}
+          onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
           {STATUS_OPTIONS.map((opt) => {
@@ -318,8 +329,8 @@ function EditableStatusCell({
                 key={opt || '__clear'}
                 onClick={() => { setOpen(false); if (opt !== value) onSave(jobId, field, opt, value) }}
                 style={{
-                  padding: '5px 10px',
-                  fontSize: 10,
+                  padding: '7px 12px',
+                  fontSize: 11,
                   fontWeight: 700,
                   letterSpacing: 0.5,
                   textTransform: 'uppercase',
@@ -328,11 +339,15 @@ function EditableStatusCell({
                   color: opt ? color : 'var(--text3)',
                   background: opt === value ? 'rgba(255,255,255,0.08)' : 'transparent',
                   transition: '0.1s',
+                  minHeight: 36,
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = opt === value ? 'rgba(255,255,255,0.08)' : 'transparent' }}
               >
                 {opt || '— Clear —'}
+                {opt === value && <span style={{ marginLeft: 'auto', color: '#E8681A', fontSize: 12 }}>✓</span>}
               </div>
             )
           })}
@@ -353,6 +368,7 @@ function EditableStagePill({
   onSave: (jobId: string, field: string, newVal: string, oldVal: string) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState({ x: 0, y: 0 })
   const ref = useRef<HTMLTableCellElement>(null)
 
   useEffect(() => {
@@ -364,30 +380,40 @@ function EditableStagePill({
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect()
+      setPos({ x: rect.left, y: rect.bottom + 2 })
+    }
+    setOpen((v) => !v)
+  }
+
   return (
     <td
       ref={ref}
-      style={{ padding: '8px 10px', position: 'relative', cursor: 'pointer' }}
-      onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
+      style={{ padding: '8px 10px', cursor: 'pointer' }}
+      onClick={handleClick}
     >
       <BuildProgressPill stage={stage} />
       {open && (
         <div
           style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            zIndex: 100,
-            background: 'var(--dark2)',
-            border: '1px solid var(--border)',
+            position: 'fixed',
+            left: pos.x,
+            top: pos.y,
+            zIndex: 9999,
+            background: '#1a1a1a',
+            border: '1px solid rgba(255,255,255,0.15)',
             borderRadius: 4,
             padding: 4,
-            minWidth: 140,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            minWidth: 200,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
             display: 'flex',
             flexDirection: 'column',
             gap: 2,
           }}
+          onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
           {STAGES.map((s) => {
@@ -397,8 +423,8 @@ function EditableStagePill({
                 key={s}
                 onClick={() => { setOpen(false); if (s !== stage) onSave(jobId, 'stage', s, stage) }}
                 style={{
-                  padding: '5px 10px',
-                  fontSize: 10,
+                  padding: '7px 12px',
+                  fontSize: 11,
                   fontWeight: 700,
                   letterSpacing: 0.5,
                   textTransform: 'uppercase',
@@ -410,12 +436,14 @@ function EditableStagePill({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 8,
+                  minHeight: 36,
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = s === stage ? 'rgba(255,255,255,0.08)' : 'transparent' }}
               >
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                {s} — {label}
+                {label}
+                {s === stage && <span style={{ marginLeft: 'auto', color: '#E8681A', fontSize: 12 }}>✓</span>}
               </div>
             )
           })}
