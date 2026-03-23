@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { writeFile } from 'fs/promises'
-import path from 'path'
+import { uploadFileToDrive } from '@/lib/drive'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -32,27 +31,31 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Look up the job to get its number (needed to find/create the Drive folder)
+    const job = await prisma.job.findUnique({ where: { id: jobId } })
+    if (!job) {
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+    }
+
     // Read file buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Create unique filename
-    const timestamp = Date.now()
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-    const storedName = `${timestamp}_${safeName}`
-    const uploadDir = path.join(process.cwd(), 'uploads', 'job-files')
-    const filePath = path.join(uploadDir, storedName)
+    // Upload to Google Drive job folder (creates folder if it doesn't exist)
+    const driveFileId = await uploadFileToDrive(
+      job.num,
+      file.name,
+      file.type || 'application/octet-stream',
+      buffer
+    )
 
-    // Write file to disk
-    await writeFile(filePath, buffer)
-
-    // Save metadata to DB
+    // Save metadata to DB — Drive file ID stored with "drive:" prefix
     const jobFile = await prisma.jobFile.create({
       data: {
         jobId,
         fileName: file.name,
         fileType: file.type || '',
-        filePath: storedName,
+        filePath: `drive:${driveFileId}`,
         fileSize: buffer.length,
         uploadedBy,
       },

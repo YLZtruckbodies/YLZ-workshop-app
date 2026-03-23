@@ -1,4 +1,5 @@
 import { google, drive_v3 } from 'googleapis'
+import { Readable } from 'stream'
 
 // Job Sheets parent folder ID in Google Drive
 const JOB_SHEETS_FOLDER_ID = '10ZvynBY7AOABRU4q_D_SmSrAFN0OkzMI'
@@ -130,6 +131,67 @@ export async function listJobDriveFiles(jobNum: string): Promise<DriveFile[]> {
   const folderId = await findJobFolder(jobNum)
   if (!folderId) return []
   return listFolderFiles(folderId)
+}
+
+/**
+ * Find the job folder or create it if it doesn't exist.
+ */
+export async function findOrCreateJobFolder(jobNum: string): Promise<string> {
+  const drive = await getDriveClient()
+  const normalised = normaliseJobNum(jobNum)
+
+  // Try to find existing folder first
+  const existing = await findJobFolder(jobNum)
+  if (existing) return existing
+
+  // Create it
+  const res = await drive.files.create({
+    requestBody: {
+      name: normalised,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [JOB_SHEETS_FOLDER_ID],
+    },
+    fields: 'id',
+  })
+
+  return res.data.id!
+}
+
+/**
+ * Upload a file buffer to the job's Google Drive folder.
+ * Returns the Drive file ID.
+ */
+export async function uploadFileToDrive(
+  jobNum: string,
+  fileName: string,
+  mimeType: string,
+  buffer: Buffer
+): Promise<string> {
+  const drive = await getDriveClient()
+  const folderId = await findOrCreateJobFolder(jobNum)
+  const stream = Readable.from(buffer)
+
+  const res = await drive.files.create({
+    requestBody: {
+      name: fileName,
+      parents: [folderId],
+    },
+    media: {
+      mimeType: mimeType || 'application/octet-stream',
+      body: stream,
+    },
+    fields: 'id',
+  })
+
+  return res.data.id!
+}
+
+/**
+ * Delete a file from Google Drive by its file ID.
+ */
+export async function deleteFileFromDrive(driveFileId: string): Promise<void> {
+  const drive = await getDriveClient()
+  await drive.files.delete({ fileId: driveFileId })
 }
 
 /**
