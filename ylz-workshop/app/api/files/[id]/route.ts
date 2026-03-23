@@ -20,7 +20,7 @@ export async function GET(
       const driveFileId = file.filePath.replace('drive:', '')
       const { buffer, mimeType, fileName } = await downloadDriveFile(driveFileId)
 
-      return new NextResponse(buffer, {
+      return new NextResponse(buffer as unknown as BodyInit, {
         headers: {
           'Content-Type': mimeType,
           'Content-Disposition': `inline; filename="${fileName}"`,
