@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface Quote {
   id: string
@@ -38,6 +38,32 @@ export default function QuotesPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
   const [copying, setCopying] = useState<string | null>(null)
+  const [statusMenu, setStatusMenu] = useState<{ id: string; x: number; y: number } | null>(null)
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
+  const statusMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!statusMenu) return
+    const close = (e: MouseEvent) => {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) setStatusMenu(null)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [statusMenu])
+
+  async function handleStatusChange(quoteId: string, newStatus: string) {
+    setUpdatingStatus(quoteId)
+    setStatusMenu(null)
+    try {
+      await fetch(`/api/quotes/${quoteId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, ...(newStatus === 'sent' ? { sentAt: new Date().toISOString() } : {}) }),
+      })
+      await fetchQuotes()
+    } catch {}
+    setUpdatingStatus(null)
+  }
 
   async function handleCopy(e: React.MouseEvent, quoteId: string) {
     e.stopPropagation()
@@ -228,12 +254,23 @@ export default function QuotesPage() {
                 </span>
                 <span style={{ color: 'var(--text3)' }}>{q.preparedBy}</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
-                    padding: '3px 8px', borderRadius: 4,
-                    background: sc.bg, color: sc.text, border: `1px solid ${sc.border}`,
-                  }}>
-                    {q.status}
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      setStatusMenu(statusMenu?.id === q.id ? null : { id: q.id, x: rect.left, y: rect.bottom + 4 })
+                    }}
+                    title="Click to change status"
+                    style={{
+                      fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+                      padding: '3px 8px', borderRadius: 4, cursor: 'pointer',
+                      background: updatingStatus === q.id ? 'rgba(255,255,255,0.06)' : sc.bg,
+                      color: updatingStatus === q.id ? 'var(--text3)' : sc.text,
+                      border: `1px solid ${statusMenu?.id === q.id ? sc.text : sc.border}`,
+                      transition: '0.1s',
+                    }}
+                  >
+                    {updatingStatus === q.id ? '…' : q.status}
                   </span>
                   {isFollowUp && (
                     <span style={{
@@ -241,7 +278,6 @@ export default function QuotesPage() {
                       padding: '2px 6px', borderRadius: 3,
                       background: 'rgba(234,179,8,0.15)', color: '#eab308',
                       border: '1px solid rgba(234,179,8,0.3)',
-                      animation: 'none',
                     }}>
                       Follow Up
                     </span>
@@ -273,6 +309,45 @@ export default function QuotesPage() {
                     {copying === q.id ? '...' : 'Copy'}
                   </button>
                 </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Status change dropdown */}
+      {statusMenu && (
+        <div
+          ref={statusMenuRef}
+          style={{
+            position: 'fixed', left: statusMenu.x, top: statusMenu.y, zIndex: 9999,
+            background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 6, padding: 4, minWidth: 140,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+          }}
+        >
+          <div style={{ padding: '4px 10px 6px', fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}>
+            Change Status
+          </div>
+          {(['draft', 'sent', 'accepted', 'declined', 'expired'] as const).map((s) => {
+            const c = STATUS_COLORS[s]
+            const current = quotes.find((q) => q.id === statusMenu.id)?.status === s
+            return (
+              <div
+                key={s}
+                onClick={() => !current && handleStatusChange(statusMenu.id, s)}
+                style={{
+                  padding: '8px 12px', fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+                  textTransform: 'uppercase', borderRadius: 3, cursor: current ? 'default' : 'pointer',
+                  color: c.text, background: current ? c.bg : 'transparent',
+                  display: 'flex', alignItems: 'center', gap: 8, minHeight: 36, transition: '0.1s',
+                  opacity: current ? 1 : 0.8,
+                }}
+                onMouseEnter={(e) => { if (!current) e.currentTarget.style.background = c.bg }}
+                onMouseLeave={(e) => { if (!current) e.currentTarget.style.background = 'transparent' }}
+              >
+                {s}
+                {current && <span style={{ marginLeft: 'auto', color: '#E8681A', fontSize: 12 }}>✓</span>}
               </div>
             )
           })}
