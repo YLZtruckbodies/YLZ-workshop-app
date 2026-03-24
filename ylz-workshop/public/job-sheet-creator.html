@@ -157,10 +157,10 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
       <div class="form-group"><label class="form-label">Body Height <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_body_height"><option value="">Select...</option></select></div>
     </div>
     <div class="form-grid-4" style="margin-top:14px">
-      <div class="form-group"><label class="form-label">Mainrunner Width <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_mainrunner_width"><option value="">Select...</option></select></div>
-      <div class="form-group"><label class="form-label">Hoist Box Height <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_hoist_box_height"><option value="">Select...</option><option>1520mm - 3AD</option><option>1630mm - 4AD</option><option>1630mm - 5AD</option><option>1730mm - 10.4m Semi</option><option>1260mm Bottom of Hoist top to Bottom of Main Runner</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Mainrunner Width <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
+      <div class="form-group"><label class="form-label">Hoist Box Height <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_hoist_box_height" placeholder="e.g. 1520mm"></div>
       <div class="form-group"><label class="form-label">Hinged <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_hinged"><option value="">Select...</option><option>430mm Forward</option><option>250mm Forward &amp; Side</option><option>Rear Hinged</option><option>N/A</option></select></div>
-      <div class="form-group"><label class="form-label">C/L Pivot to Rear <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_cl_pivot"><option value="">Select...</option><option>510mm - 3AD</option><option>190mm - 7700 Dog</option><option>330mm - 8300 Dog</option><option>250mm - 9200 Semi</option><option>395mm</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">C/L Pivot to Rear <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_cl_pivot"><option value="">Select...</option><option>235mm</option><option>510mm - 3AD</option><option>190mm - 7700 Dog</option><option>330mm - 8300 Dog</option><option>250mm - 9200 Semi</option><option>395mm</option><option>N/A</option></select></div>
     </div>
     <div id="trailerBodyDimsSection" class="hidden">
       <div class="mode-label trailer-label" style="margin-top:20px">TRAILER BODY</div>
@@ -171,10 +171,10 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
         <div class="form-group"><label class="form-label">Body Height <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_t_body_height"><option value="">Select...</option><option>1100mm</option><option>1410mm</option><option>1500mm</option><option>1000mm</option><option>1150mm</option><option>1520mm</option><option>N/A</option></select></div>
       </div>
       <div class="form-grid-4" style="margin-top:14px">
-        <div class="form-group"><label class="form-label">Mainrunner Width <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_mainrunner_width"><option value="">Select...</option><option>965mm Inside</option><option>1000mm Inside</option><option>818mm Inside - Pig</option><option>N/A</option></select></div>
-        <div class="form-group"><label class="form-label">Hoist Box Height <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_hoist_box_height"><option value="">Select...</option><option>1520mm - 3AD</option><option>1630mm - 4AD</option><option>1630mm - 5AD</option><option>1730mm - 10.4m Semi</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Mainrunner Width <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
+        <div class="form-group"><label class="form-label">Hoist Box Height <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_t_hoist_box_height" placeholder="e.g. 1520mm"></div>
         <div class="form-group"><label class="form-label">Hinged <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_hinged"><option value="">Select...</option><option>430mm Forward</option><option>250mm Forward &amp; Side</option><option>Rear Hinged</option><option>N/A</option></select></div>
-        <div class="form-group"><label class="form-label">C/L Pivot to Rear <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_cl_pivot"><option value="">Select...</option><option>510mm - 3AD</option><option>190mm - 7700 Dog</option><option>330mm - 8300 Dog</option><option>250mm - 9200 Semi</option><option>395mm</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">C/L Pivot to Rear <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_cl_pivot"><option value="">Select...</option><option>235mm</option><option>510mm - 3AD</option><option>190mm - 7700 Dog</option><option>330mm - 8300 Dog</option><option>250mm - 9200 Semi</option><option>395mm</option><option>N/A</option></select></div>
       </div>
     </div>
   </div>
@@ -185,12 +185,16 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
     <div class="form-grid">
       <div class="form-group"><label class="form-label">PTO</label><select class="form-select" id="f_pto"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
       <div class="form-group"><label class="form-label">Truck Hoist</label><select class="form-select" id="f_ctrl_truck_hoist"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
-      <div class="form-group"><label class="form-label">Trailer Hoist</label><select class="form-select" id="f_ctrl_trailer_hoist"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
       <div class="form-group"><label class="form-label">Truck Tailgate</label><select class="form-select" id="f_ctrl_truck_tailgate"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
-      <div class="form-group"><label class="form-label">Trailer Tailgate</label><select class="form-select" id="f_ctrl_trailer_tailgate"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
-      <div class="form-group"><label class="form-label">Trailer Lockflap</label><select class="form-select" id="f_ctrl_lockflap"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
       <div class="form-group"><label class="form-label">Truck Tarp</label><select class="form-select" id="f_ctrl_truck_tarp"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
-      <div class="form-group"><label class="form-label">Trailer Tarp</label><select class="form-select" id="f_ctrl_trailer_tarp"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+    </div>
+    <div id="trailerControlFields">
+      <div class="form-grid" style="margin-top:10px">
+        <div class="form-group"><label class="form-label">Trailer Hoist</label><select class="form-select" id="f_ctrl_trailer_hoist"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Trailer Tailgate</label><select class="form-select" id="f_ctrl_trailer_tailgate"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Trailer Lockflap</label><select class="form-select" id="f_ctrl_lockflap"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Trailer Tarp</label><select class="form-select" id="f_ctrl_trailer_tarp"><option value="">Select...</option><option>Existing Electric in Dash</option><option>Existing PTO Switch with Hand Held Controller</option><option>12V Hand Controller</option><option>24V Hand Controller</option><option>OEM Switches in Cab</option><option>N/A</option></select></div>
+      </div>
     </div>
   </div>
 
@@ -200,25 +204,23 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
     <div id="truckSubframeSection">
       <div id="truckSubframeLabel" class="mode-label truck-label hidden">TRUCK SUBFRAME</div>
       <div class="form-grid-4">
-        <div class="form-group"><label class="form-label">Subframe Length <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_subframe_length"></div>
-        <div class="form-group"><label class="form-label">Subframe Width <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_subframe_width"></div>
-        <div class="form-group"><label class="form-label">Hoist Model <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_hoist_model"><option value="">Select...</option><option>Binotto 3190</option><option>Hyva Alpha 191-4</option><option>Hyva Alpha 201-4</option><option>Hyva Alpha 241-4</option><option>Palfinger PH T74</option><option>N/A</option></select></div>
-        <div class="form-group"><label class="form-label">Valve Bank <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_valve_bank"><option value="">Select...</option><option>1 Spool (Body Only)</option><option>2 Spool (Body + Tailgate)</option><option>3 Spool (Body + Tailgate + Tarp)</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Subframe Length <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
+        <div class="form-group"><label class="form-label">Subframe Width <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
+        <div class="form-group"><label class="form-label">Hoist Model <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_hoist_model"><option value="">Select...</option><option>Binotto 3190</option><option>Hyva Alpha 091-4</option><option>Hyva Alpha 092-4</option><option>Hyva Alpha 191-4</option><option>Hyva Alpha 201-4</option><option>Hyva Alpha 241-4</option><option>Palfinger PH T74</option><option>Palfinger PH T94</option><option>Other</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Valve Bank <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
       </div>
       <div class="form-grid-4" style="margin-top:14px">
-        <div class="form-group"><label class="form-label">Oil Tank Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_oil_tank_type"><option value="">Select...</option><option>Behind Cab Upright Steel 80L</option><option>Behind Cab Upright Steel 120L</option><option>Behind Cab Upright Alloy 80L</option><option>Behind Cab Upright Alloy 120L</option><option>Under Tray Steel 80L</option><option>Under Tray Steel 120L</option><option>Under Tray Alloy 80L</option><option>Under Tray Alloy 120L</option><option>Existing Customer Supplied Tank</option><option>N/A</option></select></div>
-        <div class="form-group"><label class="form-label">Oil Tank Location <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_oil_tank_location"><option value="">Select...</option><option>Behind Cab LHS</option><option>Behind Cab RHS</option><option>Under Tray LHS Front</option><option>Under Tray LHS Rear</option><option>Under Tray RHS Front</option><option>Under Tray RHS Rear</option><option>Under Tray Centre</option><option>N/A</option></select></div>
-        <div class="form-group"><label class="form-label">PTO Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_pto_type"><option value="">Select...</option><option>Chelsea / Parker</option><option>Muncie</option><option>Customer Supplied</option><option>N/A</option></select></div>
-        <div class="form-group"><label class="form-label">Pump Type <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_pump_type"><option value="">Select...</option><option>Permco</option><option>Parker</option><option>Casappa</option><option>Customer Supplied</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Oil Tank Type <span class="badge-auto">Auto</span></label><input class="form-input" id="f_oil_tank_type" placeholder="e.g. TKBRS135S (TES part number)"></div>
+        <div class="form-group"><label class="form-label">Oil Tank Location <span class="badge-auto">Auto</span></label><input class="form-input" id="f_oil_tank_location" placeholder="e.g. Behind Cab LHS"></div>
       </div>
     </div>
     <div id="trailerChassisSection">
       <div id="trailerChassisLabel" class="mode-label trailer-label hidden">TRAILER CHASSIS</div>
       <div class="form-grid-4">
-        <div class="form-group"><label class="form-label">Chassis Length <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_chassis_length"><option value="">Select...</option><option>4930mm Dog</option><option>5450mm Dog</option><option>7470mm Dog</option><option>7870mm Dog</option><option>9100mm Semi</option><option>9120mm Dog</option><option>9405mm Dog</option><option>10000mm Semi</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Chassis Length <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_chassis_length"><option value="">Select...</option><option>4930mm Dog</option><option>5450mm Dog</option><option>7470mm Dog</option><option>7870mm Dog</option><option>8950mm</option><option>9120mm Dog</option><option>9405mm Dog</option><option>9450mm</option><option>10000mm Semi</option><option>N/A</option></select></div>
         <div class="form-group"><label class="form-label">Wheelbase <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_wheelbase"><option value="">Select...</option><option>3240mm</option><option>3760mm</option><option>5700mm</option><option>6150mm</option><option>6610mm</option><option>6685/6235mm</option><option>7615/7165mm</option><option>N/A</option></select></div>
         <div class="form-group"><label class="form-label">Drawbar Length <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_drawbar_length"><option value="">Select...</option><option>3000mm</option><option>3200mm</option><option>3400mm</option><option>3800mm</option><option>4000mm</option><option>5000mm</option><option>N/A</option></select></div>
-        <div class="form-group"><label class="form-label">Hoist Model <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_hoist_model"><option value="">Select...</option><option>Binotto 3190</option><option>Hyva Alpha 191-4</option><option>Hyva Alpha 201-4</option><option>Hyva Alpha 241-4</option><option>Palfinger PH T74</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Hoist Model <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_hoist_model"><option value="">Select...</option><option>Binotto 3190</option><option>Hyva Alpha 091-4</option><option>Hyva Alpha 092-4</option><option>Hyva Alpha 191-4</option><option>Hyva Alpha 201-4</option><option>Hyva Alpha 241-4</option><option>Palfinger PH T74</option><option>Palfinger PH T94</option><option>Other</option><option>N/A</option></select></div>
       </div>
     </div>
   </div>
@@ -252,7 +254,7 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
       <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="f_rear_bumper">Rear Bumper Bar</label>
     </div>
     <div class="form-grid" style="margin-top:14px">
-      <div class="form-group"><label class="form-label">Tailgate Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_tailgate_type"><option value="">Select...</option><option>Barn Doors</option><option>Single Piece Drop Down</option><option>Single Piece Swing Up</option><option>Bi-Fold</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Tailgate Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_tailgate_type"><option value="">Select...</option><option>Barn Doors</option><option>Single Piece Drop Down</option><option>Single Piece Swing Up</option><option>N/A</option></select></div>
       <div class="form-group"><label class="form-label">Tailgate Lights</label><select class="form-select" id="f_tailgate_lights"><option value="">Select...</option><option>LED Recessed</option><option>LED Surface Mount</option><option>Incandescent</option><option>Customer Supplied</option><option>N/A</option></select></div>
     </div>
   </div>
@@ -262,13 +264,13 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
     <div class="card-title"><span class="num">7</span> Tarp</div>
     <div id="truckTarpLabel" class="mode-label truck-label hidden">TRUCK TARP</div>
     <div class="form-grid">
-      <div class="form-group"><label class="form-label">Tarp Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_tarp_type"><option value="">Select...</option><option>Razor PVC/MESH Electric</option><option>Manual Pull Over</option><option>EziTarp Electric</option><option>Pulltarp Electric</option><option>Aero Easy Cover</option><option>Rollover Mesh</option><option>Rollover PVC</option><option>Side Tipper Tarp</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Tarp Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_tarp_type"><option value="">Select...</option><option>Razor PVC Electric</option><option>Razor PVC Manual</option><option>Razor Mesh Electric</option><option>Razor Mesh Manual</option><option>EziTarp Electric</option><option>EziTarp Manual</option><option>Pulltarp Electric</option><option>Pulltarp Manual</option><option>Aero Easy Cover</option><option>Rollover Mesh</option><option>Rollover PVC</option><option>Side Tipper Tarp</option><option>N/A</option></select></div>
       <div class="form-group"><label class="form-label">Tarp Make/Model <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_tarp_make"></div>
     </div>
     <div id="trailerTarpSection" class="hidden">
       <div class="mode-label trailer-label" style="margin-top:20px">TRAILER TARP</div>
       <div class="form-grid">
-        <div class="form-group"><label class="form-label">Tarp Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_t_tarp_type"><option value="">Select...</option><option>Razor PVC/MESH Electric</option><option>Manual Pull Over</option><option>EziTarp Electric</option><option>Pulltarp Electric</option><option>Aero Easy Cover</option><option>Rollover Mesh</option><option>Rollover PVC</option><option>Side Tipper Tarp</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Tarp Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_t_tarp_type"><option value="">Select...</option><option>Razor PVC Electric</option><option>Razor PVC Manual</option><option>Razor Mesh Electric</option><option>Razor Mesh Manual</option><option>EziTarp Electric</option><option>EziTarp Manual</option><option>Pulltarp Electric</option><option>Pulltarp Manual</option><option>Aero Easy Cover</option><option>Rollover Mesh</option><option>Rollover PVC</option><option>Side Tipper Tarp</option><option>N/A</option></select></div>
         <div class="form-group"><label class="form-label">Tarp Make/Model <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_t_tarp_make"></div>
       </div>
     </div>
@@ -300,17 +302,22 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
     <div class="card-title"><span class="num">9</span> Chassis Accessories &amp; Couplings</div>
     <div class="section-header">Couplings</div>
     <div class="form-grid-4">
-      <div class="form-group"><label class="form-label">Coupling Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_coupling_type"><option value="">Select...</option><option>Ring Feeder</option><option>Auto</option><option>Jost Turntable</option><option>Holland Turntable</option><option>Ringfeder Turntable</option><option>N/A</option></select></div>
-      <div class="form-group"><label class="form-label">Coupling Height <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_coupling_height"></div>
+      <div class="form-group"><label class="form-label">Coupling Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_coupling_type" onchange="updateTowbarVertical()"><option value="">Select...</option><option>Pin Coupling</option><option>Hook Coupling</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Coupling Model</label><select class="form-select" id="f_coupling_model"><option value="">Select...</option><option>Ringfeder</option><option>V.Orlandi</option><option>Pintle Hook PH300</option><option>Other</option></select></div>
       <div class="form-group"><label class="form-label">Kingpin <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_kingpin"><option value="">Select...</option><option>2" Jost</option><option>2" Holland</option><option>3.5" Jost</option><option>3.5" Holland</option><option>N/A</option></select></div>
       <div class="form-group"><label class="form-label">Pintle Hook <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_pintle_hook"><option value="">Select...</option><option>Ringfeder</option><option>Holland</option><option>N/A</option></select></div>
+    </div>
+    <div id="pintleFields" style="display:none">
+      <div class="form-grid" style="margin-top:10px">
+        <div class="form-group"><label class="form-label">Coupling Height <span class="badge-eng">Eng</span></label><input class="form-input eng-input" id="f_coupling_height"></div>
+        <div class="form-group"><label class="form-label">Pintle Eye Height</label><input class="form-input" id="f_pintle_eye_height" placeholder="mm"></div>
+      </div>
     </div>
     <div class="section-header">D-Value / Towbar</div>
     <div class="form-grid-4">
       <div class="form-group"><label class="form-label">Towbar D Value (kN)</label><input class="form-input" id="f_d_value" placeholder="e.g. 113"></div>
-      <div class="form-group"><label class="form-label">Towbar Plate Vertical Load</label><select class="form-select" id="f_towbar_vertical"><option value="">Select...</option><option>Light Duty (up to 30kN)</option><option>Medium Duty (30-50kN)</option><option>Heavy Duty (50kN+)</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Towbar Plate Vertical Load</label><input class="form-input" id="f_towbar_vertical" readonly placeholder="Auto from coupling type"></div>
       <div class="form-group"><label class="form-label">Towbar Type</label><select class="form-select" id="f_towbar_type"><option value="">Select...</option><option>Bolted</option><option>Welded</option><option>Customer Supplied</option><option>N/A</option></select></div>
-      <div class="form-group"><label class="form-label">Pintle Eye Height</label><input class="form-input" id="f_pintle_eye_height" placeholder="mm"></div>
     </div>
     <div class="section-header">Chassis Accessories</div>
     <div class="check-grid">
@@ -341,10 +348,13 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
     </div>
     <div class="section-header">Lights</div>
     <div class="form-grid">
-      <div class="form-group"><label class="form-label">Rear Lights <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_rear_lights"><option value="">Select...</option><option>LED Combo Tail Lights</option><option>LED Separate Functions</option><option>Narva LED</option><option>Hella LED</option><option>Incandescent</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Rear Lights <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_rear_lights"><option value="">Select...</option><option>LED Combo Tail Lights</option><option>LED Separate Functions</option><option>Narva LED</option><option>Hella LED</option><option>OEM Lights</option><option>5-Hole Standard</option><option>Incandescent</option><option>N/A</option></select></div>
       <div class="form-group"><label class="form-label">Side Marker Lights <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_side_marker_lights"><option value="">Select...</option><option>LED Amber</option><option>LED Red/Amber</option><option>Incandescent</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Side Marker QTY</label><input class="form-input" id="f_side_marker_qty" type="number" min="0" placeholder="Qty"></div>
       <div class="form-group"><label class="form-label">Work Lights</label><select class="form-select" id="f_work_lights"><option value="">Select...</option><option>2x LED Rear</option><option>4x LED (2 Front + 2 Rear)</option><option>Customer Supplied</option><option>N/A</option></select></div>
       <div class="form-group"><label class="form-label">Beacon <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_beacon"><option value="">Select...</option><option>LED Amber Rotating</option><option>LED Amber Strobe</option><option>LED Mini Light Bar</option><option>Customer Supplied</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Reverse Buzzer</label><select class="form-select" id="f_reverse_buzzer"><option value="">Select...</option><option>Reverse Buzzer</option><option>Reverse Squawker</option><option>N/A</option></select></div>
+      <div class="form-group"><label class="form-label">Number Plate Lights</label><select class="form-select" id="f_number_plate_lights"><option value="">Select...</option><option>Yes - LED</option><option>Yes - Incandescent</option><option>No</option><option>N/A</option></select></div>
     </div>
     <div class="section-header">Mudflaps</div>
     <div class="form-grid">
@@ -385,25 +395,27 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs
 var currentJobType = "trailer";
 
 // Option lists for mode-dependent dropdowns
-var TRUCK_BODY_LENGTHS = ["3900mm","4000mm","4100mm","4200mm","4300mm","4400mm","4500mm","4600mm","4660mm","4700mm","4800mm","4900mm","5000mm","5100mm","5200mm","5300mm","5400mm","5500mm","5600mm","5700mm","5800mm","5900mm","6000mm"];
+var TRUCK_BODY_LENGTHS = ["3900mm","4000mm","4100mm","4200mm","4300mm","4400mm","4500mm","4600mm","4660mm","4700mm","4800mm","4900mm","5000mm","5100mm","5200mm","5300mm","5350mm","5400mm","5500mm","5600mm","5700mm","5800mm","5900mm","6000mm","Other"];
 var TRAILER_BODY_LENGTHS = ["6000mm","6050mm","6100mm","6400mm","7700mm","8300mm","9200mm","9400mm","9600mm","10400mm","N/A"];
-var TRUCK_HEIGHTS = ["1000mm","1100mm","1150mm","1200mm","1300mm","1410mm","1500mm"];
+var TRUCK_HEIGHTS = ["900mm","1000mm","1100mm","1150mm","1200mm","1300mm","1410mm","1500mm"];
 var TRAILER_HEIGHTS = ["1100mm","1410mm","1500mm","1000mm","1150mm","1520mm","N/A"];
 var TRUCK_MAINRUNNER = ["762mm","770mm","850mm","860mm","865mm"];
 var TRAILER_MAINRUNNER = ["965mm Inside","1000mm Inside","818mm Inside - Pig","N/A"];
 
 // Chassis length mapping from trailer body length
 var CHASSIS_LENGTH_MAP = {
-  "5400mm": "4930mm Dog", "6000mm": "5450mm Dog", "6050mm": "5450mm Dog", "6100mm": "5450mm Dog",
+  "5300mm": "4930mm Dog", "5350mm": "4930mm Dog", "5400mm": "4930mm Dog",
+  "6000mm": "5450mm Dog", "6050mm": "5450mm Dog", "6100mm": "5450mm Dog",
   "6400mm": "5450mm Dog", "7700mm": "7470mm Dog", "8300mm": "7870mm Dog",
-  "9200mm": "9100mm Semi", "9400mm": "9120mm Dog", "9600mm": "9405mm Dog", "10400mm": "10000mm Semi"
+  "9200mm": "8950mm", "9600mm": "8950mm",
+  "9400mm": "9120mm Dog", "10200mm": "9450mm", "10400mm": "10000mm Semi"
 };
 
 // Wheelbase mapping from chassis length
 var WHEELBASE_MAP = {
   "4930mm Dog": "3240mm", "5450mm Dog": "3760mm", "7470mm Dog": "5700mm",
-  "7870mm Dog": "6150mm", "9100mm Semi": "6610mm", "9120mm Dog": "6685/6235mm",
-  "9405mm Dog": "7615/7165mm", "10000mm Semi": "7615/7165mm"
+  "7870mm Dog": "6150mm", "8950mm": "6610mm", "9120mm Dog": "6685/6235mm",
+  "9405mm Dog": "7615/7165mm", "9450mm": "", "10000mm Semi": "7615/7165mm"
 };
 
 // Populate a select with options
@@ -425,17 +437,14 @@ function updateModeOptions(mode) {
   if (mode === "truck" || mode === "both") {
     populateSelect("f_body_length", TRUCK_BODY_LENGTHS);
     populateSelect("f_body_height", TRUCK_HEIGHTS);
-    populateSelect("f_mainrunner_width", TRUCK_MAINRUNNER);
   } else {
     populateSelect("f_body_length", TRAILER_BODY_LENGTHS);
     populateSelect("f_body_height", TRAILER_HEIGHTS);
-    populateSelect("f_mainrunner_width", TRAILER_MAINRUNNER);
   }
   // Trailer body dims in both mode use trailer options
   if (mode === "both") {
     populateSelect("f_t_body_length", TRAILER_BODY_LENGTHS);
     populateSelect("f_t_body_height", TRAILER_HEIGHTS);
-    populateSelect("f_t_mainrunner_width", TRAILER_MAINRUNNER);
   }
 }
 
@@ -478,6 +487,13 @@ document.addEventListener("DOMContentLoaded", function() {
     var el = document.getElementById(id);
     if (el) el.addEventListener("change", autoCascade);
   });
+  // Set default C/L Pivot value
+  var clPivot = document.getElementById("f_cl_pivot");
+  if (clPivot) clPivot.value = "235mm";
+  var tClPivot = document.getElementById("f_t_cl_pivot");
+  if (tClPivot) tClPivot.value = "235mm";
+  // Initialize "Other" options on all selects
+  initOtherOptions();
 });
 
 // =================== FILE HANDLING ===================
@@ -565,15 +581,14 @@ function parseQuoteText(fullText, firstPageItems) {
     // Try "Invoice to" first (this is the actual customer/company)
     var inv = t.match(/invoice\s*to\s*[:\s]+([A-Za-z][A-Za-z\s'.&\/-]{1,60}?)(?:\s{2,}|\d|ABN|TEL|FAX|Ph|$)/i);
     if (inv) d.customer = inv[1].trim();
-    // Company name after "QUOTE" is the customer in Xero quotes
+    // Company name after "QUOTE" is the dealer in Xero quotes
     var dm = t.match(/QUOTE\s+([A-Za-z][A-Za-z\s&'.]+?)(?:\s{2,}|Date|ABN|Invoice)/);
     if (dm) {
-      var quoteName = dm[1].trim();
-      if (!d.customer) d.customer = quoteName;
-      d.dealer = quoteName;
+      d.dealer = dm[1].trim();
     }
-    if (d.dealer && !d.customer) d.customer = d.dealer;
+    // Only propagate customer to dealer if dealer is missing
     if (d.customer && !d.dealer) d.dealer = d.customer;
+    // Do NOT set customer = dealer; leave customer empty if no Invoice To found
   }
   
   // Quote number
@@ -656,11 +671,14 @@ function parseTruckSection(text, d) {
   else if (/under\s*tray.*centre/i.test(t)) d.truck.oil_tank_location = "Under Tray Centre";
   
   // Tarp
-  if (/razor/i.test(t)) d.truck.tarp_type = "Razor PVC/MESH Electric";
-  else if (/ezitarp/i.test(t)) d.truck.tarp_type = "EziTarp Electric";
-  else if (/pulltarp/i.test(t)) d.truck.tarp_type = "Pulltarp Electric";
-  else if (/aero\s*easy/i.test(t)) d.truck.tarp_type = "Aero Easy Cover";
-  else if (/manual\s*pull/i.test(t)) d.truck.tarp_type = "Manual Pull Over";
+  if (/razor/i.test(t)) {
+    if (/manual/i.test(t)) d.truck.tarp_type = "Razor PVC Manual";
+    else d.truck.tarp_type = "Razor PVC Electric";
+  } else if (/ezitarp/i.test(t)) {
+    d.truck.tarp_type = /manual/i.test(t) ? "EziTarp Manual" : "EziTarp Electric";
+  } else if (/pulltarp/i.test(t)) {
+    d.truck.tarp_type = /manual/i.test(t) ? "Pulltarp Manual" : "Pulltarp Electric";
+  } else if (/aero\s*easy/i.test(t)) d.truck.tarp_type = "Aero Easy Cover";
   else if (/rollover.*mesh/i.test(t)) d.truck.tarp_type = "Rollover Mesh";
   else if (/rollover.*pvc/i.test(t)) d.truck.tarp_type = "Rollover PVC";
   
@@ -748,11 +766,14 @@ function parseTrailerSection(text, d) {
   else if (/2.*holland/i.test(t) || /holland.*2\"/i.test(t)) d.trailer.kingpin = "2\" Holland";
   
   // Tarp
-  if (/razor/i.test(t)) d.trailer.tarp_type = "Razor PVC/MESH Electric";
-  else if (/ezitarp/i.test(t)) d.trailer.tarp_type = "EziTarp Electric";
-  else if (/pulltarp/i.test(t)) d.trailer.tarp_type = "Pulltarp Electric";
-  else if (/aero\s*easy/i.test(t)) d.trailer.tarp_type = "Aero Easy Cover";
-  else if (/manual\s*pull/i.test(t)) d.trailer.tarp_type = "Manual Pull Over";
+  if (/razor/i.test(t)) {
+    if (/manual/i.test(t)) d.trailer.tarp_type = "Razor PVC Manual";
+    else d.trailer.tarp_type = "Razor PVC Electric";
+  } else if (/ezitarp/i.test(t)) {
+    d.trailer.tarp_type = /manual/i.test(t) ? "EziTarp Manual" : "EziTarp Electric";
+  } else if (/pulltarp/i.test(t)) {
+    d.trailer.tarp_type = /manual/i.test(t) ? "Pulltarp Manual" : "Pulltarp Electric";
+  } else if (/aero\s*easy/i.test(t)) d.trailer.tarp_type = "Aero Easy Cover";
   else if (/rollover.*mesh/i.test(t)) d.trailer.tarp_type = "Rollover Mesh";
   else if (/rollover.*pvc/i.test(t)) d.trailer.tarp_type = "Rollover PVC";
   
@@ -908,9 +929,10 @@ function extractCustomerDealer(items, fullText, d) {
     }
   }
   
-  // If only one found, use it for both
-  if (d.dealer && !d.customer) d.customer = d.dealer;
+  // Only copy if dealer found but no customer (don't assume they're the same)
   if (d.customer && !d.dealer) d.dealer = d.customer;
+  // If dealer found but customer not found via Invoice To or Attention, leave customer empty
+  // (don't set customer = dealer as they may be different entities)
 }
 
 // =================== FORM POPULATION ===================
@@ -1004,9 +1026,8 @@ function populateForm(d) {
     setSelectClosest("f_body_length", tr.body_length);
     setSelectClosest("f_body_width", tr.body_width);
     setSelectClosest("f_body_height", tr.body_height);
-    setSelectClosest("f_oil_tank_type", tr.oil_tank_type);
-    setSelectClosest("f_oil_tank_location", tr.oil_tank_location);
-    setSelectClosest("f_pto_type", tr.pto_type);
+    setVal("f_oil_tank_type", tr.oil_tank_type);
+    setVal("f_oil_tank_location", tr.oil_tank_location);
     setSelectClosest("f_tarp_type", tr.tarp_type);
     setSelectClosest("f_floor_sheets", tr.floor_sheets);
     setSelectClosest("f_side_sheets", tr.side_sheets);
@@ -1115,6 +1136,10 @@ function applyModeVisibility() {
   var trailerTarpSection = document.getElementById("trailerTarpSection");
   if (trailerTarpSection) trailerTarpSection.classList.toggle("hidden", !isBoth);
   
+  // Card 4: Hide trailer controls when truck-only
+  var trailerCtrlFields = document.getElementById("trailerControlFields");
+  if (trailerCtrlFields) trailerCtrlFields.classList.toggle("hidden", !isTrailer);
+
   // Card 8: Running Gear (trailer/both only)
   var card8 = document.getElementById("card8");
   if (card8) {
@@ -1125,6 +1150,62 @@ function applyModeVisibility() {
 function toggle(el) {
   var cb = el.querySelector("input[type=checkbox]");
   if (cb) { cb.checked = !cb.checked; el.classList.toggle("checked", cb.checked); }
+}
+
+function updateTowbarVertical() {
+  var ct = document.getElementById("f_coupling_type");
+  var tv = document.getElementById("f_towbar_vertical");
+  var pf = document.getElementById("pintleFields");
+  if (!ct || !tv) return;
+  var val = ct.value;
+  if (val === "Pin Coupling") {
+    tv.value = "2.5T Vertical Load";
+    if (pf) pf.style.display = "none";
+  } else if (val === "Hook Coupling") {
+    tv.value = "8.1T Vertical Load";
+    if (pf) pf.style.display = "";
+  } else {
+    tv.value = "";
+    if (pf) pf.style.display = "none";
+  }
+}
+
+function initOtherOptions() {
+  var skipIds = ["f_prepared_by", "f_sales_person", "f_coupling_type", "f_trailer_model", "f_trailer_type"];
+  var selects = document.querySelectorAll(".form-select");
+  for (var i = 0; i < selects.length; i++) {
+    var sel = selects[i];
+    if (!sel.id || skipIds.indexOf(sel.id) >= 0) continue;
+    // Check if "Other" already present
+    var hasOther = false;
+    for (var j = 0; j < sel.options.length; j++) {
+      if (sel.options[j].value === "Other" || sel.options[j].value === "Other / Specify...") { hasOther = true; break; }
+    }
+    if (!hasOther) {
+      var opt = document.createElement("option");
+      opt.value = "Other";
+      opt.textContent = "Other / Specify...";
+      sel.appendChild(opt);
+    }
+    // Create companion input if not already present
+    var othInputId = sel.id + "_other";
+    if (!document.getElementById(othInputId)) {
+      var inp = document.createElement("input");
+      inp.className = "form-input";
+      inp.style.display = "none";
+      inp.style.marginTop = "4px";
+      inp.placeholder = "Specify...";
+      inp.id = othInputId;
+      sel.parentNode.appendChild(inp);
+    }
+    // Add change listener
+    (function(s) {
+      s.addEventListener("change", function() {
+        var othInp = document.getElementById(s.id + "_other");
+        if (othInp) othInp.style.display = s.value === "Other" ? "" : "none";
+      });
+    })(sel);
+  }
 }
 
 function showStatus(id, msg, type) {
@@ -1172,7 +1253,15 @@ function resetForm() {
 }
 
 // =================== EXCEL GENERATION ===================
-function gv(id) { var el = document.getElementById(id); return el ? el.value || "" : ""; }
+function gv(id) {
+  var el = document.getElementById(id);
+  if (!el) return "";
+  if (el.value === "Other") {
+    var oth = document.getElementById(id + "_other");
+    return oth && oth.value ? oth.value : "Other";
+  }
+  return el.value || "";
+}
 function gc(id) { var el = document.getElementById(id); return el ? el.checked : false; }
 
 function collectFormData() {
@@ -1203,10 +1292,8 @@ function collectFormData() {
     ctrl_trailer_tailgate: gv("f_ctrl_trailer_tailgate"), ctrl_lockflap: gv("f_ctrl_lockflap"),
     ctrl_truck_tarp: gv("f_ctrl_truck_tarp"), ctrl_trailer_tarp: gv("f_ctrl_trailer_tarp"),
     // Subframe (truck)
-    subframe_length: gv("f_subframe_length"), subframe_width: gv("f_subframe_width"),
-    hoist_model: gv("f_hoist_model"), valve_bank: gv("f_valve_bank"),
+    hoist_model: gv("f_hoist_model"),
     oil_tank_type: gv("f_oil_tank_type"), oil_tank_location: gv("f_oil_tank_location"),
-    pto_type: gv("f_pto_type"), pump_type: gv("f_pump_type"),
     // Chassis (trailer)
     chassis_length: gv("f_chassis_length"), wheelbase: gv("f_wheelbase"),
     drawbar_length: gv("f_drawbar_length"), t_hoist_model: gv("f_t_hoist_model"),
@@ -1231,7 +1318,8 @@ function collectFormData() {
     wheels: gv("f_wheels"), brakes: gv("f_brakes"),
     spare_carrier: gv("f_spare_carrier"), landing_legs: gv("f_landing_legs"),
     // Couplings
-    coupling_type: gv("f_coupling_type"), coupling_height: gv("f_coupling_height"),
+    coupling_type: gv("f_coupling_type"), coupling_model: gv("f_coupling_model"),
+    coupling_height: gv("f_coupling_height"),
     kingpin: gv("f_kingpin"), pintle_hook: gv("f_pintle_hook"),
     d_value: gv("f_d_value"), towbar_vertical: gv("f_towbar_vertical"),
     towbar_type: gv("f_towbar_type"), pintle_eye_height: gv("f_pintle_eye_height"),
@@ -1246,7 +1334,9 @@ function collectFormData() {
     body_paint: gv("f_body_paint"), chassis_paint: gv("f_chassis_paint"),
     drawbar_paint: gv("f_drawbar_paint"), paint_code: gv("f_paint_code"),
     rear_lights: gv("f_rear_lights"), side_marker_lights: gv("f_side_marker_lights"),
+    side_marker_qty: gv("f_side_marker_qty"),
     work_lights: gv("f_work_lights"), beacon: gv("f_beacon"),
+    reverse_buzzer: gv("f_reverse_buzzer"), number_plate_lights: gv("f_number_plate_lights"),
     mudflap_type: gv("f_mudflap_type"), mudflap_brackets: gv("f_mudflap_brackets"),
     // Notes
     notes: gv("f_notes"), quote_lines: gv("f_quote_lines")
@@ -1418,12 +1508,14 @@ function createTrailerSelectionSheet(wb, d, prefix) {
   // Couplings
   sectionTitle(ws, r, 1, "COUPLINGS", 4); r++;
   lbl(ws, r, 1, "Coupling Type"); val(ws, r, 2, d.coupling_type);
-  lbl(ws, r, 3, "Coupling Height"); val(ws, r, 4, d.coupling_height); r++;
-  lbl(ws, r, 1, "Kingpin"); val(ws, r, 2, d.kingpin);
-  lbl(ws, r, 3, "Pintle Hook"); val(ws, r, 4, d.pintle_hook); r++;
+  lbl(ws, r, 3, "Coupling Model"); val(ws, r, 4, d.coupling_model); r++;
+  lbl(ws, r, 1, "Coupling Height"); val(ws, r, 2, d.coupling_height);
+  lbl(ws, r, 3, "Kingpin"); val(ws, r, 4, d.kingpin); r++;
+  lbl(ws, r, 1, "Pintle Hook"); val(ws, r, 2, d.pintle_hook);
+  lbl(ws, r, 3, "Pintle Eye Height"); val(ws, r, 4, d.pintle_eye_height); r++;
   lbl(ws, r, 1, "D Value (kN)"); val(ws, r, 2, d.d_value);
   lbl(ws, r, 3, "Towbar Vertical"); val(ws, r, 4, d.towbar_vertical); r++;
-  
+
   // Sheets
   sectionTitle(ws, r, 1, "SHEET SPECS", 4); r++;
   lbl(ws, r, 1, "Floor"); val(ws, r, 2, d.floor_sheets);
@@ -1519,13 +1611,14 @@ function createTrailerChassisSheet(wb, d) {
   
   sectionTitle(ws, r, 1, "COUPLINGS", 4); r++;
   lbl(ws, r, 1, "Coupling Type"); val(ws, r, 2, d.coupling_type);
-  lbl(ws, r, 3, "Coupling Height"); val(ws, r, 4, d.coupling_height); r++;
-  lbl(ws, r, 1, "Kingpin"); val(ws, r, 2, d.kingpin);
-  lbl(ws, r, 3, "Pintle Hook"); val(ws, r, 4, d.pintle_hook); r++;
+  lbl(ws, r, 3, "Coupling Model"); val(ws, r, 4, d.coupling_model); r++;
+  lbl(ws, r, 1, "Coupling Height"); val(ws, r, 2, d.coupling_height);
+  lbl(ws, r, 3, "Kingpin"); val(ws, r, 4, d.kingpin); r++;
+  lbl(ws, r, 1, "Pintle Hook"); val(ws, r, 2, d.pintle_hook);
+  lbl(ws, r, 3, "Pintle Eye Height"); val(ws, r, 4, d.pintle_eye_height); r++;
   lbl(ws, r, 1, "D Value (kN)"); val(ws, r, 2, d.d_value);
   lbl(ws, r, 3, "Towbar Vertical"); val(ws, r, 4, d.towbar_vertical); r++;
-  lbl(ws, r, 1, "Towbar Type"); val(ws, r, 2, d.towbar_type);
-  lbl(ws, r, 3, "Pintle Eye Height"); val(ws, r, 4, d.pintle_eye_height); r++;
+  lbl(ws, r, 1, "Towbar Type"); val(ws, r, 2, d.towbar_type); r++;
   
   sectionTitle(ws, r, 1, "CHASSIS ACCESSORIES", 4); r++;
   lbl(ws, r, 1, "Mudguards"); val(ws, r, 2, yn(d.mudguards));
@@ -1567,9 +1660,12 @@ function createTrailerFitoutSheet(wb, d, prefix) {
   sectionTitle(ws, r, 1, "ELECTRICAL", 4); r++;
   lbl(ws, r, 1, "Rear Lights"); val(ws, r, 2, d.rear_lights);
   lbl(ws, r, 3, "Side Markers"); val(ws, r, 4, d.side_marker_lights); r++;
-  lbl(ws, r, 1, "Work Lights"); val(ws, r, 2, d.work_lights);
-  lbl(ws, r, 3, "Beacon"); val(ws, r, 4, d.beacon); r++;
-  lbl(ws, r, 1, "Tailgate Lights"); val(ws, r, 2, d.tailgate_lights); r++;
+  lbl(ws, r, 1, "Side Marker QTY"); val(ws, r, 2, d.side_marker_qty);
+  lbl(ws, r, 3, "Work Lights"); val(ws, r, 4, d.work_lights); r++;
+  lbl(ws, r, 1, "Beacon"); val(ws, r, 2, d.beacon);
+  lbl(ws, r, 3, "Reverse Buzzer"); val(ws, r, 4, d.reverse_buzzer); r++;
+  lbl(ws, r, 1, "Number Plate Lights"); val(ws, r, 2, d.number_plate_lights);
+  lbl(ws, r, 3, "Tailgate Lights"); val(ws, r, 4, d.tailgate_lights); r++;
   
   sectionTitle(ws, r, 1, "NOTES", 4); r++;
   val(ws, r, 1, d.notes, 4); r++;
@@ -1627,15 +1723,13 @@ function createTruckSelectionSheet(wb, d, prefix) {
   lbl(ws, r, 3, "Tailgate"); val(ws, r, 4, d.tailgate_sheet); r++;
   
   sectionTitle(ws, r, 1, "SUBFRAME / HYDRAULICS", 4); r++;
-  lbl(ws, r, 1, "Subframe Length"); val(ws, r, 2, d.subframe_length);
-  lbl(ws, r, 3, "Subframe Width"); val(ws, r, 4, d.subframe_width); r++;
+  lbl(ws, r, 1, "Subframe Length"); val(ws, r, 2, "Refer to Drawing");
+  lbl(ws, r, 3, "Subframe Width"); val(ws, r, 4, "Refer to Drawing"); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
-  lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, d.valve_bank); r++;
+  lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, "Refer to Drawing"); r++;
   lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
   lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
-  lbl(ws, r, 1, "PTO Type"); val(ws, r, 2, d.pto_type);
-  lbl(ws, r, 3, "Pump Type"); val(ws, r, 4, d.pump_type); r++;
-  
+
   sectionTitle(ws, r, 1, "CONTROLS", 4); r++;
   lbl(ws, r, 1, "PTO"); val(ws, r, 2, d.pto);
   lbl(ws, r, 3, "Truck Hoist"); val(ws, r, 4, d.ctrl_truck_hoist); r++;
@@ -1719,16 +1813,14 @@ function createTruckSubframeSheet(wb, d) {
   lbl(ws, r, 1, "Truck VIN"); val(ws, r, 2, d.truck_vin); r++;
   
   sectionTitle(ws, r, 1, "SUBFRAME", 4); r++;
-  lbl(ws, r, 1, "Subframe Length"); val(ws, r, 2, d.subframe_length);
-  lbl(ws, r, 3, "Subframe Width"); val(ws, r, 4, d.subframe_width); r++;
-  
+  lbl(ws, r, 1, "Subframe Length"); val(ws, r, 2, "Refer to Drawing");
+  lbl(ws, r, 3, "Subframe Width"); val(ws, r, 4, "Refer to Drawing"); r++;
+
   sectionTitle(ws, r, 1, "HYDRAULICS", 4); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
-  lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, d.valve_bank); r++;
+  lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, "Refer to Drawing"); r++;
   lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
   lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
-  lbl(ws, r, 1, "PTO Type"); val(ws, r, 2, d.pto_type);
-  lbl(ws, r, 3, "Pump Type"); val(ws, r, 4, d.pump_type); r++;
   
   sectionTitle(ws, r, 1, "NOTES", 4); r++;
   val(ws, r, 1, d.notes, 4); r++;
@@ -1756,9 +1848,12 @@ function createTruckFitoutSheet(wb, d, prefix) {
   sectionTitle(ws, r, 1, "ELECTRICAL", 4); r++;
   lbl(ws, r, 1, "Rear Lights"); val(ws, r, 2, d.rear_lights);
   lbl(ws, r, 3, "Side Markers"); val(ws, r, 4, d.side_marker_lights); r++;
-  lbl(ws, r, 1, "Work Lights"); val(ws, r, 2, d.work_lights);
-  lbl(ws, r, 3, "Beacon"); val(ws, r, 4, d.beacon); r++;
-  lbl(ws, r, 1, "Tailgate Lights"); val(ws, r, 2, d.tailgate_lights); r++;
+  lbl(ws, r, 1, "Side Marker QTY"); val(ws, r, 2, d.side_marker_qty);
+  lbl(ws, r, 3, "Work Lights"); val(ws, r, 4, d.work_lights); r++;
+  lbl(ws, r, 1, "Beacon"); val(ws, r, 2, d.beacon);
+  lbl(ws, r, 3, "Reverse Buzzer"); val(ws, r, 4, d.reverse_buzzer); r++;
+  lbl(ws, r, 1, "Number Plate Lights"); val(ws, r, 2, d.number_plate_lights);
+  lbl(ws, r, 3, "Tailgate Lights"); val(ws, r, 4, d.tailgate_lights); r++;
   
   sectionTitle(ws, r, 1, "ACCESSORIES", 4); r++;
   lbl(ws, r, 1, "Tow Hitch"); val(ws, r, 2, yn(d.tow_hitch));
@@ -1809,8 +1904,7 @@ function createTruckOrderSheet(wb, d) {
   sectionTitle(ws, r, 1, "HYDRAULICS SUMMARY", 4); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
   lbl(ws, r, 3, "Oil Tank Type"); val(ws, r, 4, d.oil_tank_type); r++;
-  lbl(ws, r, 1, "Oil Tank Location"); val(ws, r, 2, d.oil_tank_location);
-  lbl(ws, r, 3, "PTO Type"); val(ws, r, 4, d.pto_type); r++;
+  lbl(ws, r, 1, "Oil Tank Location"); val(ws, r, 2, d.oil_tank_location); r++;
   
   sectionTitle(ws, r, 1, "TARP", 4); r++;
   lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);

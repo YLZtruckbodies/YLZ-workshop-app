@@ -64,6 +64,16 @@ A full-stack production management and quoting app built with:
 | Google Drive | Drawings, job sheets, documents |
 | Neon (PostgreSQL) + Vercel | This app |
 
+## Job Sheet Generator — Pending Changes
+All confirmed changes from Chris Toppi's feedback (Mar 2026) are documented in:
+**`JOB_SHEET_GENERATOR_CHANGE_PLAN.md`** (root of this repo)
+
+The file to edit is: `public/job-sheet-creator.html` (standalone HTML tool — no build step needed).
+
+Priority order is in the plan: bugs first (A1–A4), then chassis length cascade (I2), then "Other" on all dropdowns (I1), then the rest.
+
+---
+
 ## How Nathan Works
 - Hands-on, practical — no fluff
 - Australian English throughout
