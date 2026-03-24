@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface JobMasterRow {
   id: string
@@ -14,6 +15,22 @@ interface JobMasterRow {
 }
 
 const JOB_TYPES = ['TRUCK', 'TRAILER', 'SEMI TRAILER', 'PIG TRAILER', 'CRANE TRAY', 'CONVERTER DOLLY', 'WHEELBASE', 'SPARE', 'OTHER']
+const STAGES = ['Requires Engineering', 'Ready to Start', 'Fab', 'Paint', 'Fitout', 'QC', 'Dispatch']
+const PROD_GROUPS = [
+  { key: 'pending',  label: 'Pending' },
+  { key: 'issued',   label: 'Issued' },
+  { key: 'goahead',  label: 'Go Ahead' },
+  { key: 'stock',    label: 'Stock' },
+  { key: 'finished', label: 'Finished' },
+]
+
+function jobTypeToBtype(jobType: string): string {
+  const jt = (jobType || '').toUpperCase()
+  if (jt.includes('TRAILER')) return 'ally-trailer'
+  if (jt === 'WHEELBASE') return 'wheelbase'
+  if (jt === 'CONVERTER DOLLY') return 'dolly'
+  return 'truck'
+}
 
 const colStyle: React.CSSProperties = {
   padding: '8px 10px',
@@ -24,6 +41,7 @@ const colStyle: React.CSSProperties = {
 }
 
 export default function JobMasterPage() {
+  const router = useRouter()
   const [jobs, setJobs] = useState<JobMasterRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -33,6 +51,15 @@ export default function JobMasterPage() {
   const [adding, setAdding] = useState(false)
   const [newRow, setNewRow] = useState({ jobNumber: '', jobType: 'TRUCK', customer: '', completed: false, invoiced: '', dimensions: '', notes: '' })
 
+  // Job board state
+  const [boardJobNums, setBoardJobNums] = useState<Set<string>>(new Set())
+  const [addToBoard, setAddToBoard] = useState(true)
+  const [boardStage, setBoardStage] = useState('Requires Engineering')
+  const [boardGroup, setBoardGroup] = useState('pending')
+  const [boardType, setBoardType] = useState('')
+  const [addingToBoard, setAddingToBoard] = useState<string | null>(null)
+  const [boardSuccess, setBoardSuccess] = useState<string | null>(null)
+
   const load = useCallback(async () => {
     const res = await fetch('/api/job-master')
     const data = await res.json()
@@ -40,7 +67,15 @@ export default function JobMasterPage() {
     setLoading(false)
   }, [])
 
-  useEffect(() => { load() }, [load])
+  const loadBoardJobs = useCallback(async () => {
+    const res = await fetch('/api/jobs')
+    const data = await res.json()
+    if (Array.isArray(data)) {
+      setBoardJobNums(new Set(data.map((j: any) => j.num?.trim().toUpperCase())))
+    }
+  }, [])
+
+  useEffect(() => { load(); loadBoardJobs() }, [load, loadBoardJobs])
 
   async function patch(id: string, field: string, value: any) {
     setSaving(id)
@@ -62,6 +97,7 @@ export default function JobMasterPage() {
   async function handleAddNew() {
     if (!newRow.jobNumber.trim()) return
     setSaving('new')
+
     const res = await fetch('/api/job-master', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -69,9 +105,61 @@ export default function JobMasterPage() {
     })
     const created = await res.json()
     setJobs((prev) => [...prev, created])
+
+    if (addToBoard) {
+      await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          num: newRow.jobNumber.trim(),
+          type: boardType.trim() || newRow.jobType,
+          customer: newRow.customer,
+          stage: boardStage,
+          prodGroup: boardGroup,
+          btype: jobTypeToBtype(newRow.jobType),
+          notes: newRow.notes || '',
+          sortOrder: 0,
+        }),
+      })
+      setBoardJobNums((prev) => new Set([...prev, newRow.jobNumber.trim().toUpperCase()]))
+      setBoardSuccess(newRow.jobNumber.trim())
+    }
+
     setNewRow({ jobNumber: '', jobType: 'TRUCK', customer: '', completed: false, invoiced: '', dimensions: '', notes: '' })
+    setBoardType('')
+    setBoardStage('Requires Engineering')
+    setBoardGroup('pending')
+    setAddToBoard(true)
     setAdding(false)
     setSaving(null)
+
+    if (addToBoard) {
+      setTimeout(() => setBoardSuccess(null), 5000)
+    }
+  }
+
+  async function handleAddToBoard(job: JobMasterRow) {
+    setAddingToBoard(job.id)
+    try {
+      await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          num: job.jobNumber.trim(),
+          type: job.jobType,
+          customer: job.customer,
+          stage: 'Requires Engineering',
+          prodGroup: 'pending',
+          btype: jobTypeToBtype(job.jobType),
+          notes: job.notes || '',
+          sortOrder: 0,
+        }),
+      })
+      setBoardJobNums((prev) => new Set([...prev, job.jobNumber.trim().toUpperCase()]))
+      setBoardSuccess(job.jobNumber.trim())
+      setTimeout(() => setBoardSuccess(null), 4000)
+    } catch {}
+    setAddingToBoard(null)
   }
 
   async function handleNextNumber() {
@@ -117,6 +205,26 @@ export default function JobMasterPage() {
         </button>
       </div>
 
+      {/* Board success toast */}
+      {boardSuccess && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
+          borderRadius: 6, padding: '10px 16px', marginBottom: 16,
+        }}>
+          <span style={{ color: '#22c55e', fontSize: 13, fontWeight: 600 }}>
+            ✓ {boardSuccess} added to Job Board
+          </span>
+          <button
+            onClick={() => router.push('/jobboard')}
+            style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, padding: '4px 14px', borderRadius: 4, cursor: 'pointer', border: '1px solid rgba(34,197,94,0.4)', background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}
+          >
+            View on Job Board →
+          </button>
+          <button onClick={() => setBoardSuccess(null)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>×</button>
+        </div>
+      )}
+
       {/* Filters */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <input
@@ -153,10 +261,10 @@ export default function JobMasterPage() {
 
       {/* Table */}
       <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1000 }}>
           <thead>
             <tr style={{ background: 'var(--dark2)' }}>
-              {['Job Number', 'Type', 'Customer', 'Completed', 'Invoiced', 'Dimensions', 'Notes', ''].map((h) => (
+              {['Job Number', 'Type', 'Customer', 'Completed', 'Invoiced', 'Dimensions', 'Notes', 'Board', ''].map((h) => (
                 <th key={h} style={{ ...colStyle, fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text3)', borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
                   {h}
                 </th>
@@ -167,119 +275,198 @@ export default function JobMasterPage() {
 
             {/* New row */}
             {adding && (
-              <tr style={{ background: 'rgba(232,104,26,0.07)' }}>
-                <td style={colStyle}>
-                  <input
-                    value={newRow.jobNumber}
-                    onChange={(e) => setNewRow((p) => ({ ...p, jobNumber: e.target.value }))}
-                    placeholder="YLZ 1094"
-                    style={inputStyle}
-                    autoFocus
-                  />
-                </td>
-                <td style={colStyle}>
-                  <select value={newRow.jobType} onChange={(e) => setNewRow((p) => ({ ...p, jobType: e.target.value }))} style={inputStyle}>
-                    {JOB_TYPES.map((t) => <option key={t}>{t}</option>)}
-                  </select>
-                </td>
-                <td style={colStyle}>
-                  <input value={newRow.customer} onChange={(e) => setNewRow((p) => ({ ...p, customer: e.target.value }))} placeholder="Customer" style={inputStyle} />
-                </td>
-                <td style={{ ...colStyle, textAlign: 'center' }}>
-                  <input type="checkbox" checked={newRow.completed} onChange={(e) => setNewRow((p) => ({ ...p, completed: e.target.checked }))} style={{ width: 16, height: 16, cursor: 'pointer' }} />
-                </td>
-                <td style={colStyle}>
-                  <input value={newRow.invoiced} onChange={(e) => setNewRow((p) => ({ ...p, invoiced: e.target.value }))} placeholder="Invoice # or status" style={inputStyle} />
-                </td>
-                <td style={colStyle}>
-                  <input value={newRow.dimensions} onChange={(e) => setNewRow((p) => ({ ...p, dimensions: e.target.value }))} placeholder="e.g. 4660 x 1000" style={inputStyle} />
-                </td>
-                <td style={colStyle}>
-                  <input value={newRow.notes} onChange={(e) => setNewRow((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" style={inputStyle} />
-                </td>
-                <td style={colStyle}>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={handleAddNew} disabled={saving === 'new'} style={{ ...btnStyle, background: '#E8681A' }}>Save</button>
-                    <button onClick={() => setAdding(false)} style={{ ...btnStyle, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text3)' }}>Cancel</button>
-                  </div>
-                </td>
-              </tr>
+              <>
+                <tr style={{ background: 'rgba(232,104,26,0.07)' }}>
+                  <td style={colStyle}>
+                    <input
+                      value={newRow.jobNumber}
+                      onChange={(e) => setNewRow((p) => ({ ...p, jobNumber: e.target.value }))}
+                      placeholder="YLZ 1094"
+                      style={inputStyle}
+                      autoFocus
+                    />
+                  </td>
+                  <td style={colStyle}>
+                    <select value={newRow.jobType} onChange={(e) => setNewRow((p) => ({ ...p, jobType: e.target.value }))} style={inputStyle}>
+                      {JOB_TYPES.map((t) => <option key={t}>{t}</option>)}
+                    </select>
+                  </td>
+                  <td style={colStyle}>
+                    <input value={newRow.customer} onChange={(e) => setNewRow((p) => ({ ...p, customer: e.target.value }))} placeholder="Customer" style={inputStyle} />
+                  </td>
+                  <td style={{ ...colStyle, textAlign: 'center' }}>
+                    <input type="checkbox" checked={newRow.completed} onChange={(e) => setNewRow((p) => ({ ...p, completed: e.target.checked }))} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+                  </td>
+                  <td style={colStyle}>
+                    <input value={newRow.invoiced} onChange={(e) => setNewRow((p) => ({ ...p, invoiced: e.target.value }))} placeholder="Invoice # or status" style={inputStyle} />
+                  </td>
+                  <td style={colStyle}>
+                    <input value={newRow.dimensions} onChange={(e) => setNewRow((p) => ({ ...p, dimensions: e.target.value }))} placeholder="e.g. 4660 x 1000" style={inputStyle} />
+                  </td>
+                  <td style={colStyle}>
+                    <input value={newRow.notes} onChange={(e) => setNewRow((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" style={inputStyle} />
+                  </td>
+                  <td style={colStyle} colSpan={2}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={handleAddNew} disabled={saving === 'new'} style={{ ...btnStyle, background: '#E8681A' }}>{saving === 'new' ? 'Saving...' : 'Save'}</button>
+                      <button onClick={() => setAdding(false)} style={{ ...btnStyle, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text3)' }}>Cancel</button>
+                    </div>
+                  </td>
+                </tr>
+
+                {/* Add to board options row */}
+                <tr style={{ background: 'rgba(232,104,26,0.04)', borderBottom: '2px solid rgba(232,104,26,0.2)' }}>
+                  <td colSpan={9} style={{ padding: '10px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                      {/* Toggle */}
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }} onClick={() => setAddToBoard((v) => !v)}>
+                        <div style={{
+                          width: 36, height: 20, borderRadius: 10,
+                          background: addToBoard ? '#E8681A' : 'var(--dark3)',
+                          border: `1px solid ${addToBoard ? '#E8681A' : 'var(--border2)'}`,
+                          position: 'relative', transition: 'all 0.2s', flexShrink: 0,
+                        }}>
+                          <div style={{
+                            position: 'absolute', top: 2, left: addToBoard ? 17 : 2,
+                            width: 14, height: 14, borderRadius: '50%', background: '#fff',
+                            transition: 'left 0.2s',
+                          }} />
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: addToBoard ? '#fff' : 'var(--text3)' }}>
+                          Add to Job Board
+                        </span>
+                      </label>
+
+                      {addToBoard && (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}>Type</span>
+                            <input
+                              value={boardType}
+                              onChange={(e) => setBoardType(e.target.value)}
+                              placeholder={`e.g. Alloy Tipper Body`}
+                              style={{ ...inputStyle, width: 200 }}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}>Stage</span>
+                            <select value={boardStage} onChange={(e) => setBoardStage(e.target.value)} style={{ ...inputStyle, width: 'auto' }}>
+                              {STAGES.map((s) => <option key={s}>{s}</option>)}
+                            </select>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}>Group</span>
+                            <select value={boardGroup} onChange={(e) => setBoardGroup(e.target.value)} style={{ ...inputStyle, width: 'auto' }}>
+                              {PROD_GROUPS.map((g) => <option key={g.key} value={g.key}>{g.label}</option>)}
+                            </select>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              </>
             )}
 
             {loading ? (
-              <tr><td colSpan={8} style={{ ...colStyle, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>Loading...</td></tr>
+              <tr><td colSpan={9} style={{ ...colStyle, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={8} style={{ ...colStyle, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>No jobs found</td></tr>
-            ) : filtered.map((job) => (
-              <tr
-                key={job.id}
-                style={{
-                  background: job.completed && job.invoiced
-                    ? 'rgba(34,197,94,0.04)'
-                    : job.completed
-                      ? 'rgba(255,255,255,0.02)'
-                      : 'transparent',
-                  opacity: saving === job.id ? 0.6 : 1,
-                  transition: 'opacity 0.15s',
-                }}
-              >
-                {/* Job Number */}
-                <td style={{ ...colStyle, fontWeight: 700, fontFamily: "'League Spartan', sans-serif", letterSpacing: 0.5, whiteSpace: 'nowrap' }}>
-                  <EditableCell value={job.jobNumber} onSave={(v) => patch(job.id, 'jobNumber', v)} />
-                </td>
+              <tr><td colSpan={9} style={{ ...colStyle, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>No jobs found</td></tr>
+            ) : filtered.map((job) => {
+              const onBoard = boardJobNums.has(job.jobNumber.trim().toUpperCase())
+              return (
+                <tr
+                  key={job.id}
+                  style={{
+                    background: job.completed && job.invoiced
+                      ? 'rgba(34,197,94,0.04)'
+                      : job.completed
+                        ? 'rgba(255,255,255,0.02)'
+                        : 'transparent',
+                    opacity: saving === job.id ? 0.6 : 1,
+                    transition: 'opacity 0.15s',
+                  }}
+                >
+                  {/* Job Number */}
+                  <td style={{ ...colStyle, fontWeight: 700, fontFamily: "'League Spartan', sans-serif", letterSpacing: 0.5, whiteSpace: 'nowrap' }}>
+                    <EditableCell value={job.jobNumber} onSave={(v) => patch(job.id, 'jobNumber', v)} />
+                  </td>
 
-                {/* Type */}
-                <td style={colStyle}>
-                  <select
-                    value={job.jobType}
-                    onChange={(e) => patch(job.id, 'jobType', e.target.value)}
-                    style={{ ...inputStyle, fontSize: 12 }}
-                  >
-                    {JOB_TYPES.map((t) => <option key={t}>{t}</option>)}
-                  </select>
-                </td>
+                  {/* Type */}
+                  <td style={colStyle}>
+                    <select
+                      value={job.jobType}
+                      onChange={(e) => patch(job.id, 'jobType', e.target.value)}
+                      style={{ ...inputStyle, fontSize: 12 }}
+                    >
+                      {JOB_TYPES.map((t) => <option key={t}>{t}</option>)}
+                    </select>
+                  </td>
 
-                {/* Customer */}
-                <td style={{ ...colStyle, minWidth: 220 }}>
-                  <EditableCell value={job.customer} onSave={(v) => patch(job.id, 'customer', v)} />
-                </td>
+                  {/* Customer */}
+                  <td style={{ ...colStyle, minWidth: 220 }}>
+                    <EditableCell value={job.customer} onSave={(v) => patch(job.id, 'customer', v)} />
+                  </td>
 
-                {/* Completed */}
-                <td style={{ ...colStyle, textAlign: 'center' }}>
-                  <input
-                    type="checkbox"
-                    checked={job.completed}
-                    onChange={(e) => patch(job.id, 'completed', e.target.checked)}
-                    style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#22c55e' }}
-                  />
-                </td>
+                  {/* Completed */}
+                  <td style={{ ...colStyle, textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={job.completed}
+                      onChange={(e) => patch(job.id, 'completed', e.target.checked)}
+                      style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#22c55e' }}
+                    />
+                  </td>
 
-                {/* Invoiced */}
-                <td style={{ ...colStyle, minWidth: 160 }}>
-                  <EditableCell value={job.invoiced} placeholder="Invoice # or status" onSave={(v) => patch(job.id, 'invoiced', v)} />
-                </td>
+                  {/* Invoiced */}
+                  <td style={{ ...colStyle, minWidth: 160 }}>
+                    <EditableCell value={job.invoiced} placeholder="Invoice # or status" onSave={(v) => patch(job.id, 'invoiced', v)} />
+                  </td>
 
-                {/* Dimensions */}
-                <td style={colStyle}>
-                  <EditableCell value={job.dimensions} placeholder="e.g. 4660 x 1000" onSave={(v) => patch(job.id, 'dimensions', v)} />
-                </td>
+                  {/* Dimensions */}
+                  <td style={colStyle}>
+                    <EditableCell value={job.dimensions} placeholder="e.g. 4660 x 1000" onSave={(v) => patch(job.id, 'dimensions', v)} />
+                  </td>
 
-                {/* Notes */}
-                <td style={{ ...colStyle, minWidth: 160 }}>
-                  <EditableCell value={job.notes} placeholder="Notes" onSave={(v) => patch(job.id, 'notes', v)} />
-                </td>
+                  {/* Notes */}
+                  <td style={{ ...colStyle, minWidth: 160 }}>
+                    <EditableCell value={job.notes} placeholder="Notes" onSave={(v) => patch(job.id, 'notes', v)} />
+                  </td>
 
-                {/* Delete */}
-                <td style={{ ...colStyle, textAlign: 'center' }}>
-                  <button onClick={() => handleDelete(job.id)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', fontSize: 16, padding: '2px 6px', borderRadius: 4 }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
-                  >
-                    ×
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  {/* Board status */}
+                  <td style={{ ...colStyle, whiteSpace: 'nowrap' }}>
+                    {onBoard ? (
+                      <button
+                        onClick={() => router.push('/jobboard')}
+                        style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '3px 8px', borderRadius: 3, cursor: 'pointer', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.1)', color: '#22c55e' }}
+                      >
+                        On Board ↗
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleAddToBoard(job)}
+                        disabled={addingToBoard === job.id}
+                        style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', padding: '3px 8px', borderRadius: 3, cursor: 'pointer', border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text3)', transition: '0.15s' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#E8681A'; e.currentTarget.style.color = '#E8681A' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.color = 'var(--text3)' }}
+                      >
+                        {addingToBoard === job.id ? '...' : '+ Add to Board'}
+                      </button>
+                    )}
+                  </td>
+
+                  {/* Delete */}
+                  <td style={{ ...colStyle, textAlign: 'center' }}>
+                    <button onClick={() => handleDelete(job.id)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', fontSize: 16, padding: '2px 6px', borderRadius: 4 }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
