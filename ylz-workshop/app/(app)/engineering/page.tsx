@@ -26,7 +26,7 @@ export default function EngineeringPage() {
           { label: 'Job Sheet Generator', icon: '📋', desc: 'Generate job sheets from accepted quotes', href: '/engineering/job-sheets' },
           { label: 'Manual Job Sheet Generator', icon: '🛠️', desc: 'Drag & drop builder — fill in fields manually and export', href: '/job-sheet-creator.html', external: true },
           { label: 'VIN Plate / EBS File / Axle Suspension Ordering', icon: '🏷️', desc: 'VIN plates, EBS files & suspension orders', href: '/engineering/vin-plates' },
-          { label: 'MRP Ordering', icon: '📦', desc: 'Material requirements planning', href: '' },
+          { label: 'MRP Ordering', icon: '📦', desc: 'Auto BOM resolver — select a job, get the full MRPeasy BOM list', href: '/engineering/mrp-ordering' },
           { label: 'Drawings', icon: '📐', desc: 'Engineering drawings & revisions', href: '' },
         ].map((tool) => (
           <button
