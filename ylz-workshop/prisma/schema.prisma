@@ -546,3 +546,68 @@ model OutboundMessage {
 
   @@index([jobId])
 }
+
+// ─── WHS / Safety Forms ───────────────────────────────────────────────────────
+
+model WhsInjury {
+  id                String   @id @default(cuid())
+  date              String
+  workerName        String
+  description       String
+  bodyPart          String   @default("")
+  treatmentRequired Boolean  @default(false)
+  medicalAttention  Boolean  @default(false)
+  lostTime          Boolean  @default(false)
+  actionTaken       String   @default("")
+  reportedBy        String   @default("")
+  status            String   @default("open")
+  createdAt         DateTime @default(now())
+
+  @@index([date])
+  @@index([status])
+}
+
+model WhsAudit {
+  id              String   @id @default(cuid())
+  date            String
+  conductedBy     String
+  area            String
+  findings        String   @default("")
+  actionsRequired String   @default("")
+  score           Int      @default(0)
+  status          String   @default("open")
+  createdAt       DateTime @default(now())
+
+  @@index([date])
+  @@index([status])
+}
+
+model WhsNearMiss {
+  id              String   @id @default(cuid())
+  date            String
+  reportedBy      String
+  location        String
+  description     String
+  potentialInjury String   @default("")
+  actionTaken     String   @default("")
+  status          String   @default("open")
+  createdAt       DateTime @default(now())
+
+  @@index([date])
+  @@index([status])
+}
+
+model WhsTimeOff {
+  id         String   @id @default(cuid())
+  workerName String
+  startDate  String
+  endDate    String   @default("")
+  reason     String
+  approvedBy String   @default("")
+  notes      String   @default("")
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+
+  @@index([workerName])
+  @@index([status])
+}

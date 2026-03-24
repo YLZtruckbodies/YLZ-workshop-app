@@ -359,22 +359,32 @@ export default function TimesheetPage() {
     setTimeout(() => setMessage(''), 3000)
   }
 
+  async function handleDeleteEntry(id: string) {
+    try {
+      await fetch(`/api/timesheets/${id}`, { method: 'DELETE' })
+      mutate()
+    } catch {
+      // silent
+    }
+  }
+
   const grouped = useMemo(() => {
     if (!timesheets || !workers) return {}
-    const groups: Record<string, { workerName: string; color: string; periods: Record<string, { job: string; hours: number }>; status?: string }[]> = {}
+    const groups: Record<string, { workerName: string; color: string; periods: Record<string, { job: string; hours: number; id: string }>; status?: string; statusId?: string }[]> = {}
     const workerMap: Record<string, { section: string; color: string }> = {}
     for (const w of workers) {
       workerMap[w.name] = { section: w.section || 'other', color: w.color || '#787878' }
     }
-    const workerData: Record<string, { periods: Record<string, { job: string; hours: number }>; status?: string }> = {}
+    const workerData: Record<string, { periods: Record<string, { job: string; hours: number; id: string }>; status?: string; statusId?: string }> = {}
     for (const t of timesheets as any[]) {
       if (!workerData[t.workerName]) workerData[t.workerName] = { periods: {} }
       if (t.startTime === 'LEAVE' || t.startTime === 'SICK') {
         workerData[t.workerName].status = t.startTime
+        workerData[t.workerName].statusId = t.id
       } else {
         const blockKey = t.section
         if (DEFAULT_BLOCKS.find((b) => b.key === blockKey)) {
-          workerData[t.workerName].periods[blockKey] = { job: t.jobNum, hours: t.hours || 0 }
+          workerData[t.workerName].periods[blockKey] = { job: t.jobNum, hours: t.hours || 0, id: t.id }
         }
       }
     }
@@ -942,33 +952,51 @@ export default function TimesheetPage() {
                             </td>
                             {w.status ? (
                               <td colSpan={5} style={{ padding: '10px 16px', textAlign: 'center' }}>
-                                <span
-                                  style={{
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    letterSpacing: 1,
-                                    textTransform: 'uppercase',
-                                    padding: '3px 10px',
-                                    borderRadius: 3,
-                                    color: w.status === 'LEAVE' ? 'var(--blue)' : 'var(--red)',
-                                    background: w.status === 'LEAVE' ? 'rgba(59,157,232,0.1)' : 'rgba(232,69,96,0.1)',
-                                  }}
-                                >
-                                  {w.status}
-                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                                  <span
+                                    style={{
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      letterSpacing: 1,
+                                      textTransform: 'uppercase',
+                                      padding: '3px 10px',
+                                      borderRadius: 3,
+                                      color: w.status === 'LEAVE' ? 'var(--blue)' : 'var(--red)',
+                                      background: w.status === 'LEAVE' ? 'rgba(59,157,232,0.1)' : 'rgba(232,69,96,0.1)',
+                                    }}
+                                  >
+                                    {w.status}
+                                  </span>
+                                  {w.statusId && (
+                                    <button
+                                      onClick={() => handleDeleteEntry(w.statusId!)}
+                                      title="Delete entry"
+                                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.25)', fontSize: 14, padding: '0 4px', lineHeight: 1 }}
+                                      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--red)' }}
+                                      onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.25)' }}
+                                    >×</button>
+                                  )}
+                                </div>
                               </td>
                             ) : (
                               <>
                                 {/* Early OT */}
                                 <td style={{ padding: '10px 16px', borderLeft: '1px solid rgba(245,166,35,0.15)' }}>
                                   {w.periods.early_ot ? (
-                                    <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                       <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#f5a623' }}>
                                         {w.periods.early_ot.job}
                                       </span>
-                                      <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 6 }}>
+                                      <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}>
                                         {w.periods.early_ot.hours}h
                                       </span>
+                                      <button
+                                        onClick={() => handleDeleteEntry(w.periods.early_ot!.id)}
+                                        title="Delete entry"
+                                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.2)', fontSize: 14, padding: '0 2px', lineHeight: 1, marginLeft: 2 }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--red)' }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.2)' }}
+                                      >×</button>
                                     </div>
                                   ) : (
                                     <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>—</span>
@@ -978,13 +1006,20 @@ export default function TimesheetPage() {
                                 {['morning', 'midday', 'afternoon'].map((pk) => (
                                   <td key={pk} style={{ padding: '10px 16px' }}>
                                     {w.periods[pk] ? (
-                                      <div>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                         <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#fff' }}>
                                           {w.periods[pk].job}
                                         </span>
-                                        <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 6 }}>
+                                        <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}>
                                           {w.periods[pk].hours}h
                                         </span>
+                                        <button
+                                          onClick={() => handleDeleteEntry(w.periods[pk]!.id)}
+                                          title="Delete entry"
+                                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.2)', fontSize: 14, padding: '0 2px', lineHeight: 1, marginLeft: 2 }}
+                                          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--red)' }}
+                                          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.2)' }}
+                                        >×</button>
                                       </div>
                                     ) : (
                                       <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>—</span>
@@ -994,13 +1029,20 @@ export default function TimesheetPage() {
                                 {/* Late OT */}
                                 <td style={{ padding: '10px 16px', borderLeft: '1px solid rgba(245,166,35,0.15)' }}>
                                   {w.periods.overtime ? (
-                                    <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                       <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#f5a623' }}>
                                         {w.periods.overtime.job}
                                       </span>
-                                      <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 6 }}>
+                                      <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}>
                                         {w.periods.overtime.hours}h
                                       </span>
+                                      <button
+                                        onClick={() => handleDeleteEntry(w.periods.overtime!.id)}
+                                        title="Delete entry"
+                                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.2)', fontSize: 14, padding: '0 2px', lineHeight: 1, marginLeft: 2 }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--red)' }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.2)' }}
+                                      >×</button>
                                     </div>
                                   ) : (
                                     <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>—</span>

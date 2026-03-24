@@ -41,6 +41,8 @@ const NAV_ITEMS = [
   { key: 'engineering', label: 'Engineering', icon: '📐', section: 'TOOLS' },
   { key: 'repairs', label: 'Repairs / Warranty', icon: '🛠', section: 'TOOLS' },
   { key: 'jobmaster', label: 'Job Sheet Master', icon: '📒', section: 'TOOLS' },
+  { key: 'whs', label: 'WHS Forms', icon: '🦺', section: 'TOOLS' },
+  { key: 'completed', label: 'Completed Jobs', icon: '✅', section: 'TOOLS' },
 ]
 
 function SortableSidebarItem({
