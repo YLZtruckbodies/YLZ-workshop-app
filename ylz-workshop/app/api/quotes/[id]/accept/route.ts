@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { deriveBtype } from '@/lib/jobTypes'
+import { resolveBoms } from '@/lib/bom-resolver'
 
 // ─── Job number generator — pulls next available from Job Sheet Master ────────
 async function nextJobNumber(): Promise<string> {
@@ -189,6 +190,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         sortOrder: 0,
       },
     })
+
+    // ── Resolve BOMs from quote configuration ──
+    try {
+      const quoteConfig = (quote.configuration && typeof quote.configuration === 'object')
+        ? quote.configuration as Record<string, unknown>
+        : {}
+      const bomList = resolveBoms(quote.buildType, quoteConfig)
+      if (bomList.length > 0) {
+        await prisma.job.update({
+          where: { id: job.id },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          data: { bomList: bomList as any },
+        })
+      }
+    } catch (bomErr) {
+      console.error('[BOM Resolver] Failed to resolve BOMs:', bomErr)
+      // Non-fatal — job still created, BOMs just won't be auto-populated
+    }
 
     await prisma.jobMaster.upsert({
       where: { jobNumber: job.num },

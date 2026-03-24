@@ -2,6 +2,14 @@
 
 import { useEffect, useState } from 'react'
 
+interface BomEntry {
+  code: string
+  name: string
+  category: string
+  section: string
+  auto: boolean
+}
+
 interface Job {
   id: string
   num: string
@@ -15,6 +23,7 @@ interface Job {
   make: string
   po: string
   vin: string
+  bomList?: BomEntry[]
   createdAt: string
 }
 
@@ -516,6 +525,90 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         </div>
       </div>
+
+      {/* ═══ MRPeasy BOM List ═══ */}
+      {Array.isArray(job.bomList) && (job.bomList as BomEntry[]).length > 0 && (
+        <div className="sheet">
+          <div className="hdr">
+            <div>
+              <div className="hdr-title">MRPeasy BOM List</div>
+              <div className="hdr-sub">Auto-generated from quote configuration — enter these into MRPeasy</div>
+            </div>
+            <div>
+              <div className="hdr-ylz">YLZ</div>
+              <div className="hdr-ylzsub">YLZ Truck Bodies &amp; Trailers</div>
+            </div>
+          </div>
+          <div className="divider" />
+
+          <div className="info-row info-row-4" style={{ marginBottom: 14 }}>
+            <div className="cell">
+              <div className="cell-lbl">Job Number</div>
+              <div className="cell-val-num">{job.num}</div>
+            </div>
+            <div className="cell">
+              <div className="cell-lbl">Customer</div>
+              <div className="cell-val-sm">{job.customer || '—'}</div>
+            </div>
+            <div className="cell">
+              <div className="cell-lbl">Build Type</div>
+              <div className="cell-val-sm">{job.type || '—'}</div>
+            </div>
+            <div className="cell">
+              <div className="cell-lbl">Date</div>
+              <div className="cell-val-sm">{today()}</div>
+            </div>
+          </div>
+
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5pt', marginBottom: 16 }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #333', textAlign: 'left' }}>
+                <th style={{ padding: '7px 10px', width: 35, color: '#999' }}>#</th>
+                <th style={{ padding: '7px 10px', width: 90 }}>BOM / Part</th>
+                <th style={{ padding: '7px 10px' }}>Description</th>
+                <th style={{ padding: '7px 10px', width: 110 }}>Section</th>
+                <th style={{ padding: '7px 10px', width: 70, textAlign: 'center' }}>Entered ✓</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(job.bomList as BomEntry[]).map((bom, i) => (
+                <tr key={`${bom.code}-${i}`} style={{ borderBottom: '1px solid #ddd' }}>
+                  <td style={{ padding: '6px 10px', color: '#999', fontSize: '8.5pt' }}>{i + 1}</td>
+                  <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontWeight: 700, color: bom.code === 'TBD' ? '#c0392b' : '#E8681A', fontSize: '10pt' }}>{bom.code}</td>
+                  <td style={{ padding: '6px 10px' }}>{bom.name}</td>
+                  <td style={{ padding: '6px 10px', color: '#666', fontSize: '8.5pt' }}>{bom.section}</td>
+                  <td style={{ padding: '6px 10px', textAlign: 'center', fontSize: '12pt' }}>☐</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Manual entry rows */}
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: '8.5pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: '#999', marginBottom: 6 }}>
+              Additional BOMs / Parts (manual)
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5pt' }}>
+              <tbody>
+                {[1,2,3,4,5].map(i => (
+                  <tr key={i} style={{ borderBottom: '1px solid #ddd' }}>
+                    <td style={{ padding: '7px 10px', width: 35, color: '#999' }}>{(job.bomList as BomEntry[]).length + i}</td>
+                    <td style={{ padding: '7px 10px', width: 90, borderBottom: '1px dotted #ccc' }} />
+                    <td style={{ padding: '7px 10px', borderBottom: '1px dotted #ccc' }} />
+                    <td style={{ padding: '7px 10px', width: 110, borderBottom: '1px dotted #ccc' }} />
+                    <td style={{ padding: '7px 10px', width: 70, textAlign: 'center', fontSize: '12pt' }}>☐</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ marginTop: 20, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 4, fontSize: '8.5pt', color: '#666' }}>
+            <strong>Note:</strong> This BOM list was auto-generated from the quote configuration. TBD items (shown in red) need manual lookup.
+            Tick each item as it&apos;s entered into MRPeasy. Add any extras not captured by the resolver in the blank rows above.
+          </div>
+        </div>
+      )}
     </>
   )
 }
