@@ -77,6 +77,11 @@ function fmt(n: number) {
   return n.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+// GST-free line items — government fees are not subject to GST
+function isGstFree(description: string): boolean {
+  return /registration/i.test(description)
+}
+
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
 }
@@ -171,10 +176,13 @@ export default function QuotePrintPage({ params }: { params: { id: string } }) {
     </div>
   )
 
-  const effectiveTotal = quote.overridePrice ?? quote.total
-  const gst            = effectiveTotal * 0.1
-  const totalAud       = effectiveTotal + gst
-  const groups         = groupBySection(quote.lineItems)
+  const effectiveTotal    = quote.overridePrice ?? quote.total
+  // Registration is a GST-free government fee — exclude from GST calculation
+  const gstFreeTotal      = quote.lineItems.filter((i) => isGstFree(i.description)).reduce((s, i) => s + i.totalPrice, 0)
+  const gstableTotal      = Math.max(0, effectiveTotal - gstFreeTotal)
+  const gst               = gstableTotal * 0.1
+  const totalAud          = effectiveTotal + gst
+  const groups            = groupBySection(quote.lineItems)
   const termsParas     = parseTerms(quote.terms)
 
   // Customer block: show dealer name if set, otherwise customer name
@@ -412,7 +420,7 @@ export default function QuotePrintPage({ params }: { params: { id: string } }) {
                       <td className="desc-td">{item.description}</td>
                       <td className="num-td">{item.quantity.toFixed(2)}</td>
                       <td className="num-td">{fmt(item.unitPrice)}</td>
-                      <td className="num-td">10%</td>
+                      <td className="num-td">{isGstFree(item.description) ? '0%' : '10%'}</td>
                       <td className="num-td">{fmt(item.totalPrice)}</td>
                     </tr>
                   ))}
@@ -431,7 +439,7 @@ export default function QuotePrintPage({ params }: { params: { id: string } }) {
 
             {/* TOTAL GST 10% */}
             <tr className="tot-row">
-              <td colSpan={4} style={{ paddingRight: 20 }}>TOTAL&nbsp;&nbsp;GST&nbsp;&nbsp;10%</td>
+              <td colSpan={4} style={{ paddingRight: 20 }}>GST&nbsp;&nbsp;10%</td>
               <td>{fmt(gst)}</td>
             </tr>
 

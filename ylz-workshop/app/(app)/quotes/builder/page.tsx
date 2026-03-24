@@ -852,6 +852,10 @@ function QuoteBuilderInner() {
   const marginAmt = subtotal * (form.margin / 100)
   const calculatedTotal = subtotal + marginAmt + form.overhead - form.discount
   const effectiveTotal = form.useOverride && form.overridePrice ? parseFloat(form.overridePrice) || 0 : calculatedTotal
+  // Registration is GST-free — exclude from GST displayed in builder
+  const gstFreeItems = form.lineItems.filter((i) => /registration/i.test(i.description))
+  const gstFreeAmt = gstFreeItems.reduce((s, i) => s + i.totalPrice, 0)
+  const inclGst = effectiveTotal + Math.max(0, effectiveTotal - gstFreeAmt) * 0.1
 
   // ── Save ─────────────────────────────────────────────────────────────────
 
@@ -1821,7 +1825,7 @@ function QuoteBuilderInner() {
                 ${fmt(effectiveTotal)}
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>
-                incl. GST: ${fmt(effectiveTotal * 1.1)}
+                incl. GST: ${fmt(inclGst)}
               </div>
             </div>
           </div>
