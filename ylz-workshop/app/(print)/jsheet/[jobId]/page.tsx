@@ -10,6 +10,46 @@ interface BomEntry {
   auto: boolean
 }
 
+interface QuoteConfig {
+  material?: string
+  chassisMake?: string
+  chassisModel?: string
+  bodyLength?: string
+  bodyHeight?: string
+  bodyWidth?: string
+  bodyCapacity?: string
+  hoist?: string
+  coupling?: string
+  pto?: string
+  controls?: string
+  hydraulics?: string
+  tarpSystem?: string
+  floorSheet?: string
+  sideSheet?: string
+  serial?: string
+  vin?: string
+  paintColour?: string
+  axleCount?: number
+  axleMake?: string
+  axleType?: string
+  suspension?: string
+  trailerModel?: string
+  trailerType?: string
+  pbsRating?: string
+  chassisLength?: string
+  drawbarLength?: string
+  wheelbase?: string
+  mainRunnerWidth?: string
+  tailgateLights?: string
+  lockFlap?: string
+  specialRequirements?: string
+  hydTankType?: string
+  hydTankLocation?: string
+  tailgateType?: string
+  brakeCoupling?: string
+  [key: string]: unknown
+}
+
 interface Job {
   id: string
   num: string
@@ -25,6 +65,9 @@ interface Job {
   vin: string
   bomList?: BomEntry[]
   createdAt: string
+  // Quote config — populated from linked quote
+  cfg?: QuoteConfig
+  quoteNumber?: string
 }
 
 function today() {
@@ -121,7 +164,30 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
   useEffect(() => {
     fetch(`/api/jobs/${params.jobId}`)
       .then(r => r.json())
-      .then(d => { setJob(d); setLoading(false) })
+      .then(async (jobData) => {
+        // Try to fetch linked quote for configuration data
+        try {
+          const qRes = await fetch(`/api/quotes?jobId=${jobData.id}`)
+          const quotes = await qRes.json()
+          const quote = Array.isArray(quotes) ? quotes.find((q: any) => q.jobId === jobData.id) : null
+          if (quote) {
+            // Fetch full quote with configuration
+            const fullRes = await fetch(`/api/quotes/${quote.id}`)
+            const fullQuote = await fullRes.json()
+            if (fullQuote.configuration) {
+              jobData.cfg = fullQuote.configuration as QuoteConfig
+              jobData.quoteNumber = fullQuote.quoteNumber
+              // Backfill job fields from config if missing
+              if (!jobData.vin && jobData.cfg?.vin) jobData.vin = jobData.cfg.vin
+              if (!jobData.make && jobData.cfg?.chassisMake) {
+                jobData.make = `${jobData.cfg.chassisMake} ${jobData.cfg.chassisModel || ''}`.trim()
+              }
+            }
+          }
+        } catch { /* quote fetch failed — continue with job data only */ }
+        setJob(jobData)
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [params.jobId])
 
@@ -129,7 +195,15 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
   if (!job) return <div style={{ fontFamily: 'sans-serif', padding: 40, color: '#c00' }}>Job not found</div>
 
   const isTrailer = job.btype === 'ally-trailer' || job.btype === 'hardox-trailer'
+    || job.type?.toLowerCase().includes('trailer') || job.type?.toLowerCase().includes('dog')
+    || job.type?.toLowerCase().includes('semi')
   const bodyLabel = isTrailer ? 'Trailer Body' : 'Truck Body'
+
+  // Helper to get a value from quote config, with fallback
+  const c = (key: string) => {
+    const val = job.cfg?.[key]
+    return val != null && val !== '' ? String(val) : ''
+  }
 
   return (
     <>
@@ -184,7 +258,8 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
           <div className="cell">
             <div className="cell-lbl">Chassis / Make</div>
-            <div className="cell-blank" />
+            <div className="cell-val-sm">{job.make || `${c('chassisMake')} ${c('chassisModel')}`.trim() || ''}</div>
+            {!job.make && !c('chassisMake') && <div className="cell-blank" />}
           </div>
           <div className="cell">
             <div className="cell-lbl">Due Date</div>
@@ -202,9 +277,9 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-hdr">Identity &amp; VIN</div>
           <div className="section-body">
             <div className="field-row field-row-3">
-              <div className="field"><div className="field-lbl">Serial No.</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Truck VIN</div><div className="field-val">{job.vin || ''}</div>{!job.vin && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Sales Drawing No.</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Serial No.</div><div className="field-val">{c('serial') || ''}</div>{!c('serial') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">VIN</div><div className="field-val">{job.vin || c('vin') || ''}</div>{!job.vin && !c('vin') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Quote Ref</div><div className="field-val">{job.quoteNumber || ''}</div>{!job.quoteNumber && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -214,23 +289,23 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-hdr">Body Dimensions</div>
           <div className="section-body">
             <div className="field-row field-row-4">
-              <div className="field"><div className="field-lbl">Body Length (mm)</div><div className="field-val">{job.dims?.split('x')[0]?.trim() || ''}</div>{!job.dims && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Body Width (mm)</div><div className="field-val">{job.dims?.split('x')[1]?.trim() || ''}</div>{!job.dims?.split('x')[1] && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Body Height (mm)</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Capacity (m³)</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Body Length (mm)</div><div className="field-val">{c('bodyLength') || job.dims?.split('x')[0]?.trim() || ''}</div>{!c('bodyLength') && !job.dims && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Body Width (mm)</div><div className="field-val">{c('bodyWidth') || job.dims?.split('x')[1]?.trim() || ''}</div>{!c('bodyWidth') && !job.dims?.split('x')[1] && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Body Height (mm)</div><div className="field-val">{c('bodyHeight') || ''}</div>{!c('bodyHeight') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Capacity (m³)</div><div className="field-val">{c('bodyCapacity') || ''}</div>{!c('bodyCapacity') && <div className="field-blank" />}</div>
             </div>
             <div className="field-row field-row-4">
-              <div className="field"><div className="field-lbl">Main Runner Width</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Hoist Box Height</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Floor Sheet</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Side Sheet</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Main Runner Width</div><div className="field-val">{c('mainRunnerWidth') || ''}</div>{!c('mainRunnerWidth') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Hoist</div><div className="field-val">{c('hoist') || ''}</div>{!c('hoist') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Floor Sheet</div><div className="field-val">{c('floorSheet') || ''}</div>{!c('floorSheet') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Side Sheet</div><div className="field-val">{c('sideSheet') || ''}</div>{!c('sideSheet') && <div className="field-blank" />}</div>
             </div>
             {isTrailer && (
               <div className="field-row field-row-4">
-                <div className="field"><div className="field-lbl">Chassis Length (mm)</div><div className="field-blank" /></div>
-                <div className="field"><div className="field-lbl">Chassis Width (mm)</div><div className="field-blank" /></div>
-                <div className="field"><div className="field-lbl">Wheelbase (mm)</div><div className="field-blank" /></div>
-                <div className="field"><div className="field-lbl">Drawbar Length (mm)</div><div className="field-blank" /></div>
+                <div className="field"><div className="field-lbl">Chassis Length (mm)</div><div className="field-val">{c('chassisLength') || ''}</div>{!c('chassisLength') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Axle Make / Type</div><div className="field-val">{`${c('axleMake')} ${c('axleType')}`.trim() || ''}</div>{!c('axleMake') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Wheelbase (mm)</div><div className="field-val">{c('wheelbase') || ''}</div>{!c('wheelbase') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Drawbar Length (mm)</div><div className="field-val">{c('drawbarLength') || ''}</div>{!c('drawbarLength') && <div className="field-blank" />}</div>
               </div>
             )}
           </div>
@@ -241,16 +316,16 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-hdr">Hoist &amp; Controls</div>
           <div className="section-body">
             <div className="field-row field-row-4">
-              <div className="field"><div className="field-lbl">Hoist Model</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">PTO</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Hoist Controls</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Hoist Model</div><div className="field-val">{c('hoist') || ''}</div>{!c('hoist') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">PTO</div><div className="field-val">{c('pto') || ''}</div>{!c('pto') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Hoist Controls</div><div className="field-val">{c('controls') || ''}</div>{!c('controls') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Valve Bank</div><div className="field-blank" /></div>
             </div>
             <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">Pump Type</div><div className="field-blank" /></div>
               <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Tailgate Type</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Tailgate Lights</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Tailgate Type</div><div className="field-val">{c('tailgateType') || ''}</div>{!c('tailgateType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Tailgate Lights</div><div className="field-val">{c('tailgateLights') || ''}</div>{!c('tailgateLights') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -260,9 +335,9 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-hdr">Hydraulics</div>
           <div className="section-body">
             <div className="field-row field-row-3">
-              <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Tank Type</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Tank Location</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('hydraulics') || ''}</div>{!c('hydraulics') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Tank Type</div><div className="field-val">{c('hydTankType') || ''}</div>{!c('hydTankType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Tank Location</div><div className="field-val">{c('hydTankLocation') || ''}</div>{!c('hydTankLocation') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -272,9 +347,9 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-hdr">Tarp System</div>
           <div className="section-body">
             <div className="field-row field-row-3">
-              <div className="field"><div className="field-lbl">Tarp Make / Model</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Operation</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Colour</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Tarp Make / Model</div><div className="field-val">{c('tarpSystem') || ''}</div>{!c('tarpSystem') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Paint Colour</div><div className="field-val">{c('paintColour') || ''}</div>{!c('paintColour') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Material</div><div className="field-val">{c('material') || ''}</div>{!c('material') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -284,10 +359,10 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-hdr">Coupling</div>
           <div className="section-body">
             <div className="field-row field-row-4">
-              <div className="field"><div className="field-lbl">Coupling Type</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Coupling Height (mm)</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">D-Value (kN)</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">Pintle Eye Height</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Coupling Type</div><div className="field-val">{c('coupling') || ''}</div>{!c('coupling') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Brake Coupling</div><div className="field-val">{c('brakeCoupling') || ''}</div>{!c('brakeCoupling') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Suspension</div><div className="field-val">{c('suspension') || ''}</div>{!c('suspension') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">PBS Rating</div><div className="field-val">{c('pbsRating') || ''}</div>{!c('pbsRating') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -295,8 +370,8 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         {/* Notes */}
         <div className="notes-box">
           <div className="notes-lbl">Special Instructions / Notes</div>
-          {job.notes ? (
-            <div className="notes-text">{job.notes}</div>
+          {(job.notes || c('specialRequirements')) ? (
+            <div className="notes-text">{c('specialRequirements')}{c('specialRequirements') && job.notes ? '\n\n' : ''}{job.notes}</div>
           ) : (
             <div className="notes-lines">
               <div className="notes-line" />
