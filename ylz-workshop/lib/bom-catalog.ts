@@ -24,6 +24,10 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
   'BOM159': { code: 'BOM159', name: '4/A Aluminium Trailer Body 7.7M', category: 'Body' },
   'BOM160': { code: 'BOM160', name: '5/A Aluminium Trailer Body 9.2M', category: 'Body' },
 
+  // ── Bodies — 8.3M (4-axle extended) ─────────────────────
+  'BOM145': { code: 'BOM145', name: '4/A Aluminium Trailer Body 8.3M', category: 'Body' },
+  'BOM147': { code: 'BOM147', name: '4/A Hardox Trailer Body 8.3M', category: 'Body' },
+
   // ── Subframes ──────────────────────────────────────────
   'BOM107': { code: 'BOM107', name: 'Hardox Truck Subframe', category: 'Subframe' },
   'BOM108': { code: 'BOM108', name: 'Aluminium Truck Subframe', category: 'Subframe' },

@@ -230,28 +230,39 @@ export function resolveBoms(
 
     if (!isDolly) {
       // ── Trailer Body ──
+      // 4-axle trailers come in two sizes: 7.7M (≤7700) and 8.3M (>7700)
+      // BOMs with size suffix (7.7M) are for standard size
+      // BOMs without suffix (BOM145/147) are for 8.3M bodies
+      const is4a83 = axles === 4 && tBodyLen > 7700  // 8300mm body
+
       if (tIsHardox && axles === 3) add('BOM155', 'Trailer Body')
-      if (tIsHardox && axles === 4) add('BOM156', 'Trailer Body')
+      if (tIsHardox && axles === 4 && !is4a83) add('BOM156', 'Trailer Body')
+      if (tIsHardox && axles === 4 && is4a83)  add('BOM147', 'Trailer Body')  // 8.3M hardox
       if (tIsHardox && axles === 5) add('BOM157', 'Trailer Body')
       if (tIsAlly && axles === 3) add('BOM158', 'Trailer Body')
-      if (tIsAlly && axles === 4) add('BOM159', 'Trailer Body')
+      if (tIsAlly && axles === 4 && !is4a83) add('BOM159', 'Trailer Body')
+      if (tIsAlly && axles === 4 && is4a83)  add('BOM145', 'Trailer Body')  // 8.3M aluminium
       if (tIsAlly && axles === 5) add('BOM160', 'Trailer Body')
 
       // ── Running Gear ──
+      // Same size logic: size-specific BOMs (7.7M/5.4M/9.2M) vs generic BOMs for 8.3M
       const isDrum = axleType.includes('drum')
       const isDisc = axleType.includes('disc')
 
       if (axleMake === 'SAF' && isDrum) {
         if (axles === 3) add('BOM161', 'Running Gear')
-        if (axles === 4) add('BOM162', 'Running Gear')
+        if (axles === 4 && !is4a83) add('BOM162', 'Running Gear')  // SAF Drum 7.7M
+        if (axles === 4 && is4a83)  add('BOM105', 'Running Gear')  // SAF Drum 8.3M
         if (axles === 5) add('BOM163', 'Running Gear')
       } else if (axleMake === 'SAF' && isDisc) {
         if (axles === 3) add('BOM164', 'Running Gear')
-        if (axles === 4) add('BOM165', 'Running Gear')
+        if (axles === 4 && !is4a83) add('BOM165', 'Running Gear')  // SAF Disc 7.7M
+        if (axles === 4 && is4a83)  add('BOM150', 'Running Gear')  // Disc 8.3M
         if (axles === 5) add('BOM166', 'Running Gear')
       } else if (axleMake === 'TMC' && isDisc) {
         if (axles === 3) add('BOM167', 'Running Gear')
-        if (axles === 4) add('BOM168', 'Running Gear')
+        if (axles === 4 && !is4a83) add('BOM168', 'Running Gear')  // TMC Disc 7.7M
+        if (axles === 4 && is4a83)  add('BOM153', 'Running Gear')  // TMC Disc 8.3M
         if (axles === 5) add('BOM169', 'Running Gear')
       } else if (isDrum) {
         if (axles === 3) add('BOM104', 'Running Gear')
