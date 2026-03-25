@@ -673,7 +673,12 @@ function QuoteBuilderInner() {
           f.useOverride = !!quote.overridePrice
           f.overridePrice = quote.overridePrice ? String(quote.overridePrice) : ''
           f.overrideNote = quote.overrideNote || ''
-          f.lineItems = quote.lineItems || []
+          f.lineItems = (quote.lineItems || []).map((li: any) => ({
+            ...li,
+            quantity:   Number.isFinite(Number(li.quantity))   ? Number(li.quantity)   : 1,
+            unitPrice:  Number.isFinite(Number(li.unitPrice))  ? Number(li.unitPrice)  : 0,
+            totalPrice: Number.isFinite(Number(li.totalPrice)) ? Number(li.totalPrice) : 0,
+          }))
           const cfg = quote.configuration as Record<string, any>
           applyTemplateConfig(f, cfg)
           setIsQuickQuote(cfg.templateType === 'quick-quote')
