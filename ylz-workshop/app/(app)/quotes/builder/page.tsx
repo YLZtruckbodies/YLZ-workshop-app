@@ -1826,16 +1826,20 @@ function QuoteBuilderInner() {
                   style={{ ...inputStyle, fontSize: 12 }}
                   min={0}
                 />
-                <input
-                  type="number"
-                  value={item.unitPrice}
-                  onChange={(e) => updateLineItem(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
-                  style={{ ...inputStyle, fontSize: 12 }}
-                  min={0}
-                  step="any"
-                />
-                <div style={{ ...inputStyle, fontSize: 13, fontWeight: 600, color: '#E8681A', cursor: 'default' }}>
-                  ${fmt(item.totalPrice)}
+                {item.section === 'Body Extras' ? (
+                  <div style={{ ...inputStyle, fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.45)', cursor: 'default', letterSpacing: 1 }}>INC</div>
+                ) : (
+                  <input
+                    type="number"
+                    value={item.unitPrice}
+                    onChange={(e) => updateLineItem(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
+                    style={{ ...inputStyle, fontSize: 12 }}
+                    min={0}
+                    step="any"
+                  />
+                )}
+                <div style={{ ...inputStyle, fontSize: 13, fontWeight: 600, color: item.section === 'Body Extras' ? 'rgba(255,255,255,0.4)' : '#E8681A', cursor: 'default' }}>
+                  {item.section === 'Body Extras' ? 'INC' : `$${fmt(item.totalPrice)}`}
                 </div>
                 <button
                   onClick={() => removeLineItem(idx)}
