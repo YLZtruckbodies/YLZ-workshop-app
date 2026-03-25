@@ -74,6 +74,7 @@ interface QuoteForm {
   truckMainRunnerWidth: string
   truckTailgateType: string
   truckTailgateLights: string
+  truckTailLights: string
   truckPto: string
   truckHydTankType: string
   truckHydTankLocation: string
@@ -90,6 +91,7 @@ interface QuoteForm {
   trailerChassisLength: string
   trailerWheelbase: string
   trailerTailgateLights: string
+  trailerTailLights: string
   trailerLockFlap: string
   // truck body extras
   truckBrakeCoupling: string
@@ -137,6 +139,16 @@ const HYDRAULICS = ['Use Existing', 'Split Factory Tank', 'Behind Cab', 'Chassis
 const PTO_OPTIONS = ['None', 'Gearbox PTO', 'Engine PTO', 'Customer Supplied']
 const TAILGATE_TYPES = ['Fixed', '2 Way', 'Single Drop', 'Bi-fold', 'No Tailgate']
 const TAILGATE_LIGHTS = ['None', '4 Per Side Round LED', 'LED Strip', 'LED Cluster', 'Reverse Light Only', 'Other']
+const TAIL_LIGHTS = [
+  'Use existing OEM tail lights',
+  '5 hole round LEDs c/w chrome surround',
+  '7 hole round LEDs c/w chrome surround',
+  'LED cluster combination lights',
+  'Narva LED combination lights',
+  'Hella LED combination lights',
+  'Customer supplied',
+  'None',
+]
 const HYD_TANK_TYPES = ['Split & Supply Tank', 'Separate Tank', 'Customer Supplied', 'None']
 const HYD_TANK_LOCATIONS = ['Behind Cab', 'Under Body', 'Sub-frame Mounted', 'Other']
 const BRAKE_COUPLINGS = ['Duomatic', 'Triomatic', 'Duomatic & Triomatic', 'None']
@@ -377,7 +389,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerTare: '', trailerPaintColour: '',
     specialRequirements: '',
     truckSerial: '', truckVin: '', truckMainRunnerWidth: '',
-    truckTailgateType: 'Single Drop', truckTailgateLights: 'None',
+    truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
     truckPto: 'None', truckHydTankType: 'Split & Supply Tank',
     truckHydTankLocation: 'Behind Cab', truckDValue: '', truckCouplingLoad: '',
     truckBrakeCoupling: 'Duomatic',
@@ -397,7 +409,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerSerial: '', trailerVin: '', trailerFloorSheet: '', trailerSideSheet: '',
     trailerHoist: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
     trailerChassisLength: '', trailerWheelbase: '',
-    trailerTailgateLights: 'None', trailerLockFlap: 'No',
+    trailerTailgateLights: 'None', trailerTailLights: 'Use existing OEM tail lights', trailerLockFlap: 'No',
     lineItems: [],
     margin: 0, overhead: 0, discount: 0,
     useOverride: false, overridePrice: '', overrideNote: '',
@@ -447,6 +459,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckMainRunnerWidth = tc.mainRunnerWidth || ''
     form.truckTailgateType = tc.tailgateType || 'Single Drop'
     form.truckTailgateLights = tc.tailgateLights || 'None'
+    form.truckTailLights = tc.tailLights || 'Use existing OEM tail lights'
     form.truckPto = tc.pto || 'None'
     form.truckHydTankType = tc.hydTankType || 'Split & Supply Tank'
     form.truckHydTankLocation = tc.hydTankLocation || 'Behind Cab'
@@ -471,6 +484,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerChassisLength = trc.chassisLength || getChassisLength(trc.bodyLength || '')
     form.trailerWheelbase = trc.wheelbase || ''
     form.trailerTailgateLights = trc.tailgateLights || 'None'
+    form.trailerTailLights = trc.tailLights || 'Use existing OEM tail lights'
     form.trailerLockFlap = trc.lockFlap || 'No'
     form.specialRequirements = cfg.specialRequirements || ''
     // Line items from quick-quote
@@ -509,6 +523,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckMainRunnerWidth = cfg.mainRunnerWidth || ''
     form.truckTailgateType = cfg.tailgateType || 'Single Drop'
     form.truckTailgateLights = cfg.tailgateLights || 'None'
+    form.truckTailLights = cfg.tailLights || 'Use existing OEM tail lights'
     form.truckPto = cfg.pto || 'None'
     form.truckHydTankType = cfg.hydTankType || 'Split & Supply Tank'
     form.truckHydTankLocation = cfg.hydTankLocation || 'Behind Cab'
@@ -546,6 +561,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerChassisLength = cfg.chassisLength || getChassisLength(cfg.bodyLength || '')
     form.trailerWheelbase = cfg.wheelbase || ''
     form.trailerTailgateLights = cfg.tailgateLights || 'None'
+    form.trailerTailLights = cfg.tailLights || 'Use existing OEM tail lights'
     form.trailerLockFlap = cfg.lockFlap || 'No'
     form.specialRequirements = cfg.specialRequirements || ''
 
@@ -569,7 +585,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     gvm: form.truckGvm, tare: form.truckTare, paintColour: form.truckPaintColour,
     serial: form.truckSerial, vin: form.truckVin,
     mainRunnerWidth: form.truckMainRunnerWidth,
-    tailgateType: form.truckTailgateType, tailgateLights: form.truckTailgateLights,
+    tailgateType: form.truckTailgateType, tailgateLights: form.truckTailgateLights, tailLights: form.truckTailLights,
     pto: form.truckPto, hydTankType: form.truckHydTankType,
     hydTankLocation: form.truckHydTankLocation,
     dValue: form.truckDValue, couplingLoad: form.truckCouplingLoad,
@@ -589,7 +605,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     serial: form.trailerSerial, vin: form.trailerVin,
     mainRunnerWidth: form.trailerMainRunnerWidth,
     chassisLength: form.trailerChassisLength, wheelbase: form.trailerWheelbase,
-    tailgateLights: form.trailerTailgateLights, lockFlap: form.trailerLockFlap,
+    tailgateLights: form.trailerTailgateLights, tailLights: form.trailerTailLights, lockFlap: form.trailerLockFlap,
   }
   if (form.buildType === 'truck-and-trailer') {
     cfg.truckConfig = truckData
@@ -1500,6 +1516,14 @@ function QuoteBuilderInner() {
                   </select>
                 </Field>
               </div>
+              {/* Row 4b: tail lights */}
+              <div style={{ ...grid(2), marginTop: 16 }}>
+                <Field label="Tail Lights">
+                  <select value={form.truckTailLights} onChange={(e) => set('truckTailLights', e.target.value)} style={selectStyle}>
+                    {TAIL_LIGHTS.map((o) => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+              </div>
               {/* Row 5: hydraulic tank */}
               <div style={{ ...grid(2), marginTop: 16 }}>
                 <Field label="Hydraulic Tank Type">
@@ -1588,7 +1612,12 @@ function QuoteBuilderInner() {
                 </Field>
               </div>
               {/* Row 5: lighting + lock flap */}
-              <div style={{ ...grid(2), marginTop: 16 }}>
+              <div style={{ ...grid(3), marginTop: 16 }}>
+                <Field label="Tail Lights">
+                  <select value={form.trailerTailLights} onChange={(e) => set('trailerTailLights', e.target.value)} style={selectStyle}>
+                    {TAIL_LIGHTS.map((o) => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
                 <Field label="Tailgate Lights">
                   <select value={form.trailerTailgateLights} onChange={(e) => set('trailerTailgateLights', e.target.value)} style={selectStyle}>
                     {TAILGATE_LIGHTS.map((o) => <option key={o}>{o}</option>)}
