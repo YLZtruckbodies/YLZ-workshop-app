@@ -43,8 +43,36 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       }
     }
 
+    // Sanitise top-level numeric fields so NaN / undefined don't crash Prisma
+    const safeFloat = (v: any, fallback = 0): number => {
+      const n = Number(v)
+      return Number.isFinite(n) ? n : fallback
+    }
+    if ('subtotal' in quoteData) quoteData.subtotal = safeFloat(quoteData.subtotal)
+    if ('margin' in quoteData)   quoteData.margin   = safeFloat(quoteData.margin, 25)
+    if ('overhead' in quoteData) quoteData.overhead  = safeFloat(quoteData.overhead)
+    if ('discount' in quoteData) quoteData.discount  = safeFloat(quoteData.discount)
+    if ('total' in quoteData)    quoteData.total     = safeFloat(quoteData.total)
+    if ('validDays' in quoteData) quoteData.validDays = Math.round(safeFloat(quoteData.validDays, 30))
+    // overridePrice is nullable Float — keep null if falsy
+    if ('overridePrice' in quoteData) {
+      quoteData.overridePrice = quoteData.overridePrice != null ? safeFloat(quoteData.overridePrice) || null : null
+    }
+
+    // Sanitise line items — convert non-numeric unitPrice / totalPrice (e.g. "INC") to 0
+    const cleanItems = Array.isArray(lineItems)
+      ? lineItems.map((item: any) => ({
+          section:     String(item.section     || 'Build'),
+          description: String(item.description || ''),
+          quantity:    Math.max(0, Math.round(safeFloat(item.quantity, 1))),
+          unitPrice:   safeFloat(item.unitPrice),
+          totalPrice:  safeFloat(item.totalPrice),
+          sortOrder:   safeFloat(item.sortOrder),
+        }))
+      : null
+
     // If lineItems provided, delete old and recreate
-    if (lineItems) {
+    if (cleanItems) {
       await prisma.quoteLineItem.deleteMany({ where: { quoteId: params.id } })
     }
 
@@ -53,8 +81,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       data: {
         ...quoteData,
         ...acceptedAtPatch,
-        lineItems: lineItems?.length
-          ? { create: lineItems }
+        lineItems: cleanItems?.length
+          ? { create: cleanItems }
           : undefined,
       },
       include: { lineItems: true },
