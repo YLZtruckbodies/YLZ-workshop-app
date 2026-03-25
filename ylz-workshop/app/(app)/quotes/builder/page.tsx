@@ -75,6 +75,11 @@ interface QuoteForm {
   truckTailgateType: string
   truckTailgateLights: string
   truckTailLights: string
+  // body extras
+  truckSideLights: string
+  truckAntiSpray: string
+  truckShovelHolder: string
+  truckMudflaps: string
   truckPto: string
   truckHydTankType: string
   truckHydTankLocation: string
@@ -148,6 +153,19 @@ const TAIL_LIGHTS = [
   'Hella LED combination lights',
   'Customer supplied',
   'None',
+]
+const SIDE_LIGHTS = [
+  'None',
+  '3 side lights c/w polished backing strip',
+  '5 side lights c/w polished backing strip',
+  '7 side lights c/w polished backing strip',
+  'Customer supplied',
+]
+const MUDFLAPS_OPTIONS = [
+  'None',
+  'Full set - 4 mudflaps across rear',
+  '2 mudflaps - rear driverside & nearside',
+  'Customer supplied',
 ]
 const HYD_TANK_TYPES = ['Split & Supply Tank', 'Separate Tank', 'Customer Supplied', 'None']
 const HYD_TANK_LOCATIONS = ['Behind Cab', 'Under Body', 'Sub-frame Mounted', 'Other']
@@ -390,6 +408,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     specialRequirements: '',
     truckSerial: '', truckVin: '', truckMainRunnerWidth: '',
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
+    truckSideLights: 'None', truckAntiSpray: 'No', truckShovelHolder: 'No', truckMudflaps: 'None',
     truckPto: 'None', truckHydTankType: 'Split & Supply Tank',
     truckHydTankLocation: 'Behind Cab', truckDValue: '', truckCouplingLoad: '',
     truckBrakeCoupling: 'Duomatic',
@@ -460,6 +479,10 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckTailgateType = tc.tailgateType || 'Single Drop'
     form.truckTailgateLights = tc.tailgateLights || 'None'
     form.truckTailLights = tc.tailLights || 'Use existing OEM tail lights'
+    form.truckSideLights = tc.sideLights || 'None'
+    form.truckAntiSpray = tc.antiSpray || 'No'
+    form.truckShovelHolder = tc.shovelHolder || 'No'
+    form.truckMudflaps = tc.mudflaps || 'None'
     form.truckPto = tc.pto || 'None'
     form.truckHydTankType = tc.hydTankType || 'Split & Supply Tank'
     form.truckHydTankLocation = tc.hydTankLocation || 'Behind Cab'
@@ -524,6 +547,10 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckTailgateType = cfg.tailgateType || 'Single Drop'
     form.truckTailgateLights = cfg.tailgateLights || 'None'
     form.truckTailLights = cfg.tailLights || 'Use existing OEM tail lights'
+    form.truckSideLights = cfg.sideLights || 'None'
+    form.truckAntiSpray = cfg.antiSpray || 'No'
+    form.truckShovelHolder = cfg.shovelHolder || 'No'
+    form.truckMudflaps = cfg.mudflaps || 'None'
     form.truckPto = cfg.pto || 'None'
     form.truckHydTankType = cfg.hydTankType || 'Split & Supply Tank'
     form.truckHydTankLocation = cfg.hydTankLocation || 'Behind Cab'
@@ -586,6 +613,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     serial: form.truckSerial, vin: form.truckVin,
     mainRunnerWidth: form.truckMainRunnerWidth,
     tailgateType: form.truckTailgateType, tailgateLights: form.truckTailgateLights, tailLights: form.truckTailLights,
+    sideLights: form.truckSideLights, antiSpray: form.truckAntiSpray, shovelHolder: form.truckShovelHolder, mudflaps: form.truckMudflaps,
     pto: form.truckPto, hydTankType: form.truckHydTankType,
     hydTankLocation: form.truckHydTankLocation,
     dValue: form.truckDValue, couplingLoad: form.truckCouplingLoad,
@@ -743,6 +771,35 @@ function QuoteBuilderInner() {
   useEffect(() => {
     setForm((f) => ({ ...f, truckCouplingLoad: getCouplingLoad(f.truckCoupling) }))
   }, [form.truckCoupling])
+
+  // Sync body extras → line items
+  useEffect(() => {
+    setForm(f => {
+      const EXTRAS_SECTION = 'Body Extras'
+      // Preserve any prices already set for these extras
+      const savedPrices: Record<string, { unitPrice: number; totalPrice: number; quantity: number }> = {}
+      for (const li of f.lineItems) {
+        if (li.section === EXTRAS_SECTION) {
+          savedPrices[li.description] = { unitPrice: li.unitPrice, totalPrice: li.totalPrice, quantity: li.quantity }
+        }
+      }
+      // Build active extras list
+      const active: string[] = []
+      if (f.truckSideLights && f.truckSideLights !== 'None') active.push(f.truckSideLights)
+      if (f.truckAntiSpray === 'Yes') active.push('Anti spray suppressant')
+      if (f.truckShovelHolder === 'Yes') active.push('Underbody shovel holder')
+      if (f.truckMudflaps && f.truckMudflaps !== 'None') active.push(f.truckMudflaps)
+
+      const newExtras: LineItem[] = active.map(desc => {
+        const saved = savedPrices[desc]
+        return { section: EXTRAS_SECTION, description: desc, quantity: saved?.quantity ?? 1, unitPrice: saved?.unitPrice ?? 0, totalPrice: saved?.totalPrice ?? 0, sortOrder: 0 }
+      })
+      const nonExtras = f.lineItems.filter(li => li.section !== EXTRAS_SECTION)
+      const allItems = [...nonExtras, ...newExtras].map((li, i) => ({ ...li, sortOrder: i }))
+      return { ...f, lineItems: allItems }
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.truckSideLights, form.truckAntiSpray, form.truckShovelHolder, form.truckMudflaps])
 
   // Load BOMs when quote is saved
   useEffect(() => {
@@ -1643,6 +1700,37 @@ function QuoteBuilderInner() {
             </Field>
           </div>
         </SectionCard>
+
+        {/* ── Section: Body Extras ── */}
+        {hasTruck && (
+          <SectionCard title="Body Extras" icon="🔩" style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 14 }}>
+              Selected extras auto-populate as line items in Pricing below.
+            </div>
+            <div style={grid(2)}>
+              <Field label="Side Lights">
+                <select value={form.truckSideLights} onChange={(e) => set('truckSideLights', e.target.value)} style={selectStyle}>
+                  {SIDE_LIGHTS.map(o => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Mudflaps">
+                <select value={form.truckMudflaps} onChange={(e) => set('truckMudflaps', e.target.value)} style={selectStyle}>
+                  {MUDFLAPS_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Anti Spray Suppressant">
+                <select value={form.truckAntiSpray} onChange={(e) => set('truckAntiSpray', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Underbody Shovel Holder">
+                <select value={form.truckShovelHolder} onChange={(e) => set('truckShovelHolder', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+            </div>
+          </SectionCard>
+        )}
 
         {/* ── Section: Pricing ── */}
         <SectionCard title="Pricing & Line Items" icon="💰" style={{ marginTop: 20 }}>

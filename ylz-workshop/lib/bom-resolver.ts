@@ -212,6 +212,24 @@ export function resolveBoms(
     if (brakeCoupling.toLowerCase().includes('triomatic')) {
       addTbd('Brake Coupling', 'Triomatic coupling — confirm part numbers in MRPeasy')
     }
+
+    // ── Body Extras ──
+    const sideLights = cfg('sideLights')
+    if (sideLights && sideLights !== 'None') {
+      addTbd('Body Extras', `${sideLights} — confirm part number in MRPeasy`)
+    }
+    const antiSpray = cfg('antiSpray')
+    if (antiSpray === 'Yes') {
+      addTbd('Body Extras', 'Anti spray suppressant — confirm part number in MRPeasy')
+    }
+    const shovelHolder = cfg('shovelHolder')
+    if (shovelHolder === 'Yes') {
+      addTbd('Body Extras', 'Underbody shovel holder — confirm part number in MRPeasy')
+    }
+    const mudflaps = cfg('mudflaps')
+    if (mudflaps && mudflaps !== 'None') {
+      addTbd('Body Extras', `${mudflaps} — confirm part number in MRPeasy`)
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
