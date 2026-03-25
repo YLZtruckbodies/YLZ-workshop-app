@@ -631,6 +631,8 @@ function QuoteBuilderInner() {
   const [specWarning, setSpecWarning] = useState<string | null>(null)
   const [customerSuggestions, setCustomerSuggestions] = useState<string[]>([])
   const [dealerSuggestions, setDealerSuggestions] = useState<string[]>([])
+  const [bomList, setBomList] = useState<{ code: string; name: string; section: string }[]>([])
+  const [bomLoading, setBomLoading] = useState(false)
 
   useEffect(() => {
     fetch('/api/quotes?limit=500')
@@ -725,6 +727,17 @@ function QuoteBuilderInner() {
   useEffect(() => {
     setForm((f) => ({ ...f, truckCouplingLoad: getCouplingLoad(f.truckCoupling) }))
   }, [form.truckCoupling])
+
+  // Load BOMs when quote is saved
+  useEffect(() => {
+    if (!savedId) { setBomList([]); return }
+    setBomLoading(true)
+    fetch(`/api/quotes/${savedId}/boms`)
+      .then(r => r.json())
+      .then(d => setBomList(Array.isArray(d.resolvedBoms) ? d.resolvedBoms : []))
+      .catch(() => setBomList([]))
+      .finally(() => setBomLoading(false))
+  }, [savedId])
 
   // ── Field update helpers ──────────────────────────────────────────────────
 
@@ -939,6 +952,13 @@ function QuoteBuilderInner() {
       }
 
       if (nextStatus) setForm((f) => ({ ...f, status: nextStatus }))
+      // Refresh BOMs after save
+      if (id) {
+        fetch(`/api/quotes/${id}/boms`)
+          .then(r => r.json())
+          .then(d => setBomList(Array.isArray(d.resolvedBoms) ? d.resolvedBoms : []))
+          .catch(() => {})
+      }
     } catch (e: any) {
       setSaveError(e.message || 'Save failed')
     }
@@ -1936,6 +1956,49 @@ function QuoteBuilderInner() {
             </Field>
           </div>
         </SectionCard>
+
+        {/* ── Section: Bill of Materials ── */}
+        {savedId && (
+          <SectionCard title="Bill of Materials" icon="📦" style={{ marginTop: 20 }}>
+            {bomLoading ? (
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Resolving BOMs…</div>
+            ) : bomList.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>
+                No BOMs resolved — add build details (material, hoist, tarp, axles etc.) and save.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {/* Group by section */}
+                {Array.from(new Set(bomList.map(b => b.section))).map(section => (
+                  <div key={section} style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 6 }}>
+                      {section}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {bomList.filter(b => b.section === section).map((b, i) => (
+                        <span key={i} style={{
+                          fontSize: 11, padding: '4px 10px', borderRadius: 4,
+                          background: b.code === 'TBD' ? 'rgba(234,179,8,0.1)' : 'rgba(232,104,26,0.08)',
+                          border: `1px solid ${b.code === 'TBD' ? 'rgba(234,179,8,0.3)' : 'rgba(232,104,26,0.25)'}`,
+                          color: b.code === 'TBD' ? '#eab308' : 'rgba(255,255,255,0.8)',
+                          fontFamily: 'monospace',
+                        }}>
+                          <span style={{ fontWeight: 700, color: b.code === 'TBD' ? '#eab308' : '#E8681A' }}>{b.code}</span>
+                          {b.code !== 'TBD' && <span style={{ marginLeft: 6, fontFamily: 'inherit', fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>{b.name}</span>}
+                          {b.code === 'TBD' && <span style={{ marginLeft: 6, fontFamily: 'inherit', fontSize: 10 }}>{b.name}</span>}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div style={{ marginTop: 6, fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>
+                  {bomList.filter(b => b.code !== 'TBD').length} BOM{bomList.filter(b => b.code !== 'TBD').length !== 1 ? 's' : ''} resolved
+                  {bomList.some(b => b.code === 'TBD') && <span style={{ color: '#eab308', marginLeft: 8 }}>· {bomList.filter(b => b.code === 'TBD').length} TBD — check manually</span>}
+                </div>
+              </div>
+            )}
+          </SectionCard>
+        )}
 
         {/* ── Bottom actions ── */}
         <div style={{
