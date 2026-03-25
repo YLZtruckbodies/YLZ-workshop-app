@@ -47,11 +47,38 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { lineItems, ...quoteData } = body
 
+  // Sanitise numeric fields
+  const safeFloat = (v: any, fallback = 0): number => {
+    const n = Number(v)
+    return Number.isFinite(n) ? n : fallback
+  }
+  if ('subtotal' in quoteData) quoteData.subtotal = safeFloat(quoteData.subtotal)
+  if ('margin' in quoteData)   quoteData.margin   = safeFloat(quoteData.margin, 25)
+  if ('overhead' in quoteData) quoteData.overhead  = safeFloat(quoteData.overhead)
+  if ('discount' in quoteData) quoteData.discount  = safeFloat(quoteData.discount)
+  if ('total' in quoteData)    quoteData.total     = safeFloat(quoteData.total)
+  if ('validDays' in quoteData) quoteData.validDays = Math.round(safeFloat(quoteData.validDays, 30))
+  if ('overridePrice' in quoteData) {
+    quoteData.overridePrice = quoteData.overridePrice != null ? safeFloat(quoteData.overridePrice) || null : null
+  }
+
+  // Sanitise line items
+  const cleanItems = Array.isArray(lineItems)
+    ? lineItems.map((item: any) => ({
+        section:     String(item.section     || 'Build'),
+        description: String(item.description || ''),
+        quantity:    Math.max(0, Math.round(safeFloat(item.quantity, 1))),
+        unitPrice:   safeFloat(item.unitPrice),
+        totalPrice:  safeFloat(item.totalPrice),
+        sortOrder:   safeFloat(item.sortOrder),
+      }))
+    : null
+
   const quote = await prisma.quote.create({
     data: {
       ...quoteData,
-      lineItems: lineItems?.length
-        ? { create: lineItems }
+      lineItems: cleanItems?.length
+        ? { create: cleanItems }
         : undefined,
     },
     include: { lineItems: true },
