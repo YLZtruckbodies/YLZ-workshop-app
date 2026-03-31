@@ -3,6 +3,7 @@ import { extractPdfText }   from '@/lib/extractPdfText'
 import { parseMO }          from '@/lib/parseMO'
 import { generateLaserSheet } from '@/lib/generateSheet'
 import { fetchPartDrawings } from '@/lib/drive'
+import type { MOPart } from '@/lib/parseMO'
 
 export const runtime    = 'nodejs'
 export const maxDuration = 60
@@ -12,32 +13,47 @@ export async function POST(req: NextRequest) {
   try {
     step = 'read-form'
     const formData = await req.formData()
-    const file = formData.get('pdf') as File | null
+    const files = formData.getAll('pdf') as File[]
 
-    if (!file || file.type !== 'application/pdf') {
-      return NextResponse.json({ error: 'Please upload a valid PDF file.' }, { status: 400 })
+    if (!files.length) {
+      return NextResponse.json({ error: 'No PDFs uploaded.' }, { status: 400 })
     }
 
-    step = 'read-buffer'
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const allLaserParts: (MOPart & { moNumber: string })[] = []
+    const moNumbers: string[] = []
+    let firstProduct  = ''
+    let firstQuantity = ''
+    let firstDate     = ''
 
-    step = 'extract-text'
-    const text = await extractPdfText(buffer)
+    step = 'parse-mos'
+    for (const file of files) {
+      if (file.type !== 'application/pdf') continue
+      const buffer = Buffer.from(await file.arrayBuffer())
+      const text   = await extractPdfText(buffer)
+      const mo     = parseMO(text)
 
-    step = 'parse-mo'
-    const mo = parseMO(text)
+      if (mo.moNumber === 'Unknown') {
+        console.warn('parseMO: could not extract MO number. Text preview:', text.substring(0, 500))
+      }
 
-    // If we still can't find the MO number, log the extracted text to help debug
-    // but don't hard-fail — generate the sheet anyway with a fallback label
-    if (mo.moNumber === 'Unknown') {
-      console.warn('parseMO: could not extract MO number. Extracted text preview:', text.substring(0, 500))
+      moNumbers.push(mo.moNumber)
+      if (!firstProduct)  firstProduct  = mo.product
+      if (!firstQuantity) firstQuantity = mo.quantity
+      if (!firstDate)     firstDate     = mo.date
+
+      const parts = mo.laserParts.length > 0 ? mo.laserParts : mo.parts
+      for (const part of parts) {
+        allLaserParts.push({ ...part, moNumber: mo.moNumber })
+      }
     }
 
-    const parts       = mo.laserParts.length > 0 ? mo.laserParts : mo.parts
-    const partNumbers = parts.map(p => p.partNumber)
+    if (!moNumbers.length) {
+      return NextResponse.json({ error: 'No valid PDF files found.' }, { status: 400 })
+    }
+
+    const allPartNumbers = allLaserParts.map(p => p.partNumber)
 
     step = 'fetch-drawings'
-    // MRP-04: if Google credentials aren't configured, skip drawings gracefully
     let drawings: Awaited<ReturnType<typeof fetchPartDrawings>>
     const hasGoogleCreds = !!(
       process.env.GOOGLE_CLIENT_ID &&
@@ -45,32 +61,43 @@ export async function POST(req: NextRequest) {
       process.env.GOOGLE_REFRESH_TOKEN
     )
     if (hasGoogleCreds) {
-      drawings = await fetchPartDrawings(partNumbers)
+      drawings = await fetchPartDrawings(allPartNumbers)
     } else {
       console.warn('Google credentials not configured — skipping part drawings')
       drawings = new Map()
     }
 
     step = 'generate-sheet'
-    const pdfBuffer = await generateLaserSheet(mo, drawings)
+    const pdfBuffer = await generateLaserSheet(
+      {
+        moNumbers,
+        laserParts: allLaserParts,
+        date:     firstDate     || new Date().toLocaleDateString('en-AU'),
+        product:  moNumbers.length === 1 ? firstProduct  : `${moNumbers.length} MOs`,
+        quantity: moNumbers.length === 1 ? firstQuantity : '—',
+      },
+      drawings
+    )
+
+    const fileLabel = moNumbers.length === 1
+      ? moNumbers[0]
+      : `Combined (${moNumbers.length} MOs)`
 
     return new NextResponse(pdfBuffer as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${mo.moNumber} Laser Sheet.pdf"`,
+        'Content-Disposition': `attachment; filename="${fileLabel} Laser Sheet.pdf"`,
         'X-MO-Data': JSON.stringify({
-          moNumber:      mo.moNumber,
-          product:       mo.product,
-          quantity:      mo.quantity,
-          date:          mo.date,
-          totalParts:    mo.parts.length,
-          laserParts:    mo.laserParts.length,
-          partNumbers,
+          moNumbers,
+          product:       moNumbers.length === 1 ? firstProduct  : `${moNumbers.length} MOs`,
+          quantity:      moNumbers.length === 1 ? firstQuantity : '—',
+          date:          firstDate,
+          totalParts:    allLaserParts.length,
+          laserParts:    allLaserParts.length,
+          partNumbers:   allPartNumbers,
           drawingsFound: Array.from(drawings.keys()),
         }),
-        // Debug: first 200 chars of extracted text — remove once parsing is confirmed working
-        'X-Debug-Text': encodeURIComponent(text.substring(0, 200)),
       },
     })
   } catch (err) {

@@ -1,8 +1,16 @@
 import PDFDocument from 'pdfkit'
-import type { MOData, MOPart } from './parseMO'
+import type { MOPart } from './parseMO'
 
 // DrawingMap: part number → JPEG thumbnail Buffer (from Google Drive)
 export type DrawingMap = Map<string, Buffer>
+
+export interface CombinedMOData {
+  moNumbers: string[]
+  laserParts: (MOPart & { moNumber?: string })[]
+  date: string
+  product?: string
+  quantity?: string
+}
 
 // ── Layout constants (A4, points, top-left origin) ────────────────────────────
 const A4W   = 595.28
@@ -28,14 +36,13 @@ const DGREY   = '#595959'
 const TEXTBLK = '#141414'
 const MGREY   = '#999999'
 
-export async function generateLaserSheet(mo: MOData, drawings: DrawingMap = new Map()): Promise<Buffer> {
+export async function generateLaserSheet(mo: CombinedMOData, drawings: DrawingMap = new Map()): Promise<Buffer> {
   const doc = new PDFDocument({ size: 'A4', margin: 0, autoFirstPage: true })
 
-  const parts     = mo.laserParts.length > 0 ? mo.laserParts : mo.parts
-  const hasFilter = mo.laserParts.length > 0
+  const parts = mo.laserParts
 
   // Group by material
-  const groups = new Map<string, MOPart[]>()
+  const groups = new Map<string, (MOPart & { moNumber?: string })[]>()
   for (const part of parts) {
     const key = part.material || 'Unknown Material'
     if (!groups.has(key)) groups.set(key, [])
@@ -51,7 +58,7 @@ export async function generateLaserSheet(mo: MOData, drawings: DrawingMap = new 
   const newPage = () => {
     if (!firstPage) doc.addPage({ size: 'A4', margin: 0 })
     firstPage = false
-    drawHeader(doc, mo, hasFilter)
+    drawHeader(doc, mo)
     curY = HEADER_H
   }
 
@@ -85,7 +92,7 @@ export async function generateLaserSheet(mo: MOData, drawings: DrawingMap = new 
 }
 
 // ── Page header ───────────────────────────────────────────────────────────────
-function drawHeader(doc: any, mo: MOData, filtered: boolean) {
+function drawHeader(doc: any, mo: CombinedMOData) {
   doc.rect(0, 0, A4W, 62).fill(BLACK)
   doc.font('Helvetica-Bold').fontSize(16).fillColor(WHITE)
     .text('COLD FORM',      ML, 18, { lineBreak: false })
@@ -97,12 +104,23 @@ function drawHeader(doc: any, mo: MOData, filtered: boolean) {
   const dy  = 72
   const col = [ML, 185, 330, 430]
 
-  labelVal(doc, col[0], dy, 'MO NUMBER', mo.moNumber,              13)
-  labelVal(doc, col[1], dy, 'PRODUCT',   truncate(mo.product, 26), 8.5)
-  labelVal(doc, col[2], dy, 'DATE',      mo.date,                  10)
-  labelVal(doc, col[3], dy, 'QTY',       mo.quantity,              10)
+  const headerLabel = mo.moNumbers.length === 1
+    ? mo.moNumbers[0]
+    : mo.moNumbers.length <= 3
+      ? mo.moNumbers.join('  ·  ')
+      : `COMBINED RUN — ${mo.moNumbers.length} MOs`
 
-  if (filtered) {
+  const moFontSize = mo.moNumbers.length > 1 ? 9 : 13
+
+  labelVal(doc, col[0], dy, 'MO NUMBER', headerLabel,                         moFontSize)
+  labelVal(doc, col[1], dy, 'PRODUCT',   truncate(mo.product || '—', 26),     8.5)
+  labelVal(doc, col[2], dy, 'DATE',      mo.date,                             10)
+  labelVal(doc, col[3], dy, 'QTY',       mo.quantity || '—',                  10)
+
+  if (mo.moNumbers.length > 1) {
+    doc.font('Helvetica-Bold').fontSize(7).fillColor(COPPER)
+      .text('COMBINED RUN — LASER CUT PARTS', col[1], dy + 30, { lineBreak: false })
+  } else {
     doc.font('Helvetica-Bold').fontSize(7).fillColor(COPPER)
       .text('LASER CUT PARTS ONLY', col[1], dy + 30, { lineBreak: false })
   }
@@ -119,7 +137,7 @@ function drawGroupHeader(doc: any, material: string, y: number) {
 }
 
 // ── Card ──────────────────────────────────────────────────────────────────────
-function drawCard(doc: any, part: MOPart, x: number, y: number, drawings: DrawingMap) {
+function drawCard(doc: any, part: MOPart & { moNumber?: string }, x: number, y: number, drawings: DrawingMap) {
   // Background + border
   doc.rect(x, y, CARD_W, CARD_H).fill(LGREY)
   doc.rect(x, y, CARD_W, CARD_H).lineWidth(0.75).stroke('#c8c8c8')
@@ -165,7 +183,7 @@ function drawCard(doc: any, part: MOPart, x: number, y: number, drawings: Drawin
   doc.font('Helvetica-Bold').fontSize(8.5).fillColor(WHITE)
     .text(`QTY  ${part.quantity.replace(' EACH', '')}`, detailX + 4, detailY + 39, { lineBreak: false })
 
-  // Thickness callout — MRP-02: show dash + CHECK DRAWING for unknown thickness
+  // Thickness callout
   const thicknessKnown = part.thickness && part.thickness.toLowerCase() !== 'unknown'
   if (thicknessKnown) {
     doc.font('Helvetica-Bold').fontSize(18).fillColor(COPPER)
@@ -177,6 +195,12 @@ function drawCard(doc: any, part: MOPart, x: number, y: number, drawings: Drawin
       .text('—', detailX, detailY + 62, { lineBreak: false })
     doc.font('Helvetica').fontSize(6.5).fillColor(MGREY)
       .text('CHECK DRAWING', detailX, detailY + 83, { lineBreak: false })
+  }
+
+  // MO number tag — bottom-right corner of card
+  if (part.moNumber) {
+    doc.font('Helvetica').fontSize(6.5).fillColor(MGREY)
+      .text(part.moNumber, x + CARD_W - 8, y + CARD_H - 14, { align: 'right', lineBreak: false })
   }
 }
 

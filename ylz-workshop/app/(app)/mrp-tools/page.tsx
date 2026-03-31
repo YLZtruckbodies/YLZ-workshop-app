@@ -19,7 +19,7 @@ interface BreadcrumbEntry {
 const PARTS_ROOT_FOLDER_ID = '1eAs6Dv4F8DdcvNIFWuggfR1YZzHwPZNo'
 
 interface MOSummary {
-  moNumber:     string
+  moNumbers:    string[]
   product:      string
   quantity:     string
   date:         string
@@ -333,7 +333,7 @@ function DriveBrowserTool() {
 }
 
 function LaserPackTool() {
-  const [moPdf, setMoPdf]       = useState<File | null>(null)
+  const [moPdfs, setMoPdfs]     = useState<File[]>([])
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
@@ -342,17 +342,25 @@ function LaserPackTool() {
 
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const handleFile = (f: File) => {
-    if (f.type !== 'application/pdf') { setError('File must be a PDF.'); return }
-    setMoPdf(f); setError(null); setResult(null); setPdfBlob(null)
+  const handleFiles = (files: FileList | File[]) => {
+    const arr = Array.from(files)
+    const pdfs = arr.filter(f => f.type === 'application/pdf')
+    if (pdfs.length !== arr.length) setError('Some files skipped — only PDFs accepted.')
+    else setError(null)
+    setMoPdfs(prev => [...prev, ...pdfs])
+    setResult(null); setPdfBlob(null)
+  }
+
+  const removeFile = (index: number) => {
+    setMoPdfs(prev => prev.filter((_, i) => i !== index))
   }
 
   const onProcess = async () => {
-    if (!moPdf) return
+    if (!moPdfs.length) return
     setLoading(true); setError(null); setResult(null); setPdfBlob(null)
     try {
       const fd = new FormData()
-      fd.append('pdf', moPdf)
+      for (const f of moPdfs) fd.append('pdf', f)
 
       const res = await fetch('/api/mrp-tools/laser-pack', { method: 'POST', body: fd })
 
@@ -364,15 +372,7 @@ function LaserPackTool() {
       }
 
       const moData = res.headers.get('X-MO-Data')
-      if (moData) {
-        const parsed = JSON.parse(moData)
-        setResult(parsed)
-        // Debug: surface extracted text if MO number wasn't found
-        if (parsed.moNumber === 'Unknown') {
-          const debugText = res.headers.get('X-Debug-Text')
-          if (debugText) setError(`Debug — extracted text: "${decodeURIComponent(debugText)}"`)
-        }
-      }
+      if (moData) setResult(JSON.parse(moData))
       setPdfBlob(await res.blob())
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unknown error.')
@@ -383,14 +383,17 @@ function LaserPackTool() {
 
   const onDownload = () => {
     if (!pdfBlob || !result) return
-    const url = URL.createObjectURL(pdfBlob)
-    const a   = document.createElement('a')
-    a.href = url; a.download = `${result.moNumber} Laser Sheet.pdf`; a.click()
-    URL.revokeObjectURL(url)
+    const label = result.moNumbers.length === 1
+      ? result.moNumbers[0]
+      : `Combined (${result.moNumbers.length} MOs)`
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(pdfBlob)
+    a.download = `${label} Laser Sheet.pdf`
+    a.click()
   }
 
   const reset = () => {
-    setMoPdf(null); setResult(null); setPdfBlob(null); setError(null)
+    setMoPdfs([]); setResult(null); setPdfBlob(null); setError(null)
     if (inputRef.current) inputRef.current.value = ''
   }
 
@@ -398,46 +401,60 @@ function LaserPackTool() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 620 }}>
 
       <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
-        Upload an MRPeasy Manufacturing Order PDF. Part drawings are fetched automatically from the YLZparts Google Drive folder.
+        Upload one or more MRPeasy Manufacturing Order PDFs. Parts from all MOs are merged into one sheet. Drawings are fetched automatically from the YLZparts Google Drive folder.
       </div>
 
       {!result ? (
         <>
-          {/* MO PDF drop zone */}
+          {/* Drop zone */}
           <div
             onDragOver={e => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}
-            onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
+            onDrop={e => { e.preventDefault(); setDragging(false); if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files) }}
             onClick={() => inputRef.current?.click()}
             style={{
-              border: `2px dashed ${dragging || moPdf ? '#E8681A' : 'rgba(255,255,255,0.15)'}`,
+              border: `2px dashed ${dragging || moPdfs.length ? '#E8681A' : 'rgba(255,255,255,0.15)'}`,
               borderRadius: 8,
               padding: '36px 20px',
               textAlign: 'center',
               cursor: 'pointer',
-              background: dragging ? 'rgba(232,104,26,0.08)' : moPdf ? 'rgba(232,104,26,0.05)' : 'rgba(255,255,255,0.02)',
+              background: dragging ? 'rgba(232,104,26,0.08)' : moPdfs.length ? 'rgba(232,104,26,0.05)' : 'rgba(255,255,255,0.02)',
               transition: '0.15s',
             }}
           >
-            <input ref={inputRef} type="file" accept=".pdf" style={{ display: 'none' }}
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
-            {moPdf ? (
-              <>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{moPdf.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
-                  {(moPdf.size / 1024).toFixed(0)} KB · Click to change
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ fontSize: 28, marginBottom: 10 }}>↑</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text2)', marginBottom: 4 }}>
-                  Drop MRPeasy MO PDF here
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--text3)' }}>or click to browse</div>
-              </>
-            )}
+            <input ref={inputRef} type="file" accept=".pdf" multiple style={{ display: 'none' }}
+              onChange={e => { if (e.target.files?.length) handleFiles(e.target.files) }} />
+            <div style={{ fontSize: 28, marginBottom: 10 }}>↑</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text2)', marginBottom: 4 }}>
+              Drop MRPeasy MO PDFs here
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text3)' }}>or click to browse — multiple files supported</div>
           </div>
+
+          {/* File chips */}
+          {moPdfs.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {moPdfs.map((f, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'rgba(232,104,26,0.12)', border: '1px solid rgba(232,104,26,0.35)',
+                  borderRadius: 5, padding: '5px 10px', fontSize: 12, color: '#fff',
+                }}>
+                  <span>📄 {f.name}</span>
+                  <button
+                    onClick={e => { e.stopPropagation(); removeFile(i) }}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: 'rgba(255,255,255,0.5)', fontSize: 14, lineHeight: 1,
+                      padding: '0 2px',
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Drive note */}
           <div style={{
@@ -460,18 +477,22 @@ function LaserPackTool() {
 
           <button
             onClick={onProcess}
-            disabled={!moPdf || loading}
+            disabled={!moPdfs.length || loading}
             style={{
               padding: '14px 20px', borderRadius: 6, border: 'none',
               fontFamily: "'League Spartan', sans-serif",
               fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
-              cursor: !moPdf || loading ? 'not-allowed' : 'pointer',
-              background: !moPdf || loading ? 'rgba(255,255,255,0.08)' : '#E8681A',
-              color: !moPdf || loading ? 'rgba(255,255,255,0.3)' : '#fff',
+              cursor: !moPdfs.length || loading ? 'not-allowed' : 'pointer',
+              background: !moPdfs.length || loading ? 'rgba(255,255,255,0.08)' : '#E8681A',
+              color: !moPdfs.length || loading ? 'rgba(255,255,255,0.3)' : '#fff',
               transition: '0.15s',
             }}
           >
-            {loading ? 'Searching Drive & Generating…' : 'Generate Laser Sheet'}
+            {loading
+              ? 'Searching Drive & Generating…'
+              : moPdfs.length > 1
+                ? `Generate Combined Sheet (${moPdfs.length} MOs)`
+                : 'Generate Laser Sheet'}
           </button>
         </>
       ) : (
@@ -481,7 +502,11 @@ function LaserPackTool() {
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
               Laser Sheet Ready
             </div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{result.moNumber}</div>
+            <div style={{ fontSize: result.moNumbers.length > 1 ? 14 : 22, fontWeight: 700, color: '#fff' }}>
+              {result.moNumbers.length === 1
+                ? result.moNumbers[0]
+                : result.moNumbers.join('  ·  ')}
+            </div>
           </div>
 
           <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
