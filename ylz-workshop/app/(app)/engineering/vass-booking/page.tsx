@@ -107,7 +107,6 @@ export default function VassBookingPage() {
     fetch('/api/quotes?status=accepted').then(r => r.json()).then((data: Quote[]) => {
       if (Array.isArray(data)) setQuotes(data)
     }).catch(() => {})
-    // Also load draft quotes
     fetch('/api/quotes?status=sent').then(r => r.json()).then((data: Quote[]) => {
       if (Array.isArray(data)) setQuotes(prev => [...prev, ...data])
     }).catch(() => {})
@@ -215,188 +214,349 @@ export default function VassBookingPage() {
       if (data.id) {
         setBookingId(data.id)
         setSaved(true)
-        setTimeÝ]
+        setTimeout(() => setSaved(false), 2500)
+        // Refresh bookings list
+        fetch('/api/vass/bookings').then(r => r.json()).then((d: Booking[]) => {
+          if (Array.isArray(d)) setBookings(d)
+        }).catch(() => {})
+      }
+    } catch (err) {
+      console.error('Save failed:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
 
+  // Save new chassis to database
+  const saveNewChassis = async () => {
+    try {
+      const res = await fetch('/api/vass/chassis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newChassis) })
+      const data = await res.json()
+      if (data.id) {
+        setChassisDb(prev => [...prev, data])
+        const uniqueMakes = [...new Set([...chassisDb, data].map(c => c.make))].sort()
+        setMakes(uniqueMakes)
+        setNewChassis({})
+        setAddChassisMode(false)
+      }
+    } catch (err) {
+      console.error('Failed to save chassis:', err)
+    }
+  }
 
-HOÙ]Ø]Y
-[ÙJK
-BËÈY\Ú\ÝÛÛÝ\ÝH]ØZ]]Ú
-	ËØ\KÝ\ÜËØÛÚÚ[ÜÉÊK[OÛÛ
-JBY
-\^K\Ð\^J\Ý
-JHÙ]ÛÚÚ[ÜÊ\Ý
-BBHØ]Ú
-\HÂ[\
-	ÑZ[YÈØ]IÊBBÙ]Ø][Ê[ÙJBBËÈ]ÈÛÚÚ[ÂÛÛÝ]ÐÛÚÚ[ÈH
+  const gridTwo: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }
+  const gridThree: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }
+  const gridFour: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }
 
-HOÂÙ]ÛÚÚ[ÒY
-[
-BÙ]Ù[XÝY][ÝJ	ÉÊBÙ]Ù[XÝYÛÙ\Ê×JBÙ]ÜJÂØ[X\	ÉËÛÚÚ[Ñ]N]È]J
-KÒTÓÔÝ[Ê
-KÜ]
-	Õ	ÊVÌK\]Y\ÝYNSÑQUSË\]Y\ÝYKÛÛ\[PY\ÜÎSÑQUSËÛÛ\[PY\ÜËÛÛ\[TÝ]NSÑQUSËÛÛ\[TÝ]KÛÛ\[TÜÝÛÙNSÑQUSËÛÛ\[TÜÝÛÙKÛÛ\[Q[XZ[SÑQUSËÛÛ\[Q[XZ[ÛÛ\[TÛNSÑQUSËÛÛ\[TÛKÓ[X\	ÉË[\Ú]NÙ]^ÙY\Ù^J
-KÝÛ\[YN	ÉËÝÛ\Y\ÜÎ	ÉËÝÛ\Ú]N	ÉËÝÛ\Ý]N	ÕPÉËÝÛ\ÜÝÛÙN	ÉËZXÛSXZÙN	ÉËZXÛS[Ù[	ÉË[Ú[U\N	ÉË[Ú[S[X\	ÉËYÛÎ	ÉËÛÛ\]Q]N	ÉËÙÛY]\	ÉËÙX]Î	ÉËÝN	ÉËØÛN	ÉËÛ^T][Î	ÉËX\^T][Î	ÉË[[X\	ÉËÛ\PÛÝ[	ÉËX\\PÛÝ[	ÉËÛ\TÚ^N	ÉËX\\TÚ^N	ÉË^[YP^TÜXÚ[Î	ÉË[Ù\ØÜ\[Û	ÉË]Õ\UÙZYÚ	ÉËÝ\Î	ÉËJBÙ]ÚÝÓ\Ý
-[ÙJBBËÈYÚ\ÜÚ\È[BÛÛÝØ]PÚ\ÜÚ\ÈH\Þ[È
+  // ── Bookings list view ────────────────────────────────────────────────────
+  if (showList) {
+    return (
+      <div style={{ padding: '24px 32px', maxWidth: 1100, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+          <button onClick={() => router.push('/engineering')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', fontSize: 13, padding: 0 }}>
+            ← Engineering
+          </button>
+          <h1 style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#fff', margin: 0, flex: 1 }}>
+            VASS Bookings
+          </h1>
+          <button
+            onClick={() => { setBookingId(null); setForm(f => ({ ...f })); setSelectedCodes([]); setShowList(false) }}
+            style={{ background: '#E8681A', border: 'none', borderRadius: 6, padding: '8px 18px', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5 }}
+          >
+            + New Booking
+          </button>
+        </div>
 
-HOÂY
-[]ÐÚ\ÜÚ\ËXZÙH[]ÐÚ\ÜÚ\Ë[Ù[
-H]\HÂÛÛÝ\ÈH]ØZ]]Ú
-	ËØ\KÝ\ÜËØÚ\ÜÚ\ÉËÈY]Ù	ÔÔÕ	ËXY\ÎÈ	ÐÛÛ[U\IÎ	Ø\XØ][ÛÚÛÛÈKÙNÓÓÝ[ÚYJ]ÐÚ\ÜÚ\ÊHJBÛÛÝ[HH]ØZ]\ËÛÛ
-BY
-[KY
-HÂÙ]Ú\ÜÚ\Ñ]OË][WJBÙ]XZÙ\Ê]OË]ÈÙ]
-Ë][KXZÙWJWKÛÜ
-
-JBÙ]]ÐÚ\ÜÚ\ÊßJBÙ]YÚ\ÜÚ\Ó[ÙJ[ÙJBBHØ]ÚÈBBËÈ8¥ 8¥ 8¥ TÕQUÈ8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ Y
-ÚÝÓ\Ý
-HÂ]\
-]Ý[O^ÞÈY[ÎX^ÚYLX\Ú[	Ì]]ÉÈ_O]Ý[O^ÞÈ\Ü^N	Ù^	Ë\ÝYPÛÛ[	ÜÜXÙKX]ÙY[Ë[YÛ][\Î	ØÙ[\ËX\Ú[ÝÛN_O]HÝ[O^ÞÈÛ[Z[NÓXYÝYHÜ\[ËØ[Ë\Ù\YÛÚ^NÛÙZYÚ]\ÜXÚ[Î^[ÙÜN	Ý\\Ø\ÙIËÛÛÜ	ÈÙËX\Ú[_OTÔÈÛÚÚ[ÈÙ[\]ÜÚO]Ý[O^ÞÈÛÚ^NLÛÛÜ	Ý\K]^ÊIËX\Ú[Ü
-_OÕÈUTÔÈÛÚÚ[È\]Y\ÝÈÜZXÛH[ÙYXØ][ÛÂÙ]Ù]]Ý[O^ÞÈ\Ü^N	Ù^	ËØ\_O]ÛÛÛXÚÏ^Ê
-HOÝ]\\Ú
-	ËÙ[Ú[Y\[ÉÊ_HÝ[O^ÞÈXÚÙÜÝ[	Ý\KY\ÌÊIËÜ\	Ì\ÛÛY\KXÜ\IËÜ\Y]\Î
-Y[Î	ÎM	ËÛÛÜ	ÈÙËÛÚ^NLÝ\ÛÜ	ÜÚ[\È_O8¡¤[Ú[Y\[ÂØ]Û]ÛÛÛXÚÏ^Û]ÐÛÚÚ[ßHÝ[O^ÞÈXÚÙÜÝ[	ÈÑN
-PIËÜ\	ÛÛIËÜ\Y]\Î
-Y[Î	ÎM	ËÛÛÜ	ÈÙËÛÚ^NLÛÙZYÚ
-ÌÝ\ÛÜ	ÜÚ[\È_O
-È]ÈÛÚÚ[ÂØ]ÛÙ]Ù]ËÊÜ[]HÛH][ÝH
-ßB]Ý[O^ÞÈÙXÝ[ÛÝ[KX\Ú[ÝÛN_O]Ý[O^ÞÈÛÚ^NLÛÛÜ	Ý\K]^ÊIËX\Ú[ÝÛNÛÙZYÚ
-_O]ZXÚÈÝ\8 %ÜX]HÛH][ÝOÙ]]Ý[O^ÞÈ\Ü^N	Ù^	ËØ\[YÛ][\Î	ØÙ[\È_OÙ[XÝ[YO^ÜÙ[XÝY][Ý_BÛÚ[ÙO^ÙHOÙ]Ù[XÝY][ÝJK\Ù][YJ_BÝ[O^ÞÈÙ[XÝÝ[KX^ÚY
-_BÜ[Û[YOHÙ[XÝH][ÝKÛÜ[ÛÜ][Ý\ËX\
-HO
-Ü[ÛÙ^O^ÜKYH[YO^ÜKYOÜK][ÝS[X\H8 %ÜKÝ\ÝÛY\[Y_H
-ÜKZ[\_JHÞÜKÝ]\ßWBÛÜ[Û
-J_BÜÙ[XÝ]ÛÛÛXÚÏ^Ê
-HOÈY
-Ù[XÝY][ÝJHÈÜ[]QÛT][ÝJÙ[XÝY][ÝJNÈ]ÐÛÚÚ[Ê
-HH_B\ØXY^È\Ù[XÝY][Ý_BÝ[O^ÞÈXÚÙÜÝ[Ù[XÝY][ÝHÈ	ÈÑN
-PIÈ	Ý\KY\ÌÊIËÜ\	ÛÛIËÜ\Y]\Î
-Y[Î	ÎM	ËÛÛÜ	ÈÙËÛÚ^NLÛÙZYÚ
-Ý\ÛÜÙ[XÝY][ÝHÈ	ÜÚ[\È	ÙY][	ËÜXÚ]NÙ[XÝY][ÝHÈHKÚ]TÜXÙN	ÛÝÜ\	È_BÜX]HÛH][ÝH8¡¤Ø]ÛÙ]Ù]ËÊÛÚÚ[ÜÈXH
-ßBØÛÚÚ[ÜË[ÝOOHÈ
-]Ý[O^ÞÈ^[YÛ	ØÙ[\ËY[Î
-ÛÛÜ	Ý\K]^ÊIËÛÚ^NLÈ_OÈTÔÈÛÚÚ[ÜÈY]ÛXÚÈÝÛÏÈ]ÈÛÚÚ[ÏÜÝÛÏÈÜX]HÛKÙ]
-H
-]Ý[O^ÞÈÝ\ÝÖ	Ø]]ÉÈ_OXHÝ[O^ÞÈÚY	ÌL	IËÜ\ÛÛ\ÙN	ØÛÛ\ÙIËÛÚ^NLÈ_OXYÝ[O^ÞÈÜ\ÝÛN	Ì\ÛÛY\KXÜ\IÈ_OÖÉÒØÉË	ÓÝÛ\Ë	ÕZXÛIË	ÕSË	ÔÝ]\ÉË	Ñ]IË	ÐXÝ[ÛÉ×KX\
-O
-Ù^O^ÚHÝ[O^ÞÈ^[YÛ	ÛY	ËY[Î	ÌLL	ËÛÛÜ	Ý\K]^ÊIËÛÚ^NLKÛÙZYÚ
-^[ÙÜN	Ý\\Ø\ÙIË]\ÜXÚ[ÎH_OÚOÝ
-J_BÝÝXYÙOØÛÚÚ[ÜËX\
-O
-Ù^O^ØYHÝ[O^ÞÈÜ\ÝÛN	Ì\ÛÛY\KXÜ\IËÝ\ÛÜ	ÜÚ[\È_HÛÛXÚÏ^Ê
-HOÝ]\\Ú
-Ù[Ú[Y\[ËÝ\ÜËXÛÚÚ[ÏÚYIØYX
-_OÝ[O^ÞÈY[Î	ÌLL	ËÛÛÜ	ÈÑN
-PIËÛÙZYÚ
-_OØØ[X\	ø %	ßOÝÝ[O^ÞÈY[Î	ÌLL	ËÛÛÜ	ÈÙÈ_OØÝÛ\[YH	ø %	ßOÝÝ[O^ÞÈY[Î	ÌLL	ËÛÛÜ	ÈÙÈ_OÖØZXÛSXZÙKZXÛS[Ù[K[\ÛÛX[KÚ[	È	ÊH	ø %	ßOÝÝ[O^ÞÈY[Î	ÌLL	ËÛÛÜ	Ý\K]^ÊIËÛ[Z[N	Û[ÛÜÜXÙIËÛÚ^NL_OØ[[X\	ø %	ßOÝÝ[O^ÞÈY[Î	ÌLL	È_OÜ[Ý[O^ÞÈÛÚ^NLKY[Î	Ì	ËÜ\Y]\Î
-ÛÙZYÚ
-XÚÙÜÝ[Ý]\ÈOOH	ØÛÛ\]Y	ÈÈ	ÜØJÍNMËMMJIÈÝ]\ÈOOH	ÜÝXZ]Y	ÈÈ	ÜØJ
-NKLÌ
-MJIÈ	ÜØJMKMKMK
-IËÛÛÜÝ]\ÈOOH	ØÛÛ\]Y	ÈÈ	ÈÌÍMYIÈÝ]\ÈOOH	ÜÝXZ]Y	ÈÈ	ÈÌØÈ	Ý\K]^ÊIË_OØÝ]\ßBÜÜ[ÝÝ[O^ÞÈY[Î	ÌLL	ËÛÛÜ	Ý\K]^ÊIÈ_OØÛÚÚ[Ñ]H	ø %	ßOÝÝ[O^ÞÈY[Î	ÌLL	È_O]ÛÛÛXÚÏ^ÊJHOÈKÝÜÜYØ][Û
-NÈÚ[ÝËÜ[Ý\ÜËÉØYX	×Ø[ÉÊH_BÝ[O^ÞÈXÚÙÜÝ[	ÛÛIËÜ\	Ì\ÛÛY\KXÜ\IËÜ\Y]\Î
-Y[Î	Í	ËÛÛÜ	ÈÙËÛÚ^NLKÝ\ÛÜ	ÜÚ[\È_B<'åª;î#È[Ø]ÛÝÝ
-J_BÝÙOÝXOÙ]
-_BÙ]
-BBËÈ8¥ 8¥ 8¥ ÔHQUÈ8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ 8¥ ÛÛÝ[\YÛÙ\ÈHTÔ×ÐÓÑTË[\ÈOÆöFTfÇFW"ÓÓÒrrÇÀ¢2æ6öFRçFôÆ÷vW$66Rææ6ÇVFW26öFTfÇFW"çFôÆ÷vW$66RÇÀ¢2æFW67&FöâçFôÆ÷vW$66Rææ6ÇVFW26öFTfÇFW"çFôÆ÷vW$66R¢ ¢&WGW&â¢ÆFb7GÆS×·²FFæs¢#BÂÖvGF¢ÂÖ&vã¢sWFòr×Óà¢²ò¢VFW"¢÷Ð¢ÆFb7GÆS×·²F7Æ¢vfÆWrÂ§W7Fg6öçFVçC¢w76RÖ&WGvVVârÂÆväFV×3¢v6VçFW"rÂÖ&vä&÷GFöÓ¢#×Óà¢ÆFcà¢Æ7GÆS×·²föçDfÖÇ¢"tÆVwVR7'FârÂ6ç2×6W&b"ÂföçE6¦S¢#"ÂföçEvVvC¢ÂÆWGFW%76æs¢"ÂFWEG&ç6f÷&Ó¢wWW&66RrÂ6öÆ÷#¢r6ffbrÂÖ&vã¢×Óà¢¶&öö¶ætBòtVFBd52&öö¶ærr¢tæWrd52&öö¶ærwÐ¢Âöà¢¶&öö¶ætBbbÆFb7GÆS×·²föçE6¦S¢Â6öÆ÷#¢wf"Ò×FWC2rÂÖ&våF÷¢"ÂföçDfÖÇ¢vÖöæ÷76Rr×ÓäC¢¶&öö¶ætGÓÂöFcçÐ¢ÂöFcà¢ÆFb7GÆS×·²F7Æ¢vfÆWrÂv¢×Óà¢Æ'WGFöâöä6Æ6³×²Óâ6WE6÷tÆ7BG'VRÒ7GÆS×·²&6¶w&÷VæC¢wf"ÒÖF&³2rÂ&÷&FW#¢s6öÆBf"ÒÖ&÷&FW"rÂ&÷&FW%&FW3¢bÂFFæs¢sGrÂ6öÆ÷#¢r6ffbrÂföçE6¦S¢"Â7W'6÷#¢wöçFW"r×Óà¢(i&6²FòÆ7@¢Âö'WGFöãà¢¶&öö¶ætBbb¢Æ'WGFöâöä6Æ6³×²ÓâvæF÷ræ÷Vâ÷f72òG¶&öö¶ætGÖÂuö&Ææ²rÒ7GÆS×·²&6¶w&÷VæC¢wf"ÒÖF&³2rÂ&÷&FW#¢s6öÆBf"ÒÖ&÷&FW"rÂ&÷&FW%&FW3¢bÂFFæs¢sGrÂ6öÆ÷#¢r6ffbrÂföçE6¦S¢"Â7W'6÷#¢wöçFW"r×Óà¢	ùjûò&çBòD`¢Âö'WGFöãà¢Ð¢Æ'WGFöâöä6Æ6³×·6fWÒF6&ÆVC×·6fæwÒ7GÆS×·²&6¶w&÷VæC¢r4ScrÂ&÷&FW#¢væöæRrÂ&÷&FW%&FW3¢bÂFFæs¢sgrÂ6öÆ÷#¢r6ffbrÂföçE6¦S¢"ÂföçEvVvC¢sÂ7W'6÷#¢wöçFW"rÂ÷6G¢6færòãb¢×Óà¢·6færòu6færâââr¢6fVBò~)É26fVBr¢u6fR&öö¶ærwÐ¢Âö'WGFöãà¢ÂöFcà¢ÂöFcà ¢²ò¢÷VÆFRg&öÒV÷FR¢÷Ð¢ÆFb7GÆS×·²ââç6V7Föå7GÆRÂ&6¶w&÷VæC¢w&v&#3"ÃBÃ#bÃãBr×Óà¢ÆFb7GÆS×·²föçE6¦S¢"Â6öÆ÷#¢r4ScrÂÖ&vä&÷GFöÓ¢ÂföçEvVvC¢c×Óå÷VÆFRg&öÒV÷FSÂöFcà¢ÆFb7GÆS×·²F7Æ¢vfÆWrÂv¢ÂÆväFV×3¢v6VçFW"r×Óà¢Ç6VÆV7BfÇVS×·6VÆV7FVEV÷FWÒöä6ævS×¶RÓâ²6WE6VÆV7FVEV÷FRRçF&vWBçfÇVR²bRçF&vWBçfÇVR÷VÆFTg&öÕV÷FRRçF&vWBçfÇVR×Ò7GÆS×·²ââç6VÆV7E7GÆRÂÖvGF¢C×Óà¢Æ÷FöâfÇVSÒ"#å6VÆV7BV÷FRââãÂö÷Föãà¢·V÷FW2æÖÓâ¢Æ÷Föâ¶W×·æGÒfÇVS×·æGÓç·çV÷FTçVÖ&W'Ò(	B·æ7W7FöÖW$æÖWÒ·æ'VÆEGWÒÂö÷Föãà¢Ð¢Â÷6VÆV7Cà¢ÂöFcà¢ÂöFcà ¢²ò¢)H)H)H$ôô´ärDUDÅ2)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H¢÷Ð¢ÆFb7GÆS×·6V7Föå7GÆWÓà¢ÆFb7GÆS×·6V7FöåFFÆWÓä&öö¶ærFWFÇ3ÂöFcà¢ÆFb7GÆS×·²F7Æ¢vw&BrÂw&EFV×ÆFT6öÇVÖç3¢w&WVB2Âg"rÂv¢"×Óà¢ÄfVÆBÆ&VÃÒ$¦ö"çVÖ&W"#à¢ÆçWBfÇVS×¶f÷&Òæ¦ö$çVÖ&W'Òöä6ævS×¶RÓâ6WBv¦ö$çVÖ&W"rÂRçF&vWBçfÇVRÒÆ6VöÆFW#Ò%Å¢#3B"7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ$&öö¶ærFFR#à¢ÆçWBGSÒ&FFR"fÇVS×¶f÷&Òæ&öö¶ætFFWÒöä6ævS×¶RÓâ6WBv&öö¶ætFFRrÂRçF&vWBçfÇVRÒ7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ$fæ6òç7V7FöâFFR#à¢ÆçWBGSÒ&FFR"fÇVS×¶f÷&Òæfæ6FFWÒöä6ævS×¶RÓâ6WBvfæ6FFRrÂRçF&vWBçfÇVRÒ7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ%&WVW7FVB'#à¢ÆçWBfÇVS×¶f÷&Òç&WVW7FVD'Òöä6ævS×¶RÓâ6WBw&WVW7FVD'rÂRçF&vWBçfÇVRÒ7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ$VÖÂ#à¢ÆçWBfÇVS×¶f÷&Òæ6ö×çVÖÇÒöä6ævS×¶RÓâ6WBv6ö×çVÖÂrÂRçF&vWBçfÇVRÒ7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ%öæR#à¢ÆçWBfÇVS×¶f÷&Òæ6ö×çöæWÒöä6ævS×¶RÓâ6WBv6ö×çöæRrÂRçF&vWBçfÇVRÒ7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ$FG&W72#à¢ÆçWBfÇVS×¶f÷&Òæ6ö×çFG&W77Òöä6ævS×¶RÓâ6WBv6ö×çFG&W72rÂRçF&vWBçfÇVRÒ7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ%7FFR#à¢Ç6VÆV7BfÇVS×¶f÷&Òæ6ö×ç7FFWÒöä6ævS×¶RÓâ6WBv6ö×ç7FFRrÂRçF&vWBçfÇVRÒ7GÆS×·6VÆV7E7GÆWÓà¢µ5DDU2æÖ2ÓâÆ÷Föâ¶W×·7ÒfÇVS×·7Óç·7ÓÂö÷FöãâÐ¢Â÷6VÆV7Cà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ%÷7F6öFR#à¢ÆçWBfÇVS×¶f÷&Òæ6ö×ç÷7F6öFWÒöä6ævS×¶RÓâ6WBv6ö×ç÷7F6öFRrÂRçF&vWBçfÇVRÒ7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ%ôòçVÖ&W"#à¢ÆçWBfÇVS×¶f÷&ÒçôçVÖ&W'Òöä6ævS×¶RÓâ6WBwôçVÖ&W"rÂRçF&vWBçfÇVRÒ7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÂöFcà¢ÂöFcà ¢²ò¢)H)H)HdT4ÄRõtäU")H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H¢÷Ð¢ÆFb7GÆS×·6V7Föå7GÆWÓà¢ÆFb7GÆS×·6V7FöåFFÆWÓåfV6ÆR÷væW"FWFÇ3ÂöFcà¢ÆFb7GÆS×·²F7Æ¢vw&BrÂw&EFV×ÆFT6öÇVÖç3¢w&WVB2Âg"rÂv¢"×Óà¢ÄfVÆBÆ&VÃÒ$÷væW"æÖR#à¢ÆçWBfÇVS×¶f÷&Òæ÷væW$æÖWÒöä6ævS×¶RÓâ6WBv÷væW$æÖRrÂRçF&vWBçfÇVRÒ7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ$FG&W72#à¢ÆçWBfÇVS×¶f÷&Òæ÷væW$FG&W77Òöä6ævS×¶RÓâ6WBv÷væW$FG&W72rÂRçF&vWBçfÇVRÒ7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ$6Gò7V'W&"#à¢ÆçWBfÇVS×¶f÷&Òæ÷væW$6GÒöä6ævS×¶RÓâ6WBv÷væW$6GrÂRçF&vWBçfÇVRÒ7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ%7FFR#à¢Ç6VÆV7BfÇVS×¶f÷&Òæ÷væW%7FFWÒöä6ævS×¶RÓâ6WBv÷væW%7FFRrÂRçF&vWBçfÇVRÒ7GÆS×·6VÆV7E7GÆWÓà¢µ5DDU2æÖ2ÓâÆ÷Föâ¶W×·7ÒfÇVS×·7Óç·7ÓÂö÷FöãâÐ¢Â÷6VÆV7Cà¢ÂôfVÆCà¢ÄfVÆBÆ&VÃÒ%÷7F6öFR#à¢ÆçWBfÇVS×¶f÷&Òæ÷væW%÷7F6öFWÒöä6ævS×¶RÓâ6WBv÷væW%÷7F6öFRrÂRçF&vWBçfÇVRÒ7GÆS×¶çWE7GÆWÒóà¢ÂôfVÆCà¢ÂöFcà¢ÂöFcà ¢²ò¢)H)H)HdT4ÄRDUDÅ2)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H¢÷Ð¢ÆFb7GÆS×·6V7Föå7GÆWÓà¢ÆFb7GÆS×·²F7Æ¢vfÆWrÂ§W7Fg6öçFVçC¢w76RÖ&WGvVVârÂÆväFV×3¢v6VçFW"r×Óà¢ÆFb7GÆS×·6V7FöåFFÆWÓåfV6ÆRFWFÇ3ÂöFcà¢Æ'WGFöâöä6Æ6³×²Óâ6WDFD6764ÖöFRFD6764ÖöFRÒ7GÆS×·²&6¶w&÷VæC¢væöæRrÂ&÷&FW#¢s6öÆBf"ÒÖ&÷&FW"rÂ&÷&FW%&FW3¢BÂFFæs¢sGrÂ6öÆ÷#¢wf"Ò×FWC2rÂföçE6¦S¢Â7W'6÷#¢wöçFW"rÂÖ&vä&÷GFöÓ¢b×Óà¢¶FD6764ÖöFRò~)ÉR6æ6VÂr¢r²FB6762wÐ¢Âö'WGFöãà¢ÂöFcà ¢²ò¢FB6762f÷&Ò¢÷Ð¢¶FD6764ÖöFRbb¢ÆFb7GÆS×·²&6¶w&÷VæC¢w&v&#3"ÃBÃ#bÃãBrÂ&÷&FW#¢s6öÆB&v&#3"ÃBÃ#bÃã"rÂ&÷&FW%&FW3¢ÂFFæs¢BÂÖ&vä&÷GFöÓ¢B×Óà¢ÆFb7GÆS×·²föçE6¦S¢Â6öÆ÷#¢r4ScrÂföçEvVvC¢cÂÖ&vä&÷GFöÓ¢×ÓäDBDò4542DD$4SÂöFcà¢ÆFb7GÆS×·²F7Æ¢vw&BrÂw&EFV×ÆFT6öÇVÖç3¢w&WVBBÂg"rÂv¢×Óà¢ÄfVÆBÆ&VÃÒ$Ö¶R#ãÆçWBfÇVS×¶æWt6762æÖ¶RÇÂrwÒöä6ævS×¶RÓâ6WDæWt67622Óâ²ââæ2ÂÖ¶S¢RçF&vWBçfÇVRÒÒ7GÆS×¶çWE7GÆWÒóãÂôfVÆCà¢ÄfVÆBÆ&VÃÒ$ÖöFVÂ#ãÆçWBfÇVS×¶æWt6762æÖöFVÂÇÂrwÒöä6ævS×¶RÓâ6WDæWt67622Óâ²ââæ2ÂÖöFVÃ¢RçF&vWBçfÇVRÒÒ7GÆS×¶çWE7GÆWÒóãÂôfVÆCà¢ÄfVÆBÆ&VÃÒ%6VG2#ãÆçWBfÇVS×¶æWt6762ç6VFæt66GÇÂrwÒöä6ævS×¶RÓâ6WDæWt67622Óâ²ââæ2Â6VFæt66G¢RçF&vWBçfÇVRÒÒ7GÆS×¶çWE7GÆWÒóãÂôfVÆCà¢ÄfVÆBÆ&VÃÒ$udÒ#ãÆçWBfÇVS×¶æWt6762æwfÒÇÂrwÒöä6ævS×¶RÓâ6WDæWt67622Óâ²ââá°Ù´è¹ÑÉÐ¹Ù±Õô¤¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼øð½¥±ø(ñ¥±±°ô
-4øñ¥¹ÁÕÐÙ±Õõí¹Ý
-¡ÍÍ¥Ì¹´ñðô½¹
-¡¹õíôøÍÑ9Ý
-¡ÍÍ¥Ì¡ôø¡ì¸¸¹°´è¹ÑÉÐ¹Ù±Õô¤¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼øð½¥±ø(ñ¥±±°ôÉ½¹Ðá±øñ¥¹ÁÕÐÙ±Õõí¹Ý
-¡ÍÍ¥Ì¹É½¹Ñá±IÑ¥¹ñðô½¹
-¡¹õíôøÍÑ9Ý
-¡ÍÍ¥Ì¡ôø¡ì¸¸¹°É½¹Ñá±IÑ¥¹è¹ÑÉÐ¹Ù±Õô¤¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼øð½¥±ø(ñ¥±±°ôIÈá±øñ¥¹ÁÕÐÙ±Õõí¹Ý
-¡ÍÍ¥Ì¹ÉÉá±IÑ¥¹ñðô½¹
-¡¹õíôøÍÑ9Ý
-¡ÍÍ¥Ì¡ôø¡ì¸¸¹°ÉÉá±IÑ¥¹è¹ÑÉÐ¹Ù±Õô¤¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼øð½¥±ø(ñ¥ØÍÑå±õíì¥ÍÁ±äè±à°±¥¹%ÑµÌè±àµ¹õôø(ñÕÑÑ½¸½¹
-±¥¬õíÍÙ
-¡ÍÍ¥ÍôÍÑå±õíì­É½Õ¹èàØàÅ°½ÉÈè¹½¹°½ÉÉI¥ÕÌèØ°Á¥¹èáÁàÄÑÁà°½±½Èè°½¹ÑM¥éèÄÈ°½¹Ñ]¥¡ÐèØÀÀ°ÕÉÍ½ÈèÁ½¥¹ÑÈ°Ý¥Ñ èÄÀÀõôùMÙ
-¡ÍÍ¥Ìð½ÕÑÑ½¸ø(ð½¥Øø(ð½¥Øø(ð½¥Øø(¥ô((ñ¥ØÍÑå±õíì¥ÍÁ±äèÉ¥°É¥QµÁ±Ñ
-½±Õµ¹ÌèÉÁÐ Ì°ÅÈ¤°ÀèÄÈõôø(ñ¥±±°ô5­ø(ñ¥ØÍÑå±õíì¥ÍÁ±äè±à°ÀèÐõôø(ñÍ±ÐÙ±Õõí½É´¹Ù¡¥±5­ô½¹
-¡¹õíôøìÍÐ Ù¡¥±5­°¹ÑÉÐ¹Ù±Õ¤ìÍÐ Ù¡¥±5½°°¤õôÍÑå±õíì¸¸¹Í±ÑMÑå±°±àèÄõôø(ñ½ÁÑ¥½¸Ù±ÕôùM±Ðµ­¸¸¸ð½½ÁÑ¥½¸ø(íµ­Ì¹µÀ¡´ôøñ½ÁÑ¥½¸­äõíµôÙ±Õõíµôùíµôð½½ÁÑ¥½¸ø¥ô(ð½Í±Ðø(ñ¥¹ÁÕÐÙ±Õõí½É´¹Ù¡¥±5­ô½¹
-¡¹õíôøÍÐ Ù¡¥±5­°¹ÑÉÐ¹Ù±Õ¥ôÁ±¡½±Èô½ÈÑåÁÍÑå±õíì¸¸¹¥¹ÁÕÑMÑå±°Ý¥Ñ èàÀ°±àè¹½¹õô¼ø(ð½¥Øø(ð½¥±ø(ñ¥±±°ô5½°ø(ñ¥ØÍÑå±õíì¥ÍÁ±äè±à°ÀèÐõôø(ñÍ±ÐÙ±Õõí½É´¹Ù¡¥±5½±ô½¹
-¡¹õíôø½¹5½±M±Ð¡¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õíì¸¸¹Í±ÑMÑå±°±àèÄõôø(ñ½ÁÑ¥½¸Ù±ÕôùM±Ðµ½°¸¸¸ð½½ÁÑ¥½¸ø(íµ½±Ì¹µÀ¡´ôøñ½ÁÑ¥½¸­äõí´¹¥ôÙ±Õõí´¹µ½±ôùí´¹µ½±ôð½½ÁÑ¥½¸ø¥ô(ð½Í±Ðø(ñ¥¹ÁÕÐÙ±Õõí½É´¹Ù¡¥±5½±ô½¹
-¡¹õíôøÍÐ Ù¡¥±5½°°¹ÑÉÐ¹Ù±Õ¥ôÁ±¡½±Èô½ÈÑåÁÍÑå±õíì¸¸¹¥¹ÁÕÑMÑå±°Ý¥Ñ èàÀ°±àè¹½¹õô¼ø(ð½¥Øø(ð½¥±ø(ñ¥±±°ô¹¥¹QåÁM¥éø(ñ¥¹ÁÕÐÙ±Õõí½É´¹¹¥¹QåÁô½¹
-¡¹õíôøÍÐ ¹¥¹QåÁ°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ô¹¥¹ø(ñ¥¹ÁÕÐÙ±Õõí½É´¹¹¥¹9ÕµÉô½¹
-¡¹õíôøÍÐ ¹¥¹9ÕµÈ°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ôI¼ø(ñ¥¹ÁÕÐÙ±Õõí½É´¹É½ô½¹
-¡¹õíôøÍÐ É¼°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ô
-½µÁ±¥¹A±ÑÑø(ñ¥¹ÁÕÐÙ±Õõí½É´¹½µÁA±ÑÑô½¹
-¡¹õíôøÍÐ ½µÁA±ÑÑ°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ô=½µÑÈø(ñ¥¹ÁÕÐÙ±Õõí½É´¹½½µÑÉô½¹
-¡¹õíôøÍÐ ½½µÑÈ°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ôMÑ¥¹
-Á¥Ñäø(ñ¥¹ÁÕÐÙ±Õõí½É´¹ÍÑÍô½¹
-¡¹õíôøÍÐ ÍÑÌ°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ôY%8ø(ñ¥¹ÁÕÐÙ±Õõí½É´¹Ù¥¹9ÕµÉô½¹
-¡¹õíôøÍÐ Ù¥¹9ÕµÈ°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õíì¸¸¹¥¹ÁÕÑMÑå±°½¹Ñµ¥±äèµ½¹½ÍÁõô¼ø(ð½¥±ø(ñ¥±±°ôY4¡­¤ø(ñ¥¹ÁÕÐÙ±Õõí½É´¹Ùµô½¹
-¡¹õíôøÍÐ Ù´°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ô
-4¡­¤ø(ñ¥¹ÁÕÐÙ±Õõí½É´¹µô½¹
-¡¹õíôøÍÐ ´°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ôÉ½¹Ðá±IÑ¥¹¡­¤ø(ñ¥¹ÁÕÐÙ±Õõí½É´¹É½¹Ñá±IÑ¥¹ô½¹
-¡¹õíôøÍÐ É½¹Ñá±IÑ¥¹°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ôIÈá±IÑ¥¹¡­¤ø(ñ¥¹ÁÕÐÙ±Õõí½É´¹ÉÉá±IÑ¥¹ô½¹
-¡¹õíôøÍÐ ÉÉá±IÑ¥¹°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ôáÑÉµá±MÁ¥¹¡µ´¤ø(ñ¥¹ÁÕÐÙ±Õõí½É´¹áÑÉµá±MÁ¥¹ô½¹
-¡¹õíôøÍÐ áÑÉµá±MÁ¥¹°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ô9ÜQÉ]¥¡Ð¡­¤ø(ñ¥¹ÁÕÐÙ±Õõí½É´¹¹ÝQÉ]¥¡Ñô½¹
-¡¹õíôøÍÐ ¹ÝQÉ]¥¡Ð°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ð½¥Øø((ì¼¨QåÉÌ¨½ô(ñ¥ØÍÑå±õíìµÉ¥¹Q½ÀèÄÐ°¥ÍÁ±äèÉ¥°É¥QµÁ±Ñ
-½±Õµ¹ÌèÉÁÐ Ð°ÅÈ¤°ÀèÄÈõôø(ñ¥±±°ôÉ½¹ÐQåÉ
-½Õ¹Ðø(ñ¥¹ÁÕÐÙ±Õõí½É´¹É½¹ÑQåÉ
-½Õ¹Ñô½¹
-¡¹õíôøÍÐ É½¹ÑQåÉ
-½Õ¹Ð°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ôÉ½¹ÐQåÉM¥éø(ñ¥¹ÁÕÐÙ±Õõí½É´¹É½¹ÑQåÉM¥éô½¹
-¡¹õíôøÍÐ É½¹ÑQåÉM¥é°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ôIÈQåÉ
-½Õ¹Ðø(ñ¥¹ÁÕÐÙ±Õõí½É´¹ÉÉQåÉ
-½Õ¹Ñô½¹
-¡¹õíôøÍÐ ÉÉQåÉ
-½Õ¹Ð°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ñ¥±±°ôIÈQåÉM¥éø(ñ¥¹ÁÕÐÙ±Õõí½É´¹ÉÉQåÉM¥éô½¹
-¡¹õíôøÍÐ ÉÉQåÉM¥é°¹ÑÉÐ¹Ù±Õ¥ôÍÑå±õí¥¹ÁÕÑMÑå±ô¼ø(ð½¥±ø(ð½¥Øø(ð½¥Øø((ì¼¨RRR YML5=%%
-Q%=8
-=LRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR ¨½ô(ñ¥ØÍÑå±õíÍÑ¥½¹MÑå±ôø(ñ¥ØÍÑå±õíÍÑ¥½¹Q¥Ñ±ôùYML5½¥¥Ñ¥½¸
-½Ìð½¥Øø((ì¼¨M±Ñ½Ì¨½ô(íÍ±Ñ
-½Ì¹±¹Ñ øÀ (ñ¥ØÍÑå±õíì¥ÍÁ±äè±à°±á]ÉÀèÝÉÀ°ÀèØ°µÉ¥¹	½ÑÑ½´èÄÈõôø(íÍ±Ñ
-½Ì¹µÀ¡ôø (ñÍÁ¸­äõí¹½ô½¹
-±¥¬õì ¤ôøÑ½±
-½¡¥ôÍÑå±õíì¥ÍÁ±äè¥¹±¥¹µ±à°±¥¹%ÑµÌè¹ÑÈ°ÀèØ°­É½Õ¹èÉ ÈÌÈ°ÄÀÐ°ÈØ°À¸ÄÈ¤°½ÉÈèÅÁàÍ½±¥É ÈÌÈ°ÄÀÐ°ÈØ°À¸Ì¤°½ÉÉI¥ÕÌèÐ°Á¥¹èÑÁàÄÁÁà°½¹ÑM¥éèÄÈ°½±½ÈèàØàÅ°½¹Ñ]¥¡ÐèØÀÀ°ÕÉÍ½ÈèÁ½¥¹ÑÈõôø(í¹½ôPí¹ÍÉ¥ÁÑ¥½¹ôñÍÁ¸ÍÑå±õíì½±½ÈèÉ ÈÌÈ°ÄÀÐ°ÈØ°À¸Ô¤õôûrTð½ÍÁ¸ø(ð½ÍÁ¸ø(¤¥ô(ð½¥Øø(¥ô((ì¼¨
-½Á¥­ÈÑ½±¨½ô(ñÕÑÑ½¸½¹
-±¥¬õì ¤ôøÍÑM¡½Ý
-½A¥­È Í¡½Ý
-½A¥­È¥ôÍÑå±õíì­É½Õ¹èÙÈ ´µÉ¬Ì¤°½ÉÈèÅÁàÍ½±¥ÙÈ ´µ½ÉÈ¤°½ÉÉI¥ÕÌèØ°Á¥¹èáÁàÄÑÁà°½±½Èè°½¹ÑM¥éèÄÈ°ÕÉÍ½ÈèÁ½¥¹ÑÈ°µÉ¥¹	½ÑÑ½´èÍ¡½Ý
-½A¥­ÈüÄÀèÀõôø(íÍ¡½Ý
-½A¥­ÈüZð!¥
-½1¥ÍÐè¬YML
-½Ìô(ð½ÕÑÑ½¸ø((íÍ¡½Ý
-½A¥­È (ñ¥Øø(ñ¥¹ÁÕÐÙ±Õõí½¥±ÑÉô½¹
-¡¹õíôøÍÑ
-½¥±ÑÈ¡¹ÑÉÐ¹Ù±Õ¥ôÁ±¡½±Èô¥±ÑÈ½Ì¸¸¸ÍÑå±õíì¸¸¹¥¹ÁÕÑMÑå±°µÉ¥¹	½ÑÑ½´èà°µá]¥Ñ èÌÀÀõô¼ø(ñ¥ØÍÑå±õíìµá!¥¡ÐèÌÀÀ°½ÙÉ±½ÝdèÕÑ¼°½ÉÈèÅÁàÍ½±¥ÙÈ ´µ½ÉÈ¤°½ÉÉI¥ÕÌèØõôø(í¥±ÑÉ
-½Ì¹µÀ¡Ùôøì(½¹ÍÐ¥ÍM±ÑôÍ±Ñ
-½Ì¹Í½µ¡ôø¹½ôôôÙ¹½¤(ÉÑÕÉ¸ (ñ¥Ø­äõíÙ¹½ô½¹
-±¥¬õì ¤ôøÑ½±
-½¡Ù¥ôÍÑå±õíì¥ÍÁ±äè±à°±¥¹%ÑµÌè¹ÑÈ°ÀèÄÀ°Á¥¹èáÁàÄÉÁà°½ÉÉ	½ÑÑ½´èÅÁàÍ½±¥ÙÈ ´µ½ÉÈ¤°ÕÉÍ½ÈèÁ½¥¹ÑÈ°­É½Õ¹è¥ÍM±ÑüÉ ÈÌÈ°ÄÀÐ°ÈØ°À¸Àà¤èÑÉ¹ÍÁÉ¹Ðõôø(ñ¥ØÍÑå±õíìÝ¥Ñ èÄà°¡¥¡ÐèÄà°½ÉÉI¥ÕÌèÌ°½ÉÈèÉÁàÍ½±¥í¥ÍM±ÑüàØàÅèÙÈ ´µ½ÉÈ¤õ°­É½Õ¹è¥ÍM±ÑüàØàÅèÑÉ¹ÍÁÉ¹Ð°¥ÍÁ±äè±à°±¥¹%ÑµÌè¹ÑÈ°©ÕÍÑ¥å
-½¹Ñ¹Ðè¹ÑÈ°½¹ÑM¥éèÄÄ°½±½Èè°±áM¡É¥¹¬èÀõôø(í¥ÍM±ÑrLô(ð½¥Øø(     <span style={{ fontWeight: 700, color: '#E8681A', fontSize: 13, minWidth: 28 }}>{vc.code}</span>
-                    <span style={{ color: '#fff', fontSize: 13 }}>{vc.description}</span>
+        {bookings.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 60, color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
+            No VASS bookings yet. Click &quot;New Booking&quot; to create one.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {bookings.map(b => (
+              <div
+                key={b.id}
+                onClick={() => router.push(`/engineering/vass-booking?id=${b.id}`)}
+                style={{
+                  background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
+                  padding: '14px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16,
+                  transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = '#E8681A'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+              >
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{b.ownerName || 'Unknown Owner'}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+                    {b.vehicleMake} {b.vehicleModel} {b.rego ? `· ${b.rego}` : ''} {b.jobNumber ? `· Job ${b.jobNumber}` : ''}
                   </div>
-                )
-              })}
-            </div>
+                </div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{b.bookingDate ? new Date(b.bookingDate).toLocaleDateString('en-AU') : ''}</div>
+                <div style={{ fontSize: 11, color: '#E8681A', fontWeight: 600 }}>Edit →</div>
+              </div>
+            ))}
           </div>
         )}
       </div>
+    )
+  }
 
-      {/* âââ DESCRIPTION OF MODIFICATION ââââââââââââââââââââââââââââââââââââââââ */}
-      <div style={sectionStyle}>
-        <div style={sectionTitle}>Description of Modification</div>
-        <textarea value={form.modDescription} onChange={e => set('modDescription', e.target.value)} rows={5} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} placeholder="Auto-populated from selected VASS codes, or type manually..." />
+  // ── Form view ─────────────────────────────────────────────────────────────
+  return (
+    <div style={{ padding: '24px 32px', maxWidth: 960, margin: '0 auto' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+        <button onClick={() => setShowList(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', fontSize: 13, padding: 0 }}>
+          ← Bookings
+        </button>
+        <h1 style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#fff', margin: 0, flex: 1 }}>
+          {bookingId ? 'Edit VASS Booking' : 'New VASS Booking'}
+        </h1>
+        {bookingId && (
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>ID: {bookingId}</div>
+        )}
       </div>
 
-      {/* âââ NOTES ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */}
+      {/* Populate from Quote */}
+      {quotes.length > 0 && (
+        <div style={{ ...sectionStyle, marginBottom: 16 }}>
+          <div style={sectionTitle}>Populate from Quote</div>
+          <div style={gridTwo}>
+            <Field label="Select Quote">
+              <select style={selectStyle} value={selectedQuote} onChange={e => populateFromQuote(e.target.value)}>
+                <option value="">— Select a quote —</option>
+                {quotes.map(q => (
+                  <option key={q.id} value={q.id}>{q.quoteNumber} — {q.customerName || 'Unknown'}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        </div>
+      )}
+
+      {/* Booking Details */}
+      <div style={sectionStyle}>
+        <div style={sectionTitle}>Booking Details</div>
+        <div style={{ ...gridFour, marginBottom: 12 }}>
+          <Field label="Job Number"><input style={inputStyle} value={form.jobNumber} onChange={e => set('jobNumber', e.target.value)} placeholder="e.g. 1042" /></Field>
+          <Field label="Booking Date"><input type="date" style={inputStyle} value={form.bookingDate} onChange={e => set('bookingDate', e.target.value)} /></Field>
+          <Field label="Finish Date"><input type="date" style={inputStyle} value={form.finishDate} onChange={e => set('finishDate', e.target.value)} /></Field>
+          <Field label="PO Number"><input style={inputStyle} value={form.poNumber} onChange={e => set('poNumber', e.target.value)} placeholder="Optional" /></Field>
+        </div>
+        <div style={gridFour}>
+          <Field label="Requested By"><input style={inputStyle} value={form.requestedBy} onChange={e => set('requestedBy', e.target.value)} /></Field>
+          <Field label="Company Email"><input style={inputStyle} value={form.companyEmail} onChange={e => set('companyEmail', e.target.value)} /></Field>
+          <Field label="Company Phone"><input style={inputStyle} value={form.companyPhone} onChange={e => set('companyPhone', e.target.value)} /></Field>
+          <Field label="Company State">
+            <select style={selectStyle} value={form.companyState} onChange={e => set('companyState', e.target.value)}>
+              {STATES.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </Field>
+        </div>
+      </div>
+
+      {/* Owner / Customer */}
+      <div style={sectionStyle}>
+        <div style={sectionTitle}>Owner / Customer</div>
+        <div style={{ ...gridThree, marginBottom: 12 }}>
+          <Field label="Owner Name"><input style={inputStyle} value={form.ownerName} onChange={e => set('ownerName', e.target.value)} placeholder="Full name or company" /></Field>
+          <Field label="Address"><input style={inputStyle} value={form.ownerAddress} onChange={e => set('ownerAddress', e.target.value)} /></Field>
+          <Field label="City / Suburb"><input style={inputStyle} value={form.ownerCity} onChange={e => set('ownerCity', e.target.value)} /></Field>
+        </div>
+        <div style={gridThree}>
+          <Field label="State">
+            <select style={selectStyle} value={form.ownerState} onChange={e => set('ownerState', e.target.value)}>
+              {STATES.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </Field>
+          <Field label="Postcode"><input style={inputStyle} value={form.ownerPostcode} onChange={e => set('ownerPostcode', e.target.value)} /></Field>
+        </div>
+      </div>
+
+      {/* Vehicle Details */}
+      <div style={sectionStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={sectionTitle}>Vehicle Details</div>
+          <button onClick={() => setAddChassisMode(!addChassisMode)} style={{ background: 'rgba(232,104,26,0.12)', border: '1px solid rgba(232,104,26,0.3)', borderRadius: 5, padding: '5px 12px', color: '#E8681A', fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5 }}>
+            {addChassisMode ? 'Cancel' : '+ Add Chassis'}
+          </button>
+        </div>
+
+        {addChassisMode && (
+          <div style={{ background: 'rgba(232,104,26,0.05)', border: '1px solid rgba(232,104,26,0.15)', borderRadius: 8, padding: 14, marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#E8681A', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>Add New Chassis to Database</div>
+            <div style={{ ...gridFour, marginBottom: 10 }}>
+              <Field label="Make"><input style={inputStyle} value={newChassis.make || ''} onChange={e => setNewChassis(c => ({ ...c, make: e.target.value }))} /></Field>
+              <Field label="Model"><input style={inputStyle} value={newChassis.model || ''} onChange={e => setNewChassis(c => ({ ...c, model: e.target.value }))} /></Field>
+              <Field label="GVM (kg)"><input style={inputStyle} value={newChassis.gvm || ''} onChange={e => setNewChassis(c => ({ ...c, gvm: e.target.value }))} /></Field>
+              <Field label="GCM (kg)"><input style={inputStyle} value={newChassis.gcm || ''} onChange={e => setNewChassis(c => ({ ...c, gcm: e.target.value }))} /></Field>
+            </div>
+            <div style={{ ...gridFour, marginBottom: 10 }}>
+              <Field label="Front Axle (kg)"><input style={inputStyle} value={newChassis.frontAxleRating || ''} onChange={e => setNewChassis(c => ({ ...c, frontAxleRating: e.target.value }))} /></Field>
+              <Field label="Rear Axle (kg)"><input style={inputStyle} value={newChassis.rearAxleRating || ''} onChange={e => setNewChassis(c => ({ ...c, rearAxleRating: e.target.value }))} /></Field>
+              <Field label="Seating Capacity"><input style={inputStyle} value={newChassis.seatingCapacity || ''} onChange={e => setNewChassis(c => ({ ...c, seatingCapacity: e.target.value }))} /></Field>
+            </div>
+            <button onClick={saveNewChassis} style={{ background: '#E8681A', border: 'none', borderRadius: 5, padding: '7px 16px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              Save Chassis
+            </button>
+          </div>
+        )}
+
+        <div style={{ ...gridFour, marginBottom: 12 }}>
+          <Field label="Make">
+            <select style={selectStyle} value={form.vehicleMake} onChange={e => set('vehicleMake', e.target.value)}>
+              <option value="">— Select Make —</option>
+              {makes.map(m => <option key={m}>{m}</option>)}
+              <option value="__other__">Other (type below)</option>
+            </select>
+          </Field>
+          <Field label="Model">
+            {models.length > 0 ? (
+              <select style={selectStyle} value={form.vehicleModel} onChange={e => onModelSelect(e.target.value)}>
+                <option value="">— Select Model —</option>
+                {models.map(m => <option key={m.id} value={m.model}>{m.model}</option>)}
+              </select>
+            ) : (
+              <input style={inputStyle} value={form.vehicleModel} onChange={e => set('vehicleModel', e.target.value)} placeholder="Enter model" />
+            )}
+          </Field>
+          <Field label="Rego"><input style={inputStyle} value={form.rego} onChange={e => set('rego', e.target.value)} /></Field>
+          <Field label="VIN Number"><input style={inputStyle} value={form.vinNumber} onChange={e => set('vinNumber', e.target.value)} /></Field>
+        </div>
+        <div style={{ ...gridFour, marginBottom: 12 }}>
+          <Field label="Engine Type"><input style={inputStyle} value={form.engineType} onChange={e => set('engineType', e.target.value)} /></Field>
+          <Field label="Engine Number"><input style={inputStyle} value={form.engineNumber} onChange={e => set('engineNumber', e.target.value)} /></Field>
+          <Field label="Comp Plate Date"><input type="date" style={inputStyle} value={form.compPlateDate} onChange={e => set('compPlateDate', e.target.value)} /></Field>
+          <Field label="Odometer (km)"><input style={inputStyle} value={form.odometer} onChange={e => set('odometer', e.target.value)} /></Field>
+        </div>
+        <div style={gridFour}>
+          <Field label="GVM (kg)"><input style={inputStyle} value={form.gvm} onChange={e => set('gvm', e.target.value)} /></Field>
+          <Field label="GCM (kg)"><input style={inputStyle} value={form.gcm} onChange={e => set('gcm', e.target.value)} /></Field>
+          <Field label="Front Axle Rating (kg)"><input style={inputStyle} value={form.frontAxleRating} onChange={e => set('frontAxleRating', e.target.value)} /></Field>
+          <Field label="Rear Axle Rating (kg)"><input style={inputStyle} value={form.rearAxleRating} onChange={e => set('rearAxleRating', e.target.value)} /></Field>
+        </div>
+      </div>
+
+      {/* Tyre Details */}
+      <div style={sectionStyle}>
+        <div style={sectionTitle}>Tyre Details</div>
+        <div style={gridFour}>
+          <Field label="Front Tyre Count"><input style={inputStyle} value={form.frontTyreCount} onChange={e => set('frontTyreCount', e.target.value)} placeholder="e.g. 2" /></Field>
+          <Field label="Front Tyre Size"><input style={inputStyle} value={form.frontTyreSize} onChange={e => set('frontTyreSize', e.target.value)} placeholder="e.g. 315/80R22.5" /></Field>
+          <Field label="Rear Tyre Count"><input style={inputStyle} value={form.rearTyreCount} onChange={e => set('rearTyreCount', e.target.value)} placeholder="e.g. 4" /></Field>
+          <Field label="Rear Tyre Size"><input style={inputStyle} value={form.rearTyreSize} onChange={e => set('rearTyreSize', e.target.value)} placeholder="e.g. 315/80R22.5" /></Field>
+        </div>
+      </div>
+
+      {/* Modification Details */}
+      <div style={sectionStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={sectionTitle}>Modification Details</div>
+          <button onClick={() => setShowCodePicker(!showCodePicker)} style={{ background: 'rgba(232,104,26,0.12)', border: '1px solid rgba(232,104,26,0.3)', borderRadius: 5, padding: '5px 12px', color: '#E8681A', fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5 }}>
+            {showCodePicker ? 'Hide VASS Codes' : `+ VASS Codes${selectedCodes.length > 0 ? ` (${selectedCodes.length})` : ''}`}
+          </button>
+        </div>
+
+        {showCodePicker && (
+          <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 14, marginBottom: 14 }}>
+            <input
+              style={{ ...inputStyle, marginBottom: 10 }}
+              placeholder="Filter codes..."
+              value={codeFilter}
+              onChange={e => setCodeFilter(e.target.value)}
+            />
+            <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {VASS_CODES
+                .filter(vc => !codeFilter || vc.code.toLowerCase().includes(codeFilter.toLowerCase()) || vc.description.toLowerCase().includes(codeFilter.toLowerCase()))
+                .map(vc => {
+                  const selected = selectedCodes.some(c => c.code === vc.code)
+                  return (
+                    <div
+                      key={vc.code}
+                      onClick={() => toggleCode(vc)}
+                      style={{
+                        padding: '7px 10px', borderRadius: 5, cursor: 'pointer',
+                        background: selected ? 'rgba(232,104,26,0.15)' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${selected ? 'rgba(232,104,26,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                        display: 'flex', alignItems: 'center', gap: 10,
+                      }}
+                    >
+                      <div style={{ width: 16, height: 16, borderRadius: 3, background: selected ? '#E8681A' : 'transparent', border: `2px solid ${selected ? '#E8681A' : 'rgba(255,255,255,0.2)'}`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {selected && <span style={{ fontSize: 10, color: '#fff', fontWeight: 700 }}>✓</span>}
+                      </div>
+                      <span style={{ fontSize: 12, color: '#E8681A', fontWeight: 700, width: 40, flexShrink: 0 }}>{vc.code}</span>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{vc.description}</span>
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        )}
+
+        {selectedCodes.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+            {selectedCodes.map(vc => (
+              <span key={vc.code} style={{ background: 'rgba(232,104,26,0.15)', border: '1px solid rgba(232,104,26,0.3)', borderRadius: 4, padding: '3px 8px', fontSize: 11, color: '#E8681A', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                {vc.code}
+                <span onClick={() => toggleCode(vc)} style={{ cursor: 'pointer', opacity: 0.6 }}>×</span>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div style={{ ...gridTwo, marginBottom: 12 }}>
+          <Field label="Extreme Axle Spacing (mm)"><input style={inputStyle} value={form.extremeAxleSpacing} onChange={e => set('extremeAxleSpacing', e.target.value)} /></Field>
+          <Field label="New Tare Weight (kg)"><input style={inputStyle} value={form.newTareWeight} onChange={e => set('newTareWeight', e.target.value)} /></Field>
+        </div>
+        <Field label="Modification Description">
+          <textarea
+            style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
+            value={form.modDescription}
+            onChange={e => set('modDescription', e.target.value)}
+            placeholder="Describe the modification work..."
+          />
+        </Field>
+      </div>
+
+      {/* Seating */}
+      <div style={sectionStyle}>
+        <div style={sectionTitle}>Seating</div>
+        <div style={{ maxWidth: 200 }}>
+          <Field label="Seats"><input style={inputStyle} value={form.seats} onChange={e => set('seats', e.target.value)} placeholder="e.g. 3" /></Field>
+        </div>
+      </div>
+
+      {/* Notes */}
       <div style={sectionStyle}>
         <div style={sectionTitle}>Notes</div>
-        <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} placeholder="Internal notes..." />
+        <textarea
+          style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
+          value={form.notes}
+          onChange={e => set('notes', e.target.value)}
+          placeholder="Any additional notes..."
+        />
       </div>
 
-      {/* âââ SAVE BAR âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '16px 0' }}>
-        {bookingId && (
-          <button onClick={() => window.open(`/vass/${bookingId}`, '_blank')} style={{ background: 'var(--dark3)', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 18px', color: '#fff', fontSize: 13, cursor: 'pointer' }}>
-            ð¨ï¸ Print / Save PDF
-          </button>
-        )}
-        <button onClick={save} disabled={saving} style={{ background: '#E8681A', border: 'none', borderRadius: 8, padding: '10px 24px', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-          {saving ? 'Saving...' : saved ? 'â Saved!' : 'Save Booking'}
+      {/* Save button */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 40 }}>
+        <button
+          onClick={save}
+          disabled={saving}
+          style={{
+            background: saving ? 'rgba(232,104,26,0.4)' : '#E8681A',
+            border: 'none', borderRadius: 7, padding: '12px 28px',
+            color: '#fff', fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer',
+            letterSpacing: 0.5, transition: 'background 0.15s',
+          }}
+        >
+          {saving ? 'Saving...' : bookingId ? 'Update Booking' : 'Save Booking'}
         </button>
+        {saved && (
+          <div style={{ fontSize: 13, color: '#4ade80', fontWeight: 600 }}>
+            ✓ Saved successfully
+          </div>
+        )}
       </div>
     </div>
   )

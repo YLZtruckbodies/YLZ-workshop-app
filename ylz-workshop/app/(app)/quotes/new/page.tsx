@@ -191,7 +191,7 @@ export default function NewQuotePage() {
 
                 {other.length > 0 && (
                   <>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 10, marginTop: trailers.length > 0 ? 20 : 0 }}>Other</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 10, marginTop: (trailers.length > 0 || beavertailTrays.length > 0) ? 20 : 0 }}>Other</div>
                     <div style={rowGrid(other.length)}>
                       {other.map(t => <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />)}
                     </div>
