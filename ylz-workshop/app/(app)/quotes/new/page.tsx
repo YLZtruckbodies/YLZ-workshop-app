@@ -183,7 +183,7 @@ export default function NewQuotePage() {
                 {beavertailTrays.length > 0 && (
                   <>
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 10, marginTop: trailers.length > 0 ? 20 : 0 }}>Beavertail / Trays</div>
-                    <div style={{ ...rowGrid(beavertailTrays.length), marginBottom: other.length > 0 ? 20 : 0 }}>
+                    <div style={{ ...rowGrid(4), marginBottom: other.length > 0 ? 20 : 0 }}>
                       {beavertailTrays.map(t => <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />)}
                     </div>
                   </>

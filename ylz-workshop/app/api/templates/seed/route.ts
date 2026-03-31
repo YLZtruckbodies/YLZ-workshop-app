@@ -582,7 +582,7 @@ const SEED_TEMPLATES = [
     name: 'Beavertail with Twin Ramps',
     category: 'quick-quote',
     description: 'Standard beavertail body with twin ramps. 2470W × 8500L (7000mm flat deck, 1200mm tail). 5mm checkered plate floor, profile laser cut side rails, 400mm cross-members. Hydraulic power pack 3000 PSI. Twin ramps 800mm × 2700mm, 12T rated. Stabiliser legs, rope rails, LED lights, PPG 2-pack paint.',
-    imagePath: '/images/truck-bodies/beavertail.svg',
+    imagePath: '/images/trailers/beavertail.jpg',
     configuration: {
       buildType: 'beavertail',
       templateType: 'quick-quote',
