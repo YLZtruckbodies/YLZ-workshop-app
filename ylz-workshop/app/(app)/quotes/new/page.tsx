@@ -192,7 +192,7 @@ export default function NewQuotePage() {
 
           {/* Repairs & Warranty section */}
           <section style={{ marginBottom: 48 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#fff' }}>
                 🔩 Repairs & Warranty
               </div>
@@ -201,11 +201,10 @@ export default function NewQuotePage() {
                 Quote for repair work or warranty claims
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
-              <ConfigCard
-                icon="🔩"
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
+              <RepairCard
                 label="Repairs / Warranty"
-                desc="Quote for repair work, modifications, or warranty claims on existing builds"
+                desc="Repair work, modifications, or warranty claims on existing builds. Price on application."
                 onClick={() => router.push('/quotes/builder?buildType=repairs')}
               />
             </div>
@@ -394,6 +393,63 @@ function QuickQuoteCard({
           fontSize: 11, color: hovered ? '#E8681A' : 'rgba(255,255,255,0.35)',
           fontWeight: 600, transition: 'color 0.15s',
           display: 'flex', alignItems: 'center', gap: 4,
+        }}>
+          Select →
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Repair card — same style as QuickQuoteCard but no price ─────────────────
+function RepairCard({ label, desc, onClick }: { label: string; desc: string; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: hovered ? '#1a1a1a' : '#111',
+        border: `2px solid ${hovered ? '#E8681A' : 'rgba(255,255,255,0.1)'}`,
+        borderRadius: 10,
+        padding: 14,
+        cursor: 'pointer',
+        transition: 'all 0.18s',
+        transform: hovered ? 'translateY(-2px)' : 'none',
+        boxShadow: hovered ? '0 6px 24px rgba(232,104,26,0.12)' : 'none',
+        position: 'relative',
+      }}
+    >
+      <div style={{
+        position: 'absolute', top: 14, right: 14,
+        fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+        background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)',
+        padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)',
+      }}>
+        Repairs
+      </div>
+      <div style={{ fontSize: 28, marginBottom: 8 }}>🔩</div>
+      <div style={{
+        fontFamily: "'League Spartan', sans-serif",
+        fontSize: 14, fontWeight: 800, letterSpacing: 0.3,
+        color: '#fff', marginBottom: 6, paddingRight: 70, lineHeight: 1.3,
+      }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 10, lineHeight: 1.4,
+      }}>
+        {desc}
+      </div>
+      <div style={{
+        borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Price on application</div>
+        <div style={{
+          fontSize: 11, color: hovered ? '#E8681A' : 'rgba(255,255,255,0.35)',
+          fontWeight: 600, transition: 'color 0.15s',
         }}>
           Select →
         </div>
