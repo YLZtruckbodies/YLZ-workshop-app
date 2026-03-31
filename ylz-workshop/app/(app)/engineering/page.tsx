@@ -28,7 +28,7 @@ export default function EngineeringPage() {
           { label: 'VIN Plate / EBS File / Axle Suspension Ordering', icon: '🏷️', desc: 'VIN plates, EBS files & suspension orders', href: '/engineering/vin-plates' },
           { label: 'MRP Ordering', icon: '📦', desc: 'Auto BOM resolver — select a job, get the full MRPeasy BOM list', href: '/engineering/mrp-ordering' },
           { label: 'Xero Quote Import', icon: '📥', desc: 'Drop Xero quotes CSV → parse specs → get BOMs → import to app', href: '/engineering/xero-import' },
-          { label: 'VASS Booking Generator', icon: '🔧', desc: 'CVC eVASS booking requests \u2014 populate from quotes or fill manually', href: '/engineering/vass-booking' },
+          { label: 'VASS Booking Generator', icon: '🔧', desc: 'CVC eVASS booking requests — populate from quotes or fill manually', href: '/engineering/vass-booking' },
           { label: 'Drawings', icon: '📐', desc: 'Engineering drawings & revisions', href: '' },
         ].map((tool) => (
           <button
@@ -73,4 +73,4 @@ export default function EngineeringPage() {
       </div>
     </div>
   )
-}  
+}
