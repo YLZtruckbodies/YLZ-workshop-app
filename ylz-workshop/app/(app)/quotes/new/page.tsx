@@ -129,10 +129,12 @@ export default function NewQuotePage() {
           {/* Quick Quote section */}
           {grouped['quick-quote'] && (() => {
             const isTrailerOnly = (t: Template) => (t.configuration as Record<string, unknown>).buildType === 'trailer'
-            const hardox   = grouped['quick-quote'].filter(t => !isTrailerOnly(t) && (t.name.toLowerCase().startsWith('hardox') || t.name.includes('10m3 Hardox')))
-            const alloy    = grouped['quick-quote'].filter(t => !isTrailerOnly(t) && t.name.toLowerCase().startsWith('alloy'))
-            const trailers = grouped['quick-quote'].filter(isTrailerOnly)
-            const other    = grouped['quick-quote'].filter(t => !isTrailerOnly(t) && !hardox.includes(t) && !alloy.includes(t))
+            const isBeavertail  = (t: Template) => (t.configuration as Record<string, unknown>).buildType === 'beavertail'
+            const hardox      = grouped['quick-quote'].filter(t => !isTrailerOnly(t) && !isBeavertail(t) && (t.name.toLowerCase().startsWith('hardox') || t.name.includes('10m3 Hardox')))
+            const alloy       = grouped['quick-quote'].filter(t => !isTrailerOnly(t) && !isBeavertail(t) && t.name.toLowerCase().startsWith('alloy'))
+            const trailers    = grouped['quick-quote'].filter(isTrailerOnly)
+            const beavertails = grouped['quick-quote'].filter(isBeavertail)
+            const other       = grouped['quick-quote'].filter(t => !isTrailerOnly(t) && !isBeavertail(t) && !hardox.includes(t) && !alloy.includes(t))
             const rowGrid = (count: number, max = 4) => ({
               display: 'grid',
               gridTemplateColumns: `repeat(${Math.min(count, max)}, minmax(0, 1fr))`,
@@ -178,9 +180,18 @@ export default function NewQuotePage() {
                   </>
                 )}
 
+                {beavertails.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 10, marginTop: trailers.length > 0 ? 20 : 0 }}>Beavertail</div>
+                    <div style={rowGrid(beavertails.length)}>
+                      {beavertails.map(t => <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />)}
+                    </div>
+                  </>
+                )}
+
                 {other.length > 0 && (
                   <>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 10, marginTop: trailers.length > 0 ? 20 : 0 }}>Other</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 10, marginTop: (trailers.length > 0 || beavertails.length > 0) ? 20 : 0 }}>Other</div>
                     <div style={rowGrid(other.length)}>
                       {other.map(t => <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />)}
                     </div>
