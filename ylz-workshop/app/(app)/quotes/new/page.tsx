@@ -190,6 +190,27 @@ export default function NewQuotePage() {
             )
           })()}
 
+          {/* Repairs & Warranty section */}
+          <section style={{ marginBottom: 48 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#fff' }}>
+                🔩 Repairs & Warranty
+              </div>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
+                Quote for repair work or warranty claims
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+              <ConfigCard
+                icon="🔩"
+                label="Repairs / Warranty"
+                desc="Quote for repair work, modifications, or warranty claims on existing builds"
+                onClick={() => router.push('/quotes/builder?buildType=repairs')}
+              />
+            </div>
+          </section>
+
           {/* Configure Build section */}
           <section style={{ marginBottom: 48 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>

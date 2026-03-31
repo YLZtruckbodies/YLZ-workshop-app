@@ -129,6 +129,11 @@ interface QuoteForm {
   declineReason: string
   // job link
   jobId: string
+  // repairs / warranty
+  repairDescription: string
+  repairUnit: string
+  repairWarranty: boolean
+  repairOriginalJob: string
   // beavertail
   btDeckWidth: string
   btDeckLength: string
@@ -298,6 +303,7 @@ const BUILD_TYPES = [
   { value: 'trailer', label: '🚜 Trailer' },
   { value: 'truck-and-trailer', label: '🚛🚜 Truck + Trailer' },
   { value: 'beavertail', label: '🔧 Beavertail' },
+  { value: 'repairs', label: '🔩 Repairs / Warranty' },
 ]
 const STATUS_OPTIONS = ['draft', 'sent', 'accepted', 'declined', 'expired']
 
@@ -515,6 +521,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     notes: '', terms: DEFAULT_TERMS,
     declineReason: '',
     jobId: '',
+    repairDescription: '', repairUnit: '', repairWarranty: false, repairOriginalJob: '',
     btDeckWidth: '2470', btDeckLength: '8500', btFlatDeckLength: '7000',
     btTailLength: '1200', btTailAngle: '15', btRampExtension: '300',
     btRampType: 'Twin Ramps', btRampWidth: '800', btRampActualLength: '2700', btRampCapacity: '12T',
@@ -744,6 +751,12 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
         { section: 'Chassis Mods', description: 'Rear Chassis Modifications', quantity: 1, unitPrice: 0, totalPrice: 0, sortOrder: 1 },
       ]
     }
+  } else if (form.buildType === 'repairs') {
+    form.repairDescription = cfg.repairDescription || ''
+    form.repairUnit = cfg.repairUnit || ''
+    form.repairWarranty = cfg.repairWarranty || false
+    form.repairOriginalJob = cfg.repairOriginalJob || ''
+    form.specialRequirements = cfg.specialRequirements || ''
   }
 }
 
@@ -818,6 +831,12 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     cfg.chassisMake = form.chassisMake
     cfg.chassisModel = form.chassisModel
     cfg.specialRequirements = form.specialRequirements
+  } else if (form.buildType === 'repairs') {
+    cfg.repairDescription = form.repairDescription
+    cfg.repairUnit = form.repairUnit
+    cfg.repairWarranty = form.repairWarranty
+    cfg.repairOriginalJob = form.repairOriginalJob
+    cfg.specialRequirements = form.specialRequirements
   } else {
     Object.assign(cfg, trailerData)
     cfg.specialRequirements = form.specialRequirements
@@ -832,6 +851,7 @@ function QuoteBuilderInner() {
   const params = useSearchParams()
   const quoteId = params.get('id')
   const templateId = params.get('templateId')
+  const buildTypeParam = params.get('buildType')
   const { data: session } = useSession()
 
   const [form, setForm] = useState<QuoteForm>(emptyForm())
@@ -926,6 +946,8 @@ function QuoteBuilderInner() {
             const cfg = template.configuration as Record<string, any>
             applyTemplateConfig(f, cfg, template)
             setIsQuickQuote(cfg.templateType === 'quick-quote')
+          } else if (buildTypeParam) {
+            f.buildType = buildTypeParam
           }
           setForm(f)
         }
@@ -936,7 +958,7 @@ function QuoteBuilderInner() {
     }
     init()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quoteId, templateId])
+  }, [quoteId, templateId, buildTypeParam])
 
   // Auto-set preparedBy from session once loaded
   useEffect(() => {
@@ -1288,6 +1310,7 @@ function QuoteBuilderInner() {
   const hasTruck = form.buildType === 'truck-body' || form.buildType === 'truck-and-trailer'
   const hasTrailer = form.buildType === 'trailer' || form.buildType === 'truck-and-trailer'
   const hasBeavertail = form.buildType === 'beavertail'
+  const hasRepairs = form.buildType === 'repairs'
 
   if (loading) {
     return (
@@ -1757,6 +1780,58 @@ function QuoteBuilderInner() {
               >
                 ↻ Regenerate Spec Line Items
               </button>
+            </div>
+          </SectionCard>
+        )}
+
+        {/* ── Section: Repairs / Warranty Config ── */}
+        {hasRepairs && (
+          <SectionCard title="Repair / Warranty Details" icon="🔩" style={{ marginTop: 20 }}>
+            <div style={grid(2)}>
+              <Field label="Unit / Vehicle">
+                <input
+                  value={form.repairUnit}
+                  onChange={(e) => set('repairUnit', e.target.value)}
+                  placeholder="e.g. YLZ1080 — Alloy Tipper on Kenworth T409"
+                  style={inputStyle}
+                />
+              </Field>
+              <Field label="Warranty Claim?">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, height: 38 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                    <input
+                      type="checkbox"
+                      checked={form.repairWarranty}
+                      onChange={(e) => set('repairWarranty', e.target.checked)}
+                      style={{ width: 16, height: 16, accentColor: '#E8681A' }}
+                    />
+                    Yes — this is a warranty claim
+                  </label>
+                </div>
+              </Field>
+            </div>
+            {form.repairWarranty && (
+              <div style={{ ...grid(1), marginTop: 16 }}>
+                <Field label="Original Job Number">
+                  <input
+                    value={form.repairOriginalJob}
+                    onChange={(e) => set('repairOriginalJob', e.target.value.toUpperCase())}
+                    placeholder="e.g. YLZ1080"
+                    style={inputStyle}
+                  />
+                </Field>
+              </div>
+            )}
+            <div style={{ marginTop: 16 }}>
+              <Field label="Scope of Work / Repair Description">
+                <textarea
+                  value={form.repairDescription}
+                  onChange={(e) => set('repairDescription', e.target.value)}
+                  placeholder="Describe the repair or warranty work required..."
+                  rows={5}
+                  style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }}
+                />
+              </Field>
             </div>
           </SectionCard>
         )}

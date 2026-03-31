@@ -35,6 +35,7 @@ function btypeToJobMasterType(btype: string): string {
   if (btype === 'wheelbase') return 'WHEELBASE'
   if (btype === 'dolly') return 'CONVERTER DOLLY'
   if (btype === 'beavertail') return 'BEAVERTAIL'
+  if (btype === 'repairs') return 'REPAIRS'
   return 'TRUCK'
 }
 
@@ -62,6 +63,12 @@ function jobTypeString(quote: { buildType: string; configuration: any }): string
 
   if (bt.includes('beavertail')) {
     return 'Beavertail with Twin Ramps'
+  }
+
+  if (bt === 'repairs') {
+    const desc = cfg.repairDescription || 'Repairs / Warranty'
+    const unit = cfg.repairUnit ? ` — ${cfg.repairUnit}` : ''
+    return `${desc}${unit}`.trim()
   }
 
   return quote.buildType

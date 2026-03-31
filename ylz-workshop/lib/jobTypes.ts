@@ -19,6 +19,7 @@ export function deriveBtype(type: string): string {
   if (t.includes('alloy') || t.includes('ally')) return 'ally-body'
   if (t.includes('wheelbase')) return 'wheelbase'
   if (t.includes('beavertail')) return 'beavertail'
+  if (t.includes('repair') || t.includes('warranty')) return 'repairs'
   if (t.includes('tray')) return 'flat-tray'
   if (t.includes('dolly')) return 'dolly'
   if (t.includes('dropside')) return 'dropside'
