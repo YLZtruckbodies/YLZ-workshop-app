@@ -180,43 +180,23 @@ export default function NewQuotePage() {
                   </>
                 )}
 
-                {/* Beavertail moved to its own top-level section below */}
+                {beavertailTrays.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 10, marginTop: trailers.length > 0 ? 20 : 0 }}>Beavertail / Trays</div>
+                    <div style={{ ...rowGrid(beavertailTrays.length), marginBottom: other.length > 0 ? 20 : 0 }}>
+                      {beavertailTrays.map(t => <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />)}
+                    </div>
+                  </>
+                )}
 
                 {other.length > 0 && (
                   <>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 10, marginTop: (trailers.length > 0 || beavertailTrays.length > 0) ? 20 : 0 }}>Other</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 10, marginTop: trailers.length > 0 ? 20 : 0 }}>Other</div>
                     <div style={rowGrid(other.length)}>
                       {other.map(t => <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />)}
                     </div>
                   </>
                 )}
-              </section>
-            )
-          })()}
-
-          {/* Beavertail section — own top-level category */}
-          {(() => {
-            const isBeavertailTemplate = (t: Template) => (t.configuration as Record<string, unknown>).buildType === 'beavertail'
-            const beavertails = templates.filter(t => t.category === 'quick-quote' && isBeavertailTemplate(t)).sort((a, b) => a.sortOrder - b.sortOrder)
-            if (beavertails.length === 0) return null
-            return (
-              <section style={{ marginBottom: 48 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                  <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', color: '#fff' }}>
-                    🔧 Beavertail
-                  </div>
-                  <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
-                    Fixed-price beavertail builds — ready in seconds
-                  </div>
-                </div>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${Math.min(beavertails.length, 4)}, minmax(0, 1fr))`,
-                  gap: 10,
-                }}>
-                  {beavertails.map(t => <QuickQuoteCard key={t.id} template={t} onSelect={handleSelect} />)}
-                </div>
               </section>
             )
           })()}

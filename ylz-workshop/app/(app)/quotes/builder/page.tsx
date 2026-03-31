@@ -302,7 +302,6 @@ const BUILD_TYPES = [
   { value: 'truck-body', label: '🚛 Truck Body' },
   { value: 'trailer', label: '🚜 Trailer' },
   { value: 'truck-and-trailer', label: '🚛🚜 Truck + Trailer' },
-  { value: 'beavertail', label: '🔧 Beavertail' },
   { value: 'repairs', label: '🔩 Repairs / Warranty' },
 ]
 const STATUS_OPTIONS = ['draft', 'sent', 'accepted', 'declined', 'expired']
