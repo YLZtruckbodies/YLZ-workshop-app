@@ -54,14 +54,22 @@ export default function QuotesPage() {
   async function handleStatusChange(quoteId: string, newStatus: string) {
     setUpdatingStatus(quoteId)
     setStatusMenu(null)
+    // Optimistic update
+    setQuotes(prev => prev.map(q => q.id === quoteId ? { ...q, status: newStatus } : q))
     try {
-      await fetch(`/api/quotes/${quoteId}`, {
+      const res = await fetch(`/api/quotes/${quoteId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus, ...(newStatus === 'sent' ? { sentAt: new Date().toISOString() } : {}) }),
       })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(err.error || `Failed to update status`)
+        await fetchQuotes() // revert to actual DB state
+      }
+    } catch {
       await fetchQuotes()
-    } catch {}
+    }
     setUpdatingStatus(null)
   }
 

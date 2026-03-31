@@ -14,6 +14,6 @@ export async function GET() {
   }
 
   const next = maxNum + 1
-  const jobNumber = `YLZ ${String(next).padStart(4, '0')}`
+  const jobNumber = `YLZ${next}`
   return NextResponse.json({ jobNumber })
 }

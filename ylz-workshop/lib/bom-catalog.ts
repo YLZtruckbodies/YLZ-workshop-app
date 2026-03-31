@@ -66,6 +66,8 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
   'BOM173': { code: 'BOM173', name: '5/A Drawbar', category: 'Drawbar' },
 
   // ── Tarps ──────────────────────────────────────────────
+  'MRP20-05': { code: 'MRP20-05', name: 'Roll Right Controller (20-05)', category: 'Tarp' },
+  'MRP20-14': { code: 'MRP20-14', name: 'Manual Tarp Handle (20-14)', category: 'Tarp' },
   'BOM124': { code: 'BOM124', name: 'Tarp PVC 3.410–4.350', category: 'Tarp' },
   'BOM125': { code: 'BOM125', name: 'Tarp PVC 4.360–5.200', category: 'Tarp' },
   'BOM126': { code: 'BOM126', name: 'Tarp PVC 5.210–6.050', category: 'Tarp' },
@@ -161,6 +163,12 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
 
   // ── Hydraulic Pump ─────────────────────────────────────
   '500-223': { code: '500-223', name: 'Tipper Gear Pump Kit ISO 82L (OMFB DTH182)', category: 'Hydraulics' },
+  '500-86':  { code: '500-86',  name: 'Single Spool Valve', category: 'Hydraulics' },
+  '500-224': { code: '500-224', name: 'Truck and Trailer Spool Valve', category: 'Hydraulics' },
+  '500-233': { code: '500-233', name: 'Hydraulic Tank 135L Behind Cab', category: 'Hydraulics' },
+  '500-232': { code: '500-232', name: 'Hydraulic Tank 135L Chassis Mounted', category: 'Hydraulics' },
+  '500-231': { code: '500-231', name: 'Hydraulic Tank 200L Behind Cab', category: 'Hydraulics' },
+  '500-245': { code: '500-245', name: 'Hydraulic Tank 200L Side Mount', category: 'Hydraulics' },
 
   // ── Controller ─────────────────────────────────────────
   '500-95':  { code: '500-95',  name: 'Controller Blaze Wired 8CH E-Stop Truck & Trailer', category: 'Controls' },

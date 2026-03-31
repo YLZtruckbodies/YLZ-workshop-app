@@ -6,9 +6,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status')
     const search = searchParams.get('q')
+    const jobId = searchParams.get('jobId')
 
     const where: any = {}
     if (status) where.status = status
+    if (jobId) where.jobId = jobId
     if (search) {
       where.OR = [
         { quoteNumber: { contains: search, mode: 'insensitive' } },
@@ -35,6 +37,7 @@ export async function GET(req: NextRequest) {
         acceptedAt: true,
         createdAt: true,
         updatedAt: true,
+        jobId: true,
       },
     })
     return NextResponse.json(quotes)
@@ -44,8 +47,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { lineItems, ...quoteData } = body
+  try {
+    const body = await req.json()
+    const { lineItems, ...quoteData } = body
 
   // Sanitise numeric fields
   const safeFloat = (v: any, fallback = 0): number => {
@@ -89,18 +93,22 @@ export async function POST(req: NextRequest) {
     const configStr = JSON.stringify(quote.configuration)
     const configHash = simpleHash(configStr)
     await prisma.pricingHistory.create({
-      data: {
-        configHash,
-        buildType: quote.buildType,
-        configuration: quote.configuration as any,
-        quotedPrice: quote.total,
-        quoteNumber: quote.quoteNumber,
-        customerName: quote.customerName,
-      },
-    })
-  }
+        data: {
+          configHash,
+          buildType: quote.buildType,
+          configuration: quote.configuration as any,
+          quotedPrice: quote.total,
+          quoteNumber: quote.quoteNumber,
+          customerName: quote.customerName,
+        },
+      })
+    }
 
-  return NextResponse.json(quote, { status: 201 })
+    return NextResponse.json(quote, { status: 201 })
+  } catch (err: any) {
+    console.error('[POST /api/quotes]', err)
+    return NextResponse.json({ error: err.message || 'Failed to create quote' }, { status: 500 })
+  }
 }
 
 function simpleHash(str: string): string {

@@ -158,7 +158,7 @@ function drawCard(doc: any, part: MOPart, x: number, y: number, drawings: Drawin
   doc.font('Helvetica-Bold').fontSize(10).fillColor(TEXTBLK)
     .text(part.partNumber, detailX, detailY, { lineBreak: false })
   doc.font('Helvetica').fontSize(8).fillColor(DGREY)
-    .text(truncate(part.description, 22), detailX, detailY + 16, { lineBreak: false })
+    .text(truncate(part.description, 35), detailX, detailY + 16, { lineBreak: false })
 
   // Qty badge
   doc.rect(detailX, detailY + 34, detailW, 18).fill(BLACK)

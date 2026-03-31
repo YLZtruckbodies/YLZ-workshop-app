@@ -163,6 +163,19 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
     <p class="subtitle">Select configuration, enter VINs, and generate PDF plates — no file uploads needed</p>
   </div>
 
+  <!-- Job Number -->
+  <div class="card">
+    <div class="card-title">Job Number</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <input type="text" id="jobNumber" placeholder="e.g. YLZ1103" maxlength="20"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--text);outline:none;transition:border .2s;width:200px"
+        oninput="this.value=this.value.toUpperCase()"
+        onfocus="this.style.borderColor='var(--accent)'"
+        onblur="this.style.borderColor='var(--border)'">
+      <span style="font-size:12px;color:var(--text3)">Prefixed on all generated filenames</span>
+    </div>
+  </div>
+
   <!-- Step 1: Configuration -->
   <div class="card">
     <div class="card-title"><span class="num">1</span> Trailer Configuration</div>
@@ -386,6 +399,11 @@ const LOOKUP = {
 
 // ==================== STATE ====================
 let config = { axles: null, brand: null, brake: null };
+
+function getJobPrefix() {
+  const n = (document.getElementById('jobNumber').value || '').trim().toUpperCase();
+  return n ? n + '-' : '';
+}
 let currentData = null;
 let generatedFiles = [];
 
@@ -527,18 +545,18 @@ const ORDER_CELL_MAP = {
   // Brake: C49=STD 430mm Disc, C50=OPT 377mm Disc, C51=SK-20-4218 Drum
   // Trailer: B105=Dog, B106=Lead, B107=Dolly, B108=Semi, B109=Road Train, B110=Pig
   // Axles: B112=1, B113=2, B114=3, B115=4, B116=5, B117=6
-  '3-SAF-DISC':  { B13:1, A15:1, C49:1, B105:1, B114:1 },
-  '3-SAF-DRUM':  { A13:1, A15:1, C51:1, B105:1, B114:1 },
-  '3-TMC-DISC':  { B13:1, A15:1, C49:1, B105:1, B114:1 },
-  '3-TMC-DRUM':  { A13:1, A15:1, C51:1, B105:1, B114:1 },
-  '4-SAF-DISC':  { B13:1, A15:1, C49:1, B105:1, B115:1 },
-  '4-SAF-DRUM':  { A13:1, A15:1, C51:1, B105:1, B115:1 },
-  '4-TMC-DISC':  { B13:1, A15:1, C49:1, B105:1, B115:1 },
-  '4-TMC-DRUM':  { A13:1, A15:1, C51:1, B105:1, B115:1 },
-  '5-SAF-DISC':  { B13:1, A15:1, C49:1, B105:1, B116:1 },
-  '5-SAF-DRUM':  { A13:1, A15:1, C51:1, B105:1, B116:1 },
-  '6-SAF-DISC':  { B13:1, A15:1, C49:1, B105:1, B117:1 },
-  '6-SAF-DRUM':  { A13:1, A15:1, C51:1, B105:1, B117:1 }
+  '3-SAF-DISC':  { B13:1, B15:1, C49:1, B105:1, B114:1 },
+  '3-SAF-DRUM':  { A13:1, B15:1, C51:1, B105:1, B114:1 },
+  '3-TMC-DISC':  { B13:1, B15:1, C49:1, B105:1, B114:1 },
+  '3-TMC-DRUM':  { A13:1, B15:1, C51:1, B105:1, B114:1 },
+  '4-SAF-DISC':  { B13:1, B15:1, C49:1, B105:1, B115:1 },
+  '4-SAF-DRUM':  { A13:1, B15:1, C51:1, B105:1, B115:1 },
+  '4-TMC-DISC':  { B13:1, B15:1, C49:1, B105:1, B115:1 },
+  '4-TMC-DRUM':  { A13:1, B15:1, C51:1, B105:1, B115:1 },
+  '5-SAF-DISC':  { B13:1, B15:1, C49:1, B105:1, B116:1 },
+  '5-SAF-DRUM':  { A13:1, B15:1, C51:1, B105:1, B116:1 },
+  '6-SAF-DISC':  { B13:1, B15:1, C49:1, B105:1, B117:1 },
+  '6-SAF-DRUM':  { A13:1, B15:1, C51:1, B105:1, B117:1 }
 };
 
 // All boolean cells that need to be reset to 0 before setting new values
@@ -599,7 +617,7 @@ async function generateOrderForm() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ORDER_FORM_${config.axles}axle_${config.brand}_${config.brake}.xlsm`;
+    a.download = `${getJobPrefix()}Order-Form_${config.axles}axle_${config.brand}_${config.brake}.xlsm`;
     a.click();
     showStatus('Order form downloaded — open in Excel to see auto-populated fields', 'ok');
   } catch(err) {
@@ -617,7 +635,7 @@ async function downloadTEBS() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `TEBS_DATASHEET_${config.axles}axle_${config.brand}_${config.brake}.docx`;
+    a.download = `${getJobPrefix()}TEBS-Datasheet_${config.axles}axle_${config.brand}_${config.brake}.docx`;
     a.click();
     showStatus('TEBS datasheet downloaded — open in Word to review', 'ok');
   } catch(err) {
@@ -714,19 +732,20 @@ async function generate() {
     generatedFiles = [];
     // Generate order form first
     const orderBlob = await generateOrderFormExcel(currentData);
+    const pfx = getJobPrefix();
     if (orderBlob) {
-      generatedFiles.push({ name: `ORDER_FORM_${config.axles}axle_${config.brand}_${config.brake}.xlsm`, blob: orderBlob, type: 'xlsm', isOrder: true });
+      generatedFiles.push({ name: `${pfx}Order-Form_${config.axles}axle_${config.brand}_${config.brake}.xlsm`, blob: orderBlob, type: 'xlsm', isOrder: true });
     }
     // Generate TEBS datasheet
     const tebsBlob = await generateTEBSDocx(currentData);
     if (tebsBlob) {
-      generatedFiles.push({ name: `TEBS_DATASHEET_${config.axles}axle_${config.brand}_${config.brake}.docx`, blob: tebsBlob, type: 'docx', isTebs: true });
+      generatedFiles.push({ name: `${pfx}TEBS-Datasheet_${config.axles}axle_${config.brand}_${config.brake}.docx`, blob: tebsBlob, type: 'docx', isTebs: true });
     }
     // Generate VIN plates
     for (const entry of entries) {
       const v = { ...currentData, plateDate: entry.date };
       const blob = makePDF(entry.vin, v);
-      generatedFiles.push({ name: `VIN_PLATE_${entry.vin}.pdf`, blob, type: 'pdf' });
+      generatedFiles.push({ name: `${pfx}VIN-Plate_${entry.vin}.pdf`, blob, type: 'pdf' });
     }
     renderOutput();
     showStatus(`Generated ${entries.length} VIN plate${entries.length > 1 ? 's' : ''} + order form + TEBS datasheet successfully`, 'ok');
@@ -772,7 +791,7 @@ async function downloadAllZip() {
   const b = await z.generateAsync({ type: 'blob' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(b);
-  a.download = 'VIN_Plates.zip';
+  a.download = `${getJobPrefix()}VIN-Plates.zip`;
   a.click();
 }
 

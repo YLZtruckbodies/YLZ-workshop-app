@@ -25,8 +25,8 @@ export function parseMO(text: string): MOData {
   // ── Header ────────────────────────────────────────────────────────────────
   // Try "Number:   MO-xxx" first, then fall back to bare "MO-xxx" anywhere in text
   // (Vercel's pdfjs text extraction can split label/value onto adjacent lines)
-  const moNumber = extract(full, /Number:\s*(MO-[\w-]+)/)
-    ?? extract(full, /\b(MO-[\w-]+)\b/)
+  const moNumber = extract(full, /Number:\s*(MO-[\w.-]+)/)
+    ?? extract(full, /\b(MO-[\w.-]+)\b/)
     ?? 'Unknown'
   const product  = extract(full, /Product:\s*([^\n]+)/)  ?? 'Unknown'
   const quantity = extract(full, /Quantity:\s*([^\n]+)/)  ?? ''
@@ -49,6 +49,11 @@ export function parseMO(text: string): MOData {
     }
   }
 
+  // ── Kit-level laser cut flag (product itself is LASERCUT, so all sub-parts are) ─
+  const productIsLaserCut =
+    product.toUpperCase().includes('LASERCUT') ||
+    product.toUpperCase().includes('LASER CUT')
+
   // ── Extract parts + materials ─────────────────────────────────────────────
   const allMatches = Array.from(partsText.matchAll(/\b(\d{3}-\d{2}-\d{3})\b/g))
   const parts: MOPart[] = []
@@ -58,12 +63,12 @@ export function parseMO(text: string): MOData {
     const match = allMatches[i]
     const num   = match[1]
 
-    // Skip stock codes (8xx-xx-xxx) and duplicates
-    if (/^8\d{2}/.test(num) || seen.has(num)) continue
+    // Skip stock codes (8xx/9xx-xx-xxx) and duplicates
+    if (/^[89]\d{2}/.test(num) || seen.has(num)) continue
     seen.add(num)
 
     const segStart = (match.index ?? 0) + num.length
-    const nextPart = allMatches.slice(i + 1).find(m => !/^8\d{2}/.test(m[1]) && !seen.has(m[1]))
+    const nextPart = allMatches.slice(i + 1).find(m => !/^[89]\d{2}/.test(m[1]) && !seen.has(m[1]))
     const segEnd   = nextPart?.index ?? partsText.length
     const chunk    = partsText.slice(segStart, segEnd)
     const cLines   = chunk.split('\n').map(l => l.trim()).filter(Boolean)
@@ -75,12 +80,11 @@ export function parseMO(text: string): MOData {
       l.length > 3
     ) ?? ''
 
-    // Quantity — MRP-05: accept EA, PCS, PC, UNIT in addition to EACH
-    const qtyMatch = chunk.match(/(\d+)\s+(?:EACH|EA|PCS|PC|UNIT)/i)
-    const qty = qtyMatch ? `${qtyMatch[1]} EACH` : ''
+    // Quantity — skip decimal values (e.g. 0.00322 EACH → ignore 322)
+    const qty = parseQty(chunk)
 
     // Material — find stock code line then read next descriptive line
-    const stockMatch = chunk.match(/\b(8\d{2}-\d{2}-\d{3})\b/)
+    const stockMatch = chunk.match(/\b([89]\d{2}-\d{2}-\d{3})\b/)
     let material = ''
     if (stockMatch) {
       const afterStock = chunk.slice(chunk.indexOf(stockMatch[0]) + stockMatch[0].length)
@@ -94,7 +98,7 @@ export function parseMO(text: string): MOData {
       quantity: qty,
       material: clean(material),
       thickness: extractThickness(material),
-      isLaserCut: laserSet.has(num),
+      isLaserCut: laserSet.has(num) || productIsLaserCut,
     })
   }
 
@@ -113,4 +117,20 @@ function extract(text: string, re: RegExp): string | null {
 
 function clean(s: string): string {
   return s.replace(/\s+/g, ' ').trim()
+}
+
+function parseQty(chunk: string): string {
+  const candidates: number[] = []
+  let match: RegExpExecArray | null
+  const re = /(\d+)\s+(?:EACH|EA|PCS|PC|UNIT)/gi
+  while ((match = re.exec(chunk)) !== null) {
+    const preceding = chunk.slice(Math.max(0, match.index - 5), match.index)
+    if (!preceding.includes('.')) {
+      candidates.push(parseInt(match[1], 10))
+    }
+  }
+  const nonZero = candidates.filter(q => q > 0)
+  if (nonZero.length > 0) return `${nonZero[0]} EACH`
+  if (candidates.length > 0) return `${candidates[0]} EACH`
+  return ''
 }

@@ -127,21 +127,98 @@ interface QuoteForm {
   terms: string
   // decline
   declineReason: string
+  // job link
+  jobId: string
+  // beavertail
+  btDeckWidth: string
+  btDeckLength: string
+  btFlatDeckLength: string
+  btTailLength: string
+  btTailAngle: string
+  btRampExtension: string
+  btRampType: string
+  btRampWidth: string
+  btRampActualLength: string
+  btRampCapacity: string
+  btFloorPlate: string
+  btCrossMembers: string
+  btHydraulics: string
+  btStabiliserLegs: string
+  btChainPoints: string
+  btToolbox: string
+  btShovelRacks: string
+  btLights: string
+  btPaint: string
+  btEngineeringNote: string
+}
+
+// ─── Chassis makes & models ───────────────────────────────────────────────────
+
+const CHASSIS_MAKES = [
+  'Kenworth', 'Mack', 'Western Star', 'Freightliner',
+  'Hino', 'Isuzu', 'Fuso', 'UD Trucks',
+  'Mercedes-Benz', 'Volvo', 'Scania', 'MAN', 'DAF',
+]
+
+const CHASSIS_MODELS: Record<string, string[]> = {
+  'Kenworth':      ['T409', 'T610', 'T610SAR', 'T360', 'T410', 'T659', 'T909', 'C509', 'C540', 'T480'],
+  'Mack':          ['Granite', 'Trident', 'Anthem', 'SuperLiner', 'Titan', 'Metro-Liner'],
+  'Western Star':  ['4700', '4800', '4900', '5700', '6900'],
+  'Freightliner':  ['Cascadia', 'Coronado', 'Argosy', '114SD'],
+  'Hino':          ['500 Series FC', '500 Series FD', '500 Series FE', '500 Series FG',
+                    '700 Series FM', '700 Series FS', '300 Series'],
+  'Isuzu':         ['FVZ 260-300', 'FVD 1000', 'FVY 1400', 'FVL 1400', 'FVR 900',
+                    'CXZ 400', 'CXY 350', 'EXZ 440'],
+  'Fuso':          ['FP 54', 'FN 61', 'FV 54', 'FM 65', 'FS 55', 'FZ 60'],
+  'UD Trucks':     ['Quon GW 26', 'Quon CD 14', 'Croner PKE 250'],
+  'Mercedes-Benz': ['Actros 2644', 'Actros 2653', 'Arocs 3240', 'Axor 2633', 'Atego 1623'],
+  'Volvo':         ['FMX 460', 'FMX 500', 'FH 540', 'FM 370', 'FLD 22'],
+  'Scania':        ['P 360', 'P 410', 'G 410', 'G 500', 'R 500', 'R 580', 'S 580'],
+  'MAN':           ['TGS 26.480', 'TGS 35.480', 'TGX 26.560', 'TGM 18.250'],
+  'DAF':           ['CF 480', 'XF 530', 'XG 530'],
 }
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
 const MATERIALS = ['Hardox 500', 'Aluminium', 'Hardox 450', 'Steel']
 const HOISTS = ['Binotto 3190', 'Hyva Alpha 092', 'Hyva Alpha 190', 'PH122 Kröger', 'None']
-const TARPS = [
-  'Razor PVC Electric', 'Razor PVC Manual',
-  'Razor Mesh Electric', 'Razor Mesh Manual',
-  'EziTarp Electric', 'Pulltarp Manual', 'None',
-]
+const TARPS = ['None', 'Manual', 'Razor Electric', 'Roll Right Electric', 'Pull Out']
 const COUPLINGS = ['V.Orlandi', 'Bartlett Ball 127mm', 'Pintle Hook PH300 with Air Cushion', 'None']
 const CONTROLS = ['Electric hand controller', 'In-cab controller', 'None']
-const HYDRAULICS = ['Use Existing', 'Split Factory Tank', 'Behind Cab', 'Chassis Mounted', 'None']
-const PTO_OPTIONS = ['None', 'Gearbox PTO', 'Engine PTO', 'Customer Supplied']
+const HYDRAULICS_TRUCK = ['Single spool valve', 'Truck and Trailer spool valve', 'None']
+const HYDRAULICS_TRUCK_AND_DOG = ['Truck and Trailer spool valve', 'None']
+const PTO_OPTIONS = [
+  'None',
+  // Generic
+  'Road Ranger style PTO',
+  'Gearbox PTO',
+  'Engine PTO',
+  'Customer Supplied',
+  // Kenworth / DAF (Paccar)
+  '500-214 — Paccar TX18 Hydreco (Kenworth/DAF)',
+  // Mercedes
+  '500-123 — Mercedes G230-12 ISO4B Kit',
+  '500-135 — Mercedes G230 ISO4B',
+  '500-18 — Mercedes G230-12',
+  '500-220 — Mercedes OMFB Kit',
+  // ZF / Eaton
+  '500-136 — ZF/Eaton PZB3B',
+  '500-221 — ZF OMFB Kit (ISO)',
+  '500-222 — ZF OMFB Kit (small)',
+  '500-24 — ZF OMFB Kit',
+  '500-73 — ZF 12AS 2330 TD',
+  // Volvo
+  '500-165 — Volvo VT-C ISO4B Air',
+  '500-251 — Volvo OMFB (VOL024ISO)',
+  '500-252 — Volvo OMFB (VOL025ISO)',
+  // Fuller
+  '500-97 — Fuller RT906 PZB3B Air',
+  '500-216 — Fuller OMFB Kit',
+  // Iveco
+  '500-23 — Iveco Stralis/Eurotech',
+  // Job specific
+  '500-75 — Job Specific PTO Kit',
+]
 const TAILGATE_TYPES = ['Fixed', '2 Way', 'Single Drop', 'Bi-fold', 'No Tailgate']
 const TAILGATE_LIGHTS = ['None', '4 Per Side Round LED', 'LED Strip', 'LED Cluster', 'Reverse Light Only', 'Other']
 const TAIL_LIGHTS = [
@@ -167,8 +244,8 @@ const MUDFLAPS_OPTIONS = [
   '2 mudflaps - rear driverside & nearside',
   'Customer supplied',
 ]
-const HYD_TANK_TYPES = ['Split & Supply Tank', 'Separate Tank', 'Customer Supplied', 'None']
-const HYD_TANK_LOCATIONS = ['Behind Cab', 'Under Body', 'Sub-frame Mounted', 'Other']
+const HYD_TANK_TYPES = ['Use factory tank', 'Split existing tank', '135L Behind Cab', '135L Chassis Mounted', '200L Behind Cab', '200L Chassis Mounted']
+const HYD_TANK_LOCATIONS = ['Centre', 'Drivers', 'Passenger']
 const BRAKE_COUPLINGS = ['Duomatic', 'Triomatic', 'Duomatic & Triomatic', 'None']
 const LADDER_TYPES = [
   '3-Step Pull out ladder c/w rungs',
@@ -183,7 +260,7 @@ const LADDER_POSITIONS = [
 ]
 const TARP_MATERIALS = ['PVC', 'Mesh', 'PVC or Mesh (customer choice)', 'None']
 const TARP_TYPES = ['Hoop Type', 'Roll Type']
-const TARP_STYLES = ['Razor Electric', 'Roll Rite', 'EziTarp Electric', 'Pulltarp Manual', 'Other']
+const TARP_STYLES = ['None', 'Manual', 'Razor Electric', 'Roll Right Electric', 'Pull Out']
 const TARP_LOCATIONS = ['Standard Out Front', 'Internal Through Top Rail', 'Rear Mounted', 'Other']
 
 // Chassis length lookup — body length → chassis length
@@ -220,6 +297,7 @@ const BUILD_TYPES = [
   { value: 'truck-body', label: '🚛 Truck Body' },
   { value: 'trailer', label: '🚜 Trailer' },
   { value: 'truck-and-trailer', label: '🚛🚜 Truck + Trailer' },
+  { value: 'beavertail', label: '🔧 Beavertail' },
 ]
 const STATUS_OPTIONS = ['draft', 'sent', 'accepted', 'declined', 'expired']
 
@@ -305,7 +383,9 @@ function generateTruckBodySpec(form: QuoteForm): string {
     if (form.truckTarpLocation) tarpParts.push(form.truckTarpLocation)
     lines.push(`Tarp: ${tarpParts.join(' — ')}`)
   }
-  // Ladder
+  // Underbody access ladder — always included
+  lines.push('Underbody access ladder')
+  // External ladder
   if (form.truckLadderType && form.truckLadderType !== 'No Ladder') {
     lines.push(`${form.truckLadderType} — ${form.truckLadderPosition || 'Driverside Front'}`)
   }
@@ -389,7 +469,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckTarp: 'Razor PVC/MESH Electric',
     truckCoupling: 'V.Orlandi',
     truckControls: 'Electric hand controller',
-    truckHydraulics: 'Split & supply hydraulic tank',
+    truckHydraulics: 'Single spool valve',
     trailerModel: 'DT-4 (4-Axle Dog)',
     trailerType: 'P Beam',
     trailerMaterial: 'Aluminium',
@@ -409,8 +489,8 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckSerial: '', truckVin: '', truckMainRunnerWidth: '',
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
     truckSideLights: 'None', truckAntiSpray: 'No', truckShovelHolder: 'No', truckMudflaps: 'None',
-    truckPto: 'None', truckHydTankType: 'Split & Supply Tank',
-    truckHydTankLocation: 'Behind Cab', truckDValue: '', truckCouplingLoad: '',
+    truckPto: 'None', truckHydTankType: 'Use factory tank',
+    truckHydTankLocation: 'Centre', truckDValue: '', truckCouplingLoad: '',
     truckBrakeCoupling: 'Duomatic',
     truckLadderType: '3-Step Pull out ladder c/w rungs',
     truckLadderPosition: 'Driverside Front',
@@ -434,7 +514,45 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     useOverride: false, overridePrice: '', overrideNote: '',
     notes: '', terms: DEFAULT_TERMS,
     declineReason: '',
+    jobId: '',
+    btDeckWidth: '2470', btDeckLength: '8500', btFlatDeckLength: '7000',
+    btTailLength: '1200', btTailAngle: '15', btRampExtension: '300',
+    btRampType: 'Twin Ramps', btRampWidth: '800', btRampActualLength: '2700', btRampCapacity: '12T',
+    btFloorPlate: '5mm checkered plate', btCrossMembers: '400mm',
+    btHydraulics: 'Hydraulic Power pack 3000 PSI, double controls with push button hand control and key switch isolator',
+    btStabiliserLegs: '2 x stabilising legs rated at 10T',
+    btChainPoints: '4 x key chain points per side',
+    btToolbox: '900 x 450 x 450',
+    btShovelRacks: '2 x shovel racks to headboard behind cabin',
+    btLights: 'Jumbo LED tail lights and side marker lamps',
+    btPaint: 'Etch primed and painted with PPG 2pack systems. Colour match to cab.',
+    btEngineeringNote: 'subject to final engineering and approval',
   }
+}
+
+function buildBeavertailSpec(form: QuoteForm): string {
+  return [
+    `Beavertail with Twin Ramps.`,
+    `Beavertail section`,
+    `Size: ${form.btDeckWidth}W x ${form.btDeckLength}L (${form.btFlatDeckLength}mm flat deck section, ${form.btTailLength}mm tail, ${form.btRampExtension}mm ramps)`,
+    form.btEngineeringNote ? `*${form.btEngineeringNote}*` : null,
+    `Profile laser cut side rails with heavy cross-members spaced ${form.btCrossMembers}.`,
+    `${form.btFloorPlate} floor fully welded.`,
+    `Laser cut profiling on twin ramps.`,
+    `Twin Ramps; ${form.btRampWidth}mm Wide, ${form.btRampActualLength}mm long, ${form.btFloorPlate}, rated at ${form.btRampCapacity} capacity.`,
+    `Traction bars - lashing chains/ratchets to secure ramps.`,
+    form.btHydraulics ? `${form.btHydraulics}.` : null,
+    `${form.btTailLength}mm beavertail section at ${form.btTailAngle} degree angle with traction bars.`,
+    form.btStabiliserLegs ? `${form.btStabiliserLegs}.` : null,
+    form.btChainPoints ? `${form.btChainPoints}.` : null,
+    `Side coaming finished flush with deck level.`,
+    `Laser cut rope rails.`,
+    form.btLights ? `${form.btLights}.` : null,
+    form.btPaint || null,
+    `Steps and handles to both sides of tray.`,
+    form.btShovelRacks ? `${form.btShovelRacks}.` : null,
+    form.btToolbox ? `Tool box - powder coated black. ${form.btToolbox}. Twin lockable door handles. Waterproof seal.` : null,
+  ].filter(Boolean).join('\n')
 }
 
 function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template?: any) {
@@ -484,8 +602,8 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckShovelHolder = tc.shovelHolder || 'No'
     form.truckMudflaps = tc.mudflaps || 'None'
     form.truckPto = tc.pto || 'None'
-    form.truckHydTankType = tc.hydTankType || 'Split & Supply Tank'
-    form.truckHydTankLocation = tc.hydTankLocation || 'Behind Cab'
+    form.truckHydTankType = tc.hydTankType || 'Use factory tank'
+    form.truckHydTankLocation = tc.hydTankLocation || 'Centre'
     form.truckDValue = tc.dValue || ''
     form.truckCouplingLoad = tc.couplingLoad || getCouplingLoad(form.truckCoupling)
     // Engineering details (trailer)
@@ -552,8 +670,8 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckShovelHolder = cfg.shovelHolder || 'No'
     form.truckMudflaps = cfg.mudflaps || 'None'
     form.truckPto = cfg.pto || 'None'
-    form.truckHydTankType = cfg.hydTankType || 'Split & Supply Tank'
-    form.truckHydTankLocation = cfg.hydTankLocation || 'Behind Cab'
+    form.truckHydTankType = cfg.hydTankType || 'Use factory tank'
+    form.truckHydTankLocation = cfg.hydTankLocation || 'Centre'
     form.truckDValue = cfg.dValue || ''
     form.truckCouplingLoad = cfg.couplingLoad || getCouplingLoad(form.truckCoupling)
     form.specialRequirements = cfg.specialRequirements || ''
@@ -595,6 +713,37 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
       form.lineItems = [{ section: 'Build', description: template.name, quantity: 1, unitPrice: template.basePrice, totalPrice: template.basePrice, sortOrder: 0 }]
     }
+  } else if (form.buildType === 'beavertail') {
+    form.btDeckWidth = cfg.btDeckWidth || '2470'
+    form.btDeckLength = cfg.btDeckLength || '8500'
+    form.btFlatDeckLength = cfg.btFlatDeckLength || '7000'
+    form.btTailLength = cfg.btTailLength || '1200'
+    form.btTailAngle = cfg.btTailAngle || '15'
+    form.btRampExtension = cfg.btRampExtension || '300'
+    form.btRampType = cfg.btRampType || 'Twin Ramps'
+    form.btRampWidth = cfg.btRampWidth || '800'
+    form.btRampActualLength = cfg.btRampActualLength || '2700'
+    form.btRampCapacity = cfg.btRampCapacity || '12T'
+    form.btFloorPlate = cfg.btFloorPlate || '5mm checkered plate'
+    form.btCrossMembers = cfg.btCrossMembers || '400mm'
+    form.btHydraulics = cfg.btHydraulics || 'Hydraulic Power pack 3000 PSI, double controls with push button hand control and key switch isolator'
+    form.btStabiliserLegs = cfg.btStabiliserLegs || '2 x stabilising legs rated at 10T'
+    form.btChainPoints = cfg.btChainPoints || '4 x key chain points per side'
+    form.btToolbox = cfg.btToolbox || '900 x 450 x 450'
+    form.btShovelRacks = cfg.btShovelRacks || '2 x shovel racks to headboard behind cabin'
+    form.btLights = cfg.btLights || 'Jumbo LED tail lights and side marker lamps'
+    form.btPaint = cfg.btPaint || 'Etch primed and painted with PPG 2pack systems. Colour match to cab.'
+    form.btEngineeringNote = cfg.btEngineeringNote || 'subject to final engineering and approval'
+    form.chassisMake = cfg.chassisMake || ''
+    form.chassisModel = cfg.chassisModel || ''
+    form.specialRequirements = cfg.specialRequirements || ''
+    if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
+      const spec = buildBeavertailSpec(form)
+      form.lineItems = [
+        { section: 'Beavertail', description: spec, quantity: 1, unitPrice: template.basePrice, totalPrice: template.basePrice, sortOrder: 0 },
+        { section: 'Chassis Mods', description: 'Rear Chassis Modifications', quantity: 1, unitPrice: 0, totalPrice: 0, sortOrder: 1 },
+      ]
+    }
   }
 }
 
@@ -604,7 +753,9 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     material: form.truckMaterial, floorSheet: form.truckFloorSheet,
     sideSheet: form.truckSideSheet,
     hoist: form.truckHoist,
-    tarpSystem: form.truckTarp, coupling: form.truckCoupling,
+    tarpSystem: (form.truckTarpMaterial !== 'None' && form.truckTarpStyle !== 'None')
+      ? `${form.truckTarpMaterial} ${form.truckTarpStyle}`
+      : 'None', coupling: form.truckCoupling,
     controls: form.truckControls, hydraulics: form.truckHydraulics,
     chassisMake: form.chassisMake, chassisModel: form.chassisModel,
     bodyLength: form.truckBodyLength, bodyWidth: form.truckBodyWidth,
@@ -643,6 +794,30 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
   } else if (form.buildType === 'truck-body') {
     Object.assign(cfg, truckData)
     cfg.specialRequirements = form.specialRequirements
+  } else if (form.buildType === 'beavertail') {
+    cfg.btDeckWidth = form.btDeckWidth
+    cfg.btDeckLength = form.btDeckLength
+    cfg.btFlatDeckLength = form.btFlatDeckLength
+    cfg.btTailLength = form.btTailLength
+    cfg.btTailAngle = form.btTailAngle
+    cfg.btRampExtension = form.btRampExtension
+    cfg.btRampType = form.btRampType
+    cfg.btRampWidth = form.btRampWidth
+    cfg.btRampActualLength = form.btRampActualLength
+    cfg.btRampCapacity = form.btRampCapacity
+    cfg.btFloorPlate = form.btFloorPlate
+    cfg.btCrossMembers = form.btCrossMembers
+    cfg.btHydraulics = form.btHydraulics
+    cfg.btStabiliserLegs = form.btStabiliserLegs
+    cfg.btChainPoints = form.btChainPoints
+    cfg.btToolbox = form.btToolbox
+    cfg.btShovelRacks = form.btShovelRacks
+    cfg.btLights = form.btLights
+    cfg.btPaint = form.btPaint
+    cfg.btEngineeringNote = form.btEngineeringNote
+    cfg.chassisMake = form.chassisMake
+    cfg.chassisModel = form.chassisModel
+    cfg.specialRequirements = form.specialRequirements
   } else {
     Object.assign(cfg, trailerData)
     cfg.specialRequirements = form.specialRequirements
@@ -667,6 +842,7 @@ function QuoteBuilderInner() {
   const [acceptModal, setAcceptModal] = useState(false)
   const [acceptMode, setAcceptMode] = useState<'new' | 'existing'>('new')
   const [existingJobNum, setExistingJobNum] = useState('')
+  const [newJobNum, setNewJobNum] = useState('')
   const [acceptResult, setAcceptResult] = useState<{ jobNum: string; jobId: string; isExisting?: boolean } | null>(null)
   const [saveError, setSaveError] = useState('')
   const [isQuickQuote, setIsQuickQuote] = useState(false)
@@ -677,6 +853,7 @@ function QuoteBuilderInner() {
   const [dealerSuggestions, setDealerSuggestions] = useState<string[]>([])
   const [bomList, setBomList] = useState<{ code: string; name: string; section: string }[]>([])
   const [bomLoading, setBomLoading] = useState(false)
+  const [linkedJobNum, setLinkedJobNum] = useState('')
 
   useEffect(() => {
     fetch('/api/quotes?limit=500')
@@ -719,12 +896,19 @@ function QuoteBuilderInner() {
           f.useOverride = !!quote.overridePrice
           f.overridePrice = quote.overridePrice ? String(quote.overridePrice) : ''
           f.overrideNote = quote.overrideNote || ''
+          f.jobId = quote.jobId || ''
           f.lineItems = (quote.lineItems || []).map((li: any) => ({
             ...li,
             quantity:   Number.isFinite(Number(li.quantity))   ? Number(li.quantity)   : 1,
             unitPrice:  Number.isFinite(Number(li.unitPrice))  ? Number(li.unitPrice)  : 0,
             totalPrice: Number.isFinite(Number(li.totalPrice)) ? Number(li.totalPrice) : 0,
           }))
+          if (quote.jobId) {
+            fetch(`/api/jobs/${quote.jobId}`)
+              .then((r) => r.json())
+              .then((j) => { if (j?.num) setLinkedJobNum(j.num) })
+              .catch(() => {})
+          }
           const cfg = quote.configuration as Record<string, any>
           applyTemplateConfig(f, cfg)
           setIsQuickQuote(cfg.templateType === 'quick-quote')
@@ -785,6 +969,7 @@ function QuoteBuilderInner() {
       }
       // Build active extras list
       const active: string[] = []
+      active.push('Underbody access ladder')  // always included on every truck job
       if (f.truckSideLights && f.truckSideLights !== 'None') active.push(f.truckSideLights)
       if (f.truckAntiSpray === 'Yes') active.push('Anti spray suppressant')
       if (f.truckShovelHolder === 'Yes') active.push('Underbody shovel holder')
@@ -995,6 +1180,7 @@ function QuoteBuilderInner() {
         notes: form.notes,
         terms: form.terms,
         declineReason: form.declineReason,
+        jobId: form.jobId || null,
         lineItems: form.lineItems.map((item, i) => ({
           section: item.section,
           description: item.description,
@@ -1047,6 +1233,8 @@ function QuoteBuilderInner() {
       const body: Record<string, string> = {}
       if (acceptMode === 'existing' && existingJobNum.trim()) {
         body.existingJobNum = existingJobNum.trim()
+      } else if (acceptMode === 'new' && newJobNum.trim()) {
+        body.customJobNum = newJobNum.trim()
       }
       const res = await fetch(`/api/quotes/${savedId}/accept`, {
         method: 'POST',
@@ -1057,7 +1245,8 @@ function QuoteBuilderInner() {
       if (!res.ok) {
         setSaveError(data.error || 'Accept failed')
       } else {
-        setForm((f) => ({ ...f, status: 'accepted' }))
+        setForm((f) => ({ ...f, status: 'accepted', jobId: data.job.id }))
+        setLinkedJobNum(data.job.num)
         setAcceptResult({ jobNum: data.job.num, jobId: data.job.id, isExisting: data.isExisting })
       }
     } catch (e: any) {
@@ -1098,6 +1287,7 @@ function QuoteBuilderInner() {
 
   const hasTruck = form.buildType === 'truck-body' || form.buildType === 'truck-and-trailer'
   const hasTrailer = form.buildType === 'trailer' || form.buildType === 'truck-and-trailer'
+  const hasBeavertail = form.buildType === 'beavertail'
 
   if (loading) {
     return (
@@ -1180,7 +1370,17 @@ function QuoteBuilderInner() {
           )}
           {savedId && (form.status === 'draft' || form.status === 'sent') && (
             <button
-              onClick={() => { setAcceptMode('new'); setExistingJobNum(''); setAcceptModal(true) }}
+              onClick={async () => {
+                setAcceptMode('new')
+                setExistingJobNum('')
+                setNewJobNum('')
+                try {
+                  const res = await fetch('/api/job-master/next-number')
+                  const { jobNumber } = await res.json()
+                  setNewJobNum(jobNumber)
+                } catch {}
+                setAcceptModal(true)
+              }}
               disabled={saving || accepting}
               style={{ ...btnStyle('secondary'), borderColor: 'rgba(34,197,94,0.5)', background: 'rgba(34,197,94,0.1)', color: 'rgba(34,197,94,0.9)' }}
             >
@@ -1270,6 +1470,13 @@ function QuoteBuilderInner() {
             <Field label="Sales Person">
               <input value={form.salesPerson} onChange={(e) => set('salesPerson', e.target.value)} placeholder="e.g. Pete" style={inputStyle} />
             </Field>
+            {linkedJobNum && (
+              <Field label="Job Number">
+                <div style={{ ...inputStyle, background: 'rgba(232,104,26,0.08)', border: '1px solid rgba(232,104,26,0.4)', color: '#E8681A', fontWeight: 700, cursor: 'default' }}>
+                  {linkedJobNum}
+                </div>
+              </Field>
+            )}
           </div>
         </SectionCard>
 
@@ -1346,7 +1553,7 @@ function QuoteBuilderInner() {
             <div style={{ ...grid(2), marginTop: 16 }}>
               <Field label="Hydraulics">
                 <select value={form.truckHydraulics} onChange={(e) => set('truckHydraulics', e.target.value)} style={selectStyle}>
-                  {HYDRAULICS.map((h) => <option key={h}>{h}</option>)}
+                  {(form.buildType === 'truck-and-trailer' ? HYDRAULICS_TRUCK_AND_DOG : HYDRAULICS_TRUCK).map((h) => <option key={h}>{h}</option>)}
                 </select>
               </Field>
             </div>
@@ -1420,6 +1627,136 @@ function QuoteBuilderInner() {
                   {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
                 </select>
               </Field>
+            </div>
+          </SectionCard>
+        )}
+
+        {/* ── Section: Beavertail Config ── */}
+        {hasBeavertail && (
+          <SectionCard title="Beavertail Configuration" icon="🔧" style={{ marginTop: 20 }}>
+            {/* Dimensions */}
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Deck Dimensions</div>
+            <div style={grid(4)}>
+              <Field label="Deck Width (mm)">
+                <input value={form.btDeckWidth} onChange={(e) => set('btDeckWidth', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Overall Length (mm)">
+                <input value={form.btDeckLength} onChange={(e) => set('btDeckLength', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Flat Deck Section (mm)">
+                <input value={form.btFlatDeckLength} onChange={(e) => set('btFlatDeckLength', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Tail Section (mm)">
+                <input value={form.btTailLength} onChange={(e) => set('btTailLength', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            <div style={{ ...grid(3), marginTop: 16 }}>
+              <Field label="Tail Angle (degrees)">
+                <input value={form.btTailAngle} onChange={(e) => set('btTailAngle', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Ramp Extension (mm)">
+                <input value={form.btRampExtension} onChange={(e) => set('btRampExtension', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Floor Plate">
+                <input value={form.btFloorPlate} onChange={(e) => set('btFloorPlate', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            <div style={{ ...grid(2), marginTop: 16 }}>
+              <Field label="Cross-Members">
+                <input value={form.btCrossMembers} onChange={(e) => set('btCrossMembers', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            {/* Ramps */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Ramps</div>
+            <div style={grid(4)}>
+              <Field label="Ramp Type">
+                <input value={form.btRampType} onChange={(e) => set('btRampType', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Ramp Width (mm)">
+                <input value={form.btRampWidth} onChange={(e) => set('btRampWidth', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Ramp Length (mm)">
+                <input value={form.btRampActualLength} onChange={(e) => set('btRampActualLength', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Ramp Capacity">
+                <input value={form.btRampCapacity} onChange={(e) => set('btRampCapacity', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            {/* Hydraulics */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Hydraulics</div>
+            <Field label="Hydraulic System">
+              <input value={form.btHydraulics} onChange={(e) => set('btHydraulics', e.target.value)} style={inputStyle} />
+            </Field>
+            {/* Accessories */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Accessories</div>
+            <div style={grid(2)}>
+              <Field label="Stabiliser Legs">
+                <input value={form.btStabiliserLegs} onChange={(e) => set('btStabiliserLegs', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Chain Points">
+                <input value={form.btChainPoints} onChange={(e) => set('btChainPoints', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            <div style={{ ...grid(2), marginTop: 16 }}>
+              <Field label="Shovel Racks">
+                <input value={form.btShovelRacks} onChange={(e) => set('btShovelRacks', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Tool Box (L×W×H mm)">
+                <input value={form.btToolbox} onChange={(e) => set('btToolbox', e.target.value)} placeholder="e.g. 900 x 450 x 450" style={inputStyle} />
+              </Field>
+            </div>
+            {/* Paint & Lighting */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Paint & Lighting</div>
+            <div style={grid(2)}>
+              <Field label="Lights">
+                <input value={form.btLights} onChange={(e) => set('btLights', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Paint">
+                <input value={form.btPaint} onChange={(e) => set('btPaint', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            {/* Chassis */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Chassis</div>
+            <div style={grid(2)}>
+              <Field label="Chassis Make">
+                <input value={form.chassisMake} onChange={(e) => set('chassisMake', e.target.value)} placeholder="e.g. Kenworth" style={inputStyle} />
+              </Field>
+              <Field label="Chassis Model">
+                <input value={form.chassisModel} onChange={(e) => set('chassisModel', e.target.value)} placeholder="e.g. T610" style={inputStyle} />
+              </Field>
+            </div>
+            {/* Engineering note */}
+            <div style={{ ...grid(1), marginTop: 16 }}>
+              <Field label="Engineering Note">
+                <input value={form.btEngineeringNote} onChange={(e) => set('btEngineeringNote', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            {/* Generate spec button */}
+            <div style={{ marginTop: 20 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const spec = buildBeavertailSpec(form)
+                  const existing = form.lineItems.filter(l => l.section !== 'Beavertail' && l.section !== 'Chassis Mods')
+                  const basePrice = form.lineItems.find(l => l.section === 'Beavertail')?.unitPrice ?? 0
+                  setForm(f => ({
+                    ...f,
+                    lineItems: [
+                      { section: 'Beavertail', description: spec, quantity: 1, unitPrice: basePrice, totalPrice: basePrice, sortOrder: 0 },
+                      { section: 'Chassis Mods', description: 'Rear Chassis Modifications', quantity: 1, unitPrice: 0, totalPrice: 0, sortOrder: 1 },
+                      ...existing.map((l, i) => ({ ...l, sortOrder: i + 2 })),
+                    ],
+                  }))
+                }}
+                style={{ padding: '10px 20px', background: 'rgba(232,104,26,0.15)', border: '1px solid rgba(232,104,26,0.4)', borderRadius: 8, color: '#E8681A', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+              >
+                ↻ Regenerate Spec Line Items
+              </button>
             </div>
           </SectionCard>
         )}
@@ -1502,10 +1839,30 @@ function QuoteBuilderInner() {
               {/* Row 1: chassis + identity */}
               <div style={grid(4)}>
                 <Field label="Chassis Make">
-                  <input value={form.chassisMake} onChange={(e) => set('chassisMake', e.target.value)} placeholder="e.g. Hino" style={inputStyle} />
+                  <input
+                    list="chassis-makes"
+                    value={form.chassisMake}
+                    onChange={(e) => set('chassisMake', e.target.value)}
+                    placeholder="e.g. Kenworth"
+                    style={inputStyle}
+                  />
+                  <datalist id="chassis-makes">
+                    {CHASSIS_MAKES.map((m) => <option key={m} value={m} />)}
+                  </datalist>
                 </Field>
                 <Field label="Chassis Model">
-                  <input value={form.chassisModel} onChange={(e) => set('chassisModel', e.target.value)} placeholder="e.g. 500 Series" style={inputStyle} />
+                  <input
+                    list="chassis-models"
+                    value={form.chassisModel}
+                    onChange={(e) => set('chassisModel', e.target.value)}
+                    placeholder="e.g. T409"
+                    style={inputStyle}
+                  />
+                  <datalist id="chassis-models">
+                    {(CHASSIS_MODELS[form.chassisMake] ?? Object.values(CHASSIS_MODELS).flat()).map((m) => (
+                      <option key={m} value={m} />
+                    ))}
+                  </datalist>
                 </Field>
                 <Field label="Serial No.">
                   <input value={form.truckSerial} onChange={(e) => set('truckSerial', e.target.value)} placeholder="e.g. YLZ-00123" style={inputStyle} />
@@ -1558,9 +1915,16 @@ function QuoteBuilderInner() {
               {/* Row 4: controls detail */}
               <div style={{ ...grid(3), marginTop: 16 }}>
                 <Field label="PTO">
-                  <select value={form.truckPto} onChange={(e) => set('truckPto', e.target.value)} style={selectStyle}>
-                    {PTO_OPTIONS.map((o) => <option key={o}>{o}</option>)}
-                  </select>
+                  <input
+                    list="pto-options"
+                    value={form.truckPto}
+                    onChange={(e) => set('truckPto', e.target.value)}
+                    placeholder="Select or type PTO..."
+                    style={inputStyle}
+                  />
+                  <datalist id="pto-options">
+                    {PTO_OPTIONS.map((o) => <option key={o} value={o} />)}
+                  </datalist>
                 </Field>
                 <Field label="Tailgate Type">
                   <select value={form.truckTailgateType} onChange={(e) => set('truckTailgateType', e.target.value)} style={selectStyle}>
@@ -2185,13 +2549,35 @@ function QuoteBuilderInner() {
                   Link to Existing Job
                 </button>
               </div>
+              {acceptMode === 'new' && (
+                <div>
+                  <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 6 }}>
+                    Job Number
+                  </label>
+                  <input
+                    value={newJobNum}
+                    onChange={(e) => setNewJobNum(e.target.value.toUpperCase())}
+                    placeholder="e.g. YLZ1094"
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      background: '#0a0a0a', border: '1px solid rgba(34,197,94,0.4)',
+                      borderRadius: 4, color: '#fff', fontSize: 14, fontWeight: 600,
+                      padding: '10px 12px', outline: 'none', fontFamily: 'inherit',
+                      letterSpacing: 1,
+                    }}
+                  />
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 6 }}>
+                    Auto-filled with the next available number. Edit if needed.
+                  </div>
+                </div>
+              )}
               {acceptMode === 'existing' && (
                 <div>
                   <input
                     autoFocus
                     value={existingJobNum}
                     onChange={(e) => setExistingJobNum(e.target.value.toUpperCase())}
-                    placeholder="e.g. YLZ 1050"
+                    placeholder="e.g. YLZ1050"
                     style={{
                       width: '100%', boxSizing: 'border-box',
                       background: '#0a0a0a', border: '1px solid rgba(232,104,26,0.4)',
@@ -2214,7 +2600,7 @@ function QuoteBuilderInner() {
               <li>Mark quote <strong style={{ color: '#fff' }}>{form.quoteNumber}</strong> as Accepted</li>
               {acceptMode === 'new' ? (
                 <>
-                  <li>Create a new Job on the Production Board</li>
+                  <li>Create job <strong style={{ color: '#22c55e' }}>{newJobNum || '…'}</strong> on the Production Board</li>
                   <li>Stage the job at <strong style={{ color: '#fff' }}>Requires Engineering</strong></li>
                   <li>Create a draft Parts Order for Liz</li>
                 </>

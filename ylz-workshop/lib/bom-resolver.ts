@@ -117,6 +117,10 @@ export function resolveBoms(
 
   // Normalise buildType
   const bt = (buildType || '').toLowerCase().replace(/\s+/g, '-')
+
+  // Graceful fallback for build types with no BOM mapping yet
+  if (bt === 'beavertail') return []
+
   const isTruck = bt.includes('truck')
   const isTrailer = bt === 'trailer' || bt.includes('trailer') || bt.includes('and')
 
@@ -158,10 +162,18 @@ export function resolveBoms(
     // ── Tarp ──
     const tarpInfo = cfg('tarpSystem') || cfg('truckTarpMaterial') || cfg('truckTarp')
     if (tarpInfo && !tarpInfo.toLowerCase().includes('none') && bodyLen > 0) {
-      // Real quotes store "Razor PVC/MESH Electric" — PVC is primary when both listed
-      const isPVC = tarpInfo.toLowerCase().includes('pvc')
-      const tarpBom = resolveTarpBom(isPVC || !tarpInfo.toLowerCase().includes('mesh'), bodyLen)
+      // tarpSystem stores "PVC Razor Electric" / "Mesh Manual" etc — or legacy "Razor PVC/MESH Electric"
+      const isPVC = tarpInfo.toLowerCase().includes('pvc') || !tarpInfo.toLowerCase().includes('mesh')
+      const tarpBom = resolveTarpBom(isPVC, bodyLen)
       if (tarpBom) add(tarpBom, 'Truck Tarp')
+      // Manual / Pull Out → handle kit
+      const isManual = tarpInfo.toLowerCase().includes('manual') || tarpInfo.toLowerCase().includes('pull out')
+      if (isManual) add('MRP20-14', 'Manual Tarp Handle')
+      // Roll Right → controller kit
+      if (tarpInfo.toLowerCase().includes('roll right')) add('MRP20-05', 'Roll Right Controller')
+      // 1m high wall → A73 belt (no part number yet — flagged TBD)
+      const bodyH = parseFloat(cfg('bodyHeight') || '0')
+      if (bodyH >= 950 && bodyH <= 1050) addTbd('Truck Tarp', 'A73 Belt (1m wall) — no part number yet, order manually')
     }
 
     // ── Hoist ──
@@ -194,6 +206,21 @@ export function resolveBoms(
 
     // ── Hydraulic Pump (always needed for truck tippers) ──
     add('500-223', 'Hydraulic Pump')
+
+    // ── Spool Valve ──
+    const hydOption = cfg('hydraulics') || cfg('truckHydraulics')
+    if (hydOption.toLowerCase().includes('truck and trailer')) {
+      add('500-224', 'Hydraulics')
+    } else if (hydOption.toLowerCase().includes('single')) {
+      add('500-86', 'Hydraulics')
+    }
+
+    // ── Hydraulic Tank ──
+    const tankType = (cfg('hydTankType') || cfg('truckHydTankType')).toLowerCase()
+    if (tankType.includes('135') && tankType.includes('behind')) add('500-233', 'Hydraulic Tank')
+    else if (tankType.includes('135') && tankType.includes('chassis')) add('500-232', 'Hydraulic Tank')
+    else if (tankType.includes('200') && tankType.includes('behind')) add('500-231', 'Hydraulic Tank')
+    else if (tankType.includes('200') && tankType.includes('chassis')) add('500-245', 'Hydraulic Tank')
 
     // ── Controls ──
     const controls = cfg('controls') || cfg('truckControls')
@@ -309,9 +336,14 @@ export function resolveBoms(
       // ── Tarp – Trailer ──
       const tTarp = cfg('tarpSystem') || cfg('trailerTarp')
       if (tTarp && !tTarp.toLowerCase().includes('none') && tBodyLen > 0) {
-        const tIsPVC = tTarp.toLowerCase().includes('pvc')
-        const tarpBom = resolveTarpBom(tIsPVC || !tTarp.toLowerCase().includes('mesh'), tBodyLen)
+        const tIsPVC = tTarp.toLowerCase().includes('pvc') || !tTarp.toLowerCase().includes('mesh')
+        const tarpBom = resolveTarpBom(tIsPVC, tBodyLen)
         if (tarpBom) add(tarpBom, 'Trailer Tarp')
+        const tIsManual = tTarp.toLowerCase().includes('manual') || tTarp.toLowerCase().includes('pull out')
+        if (tIsManual) add('MRP20-14', 'Manual Tarp Handle')
+        if (tTarp.toLowerCase().includes('roll right')) add('MRP20-05', 'Roll Right Controller')
+        const tBodyH = parseFloat(cfg('trailerBodyHeight') || cfg('bodyHeight') || '0')
+        if (tBodyH >= 950 && tBodyH <= 1050) addTbd('Trailer Tarp', 'A73 Belt (1m wall) — no part number yet, order manually')
       }
 
       // ── Wheels & Tyres ── default to 335 PCD (most common in real quotes)

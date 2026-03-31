@@ -19,8 +19,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const body = await req.json()
     const { lineItems, ...quoteData } = body
 
-    // BUG-02: server-side guard — block sending a $0 or nameless quote
-    if (body.status === 'sent') {
+    // BUG-02: server-side guard — only validate when doing a full save (total/lineItems present)
+    // A status-only change from the quotes list sends only { status } with no total/customerName
+    const isFullSave = body.total !== undefined || body.lineItems !== undefined
+    if (body.status === 'sent' && isFullSave) {
       const total = body.overridePrice ?? body.total ?? 0
       const name = (body.customerName || '').trim().toLowerCase()
       if (total === 0) {
@@ -89,6 +91,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     })
     return NextResponse.json(quote)
   } catch (err: any) {
+    console.error('[PATCH /api/quotes/[id]]', err)
     return NextResponse.json({ error: err.message || 'Failed to save quote' }, { status: 500 })
   }
 }

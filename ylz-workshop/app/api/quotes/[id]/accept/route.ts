@@ -17,13 +17,14 @@ async function nextJobNumber(): Promise<string> {
   }
 
   const next = maxNum + 1
-  return `YLZ ${String(next).padStart(4, '0')}`
+  return `YLZ${next}`
 }
 
 function btypeToJobMasterType(btype: string): string {
   if (btype === 'ally-trailer' || btype === 'hardox-trailer') return 'TRAILER'
   if (btype === 'wheelbase') return 'WHEELBASE'
   if (btype === 'dolly') return 'CONVERTER DOLLY'
+  if (btype === 'beavertail') return 'BEAVERTAIL'
   return 'TRUCK'
 }
 
@@ -47,6 +48,10 @@ function jobTypeString(quote: { buildType: string; configuration: any }): string
     const mat = cfg.material || ''
     const model = cfg.trailerModel || 'Trailer'
     return `${mat} ${model}`.trim()
+  }
+
+  if (bt.includes('beavertail')) {
+    return 'Beavertail with Twin Ramps'
   }
 
   return quote.buildType
@@ -117,6 +122,7 @@ async function sendWorkshopEmail(opts: {
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const body = await req.json().catch(() => ({}))
   const existingJobNum: string | null = body.existingJobNum?.trim() || null
+  const customJobNum: string | null = body.customJobNum?.trim() || null
 
   const quote = await prisma.quote.findUnique({
     where: { id: params.id },
@@ -171,7 +177,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   } else {
     // ── Create new job ──
     const cfg = quote.configuration as Record<string, any>
-    const jobNumber = await nextJobNumber()
+    const jobNumber = customJobNum || await nextJobNumber()
     const chassisMake  = cfg.chassisMake  || cfg.truckConfig?.chassisMake  || ''
     const chassisModel = cfg.chassisModel || cfg.truckConfig?.chassisModel || ''
     const makeStr = [chassisMake, chassisModel].filter(Boolean).join(' ')
