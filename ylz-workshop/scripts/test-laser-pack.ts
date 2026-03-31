@@ -10,6 +10,18 @@ import path from 'path'
 import fs   from 'fs'
 import { parseMO, extractThickness } from '../lib/parseMO'
 import type { MOData } from '../lib/parseMO'
+import type { CombinedMOData } from '../lib/generateSheet'
+
+function toCombined(mo: MOData): CombinedMOData {
+  const parts = mo.laserParts.length > 0 ? mo.laserParts : mo.parts
+  return {
+    moNumbers: [mo.moNumber],
+    laserParts: parts.map(p => ({ ...p, moNumber: mo.moNumber })),
+    date: mo.date,
+    product: mo.product,
+    quantity: mo.quantity,
+  }
+}
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 let passed = 0; let failed = 0
@@ -128,7 +140,7 @@ const MINIMAL_JPEG = Buffer.from(
   const mockMO = parseMO(SAMPLE_MO)
 
   await run('generateLaserSheet — no drawings (placeholders only)', async () => {
-    const buf = await generateLaserSheet(mockMO)
+    const buf = await generateLaserSheet(toCombined(mockMO))
     if (!buf || buf.length < 500) throw new Error(`too small: ${buf?.length} bytes`)
     fs.writeFileSync(path.join(OUT, 'no-drawings.pdf'), buf)
     ok(`${buf.length} bytes → .test-output/no-drawings.pdf`)
@@ -137,7 +149,7 @@ const MINIMAL_JPEG = Buffer.from(
   await run('generateLaserSheet — with mock JPEG thumbnails', async () => {
     const drawings = new Map<string, Buffer>()
     mockMO.laserParts.forEach(p => drawings.set(p.partNumber, MINIMAL_JPEG))
-    const buf = await generateLaserSheet(mockMO, drawings)
+    const buf = await generateLaserSheet(toCombined(mockMO), drawings)
     if (!buf || buf.length < 500) throw new Error(`too small: ${buf?.length} bytes`)
     fs.writeFileSync(path.join(OUT, 'with-drawings.pdf'), buf)
     ok(`${buf.length} bytes → .test-output/with-drawings.pdf`)
@@ -160,7 +172,7 @@ const MINIMAL_JPEG = Buffer.from(
       laserParts: [],
     }
     bigMO.laserParts = bigMO.parts
-    const buf = await generateLaserSheet(bigMO)
+    const buf = await generateLaserSheet(toCombined(bigMO))
     if (!buf || buf.length < 500) throw new Error(`too small: ${buf?.length} bytes`)
     fs.writeFileSync(path.join(OUT, 'multi-page.pdf'), buf)
     ok(`${buf.length} bytes → .test-output/multi-page.pdf`)
@@ -168,7 +180,7 @@ const MINIMAL_JPEG = Buffer.from(
 
   await run('generateLaserSheet — empty parts list', async () => {
     const emptyMO: MOData = { ...mockMO, parts: [], laserParts: [] }
-    const buf = await generateLaserSheet(emptyMO)
+    const buf = await generateLaserSheet(toCombined(emptyMO))
     if (!buf || buf.length < 100) throw new Error(`too small: ${buf?.length} bytes`)
     ok(`${buf.length} bytes`)
   })
@@ -190,7 +202,7 @@ const MINIMAL_JPEG = Buffer.from(
       laserParts: [],
     }
     longMO.laserParts = longMO.parts
-    const buf = await generateLaserSheet(longMO)
+    const buf = await generateLaserSheet(toCombined(longMO))
     if (!buf || buf.length < 500) throw new Error(`too small: ${buf?.length} bytes`)
     ok(`${buf.length} bytes`)
   })
@@ -199,7 +211,7 @@ const MINIMAL_JPEG = Buffer.from(
     const badJpeg = Buffer.from('this is not a jpeg')
     const drawings = new Map<string, Buffer>([['100-01-001', badJpeg]])
     // Should fall back to placeholder, not throw
-    const buf = await generateLaserSheet(mockMO, drawings)
+    const buf = await generateLaserSheet(toCombined(mockMO), drawings)
     if (!buf || buf.length < 500) throw new Error(`too small: ${buf?.length} bytes`)
     ok(`gracefully fell back to placeholder — ${buf.length} bytes`)
   })
