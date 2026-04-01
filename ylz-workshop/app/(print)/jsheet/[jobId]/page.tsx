@@ -323,7 +323,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             </div>
             <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">Pump Type</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{c('pivotCentre') || ''}</div>{!c('pivotCentre') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tailgate Type</div><div className="field-val">{c('tailgateType') || ''}</div>{!c('tailgateType') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tailgate Lights</div><div className="field-val">{c('tailgateLights') || ''}</div>{!c('tailgateLights') && <div className="field-blank" />}</div>
             </div>
@@ -346,8 +346,9 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         <div className="section">
           <div className="section-hdr">Tarp System</div>
           <div className="section-body">
-            <div className="field-row field-row-3">
+            <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">Tarp Make / Model</div><div className="field-val">{c('tarpSystem') || ''}</div>{!c('tarpSystem') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Tarp Length (mm)</div><div className="field-val">{c('tarpLength') || ''}</div>{!c('tarpLength') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Paint Colour</div><div className="field-val">{c('paintColour') || ''}</div>{!c('paintColour') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Material</div><div className="field-val">{c('material') || ''}</div>{!c('material') && <div className="field-blank" />}</div>
             </div>
