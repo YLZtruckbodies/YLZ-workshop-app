@@ -70,6 +70,7 @@ interface QuoteForm {
   specialRequirements: string
   // engineering extras — truck
   truckPivotCentre: string
+  truckTarpLength: string
   truckSerial: string
   truckVin: string
   truckMainRunnerWidth: string
@@ -507,6 +508,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerTare: '', trailerPaintColour: '',
     specialRequirements: '',
     truckPivotCentre: '',
+    truckTarpLength: '',
     truckSerial: '', truckVin: '', truckMainRunnerWidth: '',
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
     truckSideLights: 'None', truckAntiSpray: 'No', truckShovelHolder: 'No', truckMudflaps: 'None',
@@ -614,6 +616,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckTare = tc.tare || ''
     form.truckPaintColour = tc.paintColour || ''
     form.truckPivotCentre = tc.pivotCentre || ''
+    form.truckTarpLength = tc.tarpLength || ''
     form.truckSerial = tc.serial || ''
     form.truckVin = tc.vin || ''
     form.truckMainRunnerWidth = tc.mainRunnerWidth || ''
@@ -799,6 +802,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     hydTankLocation: form.truckHydTankLocation,
     dValue: form.truckDValue, couplingLoad: form.truckCouplingLoad,
     pivotCentre: form.truckPivotCentre,
+    tarpLength: form.truckTarpLength,
   }
   const trailerData = {
     trailerModel: form.trailerModel, trailerType: form.trailerType,
@@ -1042,12 +1046,17 @@ function QuoteBuilderInner() {
   const set = useCallback((key: keyof QuoteForm, val: any) => {
     setForm((f) => {
       const updated = { ...f, [key]: val }
-      // Auto-cascade: truck body length → hoist + pivot centre
+      // Auto-cascade: truck body length → hoist + pivot centre + tarp length
       if (key === 'truckBodyLength') {
+        const bodyLen = parseInt(val?.toString().trim(), 10)
         const match = TRUCK_BODY_HOIST_MAP[val?.toString().trim()]
         if (match) {
           updated.truckHoist = match.hoist
           updated.truckPivotCentre = match.pivotCentre
+        }
+        // Tarp length = body length - 400mm
+        if (!isNaN(bodyLen) && bodyLen > 400) {
+          updated.truckTarpLength = String(bodyLen - 400)
         }
       }
       return updated
