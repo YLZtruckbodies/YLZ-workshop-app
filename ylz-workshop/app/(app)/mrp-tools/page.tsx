@@ -372,7 +372,7 @@ function LaserPackTool() {
       }
 
       const moData = res.headers.get('X-MO-Data')
-      if (moData) setResult(JSON.parse(moData))
+      if (moData) setResult(JSON.parse(decodeURIComponent(moData)))
       setPdfBlob(await res.blob())
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unknown error.')

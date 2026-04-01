@@ -83,21 +83,23 @@ export async function POST(req: NextRequest) {
       ? moNumbers[0]
       : `Combined (${moNumbers.length} MOs)`
 
+    const moDataJson = JSON.stringify({
+      moNumbers,
+      product:       moNumbers.length === 1 ? firstProduct  : `${moNumbers.length} MOs`,
+      quantity:      moNumbers.length === 1 ? firstQuantity : 'N/A',
+      date:          firstDate,
+      totalParts:    allLaserParts.length,
+      laserParts:    allLaserParts.length,
+      partNumbers:   allPartNumbers,
+      drawingsFound: Array.from(drawings.keys()),
+    })
+
     return new NextResponse(pdfBuffer as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${fileLabel} Laser Sheet.pdf"`,
-        'X-MO-Data': JSON.stringify({
-          moNumbers,
-          product:       moNumbers.length === 1 ? firstProduct  : `${moNumbers.length} MOs`,
-          quantity:      moNumbers.length === 1 ? firstQuantity : '—',
-          date:          firstDate,
-          totalParts:    allLaserParts.length,
-          laserParts:    allLaserParts.length,
-          partNumbers:   allPartNumbers,
-          drawingsFound: Array.from(drawings.keys()),
-        }),
+        'X-MO-Data': encodeURIComponent(moDataJson),
       },
     })
   } catch (err) {
