@@ -69,6 +69,7 @@ interface QuoteForm {
   // shared engineering
   specialRequirements: string
   // engineering extras — truck
+  truckPivotCentre: string
   truckSerial: string
   truckVin: string
   truckMainRunnerWidth: string
@@ -186,7 +187,21 @@ const CHASSIS_MODELS: Record<string, string[]> = {
 // ─── Options ──────────────────────────────────────────────────────────────────
 
 const MATERIALS = ['Hardox 500', 'Aluminium', 'Hardox 450', 'Steel']
-const HOISTS = ['Binotto 3190', 'Hyva Alpha 092', 'Hyva Alpha 190', 'PH122 Kröger', 'None']
+const HOISTS = ['Binotto 3190', 'Hyva Alpha 092', 'Hyva Alpha 190', 'PH122 Kröger',
+  'MFB3126.3.2840', 'MFB3128.3.2960', 'MFB3128.3.3190', 'MFB3126.4.3310', 'None']
+
+// Auto-lookup: truck body length → hoist model & pivot centre (mm)
+const TRUCK_BODY_HOIST_MAP: Record<string, { hoist: string; pivotCentre: string }> = {
+  '4200': { hoist: 'MFB3126.3.2840', pivotCentre: '3500' },
+  '4300': { hoist: 'MFB3126.3.2840', pivotCentre: '3570' },
+  '4400': { hoist: 'MFB3128.3.2960', pivotCentre: '3600' },
+  '4500': { hoist: 'MFB3128.3.3190', pivotCentre: '3800' },
+  '4600': { hoist: 'MFB3128.3.3190', pivotCentre: '3900' },
+  '4660': { hoist: 'MFB3128.3.3190', pivotCentre: '3900' },
+  '4700': { hoist: 'MFB3128.3.3190', pivotCentre: '3950' },
+  '4800': { hoist: 'MFB3126.4.3310', pivotCentre: '4150' },
+  '4900': { hoist: 'MFB3126.4.3310', pivotCentre: '4200' },
+}
 const TARPS = ['None', 'Manual', 'Razor Electric', 'Roll Right Electric', 'Pull Out']
 const COUPLINGS = ['V.Orlandi', 'Bartlett Ball 127mm', 'Pintle Hook PH300 with Air Cushion', 'None']
 const CONTROLS = ['Electric hand controller', 'In-cab controller', 'None']
@@ -491,6 +506,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerBodyCapacity: '', trailerGtm: '', trailerGcm: '',
     trailerTare: '', trailerPaintColour: '',
     specialRequirements: '',
+    truckPivotCentre: '',
     truckSerial: '', truckVin: '', truckMainRunnerWidth: '',
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
     truckSideLights: 'None', truckAntiSpray: 'No', truckShovelHolder: 'No', truckMudflaps: 'None',
@@ -597,6 +613,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckGvm = tc.gvm || ''
     form.truckTare = tc.tare || ''
     form.truckPaintColour = tc.paintColour || ''
+    form.truckPivotCentre = tc.pivotCentre || ''
     form.truckSerial = tc.serial || ''
     form.truckVin = tc.vin || ''
     form.truckMainRunnerWidth = tc.mainRunnerWidth || ''
@@ -665,6 +682,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckGvm = cfg.gvm || ''
     form.truckTare = cfg.tare || ''
     form.truckPaintColour = cfg.paintColour || ''
+    form.truckPivotCentre = cfg.pivotCentre || ''
     form.truckSerial = cfg.serial || ''
     form.truckVin = cfg.vin || ''
     form.truckMainRunnerWidth = cfg.mainRunnerWidth || ''
@@ -780,6 +798,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     pto: form.truckPto, hydTankType: form.truckHydTankType,
     hydTankLocation: form.truckHydTankLocation,
     dValue: form.truckDValue, couplingLoad: form.truckCouplingLoad,
+    pivotCentre: form.truckPivotCentre,
   }
   const trailerData = {
     trailerModel: form.trailerModel, trailerType: form.trailerType,
@@ -1021,7 +1040,18 @@ function QuoteBuilderInner() {
   // ── Field update helpers ──────────────────────────────────────────────────
 
   const set = useCallback((key: keyof QuoteForm, val: any) => {
-    setForm((f) => ({ ...f, [key]: val }))
+    setForm((f) => {
+      const updated = { ...f, [key]: val }
+      // Auto-cascade: truck body length → hoist + pivot centre
+      if (key === 'truckBodyLength') {
+        const match = TRUCK_BODY_HOIST_MAP[val?.toString().trim()]
+        if (match) {
+          updated.truckHoist = match.hoist
+          updated.truckPivotCentre = match.pivotCentre
+        }
+      }
+      return updated
+    })
   }, [])
 
   function onMaterialChange(material: string) {
