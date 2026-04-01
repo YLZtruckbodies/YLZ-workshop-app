@@ -1590,10 +1590,8 @@ function QuoteBuilderInner() {
             </div>
             {/* Row 2: Hoist + couplings + controls + hydraulics */}
             <div style={{ ...grid(4), marginTop: 16 }}>
-              <Field label="Hoist">
-                <select value={form.truckHoist} onChange={(e) => set('truckHoist', e.target.value)} style={selectStyle}>
-                  {HOISTS.map((h) => <option key={h}>{h}</option>)}
-                </select>
+              <Field label="Hoist (auto)">
+                <input value={form.truckHoist} readOnly style={{ ...inputStyle, opacity: 0.7, cursor: 'default' }} title="Auto-populated from body length" />
               </Field>
               <Field label="Coupling">
                 <select value={form.truckCoupling} onChange={(e) => set('truckCoupling', e.target.value)} style={selectStyle}>
