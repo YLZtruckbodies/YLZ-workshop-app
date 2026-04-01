@@ -584,7 +584,7 @@ const SEED_TEMPLATES = [
     description: '3-axle tag trailer with beavertail and twin hydraulic ramps. 2480W × up to 8000mm flat deck + 1000mm beavertail. 5mm checkered plate floor, 8mm laser cut combing rails, SAF Intra disc brakes, air bag suspension, ADR 3-axle EBS. Twin ramps 900×2800mm. Alcoa wheels, Austyre 255R70×22.5 low profile tyres.',
     imagePath: '/images/trailers/tag-trailer-3axle.jpg',
     configuration: {
-      buildType: 'trailer',
+      buildType: 'beavertail',
       templateType: 'quick-quote',
       trailerModel: 'TT-3 (3-Axle Tag)',
       trailerType: 'Tag',
