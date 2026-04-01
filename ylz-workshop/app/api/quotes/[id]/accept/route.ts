@@ -35,6 +35,7 @@ function btypeToJobMasterType(btype: string): string {
   if (btype === 'wheelbase') return 'WHEELBASE'
   if (btype === 'dolly') return 'CONVERTER DOLLY'
   if (btype === 'beavertail') return 'BEAVERTAIL'
+  if (btype === 'tag-trailer') return 'TAG TRAILER'
   if (btype === 'repairs') return 'REPAIRS'
   return 'TRUCK'
 }
@@ -63,6 +64,10 @@ function jobTypeString(quote: { buildType: string; configuration: any }): string
 
   if (bt.includes('beavertail')) {
     return 'Beavertail with Twin Ramps'
+  }
+
+  if (bt.includes('tag-trailer') || bt === 'tag trailer') {
+    return '3-Axle Tag Trailer'
   }
 
   if (bt === 'repairs') {

@@ -324,6 +324,8 @@ const BUILD_TYPES = [
   { value: 'truck-body', label: '🚛 Truck Body' },
   { value: 'trailer', label: '🚜 Trailer' },
   { value: 'truck-and-trailer', label: '🚛🚜 Truck + Trailer' },
+  { value: 'beavertail', label: '🔧 Beavertail' },
+  { value: 'tag-trailer', label: '🏗️ Tag Trailer' },
   { value: 'repairs', label: '🔩 Repairs / Warranty' },
 ]
 const STATUS_OPTIONS = ['draft', 'sent', 'accepted', 'declined', 'expired']
@@ -593,6 +595,31 @@ function buildBeavertailSpec(form: QuoteForm): string {
   ].filter(Boolean).join('\n')
 }
 
+function buildTagTrailerSpec(form: QuoteForm): string {
+  return [
+    `3-Axle Tag Trailer with Twin Hydraulic Ramps.`,
+    `Size: ${form.btDeckWidth}W × ${form.btFlatDeckLength}mm flat deck + ${form.btTailLength}mm beavertail section`,
+    form.btEngineeringNote ? `*${form.btEngineeringNote}*` : null,
+    `${form.btFloorPlate} floor fully welded.`,
+    form.btCrossMembers ? `${form.btCrossMembers} cross members.` : null,
+    `${form.btChainPoints}.`,
+    form.btToolbox ? `Hammer well ${form.btToolbox}.` : null,
+    `${form.btRampType}: ${form.btRampWidth}mm × ${form.btRampActualLength}mm with laser cut profiling and internal structure.`,
+    form.btHydraulics ? `${form.btHydraulics}.` : null,
+    form.btStabiliserLegs ? `${form.btStabiliserLegs}.` : null,
+    form.btLights ? `${form.btLights}.` : null,
+    `${form.trailerAxleMake} Intra series ${form.trailerAxleCount}-axle ${form.trailerAxleType}.`,
+    form.trailerSuspension ? `${form.trailerSuspension}.` : null,
+    `ADR approved ${form.trailerAxleCount}-axle EBS braking system (multi-volt).`,
+    `255R70×22.5 low profile Austyre tyres. Alcoa polished outer wheels, Alcoa machined inner wheels. Wheel alignment. Spare wheel and tyre on wound-up rack.`,
+    `Duo-matic air fittings to suit truck. 16mm safety chains.`,
+    `Pintle hook/ring feeder or Bartlett ball tow hitch (specify at order).`,
+    form.btPaint || null,
+    `Complete set of YLZ mudflaps.`,
+    form.btShovelRacks ? `${form.btShovelRacks}.` : null,
+  ].filter(Boolean).join('\n')
+}
+
 function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template?: any) {
   form.buildType = cfg.buildType || form.buildType
 
@@ -795,6 +822,42 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
         { section: 'Chassis Mods', description: 'Rear Chassis Modifications', quantity: 1, unitPrice: 0, totalPrice: 0, sortOrder: 1 },
       ]
     }
+  } else if (form.buildType === 'tag-trailer') {
+    form.btDeckWidth = cfg.btDeckWidth || cfg.deckWidth || '2480'
+    form.btDeckLength = cfg.btDeckLength || '9000'
+    form.btFlatDeckLength = cfg.btFlatDeckLength || cfg.flatDeckLength || '8000'
+    form.btTailLength = cfg.btTailLength || cfg.beavertailLength || '1000'
+    form.btTailAngle = cfg.btTailAngle || '12'
+    form.btRampExtension = cfg.btRampExtension || '0'
+    form.btRampType = cfg.btRampType || cfg.rampType || 'Twin Hydraulic Ramps'
+    form.btRampWidth = cfg.btRampWidth || cfg.rampWidth || '900'
+    form.btRampActualLength = cfg.btRampActualLength || cfg.rampLength || '2800'
+    form.btRampCapacity = cfg.btRampCapacity || '12T'
+    form.btFloorPlate = cfg.btFloorPlate || cfg.floor || '5mm checkered plate'
+    form.btCrossMembers = cfg.btCrossMembers || 'Heavy gauge'
+    form.btHydraulics = cfg.btHydraulics || cfg.hydraulics || 'Powerpack with Redarc Battery Charging System (batteries hidden), Anderson plug and associated wiring'
+    form.btStabiliserLegs = cfg.btStabiliserLegs || cfg.drawbarLeg || 'Hydraulic drawbar landing leg'
+    form.btChainPoints = cfg.btChainPoints || cfg.chainPoints || '8 x in-floor tie down/chain points'
+    form.btToolbox = cfg.btToolbox || cfg.hammerWell || '2000 x 750 x 450 (hammer well)'
+    form.btShovelRacks = cfg.btShovelRacks || ''
+    form.btLights = cfg.btLights || cfg.lighting || 'Approx 9 x Hella LED side lights, Jumbo rear LED tail lights'
+    form.btPaint = cfg.btPaint || cfg.paint || 'Sandblast frame, PPG 2K paint systems — colour match to cab'
+    form.btEngineeringNote = cfg.btEngineeringNote || 'Subject to final customer request, engineering and design approvals'
+    form.trailerAxleMake = cfg.axleMake || cfg.trailerAxleMake || 'SAF'
+    form.trailerAxleCount = cfg.axleCount || cfg.trailerAxleCount || 3
+    form.trailerAxleType = cfg.axleType || cfg.trailerAxleType || 'Disc brakes'
+    form.trailerSuspension = cfg.suspension || cfg.trailerSuspension || 'Air bag suspension'
+    form.trailerPbs = cfg.pbsRating || form.trailerPbs || ''
+    form.chassisMake = cfg.chassisMake || ''
+    form.chassisModel = cfg.chassisModel || ''
+    form.specialRequirements = cfg.specialRequirements || ''
+    if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
+      const spec = buildTagTrailerSpec(form)
+      form.lineItems = [
+        { section: 'Tag Trailer', description: spec, quantity: 1, unitPrice: template.basePrice, totalPrice: template.basePrice, sortOrder: 0 },
+        { section: 'Chassis Mods', description: 'Drawbar and coupling fitment', quantity: 1, unitPrice: 0, totalPrice: 0, sortOrder: 1 },
+      ]
+    }
   } else if (form.buildType === 'repairs') {
     form.repairDescription = cfg.repairDescription || ''
     form.repairUnit = cfg.repairUnit || ''
@@ -876,6 +939,35 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     cfg.btLights = form.btLights
     cfg.btPaint = form.btPaint
     cfg.btEngineeringNote = form.btEngineeringNote
+    cfg.chassisMake = form.chassisMake
+    cfg.chassisModel = form.chassisModel
+    cfg.specialRequirements = form.specialRequirements
+  } else if (form.buildType === 'tag-trailer') {
+    cfg.btDeckWidth = form.btDeckWidth
+    cfg.btDeckLength = form.btDeckLength
+    cfg.btFlatDeckLength = form.btFlatDeckLength
+    cfg.btTailLength = form.btTailLength
+    cfg.btTailAngle = form.btTailAngle
+    cfg.btRampExtension = form.btRampExtension
+    cfg.btRampType = form.btRampType
+    cfg.btRampWidth = form.btRampWidth
+    cfg.btRampActualLength = form.btRampActualLength
+    cfg.btRampCapacity = form.btRampCapacity
+    cfg.btFloorPlate = form.btFloorPlate
+    cfg.btCrossMembers = form.btCrossMembers
+    cfg.btHydraulics = form.btHydraulics
+    cfg.btStabiliserLegs = form.btStabiliserLegs
+    cfg.btChainPoints = form.btChainPoints
+    cfg.btToolbox = form.btToolbox
+    cfg.btShovelRacks = form.btShovelRacks
+    cfg.btLights = form.btLights
+    cfg.btPaint = form.btPaint
+    cfg.btEngineeringNote = form.btEngineeringNote
+    cfg.trailerAxleMake = form.trailerAxleMake
+    cfg.trailerAxleCount = form.trailerAxleCount
+    cfg.trailerAxleType = form.trailerAxleType
+    cfg.trailerSuspension = form.trailerSuspension
+    cfg.pbsRating = form.trailerPbs
     cfg.chassisMake = form.chassisMake
     cfg.chassisModel = form.chassisModel
     cfg.specialRequirements = form.specialRequirements
@@ -1374,6 +1466,7 @@ function QuoteBuilderInner() {
   const hasTruck = form.buildType === 'truck-body' || form.buildType === 'truck-and-trailer'
   const hasTrailer = form.buildType === 'trailer' || form.buildType === 'truck-and-trailer'
   const hasBeavertail = form.buildType === 'beavertail'
+  const hasTagTrailer = form.buildType === 'tag-trailer'
   const hasRepairs = form.buildType === 'repairs'
 
   if (loading) {
@@ -1834,6 +1927,145 @@ function QuoteBuilderInner() {
                     lineItems: [
                       { section: 'Beavertail', description: spec, quantity: 1, unitPrice: basePrice, totalPrice: basePrice, sortOrder: 0 },
                       { section: 'Chassis Mods', description: 'Rear Chassis Modifications', quantity: 1, unitPrice: 0, totalPrice: 0, sortOrder: 1 },
+                      ...existing.map((l, i) => ({ ...l, sortOrder: i + 2 })),
+                    ],
+                  }))
+                }}
+                style={{ padding: '10px 20px', background: 'rgba(232,104,26,0.15)', border: '1px solid rgba(232,104,26,0.4)', borderRadius: 8, color: '#E8681A', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+              >
+                ↻ Regenerate Spec Line Items
+              </button>
+            </div>
+          </SectionCard>
+        )}
+
+        {/* ── Section: Tag Trailer Configuration ── */}
+        {hasTagTrailer && (
+          <SectionCard title="Tag Trailer Configuration" icon="🏗️" style={{ marginTop: 20 }}>
+            {/* Dimensions */}
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Deck Dimensions</div>
+            <div style={grid(4)}>
+              <Field label="Deck Width (mm)">
+                <input value={form.btDeckWidth} onChange={(e) => set('btDeckWidth', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Flat Deck Section (mm)">
+                <input value={form.btFlatDeckLength} onChange={(e) => set('btFlatDeckLength', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Beavertail Section (mm)">
+                <input value={form.btTailLength} onChange={(e) => set('btTailLength', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Tail Angle (degrees)">
+                <input value={form.btTailAngle} onChange={(e) => set('btTailAngle', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            <div style={{ ...grid(2), marginTop: 16 }}>
+              <Field label="Floor Plate">
+                <input value={form.btFloorPlate} onChange={(e) => set('btFloorPlate', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Cross-Members">
+                <input value={form.btCrossMembers} onChange={(e) => set('btCrossMembers', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            {/* Ramps */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Ramps</div>
+            <div style={grid(4)}>
+              <Field label="Ramp Type">
+                <input value={form.btRampType} onChange={(e) => set('btRampType', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Ramp Width (mm)">
+                <input value={form.btRampWidth} onChange={(e) => set('btRampWidth', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Ramp Length (mm)">
+                <input value={form.btRampActualLength} onChange={(e) => set('btRampActualLength', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Ramp Capacity">
+                <input value={form.btRampCapacity} onChange={(e) => set('btRampCapacity', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            {/* Hydraulics */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Hydraulics & Power</div>
+            <Field label="Hydraulic / Power System">
+              <input value={form.btHydraulics} onChange={(e) => set('btHydraulics', e.target.value)} style={inputStyle} />
+            </Field>
+            {/* Axles & Suspension */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Axles & Suspension</div>
+            <div style={grid(4)}>
+              <Field label="Axle Make">
+                <input value={form.trailerAxleMake} onChange={(e) => set('trailerAxleMake', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Axle Count">
+                <input type="number" value={form.trailerAxleCount} onChange={(e) => set('trailerAxleCount', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Brake Type">
+                <input value={form.trailerAxleType} onChange={(e) => set('trailerAxleType', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Suspension">
+                <input value={form.trailerSuspension} onChange={(e) => set('trailerSuspension', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            {/* Accessories */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Accessories</div>
+            <div style={grid(2)}>
+              <Field label="Drawbar Landing Leg">
+                <input value={form.btStabiliserLegs} onChange={(e) => set('btStabiliserLegs', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Chain Points">
+                <input value={form.btChainPoints} onChange={(e) => set('btChainPoints', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            <div style={{ ...grid(2), marginTop: 16 }}>
+              <Field label="Hammer Well (L×W×H mm)">
+                <input value={form.btToolbox} onChange={(e) => set('btToolbox', e.target.value)} placeholder="e.g. 2000 x 750 x 450" style={inputStyle} />
+              </Field>
+              <Field label="Shovel Racks">
+                <input value={form.btShovelRacks} onChange={(e) => set('btShovelRacks', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            {/* Paint & Lighting */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Paint & Lighting</div>
+            <div style={grid(2)}>
+              <Field label="Lights">
+                <input value={form.btLights} onChange={(e) => set('btLights', e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Paint">
+                <input value={form.btPaint} onChange={(e) => set('btPaint', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            {/* Chassis */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Towing Chassis</div>
+            <div style={grid(2)}>
+              <Field label="Chassis Make">
+                <input value={form.chassisMake} onChange={(e) => set('chassisMake', e.target.value)} placeholder="e.g. Kenworth" style={inputStyle} />
+              </Field>
+              <Field label="Chassis Model">
+                <input value={form.chassisModel} onChange={(e) => set('chassisModel', e.target.value)} placeholder="e.g. T610" style={inputStyle} />
+              </Field>
+            </div>
+            {/* Engineering note */}
+            <div style={{ ...grid(1), marginTop: 16 }}>
+              <Field label="Engineering Note">
+                <input value={form.btEngineeringNote} onChange={(e) => set('btEngineeringNote', e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+            {/* Generate spec button */}
+            <div style={{ marginTop: 20 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const spec = buildTagTrailerSpec(form)
+                  const existing = form.lineItems.filter(l => l.section !== 'Tag Trailer' && l.section !== 'Chassis Mods')
+                  const basePrice = form.lineItems.find(l => l.section === 'Tag Trailer')?.unitPrice ?? 0
+                  setForm(f => ({
+                    ...f,
+                    lineItems: [
+                      { section: 'Tag Trailer', description: spec, quantity: 1, unitPrice: basePrice, totalPrice: basePrice, sortOrder: 0 },
+                      { section: 'Chassis Mods', description: 'Drawbar and coupling fitment', quantity: 1, unitPrice: 0, totalPrice: 0, sortOrder: 1 },
                       ...existing.map((l, i) => ({ ...l, sortOrder: i + 2 })),
                     ],
                   }))
