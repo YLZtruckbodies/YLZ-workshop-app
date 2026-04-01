@@ -644,7 +644,7 @@ const SEED_TEMPLATES = [
         '30% deposit required to confirm order, or dealer purchase order',
       ],
     },
-    basePrice: 0,
+    basePrice: 68500,
     sortOrder: 16,
   },
 
