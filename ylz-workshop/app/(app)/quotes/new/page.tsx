@@ -363,4 +363,153 @@ function QuickQuoteCard({
         {isTruckAndTrailer && truckCfg && trailerCfg ? (
           <div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 4 }}>
-              {template.basePrice > 0 ? 'From' : 'Price
+              {template.basePrice > 0 ? 'From' : 'Price on application'}
+            </div>
+            {template.basePrice > 0 && (
+              <div style={{
+                fontFamily: "'League Spartan', sans-serif",
+                fontSize: 22, fontWeight: 800, color: '#E8681A', lineHeight: 1,
+              }}>
+                ${fmt(template.basePrice)}
+              </div>
+            )}
+            {template.basePrice > 0 && truckCfg.price && trailerCfg.price ? (
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
+                ex GST &mdash; truck ${fmt(Number(truckCfg.price))} + trailer ${fmt(Number(trailerCfg.price))}
+              </div>
+            ) : template.basePrice > 0 ? (
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>ex GST</div>
+            ) : null}
+          </div>
+        ) : (
+          <div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 4 }}>
+              {template.basePrice > 0 ? 'From' : 'Price on application'}
+            </div>
+            {template.basePrice > 0 && (
+              <>
+                <div style={{
+                  fontFamily: "'League Spartan', sans-serif",
+                  fontSize: 22, fontWeight: 800, color: '#E8681A', lineHeight: 1,
+                }}>
+                  ${fmt(template.basePrice)}
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>ex GST</div>
+              </>
+            )}
+          </div>
+        )}
+
+        <div style={{
+          fontSize: 11, color: hovered ? '#E8681A' : 'rgba(255,255,255,0.35)',
+          fontWeight: 600, transition: 'color 0.15s',
+          display: 'flex', alignItems: 'center', gap: 4,
+        }}>
+          Select →
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Repair card — same style as QuickQuoteCard but no price ─────────────────
+function RepairCard({ label, desc, onClick }: { label: string; desc: string; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: hovered ? '#1a1a1a' : '#111',
+        border: `2px solid ${hovered ? '#E8681A' : 'rgba(255,255,255,0.1)'}`,
+        borderRadius: 10,
+        padding: 14,
+        cursor: 'pointer',
+        transition: 'all 0.18s',
+        transform: hovered ? 'translateY(-2px)' : 'none',
+        boxShadow: hovered ? '0 6px 24px rgba(232,104,26,0.12)' : 'none',
+        position: 'relative',
+      }}
+    >
+      <div style={{
+        position: 'absolute', top: 14, right: 14,
+        fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+        background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)',
+        padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)',
+      }}>
+        Repairs
+      </div>
+      <div style={{ fontSize: 28, marginBottom: 8 }}>🔩</div>
+      <div style={{
+        fontFamily: "'League Spartan', sans-serif",
+        fontSize: 14, fontWeight: 800, letterSpacing: 0.3,
+        color: '#fff', marginBottom: 6, paddingRight: 70, lineHeight: 1.3,
+      }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 10, lineHeight: 1.4,
+      }}>
+        {desc}
+      </div>
+      <div style={{
+        borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Price on application</div>
+        <div style={{
+          fontSize: 11, color: hovered ? '#E8681A' : 'rgba(255,255,255,0.35)',
+          fontWeight: 600, transition: 'color 0.15s',
+        }}>
+          Select →
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Configure card — smaller, text only ─────────────────────────────────────
+function ConfigCard({
+  icon,
+  label,
+  desc,
+  accent,
+  onClick,
+}: {
+  icon: string
+  label: string
+  desc: string
+  accent?: boolean
+  onClick: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: hovered ? '#1a1a1a' : '#111',
+        border: `1.5px solid ${hovered ? '#E8681A' : accent ? 'rgba(232,104,26,0.3)' : 'rgba(255,255,255,0.08)'}`,
+        borderRadius: 10,
+        padding: '18px 20px',
+        cursor: 'pointer',
+        transition: 'all 0.15s',
+      }}
+    >
+      <div style={{ fontSize: 28, marginBottom: 10 }}>{icon}</div>
+      <div style={{
+        fontFamily: "'League Spartan', sans-serif",
+        fontSize: 14, fontWeight: 700, letterSpacing: 0.5,
+        color: '#fff', marginBottom: 6,
+      }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', lineHeight: 1.5 }}>
+        {desc}
+      </div>
+    </div>
+  )
+}
