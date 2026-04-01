@@ -100,6 +100,12 @@ interface QuoteForm {
   trailerTailgateLights: string
   trailerTailLights: string
   trailerLockFlap: string
+  // trailer extras
+  trailerAxleLift: string
+  trailerAxleLiftAxle: string
+  trailerHubodometer: string
+  trailerHubodoLocation: string
+  trailerHubodoAxle: string
   // truck body extras
   truckBrakeCoupling: string
   truckLadderType: string
@@ -466,6 +472,13 @@ function generateTrailerSpec(form: QuoteForm): string {
   lines.push('Alcoa Dura-Bright aluminium wheels')
   lines.push('ST315/80R22.5 tyres')
   lines.push('')
+  if (form.trailerAxleLift === 'Yes') lines.push(`Axle lift — ${form.trailerAxleLiftAxle || 'TBC'}`)
+  if (form.trailerHubodometer === 'Yes') {
+    const loc = form.trailerHubodoLocation || 'TBC'
+    const axle = form.trailerHubodoAxle || 'TBC'
+    lines.push(`Hubodometer — ${loc}, ${axle}`)
+  }
+  lines.push('')
   if (form.trailerTarp !== 'None') lines.push(`${form.trailerTarp} tarp system`)
   lines.push('LED lighting throughout')
   if (form.trailerPaintColour) lines.push(`Paint: ${form.trailerPaintColour}`)
@@ -532,6 +545,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerHoist: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
     trailerChassisLength: '', trailerWheelbase: '',
     trailerTailgateLights: 'None', trailerTailLights: 'Use existing OEM tail lights', trailerLockFlap: 'No',
+    trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'No', trailerHubodoLocation: '', trailerHubodoAxle: '',
     lineItems: [],
     margin: 0, overhead: 0, discount: 0,
     useOverride: false, overridePrice: '', overrideNote: '',
@@ -653,6 +667,11 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerTailgateLights = trc.tailgateLights || 'None'
     form.trailerTailLights = trc.tailLights || 'Use existing OEM tail lights'
     form.trailerLockFlap = trc.lockFlap || 'No'
+    form.trailerAxleLift = trc.axleLift || 'No'
+    form.trailerAxleLiftAxle = trc.axleLiftAxle || ''
+    form.trailerHubodometer = trc.hubodometer || 'No'
+    form.trailerHubodoLocation = trc.hubodoLocation || ''
+    form.trailerHubodoAxle = trc.hubodoAxle || ''
     form.specialRequirements = cfg.specialRequirements || ''
     // Line items from quick-quote
     if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
@@ -735,6 +754,11 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerTailgateLights = cfg.tailgateLights || 'None'
     form.trailerTailLights = cfg.tailLights || 'Use existing OEM tail lights'
     form.trailerLockFlap = cfg.lockFlap || 'No'
+    form.trailerAxleLift = cfg.axleLift || 'No'
+    form.trailerAxleLiftAxle = cfg.axleLiftAxle || ''
+    form.trailerHubodometer = cfg.hubodometer || 'No'
+    form.trailerHubodoLocation = cfg.hubodoLocation || ''
+    form.trailerHubodoAxle = cfg.hubodoAxle || ''
     form.specialRequirements = cfg.specialRequirements || ''
 
     if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
@@ -820,6 +844,8 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     mainRunnerWidth: form.trailerMainRunnerWidth,
     chassisLength: form.trailerChassisLength, wheelbase: form.trailerWheelbase,
     tailgateLights: form.trailerTailgateLights, tailLights: form.trailerTailLights, lockFlap: form.trailerLockFlap,
+    axleLift: form.trailerAxleLift, axleLiftAxle: form.trailerAxleLiftAxle,
+    hubodometer: form.trailerHubodometer, hubodoLocation: form.trailerHubodoLocation, hubodoAxle: form.trailerHubodoAxle,
   }
   if (form.buildType === 'truck-and-trailer') {
     cfg.truckConfig = truckData
@@ -1936,6 +1962,39 @@ function QuoteBuilderInner() {
                   {TARPS.map((t) => <option key={t}>{t}</option>)}
                 </select>
               </Field>
+            </div>
+            <div style={{ ...grid(4), marginTop: 16 }}>
+              <Field label="Axle Lift">
+                <select value={form.trailerAxleLift} onChange={(e) => { set('trailerAxleLift', e.target.value); if (e.target.value === 'No') set('trailerAxleLiftAxle', '') }} style={selectStyle}>
+                  <option>No</option>
+                  <option>Yes</option>
+                </select>
+              </Field>
+              {form.trailerAxleLift === 'Yes' && (
+                <Field label="Lift Axle">
+                  <input value={form.trailerAxleLiftAxle} onChange={(e) => set('trailerAxleLiftAxle', e.target.value)} placeholder="e.g. Axle 1" style={inputStyle} />
+                </Field>
+              )}
+              <Field label="Hubodometer">
+                <select value={form.trailerHubodometer} onChange={(e) => { set('trailerHubodometer', e.target.value); if (e.target.value === 'No') { set('trailerHubodoLocation', ''); set('trailerHubodoAxle', '') } }} style={selectStyle}>
+                  <option>No</option>
+                  <option>Yes</option>
+                </select>
+              </Field>
+              {form.trailerHubodometer === 'Yes' && (
+                <>
+                  <Field label="Hubodometer Location">
+                    <select value={form.trailerHubodoLocation} onChange={(e) => set('trailerHubodoLocation', e.target.value)} style={selectStyle}>
+                      <option value="">Select...</option>
+                      <option>LHS</option>
+                      <option>RHS</option>
+                    </select>
+                  </Field>
+                  <Field label="Hubodometer Axle">
+                    <input value={form.trailerHubodoAxle} onChange={(e) => set('trailerHubodoAxle', e.target.value)} placeholder="e.g. Axle 2" style={inputStyle} />
+                  </Field>
+                </>
+              )}
             </div>
           </SectionCard>
         )}
