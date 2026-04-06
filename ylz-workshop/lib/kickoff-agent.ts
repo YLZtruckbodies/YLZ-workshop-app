@@ -237,16 +237,14 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
     where: { name: { in: ['CHRIS', 'Nathan', 'Jackson'], mode: 'insensitive' } },
     select: { id: true, name: true },
   })
-  const chris = engineers.find(u => u.name.toLowerCase().includes('chris'))
-
-  // ── Create task assigned to Chris ──
+  // ── Create task (unassigned — any engineer can complete it) ──
   await prisma.jobTask.create({
     data: {
       jobId,
       title: kitFiles
         ? `Review engineering pack & parts order — advance to Ready to Start`
         : `Custom engineering required — create drawings, then advance to Ready to Start`,
-      assignedTo: chris?.id ?? '',
+      assignedTo: '',
       sortOrder: 0,
     },
   })
@@ -435,16 +433,14 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
     where: { name: { in: ['CHRIS', 'Nathan', 'Jackson'], mode: 'insensitive' } },
     select: { id: true, name: true },
   })
-  const chris = engineers.find(u => u.name.toLowerCase().includes('chris'))
-
-  // ── Create task assigned to Chris ──
+  // ── Create task (unassigned — any engineer can complete it) ──
   await prisma.jobTask.create({
     data: {
       jobId,
       title: (bodyOk && (chassisOk || modelType === 'dolly'))
         ? `Review trailer engineering pack & parts order — advance to Ready to Start`
         : `Custom engineering required — create drawings, then advance to Ready to Start`,
-      assignedTo: chris?.id ?? '',
+      assignedTo: '',
       sortOrder: 0,
     },
   })
