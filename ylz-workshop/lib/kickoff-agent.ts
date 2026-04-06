@@ -232,6 +232,21 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
     },
   })
 
+  // ── Add to Cold Form — Hardox Kits tab ──
+  if (kitFiles) {
+    try {
+      const last = await prisma.coldformKit.findFirst({ orderBy: { position: 'desc' }, select: { position: true } })
+      await prisma.coldformKit.create({
+        data: {
+          size: kitFiles.kitName,
+          allocatedTo: job.num,
+          notes: kitFiles.dxfFolderUrl ? `DXF: ${kitFiles.dxfFolderUrl}` : '',
+          position: (last?.position ?? 0) + 1,
+        },
+      })
+    } catch { /* non-fatal */ }
+  }
+
   // ── Find engineering team (Chris, Nathan, Jackson) ──
   const engineers = await prisma.user.findMany({
     where: { name: { in: ['CHRIS', 'Nathan', 'Jackson'], mode: 'insensitive' } },
@@ -427,6 +442,21 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
       message: lines.join('\n'),
     },
   })
+
+  // ── Add to Cold Form — Trailer Chassis tab ──
+  if (chassisFolderUrl && modelType !== 'dolly') {
+    try {
+      const last = await prisma.coldformChassis.findFirst({ orderBy: { position: 'desc' }, select: { position: true } })
+      await prisma.coldformChassis.create({
+        data: {
+          jobNo: job.num,
+          chassisLength: `${axles}-Axle ${modelType.charAt(0).toUpperCase() + modelType.slice(1)} (${bodyLength}mm body)`,
+          notes: `Chassis folder: ${chassisFolderUrl}`,
+          position: (last?.position ?? 0) + 1,
+        },
+      })
+    } catch { /* non-fatal */ }
+  }
 
   // ── Find engineering team (Chris, Nathan, Jackson) ──
   const engineers = await prisma.user.findMany({
