@@ -232,13 +232,14 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
     },
   })
 
-  // ── Find Chris ──
-  const chris = await prisma.user.findFirst({
-    where: { name: { contains: 'Chris', mode: 'insensitive' } },
+  // ── Find engineering team (Chris, Nathan, Jackson) ──
+  const engineers = await prisma.user.findMany({
+    where: { name: { in: ['CHRIS', 'Nathan', 'Jackson'], mode: 'insensitive' } },
     select: { id: true, name: true },
   })
+  const chris = engineers.find(u => u.name.toLowerCase().includes('chris'))
 
-  // ── Create task for Chris ──
+  // ── Create task assigned to Chris ──
   await prisma.jobTask.create({
     data: {
       jobId,
@@ -250,18 +251,20 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
     },
   })
 
-  // ── Notify Chris in-app ──
-  if (chris) {
-    await prisma.notification.create({
-      data: {
-        userId: chris.id,
+  // ── Notify all engineers ──
+  const notifMessage = kitFiles
+    ? `${job.num} kick-off ready — kit found, ${longLeadItems.length} long lead-time item${longLeadItems.length !== 1 ? 's' : ''} flagged. Review and advance.`
+    : `${job.num} needs custom engineering — ${noKitReason}`
+
+  if (engineers.length) {
+    await prisma.notification.createMany({
+      data: engineers.map(u => ({
+        userId: u.id,
         jobId,
         jobNum: job.num,
         type: 'kickoff',
-        message: kitFiles
-          ? `${job.num} kick-off ready — kit found, ${longLeadItems.length} long lead-time item${longLeadItems.length !== 1 ? 's' : ''} flagged. Review and advance.`
-          : `${job.num} needs custom engineering — ${noKitReason}`,
-      },
+        message: notifMessage,
+      })),
     })
   }
 
@@ -427,13 +430,14 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
     },
   })
 
-  // ── Find Chris ──
-  const chris = await prisma.user.findFirst({
-    where: { name: { contains: 'Chris', mode: 'insensitive' } },
+  // ── Find engineering team (Chris, Nathan, Jackson) ──
+  const engineers = await prisma.user.findMany({
+    where: { name: { in: ['CHRIS', 'Nathan', 'Jackson'], mode: 'insensitive' } },
     select: { id: true, name: true },
   })
+  const chris = engineers.find(u => u.name.toLowerCase().includes('chris'))
 
-  // ── Create task for Chris ──
+  // ── Create task assigned to Chris ──
   await prisma.jobTask.create({
     data: {
       jobId,
@@ -445,18 +449,20 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
     },
   })
 
-  // ── Notify Chris ──
-  if (chris) {
-    await prisma.notification.create({
-      data: {
-        userId: chris.id,
+  // ── Notify all engineers ──
+  const notifMessage = (bodyOk && (chassisOk || modelType === 'dolly'))
+    ? `${job.num} trailer kick-off ready — ${trailerModel}, ${longLeadItems.length} long lead-time item${longLeadItems.length !== 1 ? 's' : ''} flagged. Review and advance.`
+    : `${job.num} trailer needs engineering — ${noBodyReason ?? noChassisReason}`
+
+  if (engineers.length) {
+    await prisma.notification.createMany({
+      data: engineers.map(u => ({
+        userId: u.id,
         jobId,
         jobNum: job.num,
         type: 'kickoff',
-        message: (bodyOk && (chassisOk || modelType === 'dolly'))
-          ? `${job.num} trailer kick-off ready — ${trailerModel}, ${longLeadItems.length} long lead-time item${longLeadItems.length !== 1 ? 's' : ''} flagged. Review and advance.`
-          : `${job.num} trailer needs engineering — ${noBodyReason ?? noChassisReason}`,
-      },
+        message: notifMessage,
+      })),
     })
   }
 }
