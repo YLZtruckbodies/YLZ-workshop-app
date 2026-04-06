@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { deriveBtype } from '@/lib/jobTypes'
 import { resolveBoms } from '@/lib/bom-resolver'
+import { runKickoffAgent, runTrailerKickoffAgent } from '@/lib/kickoff-agent'
 
 // ─── Job number generator — pulls next available from Job Sheet Master ────────
 async function nextJobNumber(): Promise<string> {
@@ -282,6 +283,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     where: { id: params.id },
     data: { status: 'accepted', acceptedAt: new Date(), jobId: job.id },
   })
+
+  // ── Kick-off agent (non-fatal) ──
+  if (!isExisting) {
+    const bt = (quote.buildType || '').toLowerCase()
+    if (bt === 'trailer') {
+      runTrailerKickoffAgent(job.id, params.id).catch(err =>
+        console.error('[Trailer Kickoff Agent] Failed:', err)
+      )
+    } else {
+      runKickoffAgent(job.id, params.id).catch(err =>
+        console.error('[Kickoff Agent] Failed:', err)
+      )
+    }
+  }
 
   // ── Send workshop email ──
   const emailResult = await sendWorkshopEmail({

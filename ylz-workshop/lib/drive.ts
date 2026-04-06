@@ -9,6 +9,10 @@ const JOB_SHEETS_FOLDER_ID = '10ZvynBY7AOABRU4q_D_SmSrAFN0OkzMI'
 const PARTS_SHARED_DRIVE_ID = '0AMEx2pR1R5dwUk9PVA'
 const PARTS_CONTAINER_ID = '1eAs6Dv4F8DdcvNIFWuggfR1YZzHwPZNo'
 
+// Generic Designs — tipper kit library
+// Structure: Body Kits / [Hardox|Aluminium] / YLZ[length]x[width]-[H|A]-WM / CAD / Drawings / [DXF|PDF]
+export const BODY_KITS_FOLDER_ID = '1Pf__FiZ5hVcl_Oi8faNMLx8OifYW0oQM'
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 let driveClient: drive_v3.Drive | null = null
@@ -379,4 +383,50 @@ export async function browseDriveFolder(folderId: string): Promise<BrowseItem[]>
     webViewLink: f.webViewLink || undefined,
     modifiedTime: f.modifiedTime || undefined,
   }))
+}
+
+// ── Kit Lookup Helpers ────────────────────────────────────────────────────────
+
+/**
+ * Find a child folder by exact name inside a parent folder.
+ */
+export async function findChildFolder(parentId: string, name: string): Promise<string | null> {
+  const drive = await getDriveClient()
+  const safe = name.replace(/'/g, "\\'")
+  const res = await drive.files.list({
+    q: `'${parentId}' in parents and name = '${safe}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+    fields: 'files(id)',
+    pageSize: 1,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
+  })
+  return res.data.files?.[0]?.id ?? null
+}
+
+/**
+ * Find a file by exact name inside a folder.
+ */
+export async function findFileInFolder(parentId: string, name: string): Promise<string | null> {
+  const drive = await getDriveClient()
+  const safe = name.replace(/'/g, "\\'")
+  const res = await drive.files.list({
+    q: `'${parentId}' in parents and name = '${safe}' and trashed = false`,
+    fields: 'files(id)',
+    pageSize: 1,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
+  })
+  return res.data.files?.[0]?.id ?? null
+}
+
+/**
+ * Download a JSON file from Drive and parse it.
+ */
+export async function downloadJsonFile(fileId: string): Promise<Record<string, unknown>> {
+  const drive = await getDriveClient()
+  const res = await drive.files.get(
+    { fileId, alt: 'media' },
+    { responseType: 'json' }
+  )
+  return (res.data as unknown as Record<string, unknown>) ?? {}
 }

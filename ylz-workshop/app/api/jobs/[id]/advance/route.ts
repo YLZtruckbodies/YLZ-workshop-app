@@ -64,6 +64,47 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     })
   }
 
+  // ── When advancing from Requires Engineering → Ready to Start: notify Liz ──
+  if (job.stage === 'Requires Engineering' && next === 'Ready to Start') {
+    try {
+      const partsOrder = await prisma.partsOrder.findFirst({
+        where: { jobId: params.id, status: 'draft' },
+        include: { items: true },
+      })
+
+      const liz = await prisma.user.findFirst({
+        where: { name: { contains: 'Liz', mode: 'insensitive' } },
+        select: { id: true },
+      })
+
+      if (liz) {
+        // Notify Liz
+        const itemList = partsOrder?.items.length
+          ? ` — raise POs: ${partsOrder.items.map(i => i.description).join(', ')}`
+          : ''
+        await prisma.notification.create({
+          data: {
+            userId: liz.id,
+            jobId: params.id,
+            jobNum: job.num,
+            type: 'parts-order',
+            message: `${job.num} approved by ${userName || 'Chris'}${itemList}. Enter into MRPeasy.`,
+          },
+        })
+
+        // Create task for Liz — completing this will notify Keith
+        await prisma.jobTask.create({
+          data: {
+            jobId: params.id,
+            title: `Enter ${job.num} into MRPeasy`,
+            assignedTo: liz.id,
+            sortOrder: 1,
+          },
+        })
+      }
+    } catch { /* non-fatal */ }
+  }
+
   // ── Automation: email (graceful) ──
   const apiKey = process.env.RESEND_API_KEY
   const workshopEmail = process.env.WORKSHOP_EMAIL

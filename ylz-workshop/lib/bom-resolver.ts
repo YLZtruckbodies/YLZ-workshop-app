@@ -164,7 +164,9 @@ export function resolveBoms(
     if (tarpInfo && !tarpInfo.toLowerCase().includes('none') && bodyLen > 0) {
       // tarpSystem stores "PVC Razor Electric" / "Mesh Manual" etc — or legacy "Razor PVC/MESH Electric"
       const isPVC = tarpInfo.toLowerCase().includes('pvc') || !tarpInfo.toLowerCase().includes('mesh')
-      const tarpBom = resolveTarpBom(isPVC, bodyLen)
+      // Tarp is 400mm shorter than the body (clears headboard and tailgate)
+      const tarpLen = bodyLen - 400
+      const tarpBom = resolveTarpBom(isPVC, tarpLen)
       if (tarpBom) add(tarpBom, 'Truck Tarp')
       // Manual / Pull Out → handle kit
       const isManual = tarpInfo.toLowerCase().includes('manual') || tarpInfo.toLowerCase().includes('pull out')

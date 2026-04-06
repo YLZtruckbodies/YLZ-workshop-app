@@ -18,7 +18,30 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       data.completedBy = ''
     }
   }
+
   const task = await prisma.jobTask.update({ where: { id: params.taskId }, data })
+
+  // ── When Liz completes the MRPeasy task, notify Keith ──
+  if (body.completed === true && task.title.includes('MRPeasy')) {
+    try {
+      const [job, keith] = await Promise.all([
+        prisma.job.findUnique({ where: { id: params.id }, select: { num: true, customer: true, type: true } }),
+        prisma.user.findFirst({ where: { name: { contains: 'Keith', mode: 'insensitive' } }, select: { id: true } }),
+      ])
+      if (job && keith) {
+        await prisma.notification.create({
+          data: {
+            userId: keith.id,
+            jobId: params.id,
+            jobNum: job.num,
+            type: 'scheduling',
+            message: `${job.num} (${job.customer} — ${job.type}) is in MRPeasy and ready to schedule.`,
+          },
+        })
+      }
+    } catch { /* non-fatal */ }
+  }
+
   return NextResponse.json(task)
 }
 
