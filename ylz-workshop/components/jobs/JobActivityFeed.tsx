@@ -19,6 +19,9 @@ const TYPE_LABEL: Record<string, string> = {
   photo: 'Photo',
   automation: 'System',
   signoff: 'Sign-off',
+  kickoff: 'Kick-off',
+  'parts-order': 'Parts Order',
+  scheduling: 'Scheduling',
 }
 
 const TYPE_COLOR: Record<string, string> = {
@@ -28,6 +31,30 @@ const TYPE_COLOR: Record<string, string> = {
   photo: '#3b9de8',
   automation: 'rgba(255,255,255,0.3)',
   signoff: '#a855f7',
+  kickoff: '#E8681A',
+  'parts-order': '#22c55e',
+  scheduling: '#facc15',
+}
+
+// Render message text — preserves line breaks and turns URLs into clickable links
+function renderMessage(text: string) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  return text.split('\n').map((line, i) => {
+    const parts = line.split(urlRegex)
+    return (
+      <span key={i}>
+        {i > 0 && <br />}
+        {parts.map((part, j) =>
+          urlRegex.test(part) ? (
+            <a key={j} href={part} target="_blank" rel="noopener noreferrer"
+              style={{ color: '#E8681A', textDecoration: 'underline', wordBreak: 'break-all' }}>
+              {part}
+            </a>
+          ) : part
+        )}
+      </span>
+    )
+  })
 }
 
 function timeAgo(date: string | Date) {
@@ -188,8 +215,15 @@ export default function JobActivityFeed({ jobId, jobNum, userId, userName, userC
                 </span>
               </div>
               {note.message && (
-                <p style={{ margin: 0, fontSize: 13, color: note.type === 'automation' ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>
-                  {note.message}
+                <p style={{
+                  margin: 0, fontSize: 13, lineHeight: 1.5,
+                  color: note.type === 'automation' ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.85)',
+                  background: note.type === 'kickoff' ? 'rgba(232,104,26,0.06)' : undefined,
+                  border: note.type === 'kickoff' ? '1px solid rgba(232,104,26,0.2)' : undefined,
+                  borderRadius: note.type === 'kickoff' ? 6 : undefined,
+                  padding: note.type === 'kickoff' ? '8px 10px' : undefined,
+                }}>
+                  {renderMessage(note.message)}
                 </p>
               )}
               {note.photoUrl && (
