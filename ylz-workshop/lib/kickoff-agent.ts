@@ -77,10 +77,10 @@ interface LongLeadItem {
 
 // ── Drive navigation ──────────────────────────────────────────────────────────
 
-async function findKitFiles(bodyLength: number, bodyWidth: number, isHardox: boolean): Promise<KitFiles | null> {
+async function findKitFiles(bodyLength: number, bodyHeight: number, isHardox: boolean): Promise<KitFiles | null> {
   const matFolder = isHardox ? 'Hardox' : 'Aluminium'
   const matCode = isHardox ? 'H' : 'A'
-  const kitName = `YLZ${bodyLength}x${bodyWidth}-${matCode}-WM`
+  const kitName = `YLZ${bodyLength}x${bodyHeight}-${matCode}-WM`
 
   const matFolderId = await findChildFolder(BODY_KITS_FOLDER_ID, matFolder)
   if (!matFolderId) return null
@@ -139,13 +139,14 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
   const cfg = (quote.configuration ?? {}) as Record<string, string>
 
   // Extract dimensions from quote config
+  // Kit naming uses wall HEIGHT (1000/1100mm), not internal body width
   const material = (cfg.material || cfg.truckMaterial || '').toLowerCase()
   const bodyLength = parseInt((cfg.bodyLength || cfg.truckBodyLength || '0').replace(/[^\d]/g, ''), 10)
-  const bodyWidth = parseInt((cfg.bodyWidth || cfg.truckBodyWidth || '0').replace(/[^\d]/g, ''), 10)
+  const bodyHeight = parseInt((cfg.bodyHeight || cfg.truckBodyHeight || '0').replace(/[^\d]/g, ''), 10)
 
   const isHardox = material.includes('hardox')
   const isAluminium = material.includes('alumin') || material.includes('alloy')
-  const hasKitSupport = (isHardox || isAluminium) && bodyLength > 0 && bodyWidth > 0
+  const hasKitSupport = (isHardox || isAluminium) && bodyLength > 0 && bodyHeight > 0
 
   // ── Find kit files in Drive ──
   let kitFiles: KitFiles | null = null
@@ -153,16 +154,16 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
 
   if (hasKitSupport) {
     try {
-      kitFiles = await findKitFiles(bodyLength, bodyWidth, isHardox)
+      kitFiles = await findKitFiles(bodyLength, bodyHeight, isHardox)
       if (!kitFiles) {
         const matCode = isHardox ? 'H' : 'A'
-        noKitReason = `No standard kit found for YLZ${bodyLength}x${bodyWidth}-${matCode}-WM`
+        noKitReason = `No standard kit found for YLZ${bodyLength}x${bodyHeight}-${matCode}-WM`
       }
     } catch {
       noKitReason = 'Drive lookup failed — check Google credentials'
     }
   } else {
-    noKitReason = bodyLength === 0 || bodyWidth === 0
+    noKitReason = bodyLength === 0 || bodyHeight === 0
       ? 'Missing body dimensions in quote config'
       : `No kit library for build type: ${quote.buildType}`
   }
