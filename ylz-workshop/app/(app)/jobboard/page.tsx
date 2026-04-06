@@ -1,6 +1,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import { useJobs, updateJob, reorderJobs, syncFromMonday, createJob, useAllFiles, uploadFile, deleteFile, useDriveFiles, useJobTasks, createJobTask, updateJobTask, deleteJobTask, useJobActivity } from '@/lib/hooks'
 import KanbanView from '@/components/jobs/KanbanView'
 import JobActivityFeed from '@/components/jobs/JobActivityFeed'
@@ -978,8 +979,10 @@ export default function JobBoardPage() {
   const user = session?.user as any
   const { pushUndo } = useUndo()
 
+  const searchParams = useSearchParams()
+
   // State
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => searchParams.get('search') || '')
   const [activeFilter, setActiveFilter] = useState('all')
   const [stageFilter, setStageFilter] = useState('all')
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ finished: true })

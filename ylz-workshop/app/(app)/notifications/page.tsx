@@ -1,6 +1,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { useJobs, useNotes, createNote, useNotifications, markNotificationRead, markAllNotificationsRead } from '@/lib/hooks'
 import { useMemo, useState } from 'react'
 
@@ -32,6 +33,7 @@ function formatDate(date: string) {
 
 export default function NotificationsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const user = session?.user as any
   const { data: allNotes, mutate: mutateNotes } = useNotes()
   const { data: activeHoldups, mutate: mutateActive } = useNotes({ active: 'true' })
@@ -53,9 +55,12 @@ export default function NotificationsPage() {
   }
 
   const NOTIF_TYPE_STYLES: Record<string, { color: string; icon: string }> = {
-    automation: { color: '#3b9de8', icon: '⚙️' },
-    mention: { color: '#a259ff', icon: '@' },
-    reminder: { color: '#f97316', icon: '⏰' },
+    automation:  { color: '#3b9de8', icon: '⚙️' },
+    mention:     { color: '#a259ff', icon: '@' },
+    reminder:    { color: '#f97316', icon: '⏰' },
+    kickoff:     { color: '#E8681A', icon: '🚀' },
+    'parts-order': { color: '#22c55e', icon: '📦' },
+    scheduling:  { color: '#facc15', icon: '📅' },
   }
 
   // Active jobs for dropdown
@@ -207,7 +212,14 @@ export default function NotificationsPage() {
               >
                 <span style={{ fontSize: 16, flexShrink: 0 }}>{style.icon}</span>
                 <div style={{ flex: 1 }}>
-                  {n.jobNum && <div style={{ fontSize: 12, fontWeight: 700, color: '#E8681A', marginBottom: 2 }}>{n.jobNum}</div>}
+                  {n.jobNum && (
+                    <div
+                      style={{ fontSize: 12, fontWeight: 700, color: '#E8681A', marginBottom: 2, cursor: 'pointer', textDecoration: 'underline', display: 'inline-block' }}
+                      onClick={(e) => { e.stopPropagation(); router.push(`/jobboard?search=${n.jobNum}`) }}
+                    >
+                      {n.jobNum} →
+                    </div>
+                  )}
                   <div style={{ fontSize: 13, color: n.read ? 'var(--text3)' : '#fff' }}>{n.message}</div>
                   <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
                     <span style={{ fontWeight: 700, color: style.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>{n.type}</span>
