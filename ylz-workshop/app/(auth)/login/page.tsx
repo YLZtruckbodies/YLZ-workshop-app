@@ -315,6 +315,11 @@ export default function LoginPage() {
             </button>
           </div>
         )}
+
+        {/* Version footer — remove after deploy test */}
+        <div style={{ padding: '8px', textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>
+          v2.0.1 — 05/04/2026
+        </div>
       </div>
     </div>
   )
