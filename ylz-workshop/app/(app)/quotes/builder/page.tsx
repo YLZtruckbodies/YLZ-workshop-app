@@ -1196,17 +1196,12 @@ function QuoteBuilderInner() {
           updated.truckTarpLength = String(bodyLen - 400)
         }
       }
-      // Auto-cascade: truck tarp bow height from material + body height + body length
-      if (['truckMaterial', 'truckBodyHeight', 'truckBodyLength'].includes(key as string)) {
-        const bow = calcTarpBowHeight(updated.truckMaterial, false, updated.truckBodyLength, updated.truckBodyHeight)
-        if (bow) updated.truckTarpBowSize = bow
-      }
-      // Auto-cascade: trailer tarp bow height from material + model + body height + body length
-      if (['trailerMaterial', 'trailerModel', 'trailerBodyHeight', 'trailerBodyLength'].includes(key as string)) {
-        const isDog = (updated.trailerModel || '').startsWith('DT-')
-        const bow = calcTarpBowHeight(updated.trailerMaterial, isDog, updated.trailerBodyLength, updated.trailerBodyHeight)
-        if (bow) updated.trailerTarpBowSize = bow
-      }
+      // Auto-cascade: tarp bow height — recalculate on every change so it fills as soon as all inputs are available
+      const truckBow = calcTarpBowHeight(updated.truckMaterial, false, updated.truckBodyLength, updated.truckBodyHeight)
+      updated.truckTarpBowSize = truckBow
+      const isDog = (updated.trailerModel || '').startsWith('DT-')
+      const trailerBow = calcTarpBowHeight(updated.trailerMaterial, isDog, updated.trailerBodyLength, updated.trailerBodyHeight)
+      updated.trailerTarpBowSize = trailerBow
       return updated
     })
   }, [])
