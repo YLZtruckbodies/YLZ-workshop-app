@@ -907,7 +907,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     dValue: form.truckDValue, couplingLoad: form.truckCouplingLoad,
     pivotCentre: form.truckPivotCentre,
     tarpLength: form.truckTarpLength,
-    tarpBowSize: form.truckTarpBowSize,
+    tarpBowSize: calcTarpBowHeight(form.truckMaterial, false, form.truckBodyLength, form.truckBodyHeight),
   }
   const trailerData = {
     trailerModel: form.trailerModel, trailerType: form.trailerType,
@@ -927,7 +927,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     tailgateLights: form.trailerTailgateLights, tailLights: form.trailerTailLights, lockFlap: form.trailerLockFlap,
     axleLift: form.trailerAxleLift, axleLiftAxle: form.trailerAxleLiftAxle,
     hubodometer: form.trailerHubodometer, hubodoLocation: form.trailerHubodoLocation, hubodoAxle: form.trailerHubodoAxle,
-    tarpBowSize: form.trailerTarpBowSize,
+    tarpBowSize: calcTarpBowHeight(form.trailerMaterial, form.trailerModel.startsWith('DT-'), form.trailerBodyLength, form.trailerBodyHeight),
   }
   if (form.buildType === 'truck-and-trailer') {
     cfg.truckConfig = truckData
@@ -1196,12 +1196,6 @@ function QuoteBuilderInner() {
           updated.truckTarpLength = String(bodyLen - 400)
         }
       }
-      // Auto-cascade: tarp bow height — recalculate on every change so it fills as soon as all inputs are available
-      const truckBow = calcTarpBowHeight(updated.truckMaterial, false, updated.truckBodyLength, updated.truckBodyHeight)
-      updated.truckTarpBowSize = truckBow
-      const isDog = (updated.trailerModel || '').startsWith('DT-')
-      const trailerBow = calcTarpBowHeight(updated.trailerMaterial, isDog, updated.trailerBodyLength, updated.trailerBodyHeight)
-      updated.trailerTarpBowSize = trailerBow
       return updated
     })
   }, [])
@@ -1209,18 +1203,14 @@ function QuoteBuilderInner() {
   function onMaterialChange(material: string) {
     const sheets = defaultSheets(material)
     const isHardox = material.startsWith('Hardox')
-    setForm((f) => {
-      const bow = calcTarpBowHeight(material, false, f.truckBodyLength, f.truckBodyHeight)
-      return {
-        ...f,
-        truckMaterial: material,
-        truckFloorSheet: sheets.floor,
-        truckSideSheet: sheets.side,
-        truckLadderType: isHardox ? '3-Step Pull out ladder c/w rungs' : f.truckLadderType,
-        truckLadderPosition: isHardox ? 'Driverside Front' : f.truckLadderPosition,
-        ...(bow ? { truckTarpBowSize: bow } : {}),
-      }
-    })
+    setForm((f) => ({
+      ...f,
+      truckMaterial: material,
+      truckFloorSheet: sheets.floor,
+      truckSideSheet: sheets.side,
+      truckLadderType: isHardox ? '3-Step Pull out ladder c/w rungs' : f.truckLadderType,
+      truckLadderPosition: isHardox ? 'Driverside Front' : f.truckLadderPosition,
+    }))
   }
 
   // ── Line items ────────────────────────────────────────────────────────────
@@ -1783,12 +1773,10 @@ function QuoteBuilderInner() {
                 </select>
               </Field>
               <Field label="Bow Height">
-                <input
-                  value={form.truckTarpBowSize}
-                  readOnly
-                  placeholder="Auto from material + height"
-                  style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: form.truckTarpBowSize ? '#E8681A' : 'rgba(255,255,255,0.3)' }}
-                />
+                {(() => {
+                  const bow = calcTarpBowHeight(form.truckMaterial, false, form.truckBodyLength, form.truckBodyHeight)
+                  return <input value={bow} readOnly placeholder="Auto from material + height" style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: bow ? '#E8681A' : 'rgba(255,255,255,0.3)' }} />
+                })()}
               </Field>
             </div>
             <div style={{ ...grid(2), marginTop: 16 }}>
@@ -2230,12 +2218,11 @@ function QuoteBuilderInner() {
                 </select>
               </Field>
               <Field label="Tarp Bow Height">
-                <input
-                  value={form.trailerTarpBowSize}
-                  readOnly
-                  placeholder="Auto from material + height"
-                  style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: form.trailerTarpBowSize ? '#E8681A' : 'rgba(255,255,255,0.3)' }}
-                />
+                {(() => {
+                  const isDog = form.trailerModel.startsWith('DT-')
+                  const bow = calcTarpBowHeight(form.trailerMaterial, isDog, form.trailerBodyLength, form.trailerBodyHeight)
+                  return <input value={bow} readOnly placeholder="Auto from material + height" style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: bow ? '#E8681A' : 'rgba(255,255,255,0.3)' }} />
+                })()}
               </Field>
             </div>
             <div style={{ ...grid(4), marginTop: 16 }}>
