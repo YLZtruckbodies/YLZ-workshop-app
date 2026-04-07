@@ -1487,6 +1487,10 @@ function QuoteBuilderInner() {
   const hasTagTrailer = form.buildType === 'tag-trailer'
   const hasRepairs = form.buildType === 'repairs'
 
+  // Derived — computed at render time so they always reflect current inputs
+  const truckBowHeight = calcTarpBowHeight(form.truckMaterial, false, form.truckBodyLength, form.truckBodyHeight)
+  const trailerBowHeight = calcTarpBowHeight(form.trailerMaterial, form.trailerModel.startsWith('DT-'), form.trailerBodyLength, form.trailerBodyHeight)
+
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(255,255,255,0.3)' }}>
@@ -1773,10 +1777,7 @@ function QuoteBuilderInner() {
                 </select>
               </Field>
               <Field label="Bow Height">
-                {(() => {
-                  const bow = calcTarpBowHeight(form.truckMaterial, false, form.truckBodyLength, form.truckBodyHeight)
-                  return <input value={bow} readOnly placeholder="Auto from material + height" style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: bow ? '#E8681A' : 'rgba(255,255,255,0.3)' }} />
-                })()}
+                <input value={truckBowHeight} readOnly placeholder="Auto from material + height" style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: truckBowHeight ? '#E8681A' : 'rgba(255,255,255,0.3)' }} />
               </Field>
             </div>
             <div style={{ ...grid(2), marginTop: 16 }}>
@@ -2218,11 +2219,7 @@ function QuoteBuilderInner() {
                 </select>
               </Field>
               <Field label="Tarp Bow Height">
-                {(() => {
-                  const isDog = form.trailerModel.startsWith('DT-')
-                  const bow = calcTarpBowHeight(form.trailerMaterial, isDog, form.trailerBodyLength, form.trailerBodyHeight)
-                  return <input value={bow} readOnly placeholder="Auto from material + height" style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: bow ? '#E8681A' : 'rgba(255,255,255,0.3)' }} />
-                })()}
+                <input value={trailerBowHeight} readOnly placeholder="Auto from material + height" style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: trailerBowHeight ? '#E8681A' : 'rgba(255,255,255,0.3)' }} />
               </Field>
             </div>
             <div style={{ ...grid(4), marginTop: 16 }}>
