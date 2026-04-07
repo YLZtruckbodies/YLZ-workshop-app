@@ -122,6 +122,7 @@ interface QuoteForm {
   truckTarpBowSize: string
   truckTarpStyle: string
   truckTarpLocation: string
+  trailerTarpBowSize: string
   // pricing
   lineItems: LineItem[]
   margin: number
@@ -196,6 +197,18 @@ const CHASSIS_MODELS: Record<string, string[]> = {
 const MATERIALS = ['Hardox 500', 'Aluminium', 'Hardox 450', 'Steel']
 const HOISTS = ['Binotto 3190', 'Hyva Alpha 092', 'Hyva Alpha 190', 'PH122 Kröger',
   'MFB3126.3.2840', 'MFB3128.3.2960', 'MFB3128.3.3190', 'MFB3126.4.3310', 'None']
+
+// Auto-lookup: tarp bow height from material, body type, length, height
+function calcTarpBowHeight(material: string, isDogTrailer: boolean, bodyLength: string, bodyHeight: string): string {
+  const isAlloy = material === 'Aluminium'
+  const length = parseInt(bodyLength, 10)
+  const height = parseInt(bodyHeight, 10)
+  if (isAlloy) return '250mm'
+  if (isDogTrailer) return '320mm'
+  if (height === 1000) return '450mm'
+  if (height === 1100) return length <= 4700 ? '380mm' : '450mm'
+  return ''
+}
 
 // Auto-lookup: truck body length → hoist model & pivot centre (mm)
 const TRUCK_BODY_HOIST_MAP: Record<string, { hoist: string; pivotCentre: string }> = {
@@ -548,6 +561,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerChassisLength: '', trailerWheelbase: '',
     trailerTailgateLights: 'None', trailerTailLights: 'Use existing OEM tail lights', trailerLockFlap: 'No',
     trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'No', trailerHubodoLocation: '', trailerHubodoAxle: '',
+    trailerTarpBowSize: '',
     lineItems: [],
     margin: 0, overhead: 0, discount: 0,
     useOverride: false, overridePrice: '', overrideNote: '',
@@ -699,6 +713,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerHubodometer = trc.hubodometer || 'No'
     form.trailerHubodoLocation = trc.hubodoLocation || ''
     form.trailerHubodoAxle = trc.hubodoAxle || ''
+    form.trailerTarpBowSize = trc.tarpBowSize || ''
     form.specialRequirements = cfg.specialRequirements || ''
     // Line items from quick-quote
     if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
@@ -747,6 +762,8 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckHydTankLocation = cfg.hydTankLocation || 'Centre'
     form.truckDValue = cfg.dValue || ''
     form.truckCouplingLoad = cfg.couplingLoad || getCouplingLoad(form.truckCoupling)
+    form.truckTarpBowSize = (cfg.tarpBowSize as string) || ''
+    form.truckTarpLength = (cfg.tarpLength as string) || ''
     form.specialRequirements = cfg.specialRequirements || ''
     if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
       form.lineItems = [{ section: 'Build', description: template.name, quantity: 1, unitPrice: template.basePrice, totalPrice: template.basePrice, sortOrder: 0 }]
@@ -890,6 +907,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     dValue: form.truckDValue, couplingLoad: form.truckCouplingLoad,
     pivotCentre: form.truckPivotCentre,
     tarpLength: form.truckTarpLength,
+    tarpBowSize: form.truckTarpBowSize,
   }
   const trailerData = {
     trailerModel: form.trailerModel, trailerType: form.trailerType,
@@ -909,6 +927,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     tailgateLights: form.trailerTailgateLights, tailLights: form.trailerTailLights, lockFlap: form.trailerLockFlap,
     axleLift: form.trailerAxleLift, axleLiftAxle: form.trailerAxleLiftAxle,
     hubodometer: form.trailerHubodometer, hubodoLocation: form.trailerHubodoLocation, hubodoAxle: form.trailerHubodoAxle,
+    tarpBowSize: form.trailerTarpBowSize,
   }
   if (form.buildType === 'truck-and-trailer') {
     cfg.truckConfig = truckData
@@ -1177,6 +1196,17 @@ function QuoteBuilderInner() {
           updated.truckTarpLength = String(bodyLen - 400)
         }
       }
+      // Auto-cascade: truck tarp bow height from material + body height + body length
+      if (['truckMaterial', 'truckBodyHeight', 'truckBodyLength'].includes(key as string)) {
+        const bow = calcTarpBowHeight(updated.truckMaterial, false, updated.truckBodyLength, updated.truckBodyHeight)
+        if (bow) updated.truckTarpBowSize = bow
+      }
+      // Auto-cascade: trailer tarp bow height from material + model + body height + body length
+      if (['trailerMaterial', 'trailerModel', 'trailerBodyHeight', 'trailerBodyLength'].includes(key as string)) {
+        const isDog = (updated.trailerModel || '').startsWith('DT-')
+        const bow = calcTarpBowHeight(updated.trailerMaterial, isDog, updated.trailerBodyLength, updated.trailerBodyHeight)
+        if (bow) updated.trailerTarpBowSize = bow
+      }
       return updated
     })
   }, [])
@@ -1184,15 +1214,18 @@ function QuoteBuilderInner() {
   function onMaterialChange(material: string) {
     const sheets = defaultSheets(material)
     const isHardox = material.startsWith('Hardox')
-    setForm((f) => ({
-      ...f,
-      truckMaterial: material,
-      truckFloorSheet: sheets.floor,
-      truckSideSheet: sheets.side,
-      // Auto-default ladder for Hardox builds
-      truckLadderType: isHardox ? '3-Step Pull out ladder c/w rungs' : f.truckLadderType,
-      truckLadderPosition: isHardox ? 'Driverside Front' : f.truckLadderPosition,
-    }))
+    setForm((f) => {
+      const bow = calcTarpBowHeight(material, false, f.truckBodyLength, f.truckBodyHeight)
+      return {
+        ...f,
+        truckMaterial: material,
+        truckFloorSheet: sheets.floor,
+        truckSideSheet: sheets.side,
+        truckLadderType: isHardox ? '3-Step Pull out ladder c/w rungs' : f.truckLadderType,
+        truckLadderPosition: isHardox ? 'Driverside Front' : f.truckLadderPosition,
+        ...(bow ? { truckTarpBowSize: bow } : {}),
+      }
+    })
   }
 
   // ── Line items ────────────────────────────────────────────────────────────
@@ -1709,8 +1742,10 @@ function QuoteBuilderInner() {
             </div>
             {/* Row 2: Hoist + couplings + controls + hydraulics */}
             <div style={{ ...grid(4), marginTop: 16 }}>
-              <Field label="Hoist (auto)">
-                <input value={form.truckHoist} readOnly style={{ ...inputStyle, opacity: 0.7, cursor: 'default' }} title="Auto-populated from body length" />
+              <Field label="Hoist">
+                <select value={form.truckHoist} onChange={(e) => set('truckHoist', e.target.value)} style={selectStyle}>
+                  {HOISTS.map((h) => <option key={h}>{h}</option>)}
+                </select>
               </Field>
               <Field label="Coupling">
                 <select value={form.truckCoupling} onChange={(e) => set('truckCoupling', e.target.value)} style={selectStyle}>
@@ -1752,8 +1787,13 @@ function QuoteBuilderInner() {
                   {TARP_TYPES.map((t) => <option key={t}>{t}</option>)}
                 </select>
               </Field>
-              <Field label="Bow Size">
-                <input value={form.truckTarpBowSize} onChange={(e) => set('truckTarpBowSize', e.target.value)} placeholder="e.g. 50mm" style={inputStyle} />
+              <Field label="Bow Height">
+                <input
+                  value={form.truckTarpBowSize}
+                  readOnly
+                  placeholder="Auto from material + height"
+                  style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: form.truckTarpBowSize ? '#E8681A' : 'rgba(255,255,255,0.3)' }}
+                />
               </Field>
             </div>
             <div style={{ ...grid(2), marginTop: 16 }}>
@@ -2188,11 +2228,19 @@ function QuoteBuilderInner() {
                 <input value={form.trailerPbs} onChange={(e) => set('trailerPbs', e.target.value)} placeholder="e.g. 56.5T GCM" style={inputStyle} />
               </Field>
             </div>
-            <div style={{ ...grid(2), marginTop: 16 }}>
+            <div style={{ ...grid(3), marginTop: 16 }}>
               <Field label="Tarp System">
                 <select value={form.trailerTarp} onChange={(e) => set('trailerTarp', e.target.value)} style={selectStyle}>
                   {TARPS.map((t) => <option key={t}>{t}</option>)}
                 </select>
+              </Field>
+              <Field label="Tarp Bow Height">
+                <input
+                  value={form.trailerTarpBowSize}
+                  readOnly
+                  placeholder="Auto from material + height"
+                  style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: form.trailerTarpBowSize ? '#E8681A' : 'rgba(255,255,255,0.3)' }}
+                />
               </Field>
             </div>
             <div style={{ ...grid(4), marginTop: 16 }}>
@@ -2292,6 +2340,28 @@ function QuoteBuilderInner() {
                 </Field>
                 <Field label="Tare Estimate (kg)">
                   <input value={form.truckTare} onChange={(e) => set('truckTare', e.target.value)} placeholder="e.g. 3200" style={inputStyle} />
+                </Field>
+              </div>
+              {/* Row 2b: hoist + pivot centre (auto-derived from body length) */}
+              <div style={{ ...grid(3), marginTop: 16 }}>
+                <Field label="Hoist (from body length)">
+                  <input value={form.truckHoist} readOnly style={{ ...inputStyle, opacity: 0.6, cursor: 'default', color: form.truckHoist ? '#E8681A' : 'rgba(255,255,255,0.3)' }} title="Auto-selected from body length — change in Spec section to override" />
+                </Field>
+                <Field label="C/L Pivot to Rear (mm)">
+                  <input
+                    value={form.truckPivotCentre}
+                    onChange={(e) => set('truckPivotCentre', e.target.value)}
+                    placeholder="Auto from body length"
+                    style={{ ...inputStyle, color: form.truckPivotCentre ? '#E8681A' : 'rgba(255,255,255,0.3)' }}
+                  />
+                </Field>
+                <Field label="Tarp Length (mm)">
+                  <input
+                    value={form.truckTarpLength}
+                    onChange={(e) => set('truckTarpLength', e.target.value)}
+                    placeholder="Auto from body length"
+                    style={{ ...inputStyle, color: form.truckTarpLength ? '#fff' : 'rgba(255,255,255,0.3)' }}
+                  />
                 </Field>
               </div>
               {/* Row 3: weight + paint */}

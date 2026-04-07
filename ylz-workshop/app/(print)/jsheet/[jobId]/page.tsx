@@ -349,8 +349,12 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">Tarp Make / Model</div><div className="field-val">{c('tarpSystem') || ''}</div>{!c('tarpSystem') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tarp Length (mm)</div><div className="field-val">{c('tarpLength') || ''}</div>{!c('tarpLength') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Bow Height</div><div className="field-val">{c('tarpBowSize') || ''}</div>{!c('tarpBowSize') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Paint Colour</div><div className="field-val">{c('paintColour') || ''}</div>{!c('paintColour') && <div className="field-blank" />}</div>
+            </div>
+            <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">Material</div><div className="field-val">{c('material') || ''}</div>{!c('material') && <div className="field-blank" />}</div>
+              <div className="field" /><div className="field" /><div className="field" />
             </div>
           </div>
         </div>
