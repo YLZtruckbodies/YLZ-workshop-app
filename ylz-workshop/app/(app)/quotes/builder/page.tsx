@@ -46,6 +46,7 @@ interface QuoteForm {
   trailerAxleCount: number
   trailerAxleType: string
   trailerSuspension: string
+  trailerStudPattern: string
   trailerTarp: string
   trailerPbs: string
   // engineering details — truck
@@ -368,6 +369,7 @@ const TRAILER_MODELS = [
 const TRAILER_TYPES = ['P Beam', 'I Beam', 'Converter Dolly']
 const AXLE_MAKES = ['SAF', 'BPW', 'Fuwa', 'TMC']
 const AXLE_TYPES = ['Drum', 'Disc', 'Drum or Disc (customer choice)']
+const STUD_PATTERNS = ['285PCD', '335PCD']
 const SUSPENSIONS = ['SAF Air Ride', 'Mechanical', 'Rubber']
 const BUILD_TYPES = [
   { value: 'truck-body', label: '🚛 Truck Body' },
@@ -528,7 +530,7 @@ function generateTrailerSpec(form: QuoteForm): string {
     lines.push(`Booster settings: ${axleS.boosters.join(' / ')}`)
     lines.push(`Slack lengths: ${axleS.slacks.map(s => `${s}mm`).join(' / ')}`)
   }
-  lines.push('Alcoa Dura-Bright aluminium wheels')
+  lines.push(`Alcoa Dura-Bright aluminium wheels — ${form.trailerStudPattern}`)
   lines.push('ST315/80R22.5 tyres')
   lines.push('')
   if (form.trailerAxleLift === 'Yes') lines.push(`Axle lift — ${form.trailerAxleLiftAxle || 'TBC'}`)
@@ -574,6 +576,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerAxleCount: 4,
     trailerAxleType: 'Drum or Disc (customer choice)',
     trailerSuspension: 'SAF Air Ride',
+    trailerStudPattern: '285PCD',
     trailerTarp: 'Razor PVC/MESH Electric',
     trailerPbs: '',
     chassisMake: '', chassisModel: '',
@@ -704,6 +707,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     if (trc.axleCount) form.trailerAxleCount = Number(trc.axleCount)
     if (trc.axleType) form.trailerAxleType = trc.axleType
     if (trc.suspension) form.trailerSuspension = trc.suspension
+    if (trc.studPattern) form.trailerStudPattern = trc.studPattern
     if (trc.tarpSystem) form.trailerTarp = trc.tarpSystem
     form.trailerPbs = cfg.pbsRating || trc.pbsRating || ''
 
@@ -816,6 +820,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     if (cfg.axleCount) form.trailerAxleCount = Number(cfg.axleCount)
     if (cfg.axleType) form.trailerAxleType = cfg.axleType
     if (cfg.suspension) form.trailerSuspension = cfg.suspension
+    if (cfg.studPattern) form.trailerStudPattern = cfg.studPattern
     if (cfg.tarpSystem) form.trailerTarp = cfg.tarpSystem
     form.trailerPbs = cfg.pbsRating || ''
     form.trailerBodyLength = cfg.bodyLength || ''
@@ -951,7 +956,8 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     trailerModel: form.trailerModel, trailerType: form.trailerType,
     material: form.trailerMaterial, axleMake: form.trailerAxleMake,
     axleCount: form.trailerAxleCount, axleType: form.trailerAxleType,
-    suspension: form.trailerSuspension, tarpSystem: form.trailerTarp,
+    suspension: form.trailerSuspension, studPattern: form.trailerStudPattern,
+    tarpSystem: form.trailerTarp,
     pbsRating: form.trailerPbs,
     floorSheet: form.trailerFloorSheet, sideSheet: form.trailerSideSheet,
     hoist: form.trailerHoist, drawbarLength: form.trailerDrawbarLength,
@@ -1025,6 +1031,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     cfg.trailerAxleCount = form.trailerAxleCount
     cfg.trailerAxleType = form.trailerAxleType
     cfg.trailerSuspension = form.trailerSuspension
+    cfg.trailerStudPattern = form.trailerStudPattern
     cfg.pbsRating = form.trailerPbs
     cfg.chassisMake = form.chassisMake
     cfg.chassisModel = form.chassisModel
@@ -2227,7 +2234,7 @@ function QuoteBuilderInner() {
                 </select>
               </Field>
             </div>
-            <div style={{ ...grid(4), marginTop: 16 }}>
+            <div style={{ ...grid(5), marginTop: 16 }}>
               <Field label="Axle Make">
                 <select value={form.trailerAxleMake} onChange={(e) => set('trailerAxleMake', e.target.value)} style={selectStyle}>
                   {AXLE_MAKES.map((a) => <option key={a}>{a}</option>)}
@@ -2244,6 +2251,11 @@ function QuoteBuilderInner() {
               <Field label="Suspension">
                 <select value={form.trailerSuspension} onChange={(e) => set('trailerSuspension', e.target.value)} style={selectStyle}>
                   {SUSPENSIONS.map((s) => <option key={s}>{s}</option>)}
+                </select>
+              </Field>
+              <Field label="Stud Pattern">
+                <select value={form.trailerStudPattern} onChange={(e) => set('trailerStudPattern', e.target.value)} style={selectStyle}>
+                  {STUD_PATTERNS.map((s) => <option key={s}>{s}</option>)}
                 </select>
               </Field>
             </div>
