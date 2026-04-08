@@ -30,6 +30,7 @@ interface QuoteForm {
   buildType: string
   // truck body
   truckMaterial: string
+  truckMountType: string
   truckFloorSheet: string
   truckSideSheet: string
   truckHoist: string
@@ -191,6 +192,7 @@ const CHASSIS_MODELS: Record<string, string[]> = {
 // ─── Options ──────────────────────────────────────────────────────────────────
 
 const MATERIALS = ['Hardox 500', 'Aluminium', 'Hardox 450', 'Steel']
+const MOUNT_TYPES = ['Well Mount Body', 'Front Mount Body']
 const HOISTS = ['Binotto 3190', 'Hyva Alpha 092', 'Hyva Alpha 190', 'PH122 Kröger',
   'MFB3126.3.2840', 'MFB3128.3.2960', 'MFB3128.3.3190', 'MFB3126.4.3310', 'None']
 
@@ -398,7 +400,7 @@ function generateTruckBodySpec(form: QuoteForm): string {
     if (form.chassisModel) lines.push(`CHASSIS MODEL: ${form.chassisModel}`)
   }
   lines.push('')
-  lines.push(`${isAlloy ? 'Aluminium' : form.truckMaterial} truck body ${L}L x ${W}W x ${H}H mm (Internal)`)
+  lines.push(`${isAlloy ? 'Aluminium' : form.truckMaterial} ${form.truckMountType.toLowerCase()} ${L}L x ${W}W x ${H}H mm (Internal)`)
   if (form.truckBodyCapacity) lines.push(`Body capacity: ${form.truckBodyCapacity}m³`)
   if (form.truckGvm) lines.push(`GVM: ${fmtDim(form.truckGvm)}kg`)
   lines.push('')
@@ -521,6 +523,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     preparedBy: '', salesPerson: '', validDays: 30,
     buildType: 'truck-body',
     truckMaterial: 'Hardox 500',
+    truckMountType: 'Well Mount Body',
     truckFloorSheet: '6mm Hardox 500',
     truckSideSheet: '5mm Hardox 500',
     truckHoist: 'Binotto 3190',
@@ -648,6 +651,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     const tc = cfg.truckConfig || {}
     const trc = cfg.trailerConfig || {}
     if (tc.material) form.truckMaterial = tc.material
+    if (tc.mountType) form.truckMountType = tc.mountType
     if (tc.hoist) form.truckHoist = tc.hoist
     if (tc.tarpSystem) form.truckTarp = tc.tarpSystem
     if (tc.coupling) form.truckCoupling = tc.coupling
@@ -732,6 +736,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     }
   } else if (form.buildType === 'truck-body') {
     if (cfg.material) form.truckMaterial = cfg.material
+    if (cfg.mountType) form.truckMountType = cfg.mountType
     if (cfg.hoist) form.truckHoist = cfg.hoist
     if (cfg.tarpSystem) form.truckTarp = cfg.tarpSystem
     if (cfg.coupling) form.truckCoupling = cfg.coupling
@@ -888,8 +893,8 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
 function buildConfiguration(form: QuoteForm): Record<string, unknown> {
   const cfg: Record<string, unknown> = { buildType: form.buildType }
   const truckData = {
-    material: form.truckMaterial, floorSheet: form.truckFloorSheet,
-    sideSheet: form.truckSideSheet,
+    material: form.truckMaterial, mountType: form.truckMountType,
+    floorSheet: form.truckFloorSheet, sideSheet: form.truckSideSheet,
     hoist: form.truckHoist,
     tarpSystem: (form.truckTarpMaterial !== 'None' && form.truckTarpStyle !== 'None')
       ? `${form.truckTarpMaterial} ${form.truckTarpStyle}`
@@ -1718,11 +1723,16 @@ function QuoteBuilderInner() {
             icon="🚛"
             style={{ marginTop: 20 }}
           >
-            {/* Row 1: Material + sheets */}
-            <div style={grid(3)}>
+            {/* Row 1: Material + mount type + sheets */}
+            <div style={grid(4)}>
               <Field label="Body Material">
                 <select value={form.truckMaterial} onChange={(e) => onMaterialChange(e.target.value)} style={selectStyle}>
                   {MATERIALS.map((m) => <option key={m}>{m}</option>)}
+                </select>
+              </Field>
+              <Field label="Mount Type">
+                <select value={form.truckMountType} onChange={(e) => set('truckMountType', e.target.value)} style={selectStyle}>
+                  {MOUNT_TYPES.map((m) => <option key={m}>{m}</option>)}
                 </select>
               </Field>
               <Field label="Floor Sheet">
