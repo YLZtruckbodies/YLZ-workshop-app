@@ -1,9 +1,81 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useEffect, useState, useCallback } from 'react'
+
+interface EngineeringJob {
+  id: string
+  num: string
+  type: string
+  customer: string
+  make: string
+  dims: string
+  createdAt: string
+  quoteId?: string
+}
 
 export default function EngineeringPage() {
   const router = useRouter()
+  const [drafts, setDrafts] = useState<EngineeringJob[]>([])
+  const [loading, setLoading] = useState(true)
+  const [approving, setApproving] = useState<string | null>(null)
+
+  const fetchDrafts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/jobs?stage=Requires Engineering')
+      if (res.ok) {
+        const jobs = await res.json()
+        // Fetch linked quote IDs for each job
+        const enriched = await Promise.all(
+          jobs.map(async (job: any) => {
+            let quoteId = ''
+            try {
+              const qRes = await fetch(`/api/quotes?jobId=${job.id}`)
+              if (qRes.ok) {
+                const quotes = await qRes.json()
+                if (quotes.length > 0) quoteId = quotes[0].id
+              }
+            } catch { /* ignore */ }
+            return { ...job, quoteId }
+          })
+        )
+        setDrafts(enriched)
+      }
+    } catch { /* ignore */ }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { fetchDrafts() }, [fetchDrafts])
+
+  const approveJob = async (jobId: string) => {
+    setApproving(jobId)
+    try {
+      const res = await fetch(`/api/jobs/${jobId}/advance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _userName: 'Engineering' }),
+      })
+      if (res.ok) {
+        setDrafts((prev) => prev.filter((j) => j.id !== jobId))
+      }
+    } catch { /* ignore */ }
+    setApproving(null)
+  }
+
+  const cardStyle = {
+    background: 'var(--dark2)', border: '1px solid var(--border)', borderRadius: 8,
+    padding: '20px 16px', cursor: 'pointer' as const,
+    display: 'flex' as const, flexDirection: 'column' as const, alignItems: 'flex-start' as const, gap: 8,
+    transition: 'all 0.2s', textAlign: 'left' as const,
+  }
+
+  const btnStyle = (color: string) => ({
+    fontFamily: "'League Spartan', sans-serif",
+    fontSize: 11, fontWeight: 700 as const, letterSpacing: 0.5, textTransform: 'uppercase' as const,
+    padding: '7px 14px', borderRadius: 5, cursor: 'pointer' as const,
+    border: `1px solid ${color}`, background: 'transparent', color,
+    transition: 'all 0.15s',
+  })
 
   return (
     <div style={{ padding: 24, maxWidth: 1400, margin: '0 auto' }}>
@@ -19,6 +91,102 @@ export default function EngineeringPage() {
           Track engineering specs, drawings, and build requirements.
         </div>
       </div>
+
+      {/* Engineering Queue */}
+      {!loading && drafts.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <div style={{
+            fontFamily: "'League Spartan', sans-serif",
+            fontSize: 13, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+            color: '#E8681A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <span style={{ fontSize: 16 }}>⚙️</span>
+            Awaiting Engineering Approval ({drafts.length})
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {drafts.map((job) => (
+              <div
+                key={job.id}
+                style={{
+                  background: 'var(--dark2)', border: '1px solid rgba(232,104,26,0.3)', borderRadius: 8,
+                  padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16,
+                  borderLeft: '3px solid #E8681A',
+                }}
+              >
+                <div style={{ flex: '0 0 auto', minWidth: 90 }}>
+                  <div style={{
+                    fontFamily: "'League Spartan', sans-serif",
+                    fontSize: 15, fontWeight: 800, color: '#E8681A', letterSpacing: 0.5,
+                  }}>
+                    {job.num}
+                  </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>{job.customer || '—'}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                    {job.type}{job.make ? ` — ${job.make}` : ''}{job.dims ? ` — ${job.dims}` : ''}
+                  </div>
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--text3)', minWidth: 70, textAlign: 'right' }}>
+                  {new Date(job.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  <button
+                    onClick={() => router.push(`/jsheet/${job.id}`)}
+                    style={btnStyle('rgba(255,255,255,0.5)')}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                  >
+                    View Job Sheet
+                  </button>
+                  {job.quoteId && (
+                    <button
+                      onClick={() => router.push(`/quotes/builder?id=${job.quoteId}`)}
+                      style={btnStyle('rgba(255,255,255,0.5)')}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                    >
+                      Edit Quote
+                    </button>
+                  )}
+                  <button
+                    onClick={() => approveJob(job.id)}
+                    disabled={approving === job.id}
+                    style={{
+                      ...btnStyle('#22c55e'),
+                      opacity: approving === job.id ? 0.5 : 1,
+                    }}
+                    onMouseEnter={(e) => { if (approving !== job.id) { e.currentTarget.style.background = 'rgba(34,197,94,0.12)' } }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                  >
+                    {approving === job.id ? 'Approving...' : '✓ Approve for Manufacture'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!loading && drafts.length === 0 && (
+        <div style={{
+          marginBottom: 28, padding: '14px 18px', borderRadius: 8,
+          background: 'var(--dark2)', border: '1px solid var(--border)',
+          fontSize: 12, color: 'var(--text3)',
+        }}>
+          No jobs awaiting engineering approval.
+        </div>
+      )}
+
+      {loading && (
+        <div style={{
+          marginBottom: 28, padding: '14px 18px', borderRadius: 8,
+          background: 'var(--dark2)', border: '1px solid var(--border)',
+          fontSize: 12, color: 'var(--text3)',
+        }}>
+          Loading engineering queue...
+        </div>
+      )}
 
       {/* Tool Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
@@ -39,11 +207,9 @@ export default function EngineeringPage() {
               else router.push(tool.href)
             }}
             style={{
-              background: 'var(--dark2)', border: '1px solid var(--border)', borderRadius: 8,
-              padding: '20px 16px', cursor: tool.href ? 'pointer' : 'default',
-              display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8,
-              transition: 'all 0.2s', opacity: tool.href ? 1 : 0.5,
-              textAlign: 'left',
+              ...cardStyle,
+              cursor: tool.href ? 'pointer' : 'default',
+              opacity: tool.href ? 1 : 0.5,
             }}
             onMouseEnter={(e) => {
               if (tool.href) {
