@@ -215,6 +215,22 @@ function calcBodyCapacity(bodyLength: string, material: string, bodyHeight: stri
   return result > 0 ? result.toFixed(1) : ''
 }
 
+// Auto-lookup: booster settings & slack lengths from axle make, type, count
+type AxleSettings = { boosters: string[]; slacks: string[] }
+const AXLE_SETTINGS: Record<string, AxleSettings> = {
+  'SAF|Drum|3': { boosters: ['30', '2430', '2430'], slacks: ['127', '127', '127'] },
+  'SAF|Drum|4': { boosters: ['30', '3030', '2430', '2430'], slacks: ['152', '152', '127', '127'] },
+  'SAF|Drum|5': { boosters: ['24', '24', '2430', '2430', '2430'], slacks: ['178', '178', '127', '127', '127'] },
+  'SAF|Disc|3': { boosters: ['22', '22', '1216'], slacks: ['88', '88', '88'] },
+  'SAF|Disc|4': { boosters: ['22', '22', '1216', '1216'], slacks: ['88', '88', '88', '88'] },
+  'SAF|Disc|5': { boosters: ['24', '24', '1216', '1216', '1216'], slacks: ['88', '88', '88', '88', '88'] },
+}
+function getAxleSettings(axleMake: string, axleType: string, axleCount: number): AxleSettings | null {
+  const brakeType = axleType.startsWith('Drum') ? 'Drum' : axleType.startsWith('Disc') ? 'Disc' : null
+  if (!brakeType) return null
+  return AXLE_SETTINGS[`${axleMake}|${brakeType}|${axleCount}`] || null
+}
+
 // Auto-lookup: tarp bow height from material, body type, length, height
 function calcTarpBowHeight(material: string, isDogTrailer: boolean, bodyLength: string, bodyHeight: string): string {
   const length = parseInt(bodyLength, 10)
@@ -507,6 +523,11 @@ function generateTrailerSpec(form: QuoteForm): string {
   lines.push(`${axleCount} x ${form.trailerAxleMake} ${axleTypeLabel} brake axles`)
   lines.push(`${form.trailerAxleMake} ${form.trailerSuspension} suspension`)
   lines.push(`${axleTypeLabel} brakes`)
+  const axleS = getAxleSettings(form.trailerAxleMake, form.trailerAxleType, form.trailerAxleCount)
+  if (axleS) {
+    lines.push(`Booster settings: ${axleS.boosters.join(' / ')}`)
+    lines.push(`Slack lengths: ${axleS.slacks.map(s => `${s}mm`).join(' / ')}`)
+  }
   lines.push('Alcoa Dura-Bright aluminium wheels')
   lines.push('ST315/80R22.5 tyres')
   lines.push('')
@@ -945,6 +966,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     axleLift: form.trailerAxleLift, axleLiftAxle: form.trailerAxleLiftAxle,
     hubodometer: form.trailerHubodometer, hubodoLocation: form.trailerHubodoLocation, hubodoAxle: form.trailerHubodoAxle,
     tarpBowSize: calcTarpBowHeight(form.trailerMaterial, form.trailerModel.startsWith('DT-'), form.trailerBodyLength, form.trailerBodyHeight),
+    axleSettings: getAxleSettings(form.trailerAxleMake, form.trailerAxleType, form.trailerAxleCount),
   }
   if (form.buildType === 'truck-and-trailer') {
     cfg.truckConfig = truckData
@@ -1511,6 +1533,7 @@ function QuoteBuilderInner() {
   const trailerBodyCapacity = calcBodyCapacity(form.trailerBodyLength, form.trailerMaterial, form.trailerBodyHeight, 'trailer')
   const truckBowHeight = calcTarpBowHeight(form.truckMaterial, false, form.truckBodyLength, form.truckBodyHeight)
   const trailerBowHeight = calcTarpBowHeight(form.trailerMaterial, form.trailerModel.startsWith('DT-'), form.trailerBodyLength, form.trailerBodyHeight)
+  const trailerAxleSettings = getAxleSettings(form.trailerAxleMake, form.trailerAxleType, form.trailerAxleCount)
 
   if (loading) {
     return (
@@ -2224,6 +2247,26 @@ function QuoteBuilderInner() {
                 </select>
               </Field>
             </div>
+            {/* Booster & Slack settings — auto from axle make/type/count */}
+            {trailerAxleSettings ? (
+              <div style={{ ...grid(2), marginTop: 16 }}>
+                <Field label="Booster Settings">
+                  <input value={trailerAxleSettings.boosters.map((v, i) => `${i + 1}: ${v}`).join('  |  ')} readOnly style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: '#E8681A', fontSize: 12 }} />
+                </Field>
+                <Field label="Slack Lengths">
+                  <input value={trailerAxleSettings.slacks.map((v, i) => `${i + 1}: ${v}mm`).join('  |  ')} readOnly style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: '#E8681A', fontSize: 12 }} />
+                </Field>
+              </div>
+            ) : form.trailerAxleType !== 'Drum or Disc (customer choice)' ? (
+              <div style={{ ...grid(2), marginTop: 16 }}>
+                <Field label="Booster Settings">
+                  <input value="TBC" readOnly style={{ ...inputStyle, opacity: 0.5, cursor: 'default', color: 'rgba(255,255,255,0.4)' }} />
+                </Field>
+                <Field label="Slack Lengths">
+                  <input value="TBC" readOnly style={{ ...inputStyle, opacity: 0.5, cursor: 'default', color: 'rgba(255,255,255,0.4)' }} />
+                </Field>
+              </div>
+            ) : null}
             <div style={{ ...grid(4), marginTop: 16 }}>
               <Field label="Floor Sheet">
                 <input value={form.trailerFloorSheet} onChange={(e) => set('trailerFloorSheet', e.target.value)} placeholder="e.g. 8mm Aluminium" style={inputStyle} />
