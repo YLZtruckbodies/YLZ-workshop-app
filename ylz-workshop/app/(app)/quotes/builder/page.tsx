@@ -119,10 +119,8 @@ interface QuoteForm {
   truckTarpMaterial: string
   truckTarpColour: string
   truckTarpType: string
-  truckTarpBowSize: string
   truckTarpStyle: string
   truckTarpLocation: string
-  trailerTarpBowSize: string
   // pricing
   lineItems: LineItem[]
   margin: number
@@ -200,13 +198,16 @@ const HOISTS = ['Binotto 3190', 'Hyva Alpha 092', 'Hyva Alpha 190', 'PH122 Krög
 
 // Auto-lookup: tarp bow height from material, body type, length, height
 function calcTarpBowHeight(material: string, isDogTrailer: boolean, bodyLength: string, bodyHeight: string): string {
-  const isAlloy = material === 'Aluminium'
   const length = parseInt(bodyLength, 10)
   const height = parseInt(bodyHeight, 10)
-  if (isAlloy) return '250mm'
+  if (material === 'Aluminium') return '250mm'
   if (isDogTrailer) return '320mm'
-  if (height === 1000) return '450mm'
-  if (height === 1100) return length <= 4700 ? '380mm' : '450mm'
+  // Steel / Hardox bodies — bow size based on body height + length
+  if (!isNaN(height)) {
+    if (height <= 1000) return '380mm'
+    if (height === 1100) return length <= 4700 ? '380mm' : '450mm'
+    if (height >= 1150) return '450mm'
+  }
   return ''
 }
 
@@ -421,7 +422,8 @@ function generateTruckBodySpec(form: QuoteForm): string {
     if (form.truckTarpColour) tarpParts.push(form.truckTarpColour)
     tarpParts.push(form.truckTarpType || 'Hoop Type')
     if (form.truckTarpStyle) tarpParts.push(form.truckTarpStyle)
-    if (form.truckTarpBowSize) tarpParts.push(`${form.truckTarpBowSize} bow`)
+    const bowH = calcTarpBowHeight(form.truckMaterial, false, form.truckBodyLength, form.truckBodyHeight)
+    if (bowH) tarpParts.push(`${bowH} bow`)
     if (form.truckTarpLocation) tarpParts.push(form.truckTarpLocation)
     lines.push(`Tarp: ${tarpParts.join(' — ')}`)
   }
@@ -494,7 +496,10 @@ function generateTrailerSpec(form: QuoteForm): string {
     lines.push(`Hubodometer — ${loc}, ${axle}`)
   }
   lines.push('')
-  if (form.trailerTarp !== 'None') lines.push(`${form.trailerTarp} tarp system`)
+  if (form.trailerTarp !== 'None') {
+    const bowH = calcTarpBowHeight(form.trailerMaterial, form.trailerModel.startsWith('DT-'), form.trailerBodyLength, form.trailerBodyHeight)
+    lines.push(`${form.trailerTarp} tarp system${bowH ? ` — ${bowH} bow` : ''}`)
+  }
   lines.push('LED lighting throughout')
   if (form.trailerPaintColour) lines.push(`Paint: ${form.trailerPaintColour}`)
   if (form.trailerPbs) lines.push(`\n*PBS certification ${form.trailerPbs}`)
@@ -553,7 +558,6 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckTarpMaterial: 'PVC',
     truckTarpColour: '',
     truckTarpType: 'Hoop Type',
-    truckTarpBowSize: '',
     truckTarpStyle: 'Razor Electric',
     truckTarpLocation: 'Standard Out Front',
     trailerSerial: '', trailerVin: '', trailerFloorSheet: '', trailerSideSheet: '',
@@ -561,7 +565,6 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerChassisLength: '', trailerWheelbase: '',
     trailerTailgateLights: 'None', trailerTailLights: 'Use existing OEM tail lights', trailerLockFlap: 'No',
     trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'No', trailerHubodoLocation: '', trailerHubodoAxle: '',
-    trailerTarpBowSize: '',
     lineItems: [],
     margin: 0, overhead: 0, discount: 0,
     useOverride: false, overridePrice: '', overrideNote: '',
@@ -713,7 +716,6 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerHubodometer = trc.hubodometer || 'No'
     form.trailerHubodoLocation = trc.hubodoLocation || ''
     form.trailerHubodoAxle = trc.hubodoAxle || ''
-    form.trailerTarpBowSize = trc.tarpBowSize || ''
     form.specialRequirements = cfg.specialRequirements || ''
     // Line items from quick-quote
     if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
@@ -762,7 +764,6 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckHydTankLocation = cfg.hydTankLocation || 'Centre'
     form.truckDValue = cfg.dValue || ''
     form.truckCouplingLoad = cfg.couplingLoad || getCouplingLoad(form.truckCoupling)
-    form.truckTarpBowSize = (cfg.tarpBowSize as string) || ''
     form.truckTarpLength = (cfg.tarpLength as string) || ''
     form.specialRequirements = cfg.specialRequirements || ''
     if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
