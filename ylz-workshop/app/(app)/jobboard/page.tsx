@@ -1079,6 +1079,8 @@ export default function JobBoardPage() {
   })
   const [savingJob, setSavingJob] = useState(false)
   const [jobMessage, setJobMessage] = useState('')
+  const [poFile, setPoFile] = useState<File | null>(null)
+  const poInputRef = useRef<HTMLInputElement | null>(null)
 
   // DnD sensors
   const sensors = useSensors(
@@ -1406,7 +1408,7 @@ export default function JobBoardPage() {
     }
     setSavingJob(true)
     try {
-      await createJob({
+      const job = await createJob({
         num: newJob.num.trim(),
         type: newJob.type.trim(),
         customer: newJob.customer.trim(),
@@ -1416,9 +1418,19 @@ export default function JobBoardPage() {
         stage: 'Fab',
         btype: deriveBtype(newJob.type),
       })
+      // Upload PO file if attached
+      if (poFile && job?.id) {
+        try {
+          await uploadFile(job.id, poFile, user?.name || '')
+          mutateFiles()
+        } catch (e) {
+          console.error('PO upload failed:', e)
+        }
+      }
       mutate()
       setShowNewJobModal(false)
       setNewJob({ num: '', type: '', customer: '', dealer: '', due: '', prodGroup: 'pending' })
+      setPoFile(null)
       setJobMessage('Job created')
       setTimeout(() => setJobMessage(''), 3000)
     } catch {
@@ -2210,6 +2222,41 @@ export default function JobBoardPage() {
                   </select>
                 </div>
               </div>
+              <div>
+                <label style={labelStyle}>Purchase Order</label>
+                <div
+                  onClick={() => poInputRef.current?.click()}
+                  style={{
+                    ...modalInputStyle,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    cursor: 'pointer',
+                    color: poFile ? '#fff' : 'rgba(255,255,255,0.4)',
+                  }}
+                >
+                  {poFile ? (
+                    <>
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{poFile.name}</span>
+                      <span
+                        onClick={(e) => { e.stopPropagation(); setPoFile(null); if (poInputRef.current) poInputRef.current.value = '' }}
+                        style={{ color: '#e84560', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+                      >
+                        &times;
+                      </span>
+                    </>
+                  ) : (
+                    'Click to attach PO (PDF, image, etc.)'
+                  )}
+                </div>
+                <input
+                  ref={poInputRef}
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
+                  style={{ display: 'none' }}
+                  onChange={(e) => { if (e.target.files?.[0]) setPoFile(e.target.files[0]) }}
+                />
+              </div>
             </div>
 
             {jobMessage && showNewJobModal && (
@@ -2220,7 +2267,7 @@ export default function JobBoardPage() {
 
             <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
               <button
-                onClick={() => setShowNewJobModal(false)}
+                onClick={() => { setShowNewJobModal(false); setPoFile(null) }}
                 style={{
                   fontFamily: "'League Spartan', sans-serif",
                   fontSize: 12,
