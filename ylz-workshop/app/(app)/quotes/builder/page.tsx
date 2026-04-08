@@ -51,7 +51,6 @@ interface QuoteForm {
   chassisMake: string
   chassisModel: string
   truckBodyLength: string
-  truckBodyWidth: string
   truckBodyHeight: string
   truckBodyCapacity: string
   truckGvm: string
@@ -59,7 +58,6 @@ interface QuoteForm {
   truckPaintColour: string
   // engineering details — trailer
   trailerBodyLength: string
-  trailerBodyWidth: string
   trailerBodyHeight: string
   trailerBodyCapacity: string
   trailerGtm: string
@@ -195,6 +193,12 @@ const CHASSIS_MODELS: Record<string, string[]> = {
 const MATERIALS = ['Hardox 500', 'Aluminium', 'Hardox 450', 'Steel']
 const HOISTS = ['Binotto 3190', 'Hyva Alpha 092', 'Hyva Alpha 190', 'PH122 Kröger',
   'MFB3126.3.2840', 'MFB3128.3.2960', 'MFB3128.3.3190', 'MFB3126.4.3310', 'None']
+
+// Auto-lookup: body width from material
+function calcBodyWidth(material: string): string {
+  if (material === 'Aluminium') return '2290'
+  return '2250'
+}
 
 // Auto-lookup: tarp bow height from material, body type, length, height
 function calcTarpBowHeight(material: string, isDogTrailer: boolean, bodyLength: string, bodyHeight: string): string {
@@ -382,7 +386,7 @@ function fmtDim(val: string): string {
 function generateTruckBodySpec(form: QuoteForm): string {
   const isAlloy = form.truckMaterial === 'Aluminium'
   const L = form.truckBodyLength ? fmtDim(form.truckBodyLength) : '—'
-  const W = form.truckBodyWidth  ? fmtDim(form.truckBodyWidth)  : '—'
+  const W = fmtDim(calcBodyWidth(form.truckMaterial))
   const H = form.truckBodyHeight ? fmtDim(form.truckBodyHeight) : '—'
 
   const lines: string[] = []
@@ -452,7 +456,7 @@ function generateTrailerSpec(form: QuoteForm): string {
   const isAlloy = form.trailerMaterial === 'Aluminium'
   const axleCount = form.trailerAxleCount
   const L = form.trailerBodyLength ? fmtDim(form.trailerBodyLength) : '—'
-  const W = form.trailerBodyWidth  ? fmtDim(form.trailerBodyWidth)  : '—'
+  const W = fmtDim(calcBodyWidth(form.trailerMaterial))
   const H = form.trailerBodyHeight ? fmtDim(form.trailerBodyHeight) : '—'
   const axleTypeLabel = form.trailerAxleType === 'Drum or Disc (customer choice)' ? 'Drum or Disc' : form.trailerAxleType
 
@@ -534,9 +538,9 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerTarp: 'Razor PVC/MESH Electric',
     trailerPbs: '',
     chassisMake: '', chassisModel: '',
-    truckBodyLength: '', truckBodyWidth: '', truckBodyHeight: '',
+    truckBodyLength: '', truckBodyHeight: '',
     truckBodyCapacity: '', truckGvm: '', truckTare: '', truckPaintColour: '',
-    trailerBodyLength: '', trailerBodyWidth: '', trailerBodyHeight: '',
+    trailerBodyLength: '', trailerBodyHeight: '',
     trailerBodyCapacity: '', trailerGtm: '', trailerGcm: '',
     trailerTare: '', trailerPaintColour: '',
     specialRequirements: '',
@@ -667,7 +671,6 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.chassisMake = tc.chassisMake || ''
     form.chassisModel = tc.chassisModel || ''
     form.truckBodyLength = tc.bodyLength || ''
-    form.truckBodyWidth = tc.bodyWidth || ''
     form.truckBodyHeight = tc.bodyHeight || ''
     form.truckBodyCapacity = tc.bodyCapacity || ''
     form.truckGvm = tc.gvm || ''
@@ -692,7 +695,6 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckCouplingLoad = tc.couplingLoad || getCouplingLoad(form.truckCoupling)
     // Engineering details (trailer)
     form.trailerBodyLength = trc.bodyLength || ''
-    form.trailerBodyWidth = trc.bodyWidth || ''
     form.trailerBodyHeight = trc.bodyHeight || ''
     form.trailerBodyCapacity = trc.bodyCapacity || ''
     form.trailerGtm = trc.gtm || ''
@@ -742,7 +744,6 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.chassisMake = cfg.chassisMake || ''
     form.chassisModel = cfg.chassisModel || ''
     form.truckBodyLength = cfg.bodyLength || ''
-    form.truckBodyWidth = cfg.bodyWidth || ''
     form.truckBodyHeight = cfg.bodyHeight || ''
     form.truckBodyCapacity = cfg.bodyCapacity || ''
     form.truckGvm = cfg.gvm || ''
@@ -780,7 +781,6 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     if (cfg.tarpSystem) form.trailerTarp = cfg.tarpSystem
     form.trailerPbs = cfg.pbsRating || ''
     form.trailerBodyLength = cfg.bodyLength || ''
-    form.trailerBodyWidth = cfg.bodyWidth || ''
     form.trailerBodyHeight = cfg.bodyHeight || ''
     form.trailerBodyCapacity = cfg.bodyCapacity || ''
     form.trailerGtm = cfg.gtm || ''
@@ -896,7 +896,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
       : 'None', coupling: form.truckCoupling,
     controls: form.truckControls, hydraulics: form.truckHydraulics,
     chassisMake: form.chassisMake, chassisModel: form.chassisModel,
-    bodyLength: form.truckBodyLength, bodyWidth: form.truckBodyWidth,
+    bodyLength: form.truckBodyLength, bodyWidth: calcBodyWidth(form.truckMaterial),
     bodyHeight: form.truckBodyHeight, bodyCapacity: form.truckBodyCapacity,
     gvm: form.truckGvm, tare: form.truckTare, paintColour: form.truckPaintColour,
     serial: form.truckSerial, vin: form.truckVin,
@@ -918,7 +918,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     pbsRating: form.trailerPbs,
     floorSheet: form.trailerFloorSheet, sideSheet: form.trailerSideSheet,
     hoist: form.trailerHoist, drawbarLength: form.trailerDrawbarLength,
-    bodyLength: form.trailerBodyLength, bodyWidth: form.trailerBodyWidth,
+    bodyLength: form.trailerBodyLength, bodyWidth: calcBodyWidth(form.trailerMaterial),
     bodyHeight: form.trailerBodyHeight, bodyCapacity: form.trailerBodyCapacity,
     gtm: form.trailerGtm, gcm: form.trailerGcm,
     tare: form.trailerTare, paintColour: form.trailerPaintColour,
@@ -1489,6 +1489,8 @@ function QuoteBuilderInner() {
   const hasRepairs = form.buildType === 'repairs'
 
   // Derived — computed at render time so they always reflect current inputs
+  const truckBodyWidth = calcBodyWidth(form.truckMaterial)
+  const trailerBodyWidth = calcBodyWidth(form.trailerMaterial)
   const truckBowHeight = calcTarpBowHeight(form.truckMaterial, false, form.truckBodyLength, form.truckBodyHeight)
   const trailerBowHeight = calcTarpBowHeight(form.trailerMaterial, form.trailerModel.startsWith('DT-'), form.trailerBodyLength, form.trailerBodyHeight)
 
@@ -2307,7 +2309,7 @@ function QuoteBuilderInner() {
                   <input value={form.truckBodyLength} onChange={(e) => set('truckBodyLength', e.target.value)} placeholder="e.g. 5400" style={inputStyle} />
                 </Field>
                 <Field label="Body Width (mm)">
-                  <input value={form.truckBodyWidth} onChange={(e) => set('truckBodyWidth', e.target.value)} placeholder="e.g. 2250" style={inputStyle} />
+                  <input value={truckBodyWidth} readOnly placeholder="Auto from material" style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: '#E8681A' }} />
                 </Field>
                 <Field label="Main Runner Width (mm)">
                   <input value={form.truckMainRunnerWidth} onChange={(e) => set('truckMainRunnerWidth', e.target.value)} placeholder="e.g. 820" style={inputStyle} />
@@ -2448,7 +2450,7 @@ function QuoteBuilderInner() {
                   <input value={form.trailerBodyLength} onChange={(e) => set('trailerBodyLength', e.target.value)} placeholder="e.g. 8300" style={inputStyle} />
                 </Field>
                 <Field label="Body Width (mm)">
-                  <input value={form.trailerBodyWidth} onChange={(e) => set('trailerBodyWidth', e.target.value)} placeholder="e.g. 2250" style={inputStyle} />
+                  <input value={trailerBodyWidth} readOnly placeholder="Auto from material" style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: '#E8681A' }} />
                 </Field>
                 <Field label="Main Runner Width (mm)">
                   <input value={form.trailerMainRunnerWidth} onChange={(e) => set('trailerMainRunnerWidth', e.target.value)} placeholder="e.g. 820" style={inputStyle} />
@@ -2562,12 +2564,10 @@ function QuoteBuilderInner() {
                 const missing: string[] = []
                 if (hasTrk) {
                   if (!form.truckBodyLength) missing.push('Truck Body Length')
-                  if (!form.truckBodyWidth)  missing.push('Truck Body Width')
                   if (!form.chassisMake)     missing.push('Chassis Make/Model')
                 }
                 if (hasTrl) {
                   if (!form.trailerBodyLength) missing.push('Trailer Body Length')
-                  if (!form.trailerBodyWidth)  missing.push('Trailer Body Width')
                 }
                 setSpecWarning(missing.length > 0 ? `Unfilled fields will appear as dashes: ${missing.join(', ')}` : null)
               }}
