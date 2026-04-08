@@ -2,6 +2,15 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
+import { generateTEBSDocx, downloadTEBSBlob, hasTEBSData, type TEBSInput } from '@/lib/tebs'
+
+interface QuoteConfig {
+  axleCount?: number
+  axleMake?: string
+  axleType?: string
+  vin?: string
+  [key: string]: unknown
+}
 
 interface EngineeringJob {
   id: string
@@ -11,7 +20,9 @@ interface EngineeringJob {
   make: string
   dims: string
   createdAt: string
+  vin?: string
   quoteId?: string
+  quoteCfg?: QuoteConfig
 }
 
 export default function EngineeringPage() {
@@ -19,24 +30,34 @@ export default function EngineeringPage() {
   const [drafts, setDrafts] = useState<EngineeringJob[]>([])
   const [loading, setLoading] = useState(true)
   const [approving, setApproving] = useState<string | null>(null)
+  const [tebsLoading, setTebsLoading] = useState<string | null>(null)
 
   const fetchDrafts = useCallback(async () => {
     try {
       const res = await fetch('/api/jobs?stage=Requires Engineering')
       if (res.ok) {
         const jobs = await res.json()
-        // Fetch linked quote IDs for each job
+        // Fetch linked quote IDs and config for each job
         const enriched = await Promise.all(
           jobs.map(async (job: any) => {
             let quoteId = ''
+            let quoteCfg: QuoteConfig | undefined
             try {
               const qRes = await fetch(`/api/quotes?jobId=${job.id}`)
               if (qRes.ok) {
                 const quotes = await qRes.json()
-                if (quotes.length > 0) quoteId = quotes[0].id
+                if (quotes.length > 0) {
+                  quoteId = quotes[0].id
+                  // Fetch full quote for configuration
+                  const fullRes = await fetch(`/api/quotes/${quotes[0].id}`)
+                  if (fullRes.ok) {
+                    const fullQuote = await fullRes.json()
+                    if (fullQuote.configuration) quoteCfg = fullQuote.configuration
+                  }
+                }
               }
             } catch { /* ignore */ }
-            return { ...job, quoteId }
+            return { ...job, quoteId, quoteCfg }
           })
         )
         setDrafts(enriched)
@@ -149,6 +170,31 @@ export default function EngineeringPage() {
                       Edit Quote
                     </button>
                   )}
+                  {(() => {
+                    const isTrailer = job.type?.toLowerCase().includes('trailer') || job.type?.toLowerCase().includes('dog') || job.type?.toLowerCase().includes('semi')
+                    const tInput: TEBSInput | null = isTrailer && job.quoteCfg?.axleCount && job.quoteCfg?.axleMake && job.quoteCfg?.axleType
+                      ? { axleCount: job.quoteCfg.axleCount, axleMake: job.quoteCfg.axleMake, axleType: job.quoteCfg.axleType, vin: job.vin || (job.quoteCfg?.vin as string) || '', jobNumber: job.num }
+                      : null
+                    if (!tInput || !hasTEBSData(tInput)) return null
+                    return (
+                      <button
+                        onClick={async () => {
+                          setTebsLoading(job.id)
+                          try {
+                            const blob = await generateTEBSDocx(tInput)
+                            if (blob) downloadTEBSBlob(blob, job.num)
+                          } catch { /* ignore */ }
+                          setTebsLoading(null)
+                        }}
+                        disabled={tebsLoading === job.id}
+                        style={{ ...btnStyle('#3b82f6'), opacity: tebsLoading === job.id ? 0.5 : 1 }}
+                        onMouseEnter={(e) => { if (tebsLoading !== job.id) e.currentTarget.style.background = 'rgba(59,130,246,0.12)' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                      >
+                        {tebsLoading === job.id ? 'Generating...' : '📄 TEBS'}
+                      </button>
+                    )
+                  })()}
                   <button
                     onClick={() => approveJob(job.id)}
                     disabled={approving === job.id}

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { generateTEBSDocx, downloadTEBSBlob, hasTEBSData, type TEBSInput } from '@/lib/tebs'
 
 interface BomEntry {
   code: string
@@ -160,6 +161,7 @@ const S = {
 export default function JobSheetPage({ params }: { params: { jobId: string } }) {
   const [job, setJob] = useState<Job | null>(null)
   const [loading, setLoading] = useState(true)
+  const [tebsLoading, setTebsLoading] = useState(false)
 
   useEffect(() => {
     fetch(`/api/jobs/${params.jobId}`)
@@ -205,6 +207,22 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
     return val != null && val !== '' ? String(val) : ''
   }
 
+  // TEBS datasheet — only for trailers with axle config
+  const tebsInput: TEBSInput | null = isTrailer && job.cfg?.axleCount && job.cfg?.axleMake && job.cfg?.axleType
+    ? { axleCount: job.cfg.axleCount, axleMake: job.cfg.axleMake, axleType: job.cfg.axleType, vin: job.vin || job.cfg?.vin || '', jobNumber: job.num }
+    : null
+  const canDownloadTEBS = tebsInput && hasTEBSData(tebsInput)
+
+  const handleTEBSDownload = async () => {
+    if (!tebsInput) return
+    setTebsLoading(true)
+    try {
+      const blob = await generateTEBSDocx(tebsInput)
+      if (blob) downloadTEBSBlob(blob, job.num)
+    } catch { /* ignore */ }
+    setTebsLoading(false)
+  }
+
   return (
     <>
       <style>{S.page}</style>
@@ -213,7 +231,14 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
       <div className="print-bar">
         <a href={`/jobboard`}>← Job Board</a>
         <span style={{ fontWeight: 700, fontSize: 14 }}>{job.num} — {job.customer} — Job Sheets</span>
-        <button onClick={() => window.print()}>Print / Save PDF</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {canDownloadTEBS && (
+            <button onClick={handleTEBSDownload} disabled={tebsLoading} style={{ opacity: tebsLoading ? 0.5 : 1 }}>
+              {tebsLoading ? 'Generating...' : '📄 TEBS Datasheet'}
+            </button>
+          )}
+          <button onClick={() => window.print()}>Print / Save PDF</button>
+        </div>
       </div>
 
       {/* ═══════════════════════════════════════════
