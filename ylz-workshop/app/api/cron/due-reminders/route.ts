@@ -19,13 +19,13 @@ export async function GET(req: NextRequest) {
   const now = new Date()
   const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
 
-  const dueSoon = jobs.filter((j) => {
+  const dueSoon = jobs.filter((j: any) => {
     const d = parseDate(j.due)
     if (!d) return false
     return d >= now && d <= in3Days
   })
 
-  const overdue = jobs.filter((j) => {
+  const overdue = jobs.filter((j: any) => {
     const d = parseDate(j.due)
     if (!d) return false
     return d < now

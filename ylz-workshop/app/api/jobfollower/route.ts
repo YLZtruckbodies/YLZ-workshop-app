@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const checks = await prisma.jobFollowerCheck.findMany({ where: { jobNum } })
   // Return as a map: { "pre-production.job-sheet-received": { checked: true, checkedBy: "Matt", checkedAt: "..." } }
   const map: Record<string, { checked: boolean; checkedBy: string; checkedAt: string | null }> = {}
-  checks.forEach((c) => {
+  checks.forEach((c: any) => {
     map[c.checkKey] = {
       checked: c.checked,
       checkedBy: c.checkedBy,

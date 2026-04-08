@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const admins = await prisma.user.findMany({ where: { fullAdmin: true }, select: { id: true } })
   if (admins.length) {
     await prisma.notification.createMany({
-      data: admins.map((a) => ({
+      data: admins.map((a: any) => ({
         userId: a.id,
         jobId: params.id,
         jobNum: job.num,

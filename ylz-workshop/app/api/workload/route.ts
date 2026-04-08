@@ -19,24 +19,24 @@ export async function GET() {
     stageCounts[j.stage] = (stageCounts[j.stage] || 0) + 1
   }
   const stageBreakdown = Object.entries(stageCounts)
-    .map(([stage, count]) => ({ stage, count }))
-    .sort((a, b) => b.count - a.count)
+    .map(([stage, count]: any) => ({ stage, count }))
+    .sort((a: any, b: any) => b.count - a.count)
 
   // Worker load
   const workerCount: Record<string, number> = {}
   for (const wj of workerJobs) {
     workerCount[wj.workerId] = (workerCount[wj.workerId] || 0) + 1
   }
-  const workerLoad = workers.map((w) => ({
+  const workerLoad = workers.map((w: any) => ({
     id: w.id,
     name: w.name,
     section: w.section,
     color: w.color,
     jobCount: workerCount[w.id] || 0,
-  })).sort((a, b) => b.jobCount - a.jobCount)
+  })).sort((a: any, b: any) => b.jobCount - a.jobCount)
 
   // Capacity
-  const totalHours = jobs.reduce((sum, j) => sum + (j.estimatedHours || 0), 0)
+  const totalHours = jobs.reduce((sum: any, j: any) => sum + (j.estimatedHours || 0), 0)
   const weeksBooked = totalHours > 0 ? +(totalHours / HOURS_PER_WEEK).toFixed(1) : 0
 
   return NextResponse.json({ stageBreakdown, workerLoad, totalHours, weeksBooked })

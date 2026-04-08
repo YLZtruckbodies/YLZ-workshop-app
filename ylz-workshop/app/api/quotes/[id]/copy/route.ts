@@ -45,7 +45,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
       notes:         original.notes,
       terms:         original.terms,
       lineItems: {
-        create: original.lineItems.map(li => ({
+        create: original.lineItems.map((li: any) => ({
           section:     li.section,
           description: li.description,
           quantity:    li.quantity,

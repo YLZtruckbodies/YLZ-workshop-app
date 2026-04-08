@@ -271,7 +271,7 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
 
   if (engineers.length) {
     await prisma.notification.createMany({
-      data: engineers.map(u => ({
+      data: engineers.map((u: any) => ({
         userId: u.id,
         jobId,
         jobNum: job.num,
@@ -482,7 +482,7 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
 
   if (engineers.length) {
     await prisma.notification.createMany({
-      data: engineers.map(u => ({
+      data: engineers.map((u: any) => ({
         userId: u.id,
         jobId,
         jobNum: job.num,

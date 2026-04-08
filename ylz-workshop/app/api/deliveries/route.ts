@@ -22,7 +22,7 @@ export async function GET() {
       deliveryMap[d.jobId] = d
     }
 
-    const merged = jobs.map((job) => ({
+    const merged = jobs.map((job: any) => ({
       job,
       delivery: deliveryMap[job.id] || null,
     }))
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       if (job.stage !== 'QC') return NextResponse.json({ error: 'Job is not in QC stage' }, { status: 400 })
 
       // Atomic transaction: upsert delivery + advance job + advance paired
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: any) => {
         const existing = await tx.delivery.findFirst({ where: { jobId } })
         const deliveryData = {
           jobNum: String(body.jobNum || job.num),

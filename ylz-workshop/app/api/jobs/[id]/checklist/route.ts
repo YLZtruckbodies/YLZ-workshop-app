@@ -20,10 +20,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }),
   ])
 
-  const checkMap = new Map(checks.map((c) => [c.checkKey, c]))
+  const checkMap = new Map(checks.map((c: any) => [c.checkKey, c]))
 
-  const items = templates.map((t) => {
-    const check = checkMap.get(t.id)
+  const items = templates.map((t: any) => {
+    const check = checkMap.get(t.id) as any
     return {
       templateId: t.id,
       label: t.label,

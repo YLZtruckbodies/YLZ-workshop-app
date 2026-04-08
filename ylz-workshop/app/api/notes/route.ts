@@ -19,15 +19,15 @@ export async function GET(req: NextRequest) {
   // If active=true, return only holdups that don't have a matching "resolved" note
   if (active === 'true') {
     // Get all holdup notes
-    const holdups = notes.filter((n) => n.type === 'holdup')
+    const holdups = notes.filter((n: any) => n.type === 'holdup')
     // Get all resolved notes
-    const resolved = notes.filter((n) => n.type === 'resolved')
-    const resolvedJobIds = new Set(resolved.map((r) => r.jobId))
+    const resolved = notes.filter((n: any) => n.type === 'resolved')
+    const resolvedJobIds = new Set(resolved.map((r: any) => r.jobId))
 
     // A holdup is active if no resolved note exists for the same job AFTER the holdup
-    const activeHoldups = holdups.filter((h) => {
+    const activeHoldups = holdups.filter((h: any) => {
       const resolvedAfter = resolved.find(
-        (r) => r.jobId === h.jobId && new Date(r.createdAt) > new Date(h.createdAt)
+        (r: any) => r.jobId === h.jobId && new Date(r.createdAt) > new Date(h.createdAt)
       )
       return !resolvedAfter
     })

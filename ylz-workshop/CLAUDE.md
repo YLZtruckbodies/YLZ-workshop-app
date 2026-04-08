@@ -74,6 +74,11 @@ Priority order is in the plan: bugs first (A1–A4), then chassis length cascade
 
 ---
 
+## Pre-Commit Rules (MANDATORY)
+- **Always run `npx tsc --noEmit` before committing.** If it fails, fix the errors before pushing.
+- **Always type function parameters.** Never leave callback parameters untyped (e.g. use `(j: any) =>` not `(j) =>`). The tsconfig has `strict: true`.
+- **Never push code that breaks the build.** Every push triggers a Vercel deploy. If `npm run build` would fail, don't push.
+
 ## How Nathan Works
 - Hands-on, practical — no fluff
 - Australian English throughout

@@ -7,7 +7,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   })
   if (!deps.length) return NextResponse.json([])
 
-  const blockerIds = deps.map((d) => d.blockedById)
+  const blockerIds = deps.map((d: any) => d.blockedById)
   const blockers = await prisma.job.findMany({
     where: { id: { in: blockerIds } },
     select: { id: true, num: true, type: true, customer: true, stage: true },

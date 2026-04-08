@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest) {
 
     if (jobs.length === 0) return NextResponse.json([])
 
-    const jobIds = jobs.map((j) => j.id)
+    const jobIds = jobs.map((j: any) => j.id)
 
     // Fetch stage-change activity for these jobs
     const activities = await prisma.jobActivity.findMany({
@@ -37,7 +37,7 @@ export async function GET(_req: NextRequest) {
 
     const STAGES = ['Requires Engineering', 'Ready to Start', 'Fab', 'Paint', 'Fitout', 'QC', 'Dispatch']
 
-    const result = jobs.map((job) => {
+    const result = jobs.map((job: any) => {
       const acts = actByJob[job.id] || []
       const stageHistory: Record<string, { completedAt: string; completedBy: string }> = {}
 

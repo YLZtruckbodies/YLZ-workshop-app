@@ -231,11 +231,11 @@ export async function syncSheetToWorker(workerId: string): Promise<SyncSummary> 
   })
 
   // Reconcile
-  await prisma.$transaction(async (tx) => {
-    const sheetJobNos = new Set(allSheetJobs.map((j) => j.jobNo).filter(Boolean))
+  await prisma.$transaction(async (tx: any) => {
+    const sheetJobNos = new Set(allSheetJobs.map((j: any) => j.jobNo).filter(Boolean))
 
     // Delete jobs no longer in sheet
-    const toDelete = dbJobs.filter((j) => j.jobNo && !sheetJobNos.has(j.jobNo))
+    const toDelete = dbJobs.filter((j: any) => j.jobNo && !sheetJobNos.has(j.jobNo))
     for (const j of toDelete) {
       await tx.workerJob.delete({ where: { id: j.id } })
       summary.deleted++
@@ -244,7 +244,7 @@ export async function syncSheetToWorker(workerId: string): Promise<SyncSummary> 
     // Upsert jobs from sheet
     for (const sj of allSheetJobs) {
       if (!sj.jobNo) continue
-      const existing = dbJobs.find((j) => j.jobNo === sj.jobNo)
+      const existing = dbJobs.find((j: any) => j.jobNo === sj.jobNo)
 
       if (existing) {
         await tx.workerJob.update({

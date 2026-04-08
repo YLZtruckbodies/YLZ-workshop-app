@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
     })
 
     // Build response with block mapping
-    const result = SHEET_WORKER_BLOCKS.map((block) => {
-      const worker = workers.find((w) => w.id === block.workerId)
+    const result = SHEET_WORKER_BLOCKS.map((block: any) => {
+      const worker = workers.find((w: any) => w.id === block.workerId)
       if (!worker) {
         return {
           workerId: block.workerId,
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
           colComp: block.colComp,
           colDays: block.colDays,
         },
-        jobs: blockJobs.map((j) => ({
+        jobs: blockJobs.map((j: any) => ({
           jobNo: j.jobNo,
           type: j.type,
           start: j.start,
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
           direction: 'app-to-sheet',
           status: 'success',
           detail: 'pull: Apps Script requested data',
-          jobCount: workers.reduce((s, w) => s + w.jobs.length, 0),
+          jobCount: workers.reduce((s: any, w: any) => s + w.jobs.length, 0),
         },
       })
     } catch { /* ignore */ }

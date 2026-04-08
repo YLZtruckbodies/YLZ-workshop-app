@@ -40,13 +40,13 @@ export async function POST(req: NextRequest) {
         orderBy: { position: 'asc' },
       })
 
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: any) => {
         const sheetJobNos = new Set(
           jobs.filter((j: any) => j.jobNo?.trim()).map((j: any) => j.jobNo.trim())
         )
 
         // Delete jobs no longer in sheet
-        const toDelete = dbJobs.filter((j) => j.jobNo && !sheetJobNos.has(j.jobNo))
+        const toDelete = dbJobs.filter((j: any) => j.jobNo && !sheetJobNos.has(j.jobNo))
         for (const j of toDelete) {
           await tx.workerJob.delete({ where: { id: j.id } })
           totalDeleted++
@@ -54,10 +54,10 @@ export async function POST(req: NextRequest) {
 
         // Upsert jobs from sheet
         for (let i = 0; i < jobs.length; i++) {
-          const sj = jobs[i]
+          const sj: any = jobs[i]
           if (!sj.jobNo?.trim()) continue
 
-          const existing = dbJobs.find((j) => j.jobNo === sj.jobNo.trim())
+          const existing = dbJobs.find((j: any) => j.jobNo === sj.jobNo.trim())
           if (existing) {
             await tx.workerJob.update({
               where: { id: existing.id },

@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   // Generate CSV
   const header = 'Date,Worker,Job Number,Block,Work Section,Start Time,End Time,Hours'
   const rows = timesheets.map(
-    (t) => `${t.date},${t.workerName},${t.jobNum},${t.section},${SECTION_LABELS[t.workSection] || t.workSection || ''},${t.startTime},${t.endTime},${t.hours}`
+    (t: any) => `${t.date},${t.workerName},${t.jobNum},${t.section},${SECTION_LABELS[t.workSection] || t.workSection || ''},${t.startTime},${t.endTime},${t.hours}`
   )
   const csv = [header, ...rows].join('\n')
 
