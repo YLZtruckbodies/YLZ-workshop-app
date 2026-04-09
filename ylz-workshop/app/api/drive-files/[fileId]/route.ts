@@ -12,6 +12,14 @@ export async function GET(
   { params }: { params: { fileId: string } }
 ) {
   try {
+    // Check if this is a folder — redirect to Google Drive instead of downloading
+    const { getDriveClient } = await import('@/lib/drive')
+    const drive = await getDriveClient()
+    const meta = await drive.files.get({ fileId: params.fileId, fields: 'mimeType' })
+    if (meta.data.mimeType === 'application/vnd.google-apps.folder') {
+      return NextResponse.redirect(`https://drive.google.com/drive/folders/${params.fileId}`)
+    }
+
     const { buffer, mimeType, fileName } = await downloadDriveFile(params.fileId)
 
     return new NextResponse(new Uint8Array(buffer), {
