@@ -15,6 +15,7 @@ import {
   BODY_KITS_FOLDER_ID,
   findChildFolder,
   findFileInFolder,
+  findJobFolder,
   downloadJsonFile,
   listFolderFiles,
   downloadDriveFile,
@@ -230,9 +231,8 @@ export async function generateJobDrawings(
   cadFolderId: string | null,
   drawingsFolderId: string | null,
   pdfFolderId: string | null,
+  jobNum?: string,
 ): Promise<void> {
-  if (!cadFolderId && !drawingsFolderId) return
-
   // Delete existing drawings for this job (re-generate)
   await prisma.jobDrawing.deleteMany({ where: { jobId } })
 
@@ -240,26 +240,31 @@ export async function generateJobDrawings(
     fileName: string; driveFileId: string; type: string
     category: string; thumbnailUrl: string; mimeType: string; sortOrder: number
   }> = []
+  const seenFileIds = new Set<string>()
 
   let order = 0
+
+  const addFile = (f: { id: string; name: string; mimeType: string; thumbnailLink?: string }, type: string, category: string) => {
+    if (seenFileIds.has(f.id)) return
+    seenFileIds.add(f.id)
+    drawings.push({
+      fileName: f.name,
+      driveFileId: f.id,
+      type,
+      category,
+      thumbnailUrl: f.thumbnailLink || '',
+      mimeType: type === 'step' ? 'application/step' : 'application/pdf',
+      sortOrder: order++,
+    })
+  }
 
   // 1. Scan Drawings folder for PDFs NOT inside the PDF subfolder (these are assembly drawings)
   if (drawingsFolderId) {
     const drawingFiles = await listFolderFiles(drawingsFolderId)
     for (const f of drawingFiles) {
-      // Skip subfolders (DXF, PDF folders)
       if (f.mimeType === 'application/vnd.google-apps.folder') continue
-      // Only PDFs at the Drawings level are assembly drawings
       if (f.mimeType === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')) {
-        drawings.push({
-          fileName: f.name,
-          driveFileId: f.id,
-          type: 'assembly',
-          category: categoriseDrawing(f.name),
-          thumbnailUrl: f.thumbnailLink || '',
-          mimeType: 'application/pdf',
-          sortOrder: order++,
-        })
+        addFile(f, 'assembly', categoriseDrawing(f.name))
       }
     }
   }
@@ -270,27 +275,37 @@ export async function generateJobDrawings(
     for (const f of cadFiles) {
       if (f.mimeType === 'application/vnd.google-apps.folder') continue
       const lower = f.name.toLowerCase()
-
       if (lower.endsWith('.pdf') || f.mimeType === 'application/pdf') {
-        drawings.push({
-          fileName: f.name,
-          driveFileId: f.id,
-          type: 'assembly',
-          category: categoriseDrawing(f.name),
-          thumbnailUrl: f.thumbnailLink || '',
-          mimeType: 'application/pdf',
-          sortOrder: order++,
-        })
+        addFile(f, 'assembly', categoriseDrawing(f.name))
       } else if (lower.endsWith('.step') || lower.endsWith('.stp')) {
-        drawings.push({
-          fileName: f.name,
-          driveFileId: f.id,
-          type: 'step',
-          category: 'tube-laser',
-          thumbnailUrl: '',
-          mimeType: 'application/step',
-          sortOrder: order++,
-        })
+        addFile(f, 'step', 'tube-laser')
+      }
+    }
+  }
+
+  // 3. Scan the job's own Google Drive folder (Job Sheets) for drawings and STEP files
+  if (jobNum) {
+    try {
+      const jobFolderId = await findJobFolder(jobNum)
+      if (jobFolderId) {
+        await scanFolderRecursive(jobFolderId, 0)
+      }
+    } catch { /* non-fatal — Drive may not have a folder for this job */ }
+  }
+
+  async function scanFolderRecursive(folderId: string, depth: number): Promise<void> {
+    if (depth > 3) return // limit recursion depth
+    const files = await listFolderFiles(folderId)
+    for (const f of files) {
+      if (f.mimeType === 'application/vnd.google-apps.folder') {
+        await scanFolderRecursive(f.id, depth + 1)
+        continue
+      }
+      const lower = f.name.toLowerCase()
+      if (lower.endsWith('.step') || lower.endsWith('.stp')) {
+        addFile(f, 'step', 'tube-laser')
+      } else if ((lower.endsWith('.pdf') || f.mimeType === 'application/pdf') && (lower.includes('drawing') || lower.includes('assy') || lower.includes('assembly') || lower.includes('subframe') || lower.includes('body') || lower.includes('hoist') || lower.includes('tailgate'))) {
+        addFile(f, 'assembly', categoriseDrawing(f.name))
       }
     }
   }
@@ -534,7 +549,7 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
       console.error('Work order generation failed:', e)
     }
     try {
-      await generateJobDrawings(jobId, kitFiles.cadFolderId, kitFiles.drawingsFolderId, kitFiles.pdfFolderId)
+      await generateJobDrawings(jobId, kitFiles.cadFolderId, kitFiles.drawingsFolderId, kitFiles.pdfFolderId, job.num)
     } catch (e) {
       console.error('Job drawings generation failed:', e)
     }
@@ -778,7 +793,7 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
   // ── Generate job drawings ──
   if (trailerDrawingsFolderId || trailerBodyLookupId) {
     try {
-      await generateJobDrawings(jobId, trailerBodyLookupId, trailerDrawingsFolderId, trailerPdfFolderId)
+      await generateJobDrawings(jobId, trailerBodyLookupId, trailerDrawingsFolderId, trailerPdfFolderId, job.num)
     } catch (e) {
       console.error('Trailer job drawings generation failed:', e)
     }

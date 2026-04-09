@@ -52,7 +52,7 @@ export async function POST(
       const drawingsId = await findChildFolder(lookupId, 'Drawings')
       const pdfId = drawingsId ? await findChildFolder(drawingsId, 'PDF') : null
 
-      await generateJobDrawings(jobId, lookupId, drawingsId, pdfId)
+      await generateJobDrawings(jobId, lookupId, drawingsId, pdfId, job.num)
     } else {
       const material = (cfg.material || cfg.truckMaterial || '').toLowerCase()
       const bodyLength = parseInt((cfg.bodyLength || cfg.truckBodyLength || '0').replace(/[^\d]/g, ''), 10)
@@ -66,7 +66,7 @@ export async function POST(
       const kitFiles = await findKitFiles(bodyLength, bodyHeight, isHardox)
       if (!kitFiles) return NextResponse.json({ error: 'No standard kit found' }, { status: 404 })
 
-      await generateJobDrawings(jobId, kitFiles.cadFolderId, kitFiles.drawingsFolderId, kitFiles.pdfFolderId)
+      await generateJobDrawings(jobId, kitFiles.cadFolderId, kitFiles.drawingsFolderId, kitFiles.pdfFolderId, job.num)
     }
 
     const drawings = await prisma.jobDrawing.findMany({
