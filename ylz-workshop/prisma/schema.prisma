@@ -729,3 +729,15 @@ model JobDrawing {
 
   @@index([jobId])
 }
+
+model DispatchLog {
+  id        String   @id @default(cuid())
+  jobId     String
+  target    String   // coldform | panchal | axle-supplier | cvc | liz | workshop
+  method    String   // email | notification
+  status    String   // sent | failed | skipped
+  detail    String   @default("")
+  sentAt    DateTime @default(now())
+
+  @@index([jobId])
+}

@@ -112,6 +112,8 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
   const [generating, setGenerating] = useState(false)
   const [generatingDrawings, setGeneratingDrawings] = useState(false)
   const [approving, setApproving] = useState(false)
+  const [dispatching, setDispatching] = useState(false)
+  const [dispatchResults, setDispatchResults] = useState<Array<{ target: string; status: string; detail: string }>>([])
   const [dispatchMsg, setDispatchMsg] = useState('')
 
   const fetchAll = useCallback(async () => {
@@ -151,6 +153,13 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       if (bomRes.ok) {
         const bomData = await bomRes.json()
         setBoms(Array.isArray(bomData) ? bomData : bomData.items || [])
+      }
+
+      // Fetch dispatch logs
+      const dlRes = await fetch(`/api/jobs/${jobId}/dispatch-log`)
+      if (dlRes.ok) {
+        const dlData = await dlRes.json()
+        if (Array.isArray(dlData) && dlData.length > 0) setDispatchResults(dlData)
       }
 
       // Fetch VASS booking
@@ -300,24 +309,27 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
     setTebsLoading(false)
   }
 
-  const handleAdvanceJob = async () => {
+  const handleDispatch = async () => {
     if (!job) return
-    setDispatchMsg('Advancing...')
+    setDispatching(true)
+    setDispatchMsg('Dispatching...')
     try {
-      const res = await fetch(`/api/jobs/${job.id}/advance`, {
+      const res = await fetch(`/api/jobs/${job.id}/dispatch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ _userName: 'Engineering' }),
+        body: JSON.stringify({ approvedBy: 'Engineering' }),
       })
       if (res.ok) {
-        setDispatchMsg('Job advanced to Ready to Start')
-        setTimeout(() => router.push('/engineering'), 1500)
+        const data = await res.json()
+        setDispatchResults(data.results || [])
+        setDispatchMsg('Pack dispatched')
       } else {
-        setDispatchMsg('Failed to advance job')
+        setDispatchMsg('Failed to dispatch')
       }
     } catch {
-      setDispatchMsg('Failed to advance job')
+      setDispatchMsg('Failed to dispatch')
     }
+    setDispatching(false)
   }
 
   // ── Styles ─────────────────────────────────────────────────────────────────
@@ -462,39 +474,62 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
         ))}
       </div>
 
-      {/* Bottom Bar — Approve & Advance */}
-      <div style={{
-        marginTop: 24, padding: '16px 20px', background: 'var(--dark2)',
-        border: '1px solid var(--border)', borderRadius: 8,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <div style={{ fontSize: 12, color: 'var(--text3)' }}>
-          {hasCriticalMissing
-            ? 'Critical items missing — generate work order and BOM before approving.'
-            : `${readyCount}/${applicableCount} pack items ready.`}
+      {/* Dispatch Results */}
+      {dispatchResults.length > 0 && (
+        <div style={{
+          marginTop: 24, padding: '16px 20px', background: 'var(--dark2)',
+          border: '1px solid var(--border)', borderRadius: 8,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 10, fontFamily: "'League Spartan', sans-serif", letterSpacing: 0.5 }}>
+            Dispatch Results
+          </div>
+          {dispatchResults.map((r, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', fontSize: 12 }}>
+              <span>{r.status === 'sent' ? '✅' : r.status === 'skipped' ? '⏭️' : '❌'}</span>
+              <span style={{ fontWeight: 600, color: '#fff', minWidth: 120 }}>{r.target}</span>
+              <span style={{ color: 'var(--text3)' }}>{r.detail}</span>
+            </div>
+          ))}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {dispatchMsg && (
-            <span style={{ fontSize: 12, fontWeight: 600, color: dispatchMsg.includes('Failed') ? '#ef4444' : '#22c55e' }}>
-              {dispatchMsg}
-            </span>
-          )}
-          <button
-            onClick={handleAdvanceJob}
-            disabled={hasCriticalMissing}
-            style={{
-              fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 800,
-              letterSpacing: 1, textTransform: 'uppercase',
-              padding: '10px 24px', borderRadius: 6, cursor: hasCriticalMissing ? 'not-allowed' : 'pointer',
-              border: 'none', background: hasCriticalMissing ? 'rgba(34,197,94,0.2)' : '#22c55e',
-              color: '#fff', opacity: hasCriticalMissing ? 0.4 : 1,
-              transition: 'all 0.15s',
-            }}
-          >
-            ✓ Approve & Advance to Ready to Start
-          </button>
+      )}
+
+      {/* Bottom Bar — Approve & Dispatch */}
+      {dispatchResults.length === 0 && (
+        <div style={{
+          marginTop: 24, padding: '16px 20px', background: 'var(--dark2)',
+          border: '1px solid var(--border)', borderRadius: 8,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+            {hasCriticalMissing
+              ? 'Critical items missing — generate work order and BOM before dispatching.'
+              : `${readyCount}/${applicableCount} pack items ready.`}
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {dispatchMsg && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: dispatchMsg.includes('Failed') ? '#ef4444' : '#22c55e' }}>
+                {dispatchMsg}
+              </span>
+            )}
+            <button
+              onClick={handleDispatch}
+              disabled={hasCriticalMissing || dispatching}
+              style={{
+                fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 800,
+                letterSpacing: 1, textTransform: 'uppercase',
+                padding: '10px 24px', borderRadius: 6,
+                cursor: hasCriticalMissing || dispatching ? 'not-allowed' : 'pointer',
+                border: 'none',
+                background: hasCriticalMissing || dispatching ? 'rgba(34,197,94,0.2)' : '#22c55e',
+                color: '#fff', opacity: hasCriticalMissing || dispatching ? 0.4 : 1,
+                transition: 'all 0.15s',
+              }}
+            >
+              {dispatching ? 'Dispatching...' : '✓ Approve & Send All'}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 
