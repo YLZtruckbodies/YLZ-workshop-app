@@ -1,7 +1,8 @@
 'use client'
 
+import React from 'react'
 import { useSession } from 'next-auth/react'
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   useJobs,
   useColdformKits,
@@ -112,12 +113,114 @@ function JobBadge({ num, jobs }: { num: string; jobs: any[] }) {
   )
 }
 
+// ============== WORK ORDER DETAIL (expandable) ==============
+function WorkOrderDetail({ jobNum }: { jobNum: string }) {
+  const [wo, setWo] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!jobNum) { setLoading(false); return }
+    // Find job by num, then fetch work order
+    fetch(`/api/jobs?q=${encodeURIComponent(jobNum)}`)
+      .then(r => r.json())
+      .then((jobs: any[]) => {
+        const job = (Array.isArray(jobs) ? jobs : []).find((j: any) => j.num === jobNum)
+        if (!job) { setLoading(false); return }
+        return fetch(`/api/work-orders?jobId=${job.id}`)
+      })
+      .then(r => r?.json())
+      .then((orders: any) => {
+        if (Array.isArray(orders) && orders.length > 0) setWo(orders[0])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [jobNum])
+
+  if (loading) return <div style={{ padding: 12, fontSize: 12, color: 'var(--text3)' }}>Loading work order...</div>
+  if (!wo) return <div style={{ padding: 12, fontSize: 12, color: 'var(--text3)' }}>No work order found for {jobNum}</div>
+
+  const parts = wo.parts || []
+  const groups: Record<string, any[]> = {}
+  for (const p of parts) {
+    const mat = p.material || 'Unknown'
+    if (!groups[mat]) groups[mat] = []
+    groups[mat].push(p)
+  }
+
+  return (
+    <div style={{ padding: '12px 16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+          {parts.length} parts — {Object.keys(groups).length} material group{Object.keys(groups).length !== 1 ? 's' : ''} —
+          <span style={{ fontWeight: 600, color: wo.status === 'approved' ? '#22d07a' : '#E8681A' }}> {wo.status}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {wo.dxfFolderId && (
+            <a href={`https://drive.google.com/drive/folders/${wo.dxfFolderId}`} target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 3, border: '1px solid rgba(59,130,246,0.4)', color: '#3b82f6', textDecoration: 'none' }}>
+              DXF Folder
+            </a>
+          )}
+          {wo.pdfFolderId && (
+            <a href={`https://drive.google.com/drive/folders/${wo.pdfFolderId}`} target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 3, border: '1px solid rgba(232,104,26,0.4)', color: '#E8681A', textDecoration: 'none' }}>
+              PDF Folder
+            </a>
+          )}
+        </div>
+      </div>
+      {Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)).map(([material, mParts]) => (
+        <div key={material} style={{ marginBottom: 8 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase',
+            padding: '4px 10px', background: '#E8681A', color: '#fff', borderRadius: '3px 3px 0 0',
+          }}>
+            {material} ({mParts.length})
+          </div>
+          {mParts.map((p: any) => (
+            <div key={p.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '5px 10px',
+              borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 12,
+            }}>
+              {p.thumbnailUrl && (
+                <a href={p.dxfFileId ? `https://drive.google.com/file/d/${p.dxfFileId}/view` : undefined}
+                  target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0 }}>
+                  <img src={p.thumbnailUrl} alt={p.partName} style={{ width: 40, height: 30, objectFit: 'contain', borderRadius: 2, background: '#fff' }} />
+                </a>
+              )}
+              <span style={{ flex: 1, color: '#fff', fontWeight: 500 }}>{p.partName}</span>
+              <span style={{ color: 'var(--text3)', minWidth: 50 }}>{p.thickness || material}</span>
+              <span style={{ color: '#fff', fontWeight: 600, minWidth: 30, textAlign: 'center' }}>x{p.quantity}</span>
+              <span style={{ color: 'var(--text3)', minWidth: 40, textAlign: 'center', fontSize: 11 }}>
+                {p.hasFlatPattern ? '☐ Fold' : '—'}
+              </span>
+              {p.dxfFileId && (
+                <a href={`https://drive.google.com/file/d/${p.dxfFileId}/view`} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 2, border: '1px solid rgba(59,130,246,0.4)', color: '#3b82f6', textDecoration: 'none' }}>
+                  DXF
+                </a>
+              )}
+              {p.pdfFileId && (
+                <a href={`https://drive.google.com/file/d/${p.pdfFileId}/view`} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 2, border: '1px solid rgba(232,104,26,0.4)', color: '#E8681A', textDecoration: 'none' }}>
+                  PDF
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ============== HARDOX KITS TAB ==============
 function HardoxKitsTab({ jobs }: { jobs: any[] }) {
   const { data: kits, mutate } = useColdformKits()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editData, setEditData] = useState<any>({})
   const [adding, setAdding] = useState(false)
+  const [expandedKit, setExpandedKit] = useState<string | null>(null)
   const [newKit, setNewKit] = useState({ size: '', allocatedTo: '', notes: '' })
 
   const items = (kits || []) as any[]
@@ -215,8 +318,8 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
                 return v === 'y' || v === 'yes'
               })
               return (
+                <React.Fragment key={kit.id}>
                 <tr
-                  key={kit.id}
                   style={{
                     borderBottom: '1px solid rgba(255,255,255,0.06)',
                     background: allDone ? 'rgba(34,208,122,0.06)' : 'transparent',
@@ -297,6 +400,15 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
                       </div>
                     ) : (
                       <div style={{ display: 'flex', gap: 4 }}>
+                        {kit.allocatedTo && (
+                          <button
+                            onClick={() => setExpandedKit(expandedKit === kit.id ? null : kit.id)}
+                            style={btnSmall(expandedKit === kit.id ? '#E8681A' : 'rgba(59,130,246,0.3)')}
+                            title="View Work Order"
+                          >
+                            WO
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setEditingId(kit.id)
@@ -314,6 +426,14 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
                     )}
                   </td>
                 </tr>
+                {expandedKit === kit.id && kit.allocatedTo && (
+                  <tr>
+                    <td colSpan={KIT_PARTS.length + 4} style={{ padding: 0, background: 'rgba(0,0,0,0.3)', borderBottom: '2px solid #E8681A' }}>
+                      <WorkOrderDetail jobNum={kit.allocatedTo} />
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
               )
             })}
           </tbody>
