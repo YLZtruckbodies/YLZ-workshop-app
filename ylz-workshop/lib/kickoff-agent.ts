@@ -157,15 +157,22 @@ export async function generateWorkOrder(
   if (dxfFiles.length === 0) return
 
   // Build PDF lookup by stem (case-insensitive)
+  // Also index by base stem (stripping _BW/_BF suffix) so DXF files can find their PDF variants
   const pdfByName = new Map<string, typeof pdfFiles[0]>()
+  const pdfByBaseStem = new Map<string, typeof pdfFiles[0][]>()
   for (const f of pdfFiles) {
     const stem = f.name.replace(/\.[^.]+$/, '').toUpperCase()
     pdfByName.set(stem, f)
+    // Strip _BW/_BF suffix to get base stem for variant matching
+    const baseStem = stem.replace(/_(BW|BF)$/i, '')
+    if (!pdfByBaseStem.has(baseStem)) pdfByBaseStem.set(baseStem, [])
+    pdfByBaseStem.get(baseStem)!.push(f)
   }
 
-  // Match DXF ↔ PDF and extract material from PDFs (batch of 10 at a time)
+  // Match DXF ↔ PDF and extract material + quantity from PDFs (batch of 10 at a time)
   const parts: Array<{
     partName: string; material: string; thickness: string; hasFlatPattern: boolean
+    quantity: number
     dxfFileId: string; pdfFileId: string; dxfFileName: string; pdfFileName: string
     thumbnailUrl: string; sortOrder: number
   }> = []
@@ -177,21 +184,35 @@ export async function generateWorkOrder(
     const batch = dxfSorted.slice(i, i + BATCH_SIZE)
     const results = await Promise.all(batch.map(async (dxf, batchIdx) => {
       const stem = dxf.name.replace(/\.[^.]+$/, '').toUpperCase()
-      const matchedPdf = pdfByName.get(stem)
+      // Try exact match first, then fall back to _BW/_BF variants
+      let matchedPdf = pdfByName.get(stem)
+      const variantPdfs = pdfByBaseStem.get(stem) || []  // PDFs whose base stem matches this DXF
 
       let material = 'Unknown'
       let thickness = ''
       let hasFlatPattern = false
+      let quantity = 1
 
-      if (matchedPdf) {
+      // Extract info from exact-match PDF or variant PDFs (_BW/_BF)
+      const pdfsToProcess = matchedPdf ? [matchedPdf] : variantPdfs
+      if (!matchedPdf && variantPdfs.length > 0) {
+        matchedPdf = variantPdfs[0]  // use first variant as the linked PDF
+      }
+
+      for (const pdf of pdfsToProcess) {
         try {
-          const { buffer } = await downloadDriveFile(matchedPdf.id)
+          const { buffer } = await downloadDriveFile(pdf.id)
           const text = await extractPdfText(buffer)
           const info = extractMaterialFromText(text)
-          material = info.material
-          thickness = info.thickness
-          hasFlatPattern = info.hasFlatPattern
-        } catch { /* PDF extraction failed — leave as Unknown */ }
+          // Take material from first PDF that has it
+          if (material === 'Unknown' && info.material !== 'Unknown') {
+            material = info.material
+            thickness = info.thickness
+          }
+          if (info.hasFlatPattern) hasFlatPattern = true
+          // Take quantity if found (prefer higher value — _BF and _BW should agree)
+          if (info.quantity > 0) quantity = info.quantity
+        } catch { /* PDF extraction failed — skip */ }
       }
 
       return {
@@ -199,6 +220,7 @@ export async function generateWorkOrder(
         material,
         thickness,
         hasFlatPattern,
+        quantity,
         dxfFileId: dxf.id,
         pdfFileId: matchedPdf?.id || '',
         dxfFileName: dxf.name,

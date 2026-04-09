@@ -9,6 +9,7 @@ export interface PdfPartInfo {
   material: string       // e.g. "Hardox 500 - 6mm"
   thickness: string      // e.g. "6mm"
   hasFlatPattern: boolean
+  quantity: number        // e.g. 4 — extracted from title block or BOM
 }
 
 // Regex patterns to find material references in PDF text (order matters — first match wins)
@@ -34,8 +35,18 @@ const MATERIAL_NORMALISE: Record<string, string> = {
   'hardox 400': 'Hardox 400',
 }
 
+// Regex patterns to find quantity in engineering drawing title blocks
+const QUANTITY_PATTERNS: RegExp[] = [
+  /\bQTY\s*[:=]?\s*(\d+)/i,              // QTY: 4, QTY 4, QTY=4
+  /\bQUANTITY\s*[:=]?\s*(\d+)/i,         // QUANTITY: 4
+  /\bQ'?TY\s*[:=]?\s*(\d+)/i,            // Q'TY: 4
+  /\bNO\.?\s*(?:OFF|REQ'?D?)\s*[:=]?\s*(\d+)/i,  // NO. OFF: 4, NO REQ'D: 4
+  /\b(\d+)\s*(?:OFF|REQ'?D)\b/i,         // 4 OFF, 4 REQ'D
+  /\bREQ(?:UIRED)?\s*[:=]?\s*(\d+)/i,    // REQ: 4, REQUIRED: 4
+]
+
 export function extractMaterialFromText(text: string): PdfPartInfo {
-  const info: PdfPartInfo = { material: 'Unknown', thickness: '', hasFlatPattern: false }
+  const info: PdfPartInfo = { material: 'Unknown', thickness: '', hasFlatPattern: false, quantity: 0 }
 
   // Flat pattern detection
   if (/flat\s*pattern/i.test(text)) {
@@ -50,6 +61,18 @@ export function extractMaterialFromText(text: string): PdfPartInfo {
       // Pattern 6 (material: X) uses capture group 1; others use full match
       materialFound = (match[1] || match[0]).trim()
       break
+    }
+  }
+
+  // Extract quantity from title block
+  for (const qp of QUANTITY_PATTERNS) {
+    const qMatch = text.match(qp)
+    if (qMatch) {
+      const qty = parseInt(qMatch[1], 10)
+      if (qty > 0 && qty < 1000) {  // sanity check
+        info.quantity = qty
+        break
+      }
     }
   }
 
