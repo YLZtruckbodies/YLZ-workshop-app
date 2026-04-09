@@ -23,6 +23,7 @@ interface EngineeringJob {
   vin?: string
   quoteId?: string
   quoteCfg?: QuoteConfig
+  hasWorkOrder?: boolean
 }
 
 export default function EngineeringPage() {
@@ -57,7 +58,16 @@ export default function EngineeringPage() {
                 }
               }
             } catch { /* ignore */ }
-            return { ...job, quoteId, quoteCfg }
+            // Check if work order exists
+            let hasWorkOrder = false
+            try {
+              const woRes = await fetch(`/api/work-orders?jobId=${job.id}`)
+              if (woRes.ok) {
+                const orders = await woRes.json()
+                hasWorkOrder = Array.isArray(orders) && orders.length > 0
+              }
+            } catch { /* ignore */ }
+            return { ...job, quoteId, quoteCfg, hasWorkOrder }
           })
         )
         setDrafts(enriched)
@@ -178,6 +188,16 @@ export default function EngineeringPage() {
                       View Quote
                     </button>
                   )}
+                  {job.hasWorkOrder && (
+                    <button
+                      onClick={() => router.push(`/engineering/work-orders/${job.id}`)}
+                      style={btnStyle('#3b82f6')}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(59,130,246,0.12)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                    >
+                      Work Order
+                    </button>
+                  )}
                   {(() => {
                     const isTrailer = job.type?.toLowerCase().includes('trailer') || job.type?.toLowerCase().includes('dog') || job.type?.toLowerCase().includes('semi')
                     const tInput: TEBSInput | null = isTrailer && job.quoteCfg?.axleCount && job.quoteCfg?.axleMake && job.quoteCfg?.axleType
@@ -250,6 +270,7 @@ export default function EngineeringPage() {
           { label: 'VIN Plate / EBS File / Axle Suspension Ordering', icon: '🏷️', desc: 'VIN plates, EBS files & suspension orders', href: '/engineering/vin-plates' },
           { label: 'MRP Ordering', icon: '📦', desc: 'Auto BOM resolver — select a job, get the full MRPeasy BOM list', href: '/engineering/mrp-ordering' },
           { label: 'Xero Quote Import', icon: '📥', desc: 'Drop Xero quotes CSV → parse specs → get BOMs → import to app', href: '/engineering/xero-import' },
+          { label: 'Cold Form Work Orders', icon: '🔩', desc: 'Auto-generated work orders from kit DXF/PDF files — approve for Cold Form', href: '/engineering/work-orders' },
           { label: 'VASS Booking Generator', icon: '🔧', desc: 'CVC eVASS booking requests — populate from quotes or fill manually', href: '/engineering/vass-booking' },
           { label: 'Drawings', icon: '📐', desc: 'Engineering drawings & revisions', href: '' },
         ].map((tool) => (

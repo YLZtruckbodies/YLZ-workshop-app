@@ -140,6 +140,34 @@ export function useAllFiles() {
   return useSWR('/api/files', fetcher, { refreshInterval: 30000 })
 }
 
+export function useWorkOrder(jobId: string | null) {
+  return useSWR(
+    jobId ? `/api/work-orders?jobId=${jobId}` : null,
+    fetcher,
+    { refreshInterval: 0, revalidateOnFocus: false }
+  )
+}
+
+export async function approveWorkOrder(orderId: string, approvedBy: string): Promise<any> {
+  const res = await fetch(`/api/work-orders/${orderId}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ approvedBy }),
+  })
+  if (!res.ok) throw new Error('Failed to approve work order')
+  return res.json()
+}
+
+export async function updateWorkOrderPart(orderId: string, partId: string, data: Record<string, unknown>): Promise<any> {
+  const res = await fetch(`/api/work-orders/${orderId}/parts/${partId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('Failed to update part')
+  return res.json()
+}
+
 export function useDriveFiles(jobNum: string | null) {
   return useSWR(
     jobNum ? `/api/drive-files?jobNum=${encodeURIComponent(jobNum)}` : null,

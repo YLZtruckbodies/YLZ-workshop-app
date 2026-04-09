@@ -673,3 +673,44 @@ model VassChassis {
 
   @@index([make])
 }
+
+// ── Cold Form Work Orders ──────────────────────────────────────────────────
+
+model WorkOrder {
+  id          String          @id @default(cuid())
+  jobId       String          @unique
+  jobNum      String
+  kitName     String          @default("")
+  status      String          @default("draft") // draft | approved | sent
+  dxfFolderId String          @default("")
+  pdfFolderId String          @default("")
+  customer    String          @default("")
+  notes       String          @default("")
+  approvedBy  String          @default("")
+  approvedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  parts       WorkOrderPart[]
+
+  @@index([jobId])
+  @@index([status])
+}
+
+model WorkOrderPart {
+  id             String    @id @default(cuid())
+  workOrderId    String
+  partName       String
+  material       String    @default("Unknown")
+  thickness      String    @default("")
+  hasFlatPattern Boolean   @default(false)
+  quantity       Int       @default(1)
+  dxfFileId      String    @default("")
+  pdfFileId      String    @default("")
+  dxfFileName    String    @default("")
+  pdfFileName    String    @default("")
+  thumbnailUrl   String    @default("")
+  sortOrder      Int       @default(0)
+  workOrder      WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+}

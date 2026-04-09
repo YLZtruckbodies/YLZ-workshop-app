@@ -16,7 +16,11 @@ import {
   findChildFolder,
   findFileInFolder,
   downloadJsonFile,
+  listFolderFiles,
+  downloadDriveFile,
 } from './drive'
+import { extractPdfText } from './extractPdfText'
+import { extractMaterialFromText } from './work-order/extract-material'
 
 // BOM categories that are long lead-time and must be ordered immediately
 const LONG_LEAD_CATEGORIES = new Set(['Truck Tarp', 'Towbar', 'Hoist', 'PTO', 'Running Gear'])
@@ -64,6 +68,8 @@ function getChassisKey(axles: number, modelType: string, bodyLength: number): st
 
 interface KitFiles {
   kitName: string
+  dxfFolderId: string | null
+  pdfFolderId: string | null
   dxfFolderUrl: string | null
   pdfFolderUrl: string | null
   massKg: number
@@ -111,6 +117,8 @@ async function findKitFiles(bodyLength: number, bodyHeight: number, isHardox: bo
 
   return {
     kitName,
+    dxfFolderId: dxfId,
+    pdfFolderId: pdfId,
     dxfFolderUrl: dxfId ? `https://drive.google.com/drive/folders/${dxfId}` : null,
     pdfFolderUrl: pdfId ? `https://drive.google.com/drive/folders/${pdfId}` : null,
     massKg,
@@ -125,6 +133,90 @@ function buildDisplayName(category: string, bomName: string, bodyLength: number,
     return `Tarp ${isPVC ? 'PVC' : 'Mesh'} — ${tarpLength.toLocaleString()}mm`
   }
   return bomName
+}
+
+// ── Work Order generation ────────────────────────────────────────────────
+
+async function generateWorkOrder(
+  jobId: string, jobNum: string, customer: string,
+  kitName: string, dxfFolderId: string | null, pdfFolderId: string | null,
+): Promise<void> {
+  if (!dxfFolderId) return
+
+  // List DXF and PDF files from Drive
+  const [dxfFiles, pdfFiles] = await Promise.all([
+    listFolderFiles(dxfFolderId),
+    pdfFolderId ? listFolderFiles(pdfFolderId) : Promise.resolve([]),
+  ])
+
+  if (dxfFiles.length === 0) return
+
+  // Build PDF lookup by stem (case-insensitive)
+  const pdfByName = new Map<string, typeof pdfFiles[0]>()
+  for (const f of pdfFiles) {
+    const stem = f.name.replace(/\.[^.]+$/, '').toUpperCase()
+    pdfByName.set(stem, f)
+  }
+
+  // Match DXF ↔ PDF and extract material from PDFs (batch of 10 at a time)
+  const parts: Array<{
+    partName: string; material: string; thickness: string; hasFlatPattern: boolean
+    dxfFileId: string; pdfFileId: string; dxfFileName: string; pdfFileName: string
+    thumbnailUrl: string; sortOrder: number
+  }> = []
+
+  const dxfSorted = [...dxfFiles].sort((a, b) => a.name.localeCompare(b.name))
+  const BATCH_SIZE = 10
+
+  for (let i = 0; i < dxfSorted.length; i += BATCH_SIZE) {
+    const batch = dxfSorted.slice(i, i + BATCH_SIZE)
+    const results = await Promise.all(batch.map(async (dxf, batchIdx) => {
+      const stem = dxf.name.replace(/\.[^.]+$/, '').toUpperCase()
+      const matchedPdf = pdfByName.get(stem)
+
+      let material = 'Unknown'
+      let thickness = ''
+      let hasFlatPattern = false
+
+      if (matchedPdf) {
+        try {
+          const { buffer } = await downloadDriveFile(matchedPdf.id)
+          const text = await extractPdfText(buffer)
+          const info = extractMaterialFromText(text)
+          material = info.material
+          thickness = info.thickness
+          hasFlatPattern = info.hasFlatPattern
+        } catch { /* PDF extraction failed — leave as Unknown */ }
+      }
+
+      return {
+        partName: dxf.name.replace(/\.[^.]+$/, ''),
+        material,
+        thickness,
+        hasFlatPattern,
+        dxfFileId: dxf.id,
+        pdfFileId: matchedPdf?.id || '',
+        dxfFileName: dxf.name,
+        pdfFileName: matchedPdf?.name || '',
+        thumbnailUrl: matchedPdf?.thumbnailLink || '',
+        sortOrder: i + batchIdx,
+      }
+    }))
+    parts.push(...results)
+  }
+
+  // Create work order with all parts in one transaction
+  await prisma.workOrder.create({
+    data: {
+      jobId,
+      jobNum,
+      kitName,
+      customer,
+      dxfFolderId: dxfFolderId || '',
+      pdfFolderId: pdfFolderId || '',
+      parts: { create: parts },
+    },
+  })
 }
 
 // ── Main agent ────────────────────────────────────────────────────────────────
@@ -281,6 +373,15 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
     })
   }
 
+  // ── Generate Cold Form work order ──
+  if (kitFiles) {
+    try {
+      await generateWorkOrder(jobId, job.num, job.customer, kitFiles.kitName, kitFiles.dxfFolderId, kitFiles.pdfFolderId)
+    } catch (e) {
+      console.error('Work order generation failed:', e)
+    }
+  }
+
 }
 
 // ── Trailer Kick-off Agent ────────────────────────────────────────────────────
@@ -321,6 +422,8 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
   let bodyFolderUrl: string | null = null
   let dxfFolderUrl: string | null = null
   let pdfFolderUrl: string | null = null
+  let trailerDxfFolderId: string | null = null
+  let trailerPdfFolderId: string | null = null
   let noBodyReason: string | null = null
 
   if (bodyFolderId) {
@@ -340,6 +443,8 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
           findChildFolder(drawingsId, 'DXF'),
           findChildFolder(drawingsId, 'PDF'),
         ])
+        trailerDxfFolderId = dxfId
+        trailerPdfFolderId = pdfId
         if (dxfId) dxfFolderUrl = `https://drive.google.com/drive/folders/${dxfId}`
         if (pdfId) pdfFolderUrl = `https://drive.google.com/drive/folders/${pdfId}`
       }
@@ -490,6 +595,16 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
         message: notifMessage,
       })),
     })
+  }
+
+  // ── Generate Cold Form work order ──
+  if (trailerDxfFolderId) {
+    const trailerKitLabel = `${axles}-Axle ${isAlly ? 'Aluminium' : 'Steel'} Trailer (${bodyLength}mm)`
+    try {
+      await generateWorkOrder(jobId, job.num, job.customer, trailerKitLabel, trailerDxfFolderId, trailerPdfFolderId)
+    } catch (e) {
+      console.error('Trailer work order generation failed:', e)
+    }
   }
 }
 
