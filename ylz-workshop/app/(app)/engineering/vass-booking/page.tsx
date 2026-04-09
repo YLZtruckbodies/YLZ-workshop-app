@@ -140,7 +140,13 @@ export default function VassBookingPage() {
     if (!quoteId) return
     fetch(`/api/quotes/${quoteId}`).then(r => r.json()).then(async (q: Quote) => {
       if (!q.id) return
-      const cfg = q.configuration || {}
+      const rawCfg = q.configuration || {}
+
+      // For truck-and-trailer builds, config is nested under truckConfig/trailerConfig
+      // Flatten so we can access fields consistently
+      const tc = rawCfg.truckConfig || {}
+      const trc = rawCfg.trailerConfig || {}
+      const cfg = { ...rawCfg, ...tc } // truck config fields override top-level
 
       // Find linked job number
       let jobNum = ''
@@ -164,10 +170,10 @@ export default function VassBookingPage() {
         poNumber: q.quoteNumber || f.poNumber,
         vehicleMake: make || f.vehicleMake,
         vehicleModel: model || f.vehicleModel,
-        vinNumber: cfg.vin || cfg.truckVin || f.vinNumber,
-        gvm: cfg.gvm || cfg.truckGvm || f.gvm,
-        gcm: cfg.gcm || cfg.trailerGcm || f.gcm,
-        modDescription: `Body build — ${cfg.bodyLength || ''}mm ${cfg.material || cfg.truckMaterial || ''} ${cfg.bodyHeight || cfg.truckBodyHeight || ''}mm walls`.replace(/\s+/g, ' ').trim(),
+        vinNumber: cfg.vin || f.vinNumber,
+        gvm: cfg.gvm || f.gvm,
+        gcm: cfg.gcm || trc.gcm || f.gcm,
+        modDescription: `Body build — ${cfg.bodyLength || ''}mm ${cfg.material || ''} ${cfg.bodyHeight || ''}mm walls`.replace(/\s+/g, ' ').trim(),
       }))
 
       // Trigger chassis DB lookup for make/model specs
