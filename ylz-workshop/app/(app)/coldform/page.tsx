@@ -185,7 +185,7 @@ function WorkOrderDetail({ jobNum }: { jobNum: string }) {
               {p.thumbnailUrl && (
                 <a href={p.dxfFileId ? `https://drive.google.com/file/d/${p.dxfFileId}/view` : undefined}
                   target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0 }}>
-                  <img src={p.thumbnailUrl} alt={p.partName} style={{ width: 48, height: 36, objectFit: 'contain', borderRadius: 2, background: '#fff', border: '1px solid rgba(255,255,255,0.15)', filter: 'contrast(1.8) saturate(0)' }} />
+                  <img src={p.thumbnailUrl} alt={p.partName} style={{ width: 48, height: 36, objectFit: 'contain', borderRadius: 2, background: '#fff', border: '1px solid rgba(255,255,255,0.15)', filter: 'contrast(10) saturate(0) brightness(0.5)' }} />
                 </a>
               )}
               <span style={{ flex: 1, color: '#fff', fontWeight: 500 }}>{p.partName}</span>

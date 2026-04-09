@@ -161,7 +161,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
           .wo-part-detail { color: #444 !important; font-size: 11px !important; }
           .wo-qty-input { border: 2px solid #333 !important; background: #fff !important; color: #1a1a1a !important; font-size: 14px !important; font-weight: 700 !important; }
           .wo-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .wo-part-row img { filter: contrast(2.5) saturate(0) brightness(0.9) !important; width: 70px !important; height: 52px !important; border: 2px solid #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .wo-part-row img { filter: contrast(10) saturate(0) brightness(0.5) !important; width: 90px !important; height: 68px !important; border: 3px solid #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff !important; }
           .wo-part-row a { color: #1a1a1a !important; border-color: #999 !important; font-size: 9px !important; }
           @page { size: A4; margin: 10mm; }
         }
@@ -286,7 +286,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
 
             {/* Column headers */}
             <div style={{
-              display: 'grid', gridTemplateColumns: '68px 1fr 70px 80px 80px 100px',
+              display: 'grid', gridTemplateColumns: '84px 1fr 70px 80px 80px 100px',
               padding: '6px 14px', borderBottom: '1px solid var(--border)',
               fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
               color: 'var(--text3)',
@@ -305,7 +305,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                 key={part.id}
                 className="wo-part-row"
                 style={{
-                  display: 'grid', gridTemplateColumns: '68px 1fr 70px 80px 80px 100px',
+                  display: 'grid', gridTemplateColumns: '84px 1fr 70px 80px 80px 100px',
                   alignItems: 'center', padding: '10px 14px',
                   borderBottom: '1px solid rgba(255,255,255,0.06)',
                 }}
@@ -323,9 +323,9 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                         src={part.thumbnailUrl}
                         alt={part.partName}
                         style={{
-                          width: 56, height: 42, objectFit: 'contain', borderRadius: 2,
-                          background: '#fff', border: '1px solid rgba(255,255,255,0.15)',
-                          filter: 'contrast(1.8) saturate(0)',
+                          width: 72, height: 54, objectFit: 'contain', borderRadius: 2,
+                          background: '#fff', border: '2px solid rgba(255,255,255,0.2)',
+                          filter: 'contrast(10) saturate(0) brightness(0.5)',
                         }}
                       />
                     </a>
