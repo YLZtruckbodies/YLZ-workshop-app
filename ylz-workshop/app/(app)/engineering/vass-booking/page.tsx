@@ -194,10 +194,11 @@ export default function VassBookingPage() {
   const populateFromJobNum = useCallback(async (jobNum: string) => {
     try {
       // Search for the job
-      const res = await fetch(`/api/search?q=${encodeURIComponent(jobNum)}`)
+      const res = await fetch(`/api/jobs?q=${encodeURIComponent(jobNum)}`)
       if (!res.ok) return
       const data = await res.json()
-      const job = (data.jobs || []).find((j: any) => j.num === jobNum || j.num === jobNum.toUpperCase())
+      const jobs = Array.isArray(data) ? data : (data.jobs || [])
+      const job = jobs.find((j: any) => j.num === jobNum || j.num === jobNum.toUpperCase())
       if (!job) { alert(`Job ${jobNum} not found`); return }
 
       // Find linked quote
