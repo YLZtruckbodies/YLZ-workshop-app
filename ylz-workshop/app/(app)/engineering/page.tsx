@@ -32,6 +32,7 @@ export default function EngineeringPage() {
   const [loading, setLoading] = useState(true)
   const [approving, setApproving] = useState<string | null>(null)
   const [tebsLoading, setTebsLoading] = useState<string | null>(null)
+  const [generating, setGenerating] = useState<string | null>(null)
 
   const fetchDrafts = useCallback(async () => {
     try {
@@ -196,6 +197,35 @@ export default function EngineeringPage() {
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                     >
                       Work Order
+                    </button>
+                  )}
+                  {!job.hasWorkOrder && (
+                    <button
+                      onClick={async () => {
+                        setGenerating(job.id)
+                        try {
+                          const res = await fetch('/api/work-orders/generate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ jobId: job.id }),
+                          })
+                          if (res.ok) {
+                            setDrafts((prev) => prev.map((j) => j.id === job.id ? { ...j, hasWorkOrder: true } : j))
+                          } else {
+                            const err = await res.json()
+                            alert(err.error || 'Failed to generate work order')
+                          }
+                        } catch {
+                          alert('Failed to generate work order')
+                        }
+                        setGenerating(null)
+                      }}
+                      disabled={generating === job.id}
+                      style={{ ...btnStyle('#3b82f6'), opacity: generating === job.id ? 0.5 : 1 }}
+                      onMouseEnter={(e) => { if (generating !== job.id) e.currentTarget.style.background = 'rgba(59,130,246,0.12)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                    >
+                      {generating === job.id ? 'Generating...' : '🔩 Generate Work Order'}
                     </button>
                   )}
                   {(() => {

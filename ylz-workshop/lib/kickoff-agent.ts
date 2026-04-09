@@ -83,7 +83,7 @@ interface LongLeadItem {
 
 // ── Drive navigation ──────────────────────────────────────────────────────────
 
-async function findKitFiles(bodyLength: number, bodyHeight: number, isHardox: boolean): Promise<KitFiles | null> {
+export async function findKitFiles(bodyLength: number, bodyHeight: number, isHardox: boolean): Promise<KitFiles | null> {
   const matFolder = isHardox ? 'Hardox' : 'Aluminium'
   const matCode = isHardox ? 'H' : 'A'
   const kitName = `YLZ${bodyLength}x${bodyHeight}-${matCode}-WM`
@@ -137,7 +137,7 @@ function buildDisplayName(category: string, bomName: string, bodyLength: number,
 
 // ── Work Order generation ────────────────────────────────────────────────
 
-async function generateWorkOrder(
+export async function generateWorkOrder(
   jobId: string, jobNum: string, customer: string,
   kitName: string, dxfFolderId: string | null, pdfFolderId: string | null,
 ): Promise<void> {
