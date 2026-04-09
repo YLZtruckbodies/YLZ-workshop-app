@@ -34,6 +34,7 @@ export default function VassBookingPage() {
   const searchParams = useSearchParams()
   const editId = searchParams.get('id')
   const fromQuote = searchParams.get('quoteId')
+  const fromJobNum = searchParams.get('jobNum')
 
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -137,23 +138,97 @@ export default function VassBookingPage() {
   // Populate from quote
   const populateFromQuote = useCallback((quoteId: string) => {
     if (!quoteId) return
-    fetch(`/api/quotes/${quoteId}`).then(r => r.json()).then((q: Quote) => {
+    fetch(`/api/quotes/${quoteId}`).then(r => r.json()).then(async (q: Quote) => {
       if (!q.id) return
+      const cfg = q.configuration || {}
+
+      // Find linked job number
+      let jobNum = ''
+      if (q.jobId) {
+        try {
+          const jr = await fetch(`/api/jobs/${q.jobId}`)
+          if (jr.ok) {
+            const jd = await jr.json()
+            jobNum = jd.num || ''
+          }
+        } catch { /* ignore */ }
+      }
+
+      const make = cfg.chassisMake || ''
+      const model = cfg.chassisModel || ''
+
       setForm(f => ({
         ...f,
-        ownerName: q.customerName || '',
-        jobNumber: q.jobId ? '' : '',
-        poNumber: q.quoteNumber || '',
+        ownerName: q.customerName || f.ownerName,
+        jobNumber: jobNum || f.jobNumber,
+        poNumber: q.quoteNumber || f.poNumber,
+        vehicleMake: make || f.vehicleMake,
+        vehicleModel: model || f.vehicleModel,
+        vinNumber: cfg.vin || cfg.truckVin || f.vinNumber,
+        gvm: cfg.gvm || cfg.truckGvm || f.gvm,
+        gcm: cfg.gcm || cfg.trailerGcm || f.gcm,
+        modDescription: `Body build — ${cfg.bodyLength || ''}mm ${cfg.material || cfg.truckMaterial || ''} ${cfg.bodyHeight || cfg.truckBodyHeight || ''}mm walls`.replace(/\s+/g, ' ').trim(),
       }))
+
+      // Trigger chassis DB lookup for make/model specs
+      if (make && model && chassisDb.length > 0) {
+        const chassis = chassisDb.find(c => c.make === make && c.model === model)
+        if (chassis) {
+          setForm(f => ({
+            ...f,
+            seats: chassis.seatingCapacity || f.seats,
+            gvm: f.gvm || chassis.gvm || '',
+            gcm: f.gcm || chassis.gcm || '',
+            frontAxleRating: chassis.frontAxleRating || f.frontAxleRating,
+            rearAxleRating: chassis.rearAxleRating || f.rearAxleRating,
+          }))
+        }
+      }
+
       setSelectedQuote(quoteId)
       setShowList(false)
     }).catch(() => {})
-  }, [])
+  }, [chassisDb])
 
-  // Auto-populate from quote if URL param
+  // Populate from job number — finds the job, then its quote, then populates
+  const populateFromJobNum = useCallback(async (jobNum: string) => {
+    try {
+      // Search for the job
+      const res = await fetch(`/api/search?q=${encodeURIComponent(jobNum)}`)
+      if (!res.ok) return
+      const data = await res.json()
+      const job = (data.jobs || []).find((j: any) => j.num === jobNum || j.num === jobNum.toUpperCase())
+      if (!job) { alert(`Job ${jobNum} not found`); return }
+
+      // Find linked quote
+      const qRes = await fetch(`/api/quotes?jobId=${job.id}`)
+      if (qRes.ok) {
+        const quotes = await qRes.json()
+        if (quotes.length > 0) {
+          populateFromQuote(quotes[0].id)
+          return
+        }
+      }
+
+      // No quote — still fill job-level fields
+      setForm(f => ({
+        ...f,
+        jobNumber: job.num,
+        ownerName: job.customer || f.ownerName,
+        vehicleMake: job.make?.split(' ')[0] || f.vehicleMake,
+        vinNumber: job.vin || f.vinNumber,
+      }))
+      setShowList(false)
+    } catch {
+      alert('Failed to load job')
+    }
+  }, [populateFromQuote])
+
+  // Auto-populate from quote or job number URL param
   useEffect(() => {
     if (fromQuote) populateFromQuote(fromQuote)
-  }, [fromQuote, populateFromQuote])
+    else if (fromJobNum) populateFromJobNum(fromJobNum)
+  }, [fromQuote, fromJobNum, populateFromQuote, populateFromJobNum])
 
   // When make changes, update model list
   useEffect(() => {
@@ -318,12 +393,12 @@ export default function VassBookingPage() {
         )}
       </div>
 
-      {/* Populate from Quote */}
-      {quotes.length > 0 && (
-        <div style={{ ...sectionStyle, marginBottom: 16 }}>
-          <div style={sectionTitle}>Populate from Quote</div>
-          <div style={gridTwo}>
-            <Field label="Select Quote">
+      {/* Populate from Quote or Job */}
+      <div style={{ ...sectionStyle, marginBottom: 16 }}>
+        <div style={sectionTitle}>Auto-Populate</div>
+        <div style={gridTwo}>
+          {quotes.length > 0 && (
+            <Field label="From Quote">
               <select style={selectStyle} value={selectedQuote} onChange={e => populateFromQuote(e.target.value)}>
                 <option value="">— Select a quote —</option>
                 {quotes.map(q => (
@@ -331,9 +406,32 @@ export default function VassBookingPage() {
                 ))}
               </select>
             </Field>
-          </div>
+          )}
+          <Field label="From Job Number">
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                style={{ ...inputStyle, flex: 1 }}
+                placeholder="e.g. YLZ1108"
+                onKeyDown={async (e) => {
+                  if (e.key !== 'Enter') return
+                  const val = (e.target as HTMLInputElement).value.trim()
+                  if (!val) return
+                  await populateFromJobNum(val)
+                }}
+              />
+              <button
+                onClick={async () => {
+                  const input = document.querySelector<HTMLInputElement>('input[placeholder="e.g. YLZ1108"]')
+                  if (input?.value) await populateFromJobNum(input.value.trim())
+                }}
+                style={{ ...inputStyle, width: 'auto', padding: '8px 14px', cursor: 'pointer', background: '#E8681A', border: '1px solid #E8681A', fontWeight: 700, fontSize: 12 }}
+              >
+                Load
+              </button>
+            </div>
+          </Field>
         </div>
-      )}
+      </div>
 
       {/* Booking Details */}
       <div style={sectionStyle}>
