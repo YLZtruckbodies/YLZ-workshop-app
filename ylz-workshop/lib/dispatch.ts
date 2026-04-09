@@ -41,6 +41,61 @@ export async function dispatchEngineeringPack(
     results.push({ target: 'coldform', method: 'notification', status: 'skipped', detail: 'No work order exists' })
   }
 
+  // 1b. Create Cold Form kit/chassis entry if work order was just approved
+  const quote = await prisma.quote.findFirst({ where: { jobId } })
+  const cfg = (quote?.configuration ?? {}) as Record<string, any>
+  // Flatten nested truck-and-trailer config
+  const tc = cfg.truckConfig || {}
+  const trc = cfg.trailerConfig || {}
+  const flatCfg = { ...cfg, ...tc }
+  const buildType = (quote?.buildType || job.type || '').toLowerCase()
+  const isTrailer = !!buildType.match(/trailer|dog|semi|lead/)
+
+  if (workOrder && workOrder.status === 'draft') {
+    try {
+      // Check if a coldform kit already exists for this job
+      const existingKit = await prisma.coldformKit.findFirst({
+        where: { allocatedTo: job.num },
+      })
+
+      if (!existingKit) {
+        const kitSize = workOrder.kitName || `${flatCfg.bodyLength || ''}x${flatCfg.bodyHeight || ''}`
+        await prisma.coldformKit.create({
+          data: {
+            size: kitSize,
+            allocatedTo: job.num,
+            notes: `Auto-created from engineering pack approval`,
+            walls: 'N', tunnel: 'N', floor: 'N', headBoard: 'N',
+            tailGate: 'N', splashGuards: 'N', lightStrips: 'N',
+          },
+        })
+        results.push({ target: 'coldform-kit', method: 'notification', status: 'sent', detail: `Kit "${kitSize}" added to Cold Form tab` })
+      } else {
+        results.push({ target: 'coldform-kit', method: 'notification', status: 'skipped', detail: 'Kit already exists' })
+      }
+
+      // Create trailer chassis entry if applicable
+      if (isTrailer) {
+        const existingChassis = await prisma.coldformChassis.findFirst({
+          where: { jobNo: job.num },
+        })
+        if (!existingChassis) {
+          const chassisLength = trc.chassisLength || flatCfg.chassisLength || ''
+          await prisma.coldformChassis.create({
+            data: {
+              jobNo: job.num,
+              chassisLength: String(chassisLength),
+              notes: `Auto-created — ${trc.axleCount || flatCfg.axleCount || ''}x ${trc.axleMake || flatCfg.axleMake || ''} ${trc.axleType || flatCfg.axleType || ''}`.trim(),
+            },
+          })
+          results.push({ target: 'coldform-chassis', method: 'notification', status: 'sent', detail: `Chassis entry added to Cold Form tab` })
+        }
+      }
+    } catch (e) {
+      console.error('Cold Form entry creation failed:', e)
+    }
+  }
+
   // 2. Email Cold Form (placeholder — needs warehouse@coldform.com.au confirmed)
   // TODO: Send work order PDF + DXF attachments to Cold Form
   results.push({ target: 'coldform-email', method: 'email', status: 'skipped', detail: 'Email target not yet configured' })
@@ -49,10 +104,7 @@ export async function dispatchEngineeringPack(
   results.push({ target: 'panchal', method: 'email', status: 'skipped', detail: 'Email target not yet configured' })
 
   // 4. Email axle supplier (placeholder — trailers only)
-  const quote = await prisma.quote.findFirst({ where: { jobId } })
-  const cfg = (quote?.configuration ?? {}) as Record<string, string>
-  const isTrailer = (quote?.buildType || job.type || '').toLowerCase().match(/trailer|dog|semi|lead/)
-  if (isTrailer && cfg.axleMake) {
+  if (isTrailer && (trc.axleMake || flatCfg.axleMake)) {
     results.push({ target: 'axle-supplier', method: 'email', status: 'skipped', detail: 'Email target not yet configured' })
   }
 
