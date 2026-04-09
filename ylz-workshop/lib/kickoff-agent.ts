@@ -203,7 +203,7 @@ export async function generateWorkOrder(
         pdfFileId: matchedPdf?.id || '',
         dxfFileName: dxf.name,
         pdfFileName: matchedPdf?.name || '',
-        thumbnailUrl: matchedPdf?.thumbnailLink || '',
+        thumbnailUrl: dxf.thumbnailLink || matchedPdf?.thumbnailLink || '',
         sortOrder: i + batchIdx,
       }
     }))

@@ -272,14 +272,21 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                   borderBottom: '1px solid rgba(255,255,255,0.06)',
                 }}
               >
-                {/* Thumbnail */}
+                {/* Thumbnail — links to DXF in Drive */}
                 <div>
                   {part.thumbnailUrl ? (
-                    <img
-                      src={part.thumbnailUrl}
-                      alt={part.partName}
-                      style={{ width: 48, height: 36, objectFit: 'contain', borderRadius: 2, background: '#fff' }}
-                    />
+                    <a
+                      href={part.dxfFileId ? `https://drive.google.com/file/d/${part.dxfFileId}/view` : undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: 'block', cursor: part.dxfFileId ? 'pointer' : 'default' }}
+                    >
+                      <img
+                        src={part.thumbnailUrl}
+                        alt={part.partName}
+                        style={{ width: 48, height: 36, objectFit: 'contain', borderRadius: 2, background: '#fff' }}
+                      />
+                    </a>
                   ) : (
                     <div style={{
                       width: 48, height: 36, borderRadius: 2, background: 'var(--dark2)',
