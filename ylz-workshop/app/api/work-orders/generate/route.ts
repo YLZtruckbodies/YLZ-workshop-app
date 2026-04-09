@@ -26,9 +26,12 @@ export async function POST(req: NextRequest) {
     const { jobId } = await req.json()
     if (!jobId) return NextResponse.json({ error: 'jobId required' }, { status: 400 })
 
-    // Check if work order already exists
+    // Delete existing work order (allows regeneration)
     const existing = await prisma.workOrder.findUnique({ where: { jobId } })
-    if (existing) return NextResponse.json({ error: 'Work order already exists for this job' }, { status: 409 })
+    if (existing) {
+      await prisma.workOrderPart.deleteMany({ where: { workOrderId: existing.id } })
+      await prisma.workOrder.delete({ where: { id: existing.id } })
+    }
 
     // Get job
     const job = await prisma.job.findUnique({ where: { id: jobId } })

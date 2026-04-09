@@ -39,6 +39,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
   const [order, setOrder] = useState<WorkOrder | null>(null)
   const [loading, setLoading] = useState(true)
   const [approving, setApproving] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
 
   const fetchOrder = useCallback(async () => {
@@ -68,6 +69,29 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
         body: JSON.stringify({ quantity: qty }),
       })
     } catch { /* ignore */ }
+  }
+
+  const handleRegenerate = async () => {
+    setRegenerating(true)
+    setSaveMsg('')
+    try {
+      const res = await fetch('/api/work-orders/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: params.jobId }),
+      })
+      if (res.ok) {
+        setSaveMsg('Regenerated')
+        await fetchOrder()
+      } else {
+        const err = await res.json()
+        setSaveMsg(err.error || 'Failed to regenerate')
+      }
+    } catch {
+      setSaveMsg('Failed to regenerate')
+    }
+    setRegenerating(false)
+    setTimeout(() => setSaveMsg(''), 3000)
   }
 
   const handleApprove = async () => {
@@ -198,6 +222,18 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                 PDF Folder
               </a>
             )}
+            <button
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              style={{
+                fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700,
+                padding: '6px 16px', borderRadius: 4, cursor: 'pointer',
+                border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: 'rgba(255,255,255,0.7)',
+                opacity: regenerating ? 0.5 : 1,
+              }}
+            >
+              {regenerating ? 'Regenerating...' : '↻ Regenerate'}
+            </button>
             <button
               onClick={() => window.print()}
               style={{
