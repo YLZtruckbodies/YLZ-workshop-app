@@ -84,6 +84,27 @@ interface VassBooking {
   vehicleModel: string
 }
 
+interface VinPlateData {
+  vin?: string
+  make?: string
+  model?: string
+  engineNumber?: string
+  gvm?: string
+  gcm?: string
+  frontAxleRating?: string
+  rearAxleRating?: string
+  seats?: string
+  tareWeight?: string
+  complianceDate?: string
+  engineType?: string
+}
+
+interface DriveVinFile {
+  id: string
+  name: string
+  thumbnailLink?: string
+}
+
 type PackItemStatus = 'ready' | 'warning' | 'missing' | 'generating' | 'not-applicable'
 
 interface PackItem {
@@ -115,6 +136,12 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
   const [dispatching, setDispatching] = useState(false)
   const [dispatchResults, setDispatchResults] = useState<Array<{ target: string; status: string; detail: string }>>([])
   const [dispatchMsg, setDispatchMsg] = useState('')
+  const [vinData, setVinData] = useState<VinPlateData | null>(null)
+  const [vinLoading, setVinLoading] = useState(false)
+  const [vinDriveFiles, setVinDriveFiles] = useState<DriveVinFile[]>([])
+  const [vinDragOver, setVinDragOver] = useState(false)
+  const [vinError, setVinError] = useState('')
+  const [vinSaving, setVinSaving] = useState(false)
 
   const fetchAll = useCallback(async () => {
     try {
@@ -190,6 +217,13 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
 
   // Build pack item statuses
   const packItems: PackItem[] = [
+    {
+      key: 'vin-plate',
+      label: 'VIN Plate',
+      icon: '🪪',
+      status: vinData ? 'ready' : (job?.vin ? 'ready' : 'warning'),
+      detail: vinData ? `VIN: ${vinData.vin || 'extracted'} — ${vinData.make || ''} ${vinData.model || ''}` : (job?.vin ? `VIN: ${job.vin}` : 'Drop photo or search Drive'),
+    },
     {
       key: 'work-order',
       label: 'Cold Form Work Order',
@@ -537,6 +571,7 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
 
   function renderExpandedSection(key: string) {
     switch (key) {
+      case 'vin-plate': return renderVinPlate()
       case 'work-order': return renderWorkOrder()
       case 'bom': return renderBOM()
       case 'tebs': return renderTEBS()
@@ -546,6 +581,233 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       case 'tube-laser': return renderTubeLaser()
       default: return null
     }
+  }
+
+  // ── VIN Plate Handlers ────────────────────────────────────────────────────
+
+  const handleVinFile = async (file: File) => {
+    setVinLoading(true)
+    setVinError('')
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/ocr/vin-plate', { method: 'POST', body: formData })
+      if (!res.ok) {
+        const err = await res.json()
+        setVinError(err.error || 'Failed to read VIN plate')
+        return
+      }
+      const { data } = await res.json()
+      setVinData(data)
+    } catch {
+      setVinError('Failed to process image')
+    }
+    setVinLoading(false)
+  }
+
+  const handleVinDriveFile = async (fileId: string) => {
+    setVinLoading(true)
+    setVinError('')
+    try {
+      // Download from drive and send to OCR
+      const driveRes = await fetch(`/api/drive-files/${fileId}`)
+      if (!driveRes.ok) { setVinError('Failed to download from Drive'); setVinLoading(false); return }
+      const blob = await driveRes.blob()
+      const file = new File([blob], 'vin-plate.jpg', { type: blob.type || 'image/jpeg' })
+      await handleVinFile(file)
+    } catch {
+      setVinError('Failed to process Drive file')
+      setVinLoading(false)
+    }
+  }
+
+  const searchDriveForVin = async () => {
+    if (!job) return
+    try {
+      const res = await fetch(`/api/jobs/${job.id}/drive-vin-files`)
+      if (res.ok) {
+        const files = await res.json()
+        setVinDriveFiles(Array.isArray(files) ? files : [])
+      }
+    } catch { /* ignore */ }
+  }
+
+  const saveVinToJob = async () => {
+    if (!vinData || !job) return
+    setVinSaving(true)
+    try {
+      // Update job with VIN
+      if (vinData.vin) {
+        await fetch(`/api/jobs/${job.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vin: vinData.vin, make: `${vinData.make || ''} ${vinData.model || ''}`.trim() || undefined }),
+        })
+      }
+      // Update quote config with extracted specs
+      if (quote) {
+        const updates: Record<string, string> = {}
+        if (vinData.vin) updates.vin = vinData.vin
+        if (vinData.gvm) updates.gvm = vinData.gvm
+        if (vinData.gcm) updates.gcm = vinData.gcm
+        if (vinData.make) updates.chassisMake = vinData.make
+        if (vinData.model) updates.chassisModel = vinData.model
+        if (Object.keys(updates).length > 0) {
+          await fetch(`/api/quotes/${quote.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ configuration: { ...cfg, ...updates } }),
+          })
+        }
+      }
+      await fetchAll()
+    } catch { /* ignore */ }
+    setVinSaving(false)
+  }
+
+  function renderVinPlate() {
+    return (
+      <div>
+        {/* Drop Zone */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setVinDragOver(true) }}
+          onDragLeave={() => setVinDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault()
+            setVinDragOver(false)
+            const file = e.dataTransfer.files[0]
+            if (file && file.type.startsWith('image/')) handleVinFile(file)
+            else setVinError('Please drop an image file (JPG, PNG)')
+          }}
+          onClick={() => {
+            const input = document.createElement('input')
+            input.type = 'file'
+            input.accept = 'image/*'
+            input.onchange = (e: any) => {
+              const file = e.target?.files?.[0]
+              if (file) handleVinFile(file)
+            }
+            input.click()
+          }}
+          style={{
+            border: `2px dashed ${vinDragOver ? '#E8681A' : 'var(--border)'}`,
+            borderRadius: 8, padding: '24px 20px', textAlign: 'center',
+            cursor: 'pointer', transition: 'all 0.15s',
+            background: vinDragOver ? 'rgba(232,104,26,0.08)' : 'rgba(0,0,0,0.2)',
+            marginBottom: 12,
+          }}
+        >
+          {vinLoading ? (
+            <div style={{ color: '#3b82f6', fontSize: 13, fontWeight: 600 }}>
+              Reading VIN plate... (this takes a few seconds)
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 28, marginBottom: 6 }}>📷</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>
+                Drop VIN plate photo here or click to upload
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+                JPG, PNG — photo of the compliance / VIN plate on the chassis
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Drive Search */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <button
+            onClick={searchDriveForVin}
+            style={actionBtn('rgba(255,255,255,0.5)')}
+          >
+            Search Drive for VIN Photos
+          </button>
+          {vinDriveFiles.length > 0 && (
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+              {vinDriveFiles.length} file{vinDriveFiles.length !== 1 ? 's' : ''} found
+            </span>
+          )}
+        </div>
+
+        {/* Drive VIN files */}
+        {vinDriveFiles.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8, marginBottom: 12 }}>
+            {vinDriveFiles.map((f) => (
+              <div
+                key={f.id}
+                onClick={() => handleVinDriveFile(f.id)}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  padding: 8, background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)',
+                  borderRadius: 6, cursor: 'pointer', transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#E8681A' }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)' }}
+              >
+                {f.thumbnailLink ? (
+                  <img src={f.thumbnailLink} alt={f.name} style={{ width: 120, height: 80, objectFit: 'contain', borderRadius: 3, marginBottom: 4 }} />
+                ) : (
+                  <div style={{ width: 120, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dark2)', borderRadius: 3, marginBottom: 4, fontSize: 24 }}>📷</div>
+                )}
+                <div style={{ fontSize: 10, color: '#fff', textAlign: 'center', wordBreak: 'break-word' }}>{f.name}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Error */}
+        {vinError && (
+          <div style={{ fontSize: 12, color: '#ef4444', marginBottom: 12, padding: '8px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 4 }}>
+            {vinError}
+          </div>
+        )}
+
+        {/* Extracted Data */}
+        {vinData && (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+              padding: '8px 12px', background: '#E8681A', color: '#fff',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <span>Extracted VIN Plate Data</span>
+              <button
+                onClick={saveVinToJob}
+                disabled={vinSaving}
+                style={{
+                  fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: 3,
+                  border: '1px solid rgba(255,255,255,0.6)', background: 'transparent', color: '#fff',
+                  cursor: vinSaving ? 'not-allowed' : 'pointer', opacity: vinSaving ? 0.5 : 1,
+                }}
+              >
+                {vinSaving ? 'Saving...' : 'Save to Job & Quote'}
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 1, background: 'rgba(255,255,255,0.05)' }}>
+              {[
+                { label: 'VIN', value: vinData.vin },
+                { label: 'Make', value: vinData.make },
+                { label: 'Model', value: vinData.model },
+                { label: 'GVM (kg)', value: vinData.gvm },
+                { label: 'GCM (kg)', value: vinData.gcm },
+                { label: 'Front Axle Rating', value: vinData.frontAxleRating },
+                { label: 'Rear Axle Rating', value: vinData.rearAxleRating },
+                { label: 'Seats', value: vinData.seats },
+                { label: 'Tare Weight (kg)', value: vinData.tareWeight },
+                { label: 'Engine Type', value: vinData.engineType },
+                { label: 'Engine Number', value: vinData.engineNumber },
+                { label: 'Compliance Date', value: vinData.complianceDate },
+              ].filter(f => f.value).map((f) => (
+                <div key={f.label} style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)' }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>{f.label}</div>
+                  <div style={{ fontSize: 13, color: '#fff', fontWeight: 600, fontFamily: 'monospace' }}>{f.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )
   }
 
   function renderWorkOrder() {
