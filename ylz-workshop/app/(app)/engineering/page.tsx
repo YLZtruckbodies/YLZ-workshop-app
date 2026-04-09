@@ -145,7 +145,10 @@ export default function EngineeringPage() {
                   borderLeft: '3px solid #E8681A',
                 }}
               >
-                <div style={{ flex: '0 0 auto', minWidth: 90 }}>
+                <div
+                  style={{ flex: '0 0 auto', minWidth: 90, cursor: 'pointer' }}
+                  onClick={() => router.push(`/engineering/pack/${job.id}`)}
+                >
                   <div style={{
                     fontFamily: "'League Spartan', sans-serif",
                     fontSize: 15, fontWeight: 800, color: '#E8681A', letterSpacing: 0.5,
@@ -164,8 +167,16 @@ export default function EngineeringPage() {
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                   <button
-                    onClick={() => window.open(`/jsheet/${job.id}?edit=true`, '_blank')}
+                    onClick={() => router.push(`/engineering/pack/${job.id}`)}
                     style={btnStyle('#E8681A')}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(232,104,26,0.12)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                  >
+                    View Pack
+                  </button>
+                  <button
+                    onClick={() => window.open(`/jsheet/${job.id}?edit=true`, '_blank')}
+                    style={btnStyle('rgba(255,255,255,0.5)')}
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(232,104,26,0.12)' }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                   >

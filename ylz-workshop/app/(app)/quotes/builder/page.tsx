@@ -52,6 +52,7 @@ interface QuoteForm {
   // engineering details — truck
   chassisMake: string
   chassisModel: string
+  chassisVariant: string
   truckBodyLength: string
   truckBodyHeight: string
   truckGvm: string
@@ -579,7 +580,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerStudPattern: '285PCD',
     trailerTarp: 'Razor PVC/MESH Electric',
     trailerPbs: '',
-    chassisMake: '', chassisModel: '',
+    chassisMake: '', chassisModel: '', chassisVariant: '',
     truckBodyLength: '', truckBodyHeight: '',
     truckGvm: '', truckTare: '', truckPaintColour: '',
     trailerBodyLength: '', trailerBodyHeight: '',
@@ -714,6 +715,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     // Engineering details (truck)
     form.chassisMake = tc.chassisMake || ''
     form.chassisModel = tc.chassisModel || ''
+    form.chassisVariant = tc.chassisVariant || ''
     form.truckBodyLength = tc.bodyLength || ''
     form.truckBodyHeight = tc.bodyHeight || ''
     form.truckGvm = tc.gvm || ''
@@ -786,6 +788,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
 
     form.chassisMake = cfg.chassisMake || ''
     form.chassisModel = cfg.chassisModel || ''
+    form.chassisVariant = cfg.chassisVariant || ''
     form.truckBodyLength = cfg.bodyLength || ''
     form.truckBodyHeight = cfg.bodyHeight || ''
     form.truckGvm = cfg.gvm || ''
@@ -874,6 +877,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.btEngineeringNote = cfg.btEngineeringNote || 'subject to final engineering and approval'
     form.chassisMake = cfg.chassisMake || ''
     form.chassisModel = cfg.chassisModel || ''
+    form.chassisVariant = cfg.chassisVariant || ''
     form.specialRequirements = cfg.specialRequirements || ''
     if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
       const spec = buildBeavertailSpec(form)
@@ -910,6 +914,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerPbs = cfg.pbsRating || form.trailerPbs || ''
     form.chassisMake = cfg.chassisMake || ''
     form.chassisModel = cfg.chassisModel || ''
+    form.chassisVariant = cfg.chassisVariant || ''
     form.specialRequirements = cfg.specialRequirements || ''
     if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
       const spec = buildTagTrailerSpec(form)
@@ -937,7 +942,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
       ? `${form.truckTarpMaterial} ${form.truckTarpStyle}`
       : 'None', coupling: form.truckCoupling,
     controls: form.truckControls, hydraulics: form.truckHydraulics,
-    chassisMake: form.chassisMake, chassisModel: form.chassisModel,
+    chassisMake: form.chassisMake, chassisModel: form.chassisModel, chassisVariant: form.chassisVariant,
     bodyLength: form.truckBodyLength, bodyWidth: calcBodyWidth(form.truckMaterial),
     bodyHeight: form.truckBodyHeight, bodyCapacity: calcBodyCapacity(form.truckBodyLength, form.truckMaterial, form.truckBodyHeight, 'truck', form.truckMountType),
     gvm: form.truckGvm, tare: form.truckTare, paintColour: form.truckPaintColour,
@@ -1005,6 +1010,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     cfg.btEngineeringNote = form.btEngineeringNote
     cfg.chassisMake = form.chassisMake
     cfg.chassisModel = form.chassisModel
+    cfg.chassisVariant = form.chassisVariant
     cfg.specialRequirements = form.specialRequirements
   } else if (form.buildType === 'tag-trailer') {
     cfg.btDeckWidth = form.btDeckWidth
@@ -1035,6 +1041,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     cfg.pbsRating = form.trailerPbs
     cfg.chassisMake = form.chassisMake
     cfg.chassisModel = form.chassisModel
+    cfg.chassisVariant = form.chassisVariant
     cfg.specialRequirements = form.specialRequirements
   } else if (form.buildType === 'repairs') {
     cfg.repairDescription = form.repairDescription
@@ -1980,12 +1987,15 @@ function QuoteBuilderInner() {
             {/* Chassis */}
             <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Chassis</div>
-            <div style={grid(2)}>
+            <div style={grid(3)}>
               <Field label="Chassis Make">
                 <input value={form.chassisMake} onChange={(e) => set('chassisMake', e.target.value)} placeholder="e.g. Kenworth" style={inputStyle} />
               </Field>
               <Field label="Chassis Model">
                 <input value={form.chassisModel} onChange={(e) => set('chassisModel', e.target.value)} placeholder="e.g. T610" style={inputStyle} />
+              </Field>
+              <Field label="Variant">
+                <input value={form.chassisVariant} onChange={(e) => set('chassisVariant', e.target.value)} placeholder="e.g. SAR, 6x4" style={inputStyle} />
               </Field>
             </div>
             {/* Engineering note */}
@@ -2119,12 +2129,15 @@ function QuoteBuilderInner() {
             {/* Chassis */}
             <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Towing Chassis</div>
-            <div style={grid(2)}>
+            <div style={grid(3)}>
               <Field label="Chassis Make">
                 <input value={form.chassisMake} onChange={(e) => set('chassisMake', e.target.value)} placeholder="e.g. Kenworth" style={inputStyle} />
               </Field>
               <Field label="Chassis Model">
                 <input value={form.chassisModel} onChange={(e) => set('chassisModel', e.target.value)} placeholder="e.g. T610" style={inputStyle} />
+              </Field>
+              <Field label="Variant">
+                <input value={form.chassisVariant} onChange={(e) => set('chassisVariant', e.target.value)} placeholder="e.g. SAR, 6x4" style={inputStyle} />
               </Field>
             </div>
             {/* Engineering note */}
@@ -2347,7 +2360,7 @@ function QuoteBuilderInner() {
                 {form.buildType === 'truck-and-trailer' ? 'Truck / Chassis' : 'Chassis'}
               </div>
               {/* Row 1: chassis + identity */}
-              <div style={grid(4)}>
+              <div style={grid(5)}>
                 <Field label="Chassis Make">
                   <input
                     list="chassis-makes"
@@ -2373,6 +2386,9 @@ function QuoteBuilderInner() {
                       <option key={m} value={m} />
                     ))}
                   </datalist>
+                </Field>
+                <Field label="Variant">
+                  <input value={form.chassisVariant} onChange={(e) => set('chassisVariant', e.target.value)} placeholder="e.g. SAR, 6x4" style={inputStyle} />
                 </Field>
                 <Field label="Serial No.">
                   <input value={form.truckSerial} onChange={(e) => set('truckSerial', e.target.value)} placeholder="e.g. YLZ-00123" style={inputStyle} />

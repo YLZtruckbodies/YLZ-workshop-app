@@ -201,7 +201,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               // Backfill job fields from config if missing
               if (!jobData.vin && jobData.cfg?.vin) jobData.vin = jobData.cfg.vin
               if (!jobData.make && jobData.cfg?.chassisMake) {
-                jobData.make = `${jobData.cfg.chassisMake} ${jobData.cfg.chassisModel || ''}`.trim()
+                jobData.make = `${jobData.cfg.chassisMake} ${jobData.cfg.chassisModel || ''}${jobData.cfg.chassisVariant ? ` (${jobData.cfg.chassisVariant})` : ''}`.trim()
               }
             }
           }
@@ -364,10 +364,14 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <>
                 {/* Job-level fields */}
                 <div style={sectionLbl}>Job Details</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 8 }}>
                   <div>
                     <div style={lblStyle}>Chassis / Make & Model</div>
                     <input style={inpStyle} value={editMake} onChange={e => setEditMake(e.target.value)} placeholder="e.g. UD Trucks Quon CW26 420" />
+                  </div>
+                  <div>
+                    <div style={lblStyle}>Variant</div>
+                    <input style={inpStyle} value={editCfg['chassisVariant'] || ''} onChange={e => setCfgField('chassisVariant', e.target.value)} placeholder="e.g. SAR, 6x4" />
                   </div>
                   <div>
                     <div style={lblStyle}>VIN</div>
@@ -494,7 +498,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
           <div className="cell">
             <div className="cell-lbl">Chassis / Make</div>
-            <div className="cell-val-sm">{job.make || `${c('chassisMake')} ${c('chassisModel')}`.trim() || ''}</div>
+            <div className="cell-val-sm">{job.make || `${c('chassisMake')} ${c('chassisModel')}${c('chassisVariant') ? ` (${c('chassisVariant')})` : ''}`.trim() || ''}</div>
             {!job.make && !c('chassisMake') && <div className="cell-blank" />}
           </div>
           <div className="cell">
