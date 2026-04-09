@@ -129,6 +129,20 @@ function SortableSidebarItem({
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <UndoProvider>
+      <style>{`
+        @media print {
+          .app-topbar, .app-sidebar, .app-reorder-btn { display: none !important; }
+          .app-grid {
+            display: block !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
+          .app-main {
+            overflow: visible !important;
+            height: auto !important;
+          }
+        }
+      `}</style>
       <AppLayoutInner>{children}</AppLayoutInner>
     </UndoProvider>
   )
@@ -382,6 +396,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div
+      className="app-grid"
       style={{
         display: 'grid',
         gridTemplateRows: '68px 1fr',
@@ -392,6 +407,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     >
       {/* Top Bar */}
       <div
+        className="app-topbar"
         style={{
           gridColumn: '1 / -1',
           background: '#000',
@@ -538,6 +554,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <div
+        className="app-sidebar"
         style={{
           background: '#000',
           borderRight: '1px solid rgba(255,255,255,0.1)',
@@ -611,7 +628,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Main Content */}
-      <div style={{ overflowY: 'auto', background: 'var(--dark)', display: 'flex', flexDirection: 'column' }}>
+      <div className="app-main" style={{ overflowY: 'auto', background: 'var(--dark)', display: 'flex', flexDirection: 'column' }}>
         {children}
       </div>
 
