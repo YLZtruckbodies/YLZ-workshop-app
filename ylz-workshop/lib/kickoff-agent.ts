@@ -314,6 +314,64 @@ function categoriseDrawing(name: string): string {
   return 'body'
 }
 
+// ── VASS Booking auto-generation ─────────────────────────────────────────────
+
+async function generateDraftVass(
+  jobId: string, jobNum: string, customerName: string, quoteId: string,
+  cfg: Record<string, string>,
+): Promise<void> {
+  // Don't duplicate — skip if one already exists for this job number
+  const existing = await prisma.vassBooking.findFirst({ where: { jobNumber: jobNum } })
+  if (existing) return
+
+  const chassisMake = cfg.chassisMake || ''
+  const chassisModel = cfg.chassisModel || ''
+  const vin = cfg.vin || cfg.truckVin || ''
+  const gvm = cfg.gvm || cfg.truckGvm || ''
+  const gcm = cfg.gcm || cfg.trailerGcm || ''
+
+  // Look up chassis specs from VassChassis table
+  let seats = '', frontAxle = '', rearAxle = ''
+  if (chassisMake && chassisModel) {
+    const chassis = await prisma.vassChassis.findFirst({
+      where: { make: chassisMake, model: chassisModel },
+    })
+    if (chassis) {
+      seats = chassis.seatingCapacity || ''
+      frontAxle = chassis.frontAxleRating || ''
+      rearAxle = chassis.rearAxleRating || ''
+      // Use DB values if not in quote config
+      if (!gvm && chassis.gvm) gvm === chassis.gvm
+      if (!gcm && chassis.gcm) gcm === chassis.gcm
+    }
+  }
+
+  await prisma.vassBooking.create({
+    data: {
+      jobNumber: jobNum,
+      quoteId,
+      status: 'draft',
+      bookingDate: new Date().toISOString().split('T')[0],
+      requestedBy: 'Nathan Yarnold',
+      companyAddress: '31 Gatwick Rd, Bayswater North VIC 3153',
+      companyState: 'VIC',
+      companyPostcode: '3153',
+      companyEmail: 'nathan@ylztruckbodies.com',
+      companyPhone: '03 9720 1038',
+      ownerName: customerName,
+      vehicleMake: chassisMake,
+      vehicleModel: chassisModel,
+      vinNumber: vin,
+      gvm: gvm || '',
+      gcm: gcm || '',
+      seats,
+      frontAxleRating: frontAxle,
+      rearAxleRating: rearAxle,
+      modDescription: `Body build — ${cfg.bodyLength || ''}mm ${cfg.material || ''} ${cfg.bodyHeight || ''}mm walls`.trim(),
+    },
+  })
+}
+
 // ── Main agent ────────────────────────────────────────────────────────────────
 
 export async function runKickoffAgent(jobId: string, quoteId: string): Promise<void> {
@@ -482,6 +540,12 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
     }
   }
 
+  // ── Generate draft VASS booking ──
+  try {
+    await generateDraftVass(jobId, job.num, job.customer, quoteId, cfg)
+  } catch (e) {
+    console.error('VASS booking generation failed:', e)
+  }
 }
 
 // ── Trailer Kick-off Agent ────────────────────────────────────────────────────
@@ -718,6 +782,13 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
     } catch (e) {
       console.error('Trailer job drawings generation failed:', e)
     }
+  }
+
+  // ── Generate draft VASS booking ──
+  try {
+    await generateDraftVass(jobId, job.num, job.customer, quoteId, cfg)
+  } catch (e) {
+    console.error('VASS booking generation failed:', e)
   }
 }
 
