@@ -186,7 +186,7 @@ function WorkOrderDetail({ jobNum }: { jobNum: string }) {
                 <a href={p.dxfFileId ? `https://drive.google.com/file/d/${p.dxfFileId}/view` : undefined}
                   target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0 }}>
                   <img src={`/api/drive-thumbnail/${p.dxfFileId || p.pdfFileId}`} alt={p.partName}
-                    style={{ width: 48, height: 36, objectFit: 'contain', borderRadius: 2, background: '#fff', border: '1px solid rgba(255,255,255,0.15)', filter: 'contrast(3) saturate(0) brightness(0.8)' }}
+                    style={{ width: 48, height: 36, objectFit: 'contain', borderRadius: 2, background: '#fff', border: '1px solid rgba(255,255,255,0.15)' }}
                     onError={(e: any) => { e.target.style.display = 'none' }} />
                 </a>
               )}

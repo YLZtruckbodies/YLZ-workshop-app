@@ -161,7 +161,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
           .wo-part-detail { color: #444 !important; font-size: 11px !important; }
           .wo-qty-input { border: 2px solid #333 !important; background: #fff !important; color: #1a1a1a !important; font-size: 14px !important; font-weight: 700 !important; }
           .wo-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .wo-part-row img { filter: contrast(4) saturate(0) brightness(0.7) !important; width: 90px !important; height: 68px !important; border: 3px solid #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff !important; }
+          .wo-part-row img { width: 90px !important; height: 68px !important; border: 3px solid #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff !important; }
           .wo-part-row a { color: #1a1a1a !important; border-color: #999 !important; font-size: 9px !important; }
           @page { size: A4; margin: 10mm; }
         }
@@ -325,7 +325,6 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                         style={{
                           width: 72, height: 54, objectFit: 'contain', borderRadius: 2,
                           background: '#fff', border: '2px solid rgba(255,255,255,0.2)',
-                          filter: 'contrast(3) saturate(0) brightness(0.8)',
                         }}
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                       />
