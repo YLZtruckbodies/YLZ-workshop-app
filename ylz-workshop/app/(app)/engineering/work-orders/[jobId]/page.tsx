@@ -157,10 +157,12 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
           .wo-header { border-color: #E8681A !important; }
           .wo-material-hdr { background: #E8681A !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .wo-part-row { border-color: #ddd !important; }
-          .wo-part-name { color: #1a1a1a !important; }
-          .wo-part-detail { color: #666 !important; }
-          .wo-qty-input { border: 1px solid #999 !important; background: #fff !important; color: #1a1a1a !important; }
+          .wo-part-name { color: #1a1a1a !important; font-size: 13px !important; font-weight: 700 !important; }
+          .wo-part-detail { color: #444 !important; font-size: 11px !important; }
+          .wo-qty-input { border: 2px solid #333 !important; background: #fff !important; color: #1a1a1a !important; font-size: 14px !important; font-weight: 700 !important; }
           .wo-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .wo-part-row img { filter: contrast(2.5) saturate(0) brightness(0.9) !important; width: 70px !important; height: 52px !important; border: 2px solid #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .wo-part-row a { color: #1a1a1a !important; border-color: #999 !important; font-size: 9px !important; }
           @page { size: A4; margin: 10mm; }
         }
       `}</style>
