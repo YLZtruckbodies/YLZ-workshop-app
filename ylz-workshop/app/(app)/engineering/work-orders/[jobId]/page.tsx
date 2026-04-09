@@ -284,7 +284,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
 
             {/* Column headers */}
             <div style={{
-              display: 'grid', gridTemplateColumns: '60px 1fr 70px 80px 80px 100px',
+              display: 'grid', gridTemplateColumns: '68px 1fr 70px 80px 80px 100px',
               padding: '6px 14px', borderBottom: '1px solid var(--border)',
               fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
               color: 'var(--text3)',
@@ -303,7 +303,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                 key={part.id}
                 className="wo-part-row"
                 style={{
-                  display: 'grid', gridTemplateColumns: '60px 1fr 70px 80px 80px 100px',
+                  display: 'grid', gridTemplateColumns: '68px 1fr 70px 80px 80px 100px',
                   alignItems: 'center', padding: '10px 14px',
                   borderBottom: '1px solid rgba(255,255,255,0.06)',
                 }}
@@ -320,12 +320,16 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                       <img
                         src={part.thumbnailUrl}
                         alt={part.partName}
-                        style={{ width: 48, height: 36, objectFit: 'contain', borderRadius: 2, background: '#fff' }}
+                        style={{
+                          width: 56, height: 42, objectFit: 'contain', borderRadius: 2,
+                          background: '#fff', border: '1px solid rgba(255,255,255,0.15)',
+                          filter: 'contrast(1.8) saturate(0)',
+                        }}
                       />
                     </a>
                   ) : (
                     <div style={{
-                      width: 48, height: 36, borderRadius: 2, background: 'var(--dark2)',
+                      width: 56, height: 42, borderRadius: 2, background: 'var(--dark2)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 16, color: 'var(--text3)',
                     }}>
