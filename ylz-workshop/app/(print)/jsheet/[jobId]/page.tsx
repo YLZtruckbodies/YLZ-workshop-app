@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { generateTEBSDocx, downloadTEBSBlob, hasTEBSData, type TEBSInput } from '@/lib/tebs'
 
 interface BomEntry {
@@ -159,9 +160,26 @@ const S = {
 }
 
 export default function JobSheetPage({ params }: { params: { jobId: string } }) {
+  const searchParams = useSearchParams()
+  const editMode = searchParams.get('edit') === 'true'
   const [job, setJob] = useState<Job | null>(null)
   const [loading, setLoading] = useState(true)
   const [tebsLoading, setTebsLoading] = useState(false)
+  const [quoteId, setQuoteId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState('')
+
+  // Editable fields — job-level
+  const [editMake, setEditMake] = useState('')
+  const [editVin, setEditVin] = useState('')
+  const [editNotes, setEditNotes] = useState('')
+  const [editDims, setEditDims] = useState('')
+  const [editPo, setEditPo] = useState('')
+
+  // Editable fields — quote config
+  const [editCfg, setEditCfg] = useState<Record<string, string>>({})
+
+  const setCfgField = (key: string, val: string) => setEditCfg(prev => ({ ...prev, [key]: val }))
 
   useEffect(() => {
     fetch(`/api/jobs/${params.jobId}`)
@@ -173,6 +191,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           const quotes = await qRes.json()
           const quote = Array.isArray(quotes) ? quotes.find((q: any) => q.jobId === jobData.id) : null
           if (quote) {
+            setQuoteId(quote.id)
             // Fetch full quote with configuration
             const fullRes = await fetch(`/api/quotes/${quote.id}`)
             const fullQuote = await fullRes.json()
@@ -188,10 +207,69 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           }
         } catch { /* quote fetch failed — continue with job data only */ }
         setJob(jobData)
+        // Initialise edit fields
+        setEditMake(jobData.make || '')
+        setEditVin(jobData.vin || '')
+        setEditNotes(jobData.notes || '')
+        setEditDims(jobData.dims || '')
+        setEditPo(jobData.po || '')
+        if (jobData.cfg) {
+          const cfgInit: Record<string, string> = {}
+          for (const [k, v] of Object.entries(jobData.cfg)) {
+            cfgInit[k] = v != null ? String(v) : ''
+          }
+          setEditCfg(cfgInit)
+        }
         setLoading(false)
       })
       .catch(() => setLoading(false))
   }, [params.jobId])
+
+  const handleSave = async () => {
+    if (!job) return
+    setSaving(true)
+    setSaveMsg('')
+    try {
+      // Save job-level fields
+      await fetch(`/api/jobs/${job.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          make: editMake,
+          vin: editVin,
+          notes: editNotes,
+          dims: editDims,
+          po: editPo,
+          _userName: 'Engineering',
+        }),
+      })
+      // Save quote config if quote exists
+      if (quoteId) {
+        await fetch(`/api/quotes/${quoteId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ configuration: editCfg }),
+        })
+      }
+      // Reload data
+      const res = await fetch(`/api/jobs/${job.id}`)
+      const updated = await res.json()
+      if (quoteId) {
+        const qRes = await fetch(`/api/quotes/${quoteId}`)
+        const fullQuote = await qRes.json()
+        if (fullQuote.configuration) {
+          updated.cfg = fullQuote.configuration
+          updated.quoteNumber = fullQuote.quoteNumber
+        }
+      }
+      setJob(updated)
+      setSaveMsg('Saved')
+      setTimeout(() => setSaveMsg(''), 3000)
+    } catch {
+      setSaveMsg('Save failed')
+    }
+    setSaving(false)
+  }
 
   if (loading) return <div style={{ fontFamily: 'sans-serif', padding: 40, color: '#666' }}>Loading…</div>
   if (!job) return <div style={{ fontFamily: 'sans-serif', padding: 40, color: '#c00' }}>Job not found</div>
@@ -240,6 +318,139 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <button onClick={() => window.print()}>Print / Save PDF</button>
         </div>
       </div>
+
+      {/* ═══ EDIT MODE PANEL ═══ */}
+      {editMode && job && (
+        <div style={{
+          background: '#111', borderBottom: '2px solid #E8681A', padding: '24px 32px',
+          fontFamily: "'League Spartan', Arial, sans-serif",
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#E8681A', letterSpacing: 2, textTransform: 'uppercase' }}>
+              Edit Job Sheet — {job.num}
+            </div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              {saveMsg && <span style={{ fontSize: 13, fontWeight: 600, color: saveMsg === 'Saved' ? '#22d07a' : '#e84560' }}>{saveMsg}</span>}
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                style={{
+                  background: '#E8681A', color: '#fff', border: 'none', padding: '10px 28px',
+                  borderRadius: 4, fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                  opacity: saving ? 0.5 : 1, letterSpacing: 0.5,
+                }}
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+
+          {(() => {
+            const lblStyle: React.CSSProperties = { fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: '#999', marginBottom: 4 }
+            const inpStyle: React.CSSProperties = {
+              width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: 4,
+              padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'Arial, sans-serif',
+            }
+            const sectionLbl: React.CSSProperties = { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#E8681A', marginBottom: 10, marginTop: 16 }
+
+            const cfgField = (label: string, key: string) => (
+              <div key={key}>
+                <div style={lblStyle}>{label}</div>
+                <input style={inpStyle} value={editCfg[key] || ''} onChange={e => setCfgField(key, e.target.value)} />
+              </div>
+            )
+
+            return (
+              <>
+                {/* Job-level fields */}
+                <div style={sectionLbl}>Job Details</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  <div>
+                    <div style={lblStyle}>Chassis / Make & Model</div>
+                    <input style={inpStyle} value={editMake} onChange={e => setEditMake(e.target.value)} placeholder="e.g. UD Trucks Quon CW26 420" />
+                  </div>
+                  <div>
+                    <div style={lblStyle}>VIN</div>
+                    <input style={inpStyle} value={editVin} onChange={e => setEditVin(e.target.value)} />
+                  </div>
+                  <div>
+                    <div style={lblStyle}>Dimensions</div>
+                    <input style={inpStyle} value={editDims} onChange={e => setEditDims(e.target.value)} placeholder="e.g. 5400 x 2500 x 600" />
+                  </div>
+                  <div>
+                    <div style={lblStyle}>Purchase Order</div>
+                    <input style={inpStyle} value={editPo} onChange={e => setEditPo(e.target.value)} />
+                  </div>
+                </div>
+
+                {/* Quote config fields */}
+                <div style={sectionLbl}>Body Dimensions & Material</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Body Length (mm)', 'bodyLength')}
+                  {cfgField('Body Width (mm)', 'bodyWidth')}
+                  {cfgField('Body Height (mm)', 'bodyHeight')}
+                  {cfgField('Capacity (m³)', 'bodyCapacity')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Material', 'material')}
+                  {cfgField('Floor Sheet', 'floorSheet')}
+                  {cfgField('Side Sheet', 'sideSheet')}
+                  {cfgField('Main Runner Width', 'mainRunnerWidth')}
+                </div>
+
+                <div style={sectionLbl}>Hoist & Controls</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Hoist Model', 'hoist')}
+                  {cfgField('PTO', 'pto')}
+                  {cfgField('Hoist Controls', 'controls')}
+                  {cfgField('Tailgate Type', 'tailgateType')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Tailgate Lights', 'tailgateLights')}
+                  {cfgField('Hydraulic System', 'hydraulics')}
+                  {cfgField('Hyd Tank Type', 'hydTankType')}
+                  {cfgField('Hyd Tank Location', 'hydTankLocation')}
+                </div>
+
+                <div style={sectionLbl}>Tarp & Paint</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Tarp System', 'tarpSystem')}
+                  {cfgField('Paint Colour', 'paintColour')}
+                  {cfgField('Coupling', 'coupling')}
+                  {cfgField('Brake Coupling', 'brakeCoupling')}
+                </div>
+
+                <div style={sectionLbl}>Trailer / Chassis (if applicable)</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Chassis Length (mm)', 'chassisLength')}
+                  {cfgField('Wheelbase (mm)', 'wheelbase')}
+                  {cfgField('Drawbar Length (mm)', 'drawbarLength')}
+                  {cfgField('Suspension', 'suspension')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Axle Make', 'axleMake')}
+                  {cfgField('Axle Type', 'axleType')}
+                  {cfgField('Axle Count', 'axleCount')}
+                  {cfgField('PBS Rating', 'pbsRating')}
+                </div>
+
+                {/* Notes */}
+                <div style={sectionLbl}>Notes / Special Requirements</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <div style={lblStyle}>Job Notes</div>
+                    <textarea style={{ ...inpStyle, minHeight: 70, resize: 'vertical' }} value={editNotes} onChange={e => setEditNotes(e.target.value)} />
+                  </div>
+                  <div>
+                    <div style={lblStyle}>Special Requirements (Quote)</div>
+                    <textarea style={{ ...inpStyle, minHeight: 70, resize: 'vertical' }} value={editCfg['specialRequirements'] || ''} onChange={e => setCfgField('specialRequirements', e.target.value)} />
+                  </div>
+                </div>
+              </>
+            )
+          })()}
+        </div>
+      )}
 
       {/* ═══════════════════════════════════════════
           SHEET 1 — BODY FABRICATION

@@ -153,7 +153,15 @@ export default function EngineeringPage() {
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                   <button
-                    onClick={() => router.push(`/jsheet/${job.id}`)}
+                    onClick={() => window.open(`/jsheet/${job.id}?edit=true`, '_blank')}
+                    style={btnStyle('#E8681A')}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(232,104,26,0.12)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                  >
+                    Edit Job Sheet
+                  </button>
+                  <button
+                    onClick={() => window.open(`/jsheet/${job.id}`, '_blank')}
                     style={btnStyle('rgba(255,255,255,0.5)')}
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
@@ -162,12 +170,12 @@ export default function EngineeringPage() {
                   </button>
                   {job.quoteId && (
                     <button
-                      onClick={() => router.push(`/quotes/builder?id=${job.quoteId}`)}
+                      onClick={() => window.open(`/qsheet/${job.quoteId}`, '_blank')}
                       style={btnStyle('rgba(255,255,255,0.5)')}
                       onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                     >
-                      Edit Quote
+                      View Quote
                     </button>
                   )}
                   {(() => {
