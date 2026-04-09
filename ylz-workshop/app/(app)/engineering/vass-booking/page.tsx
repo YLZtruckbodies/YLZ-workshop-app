@@ -48,7 +48,7 @@ export default function VassBookingPage() {
   const [showCodePicker, setShowCodePicker] = useState(false)
   const [codeFilter, setCodeFilter] = useState('')
   const [bookings, setBookings] = useState<Booking[]>([])
-  const [showList, setShowList] = useState(!editId && !fromQuote)
+  const [showList, setShowList] = useState(!editId && !fromQuote && !fromJobNum)
   const [addChassisMode, setAddChassisMode] = useState(false)
   const [newChassis, setNewChassis] = useState<Partial<Chassis>>({})
 

@@ -717,7 +717,7 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
         <div style={{ flex: 1, fontSize: 12, color: 'var(--text3)' }}>
           No VASS booking created yet. Create one from the VASS Booking Generator.
         </div>
-        <button onClick={() => router.push('/engineering/vass-booking')} style={actionBtn('rgba(255,255,255,0.5)')}>
+        <button onClick={() => router.push(`/engineering/vass-booking?jobNum=${job!.num}`)} style={actionBtn('rgba(255,255,255,0.5)')}>
           Create VASS Booking
         </button>
       </div>
