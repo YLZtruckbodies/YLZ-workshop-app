@@ -68,6 +68,8 @@ function getChassisKey(axles: number, modelType: string, bodyLength: number): st
 
 interface KitFiles {
   kitName: string
+  cadFolderId: string | null
+  drawingsFolderId: string | null
   dxfFolderId: string | null
   pdfFolderId: string | null
   dxfFolderUrl: string | null
@@ -117,6 +119,8 @@ export async function findKitFiles(bodyLength: number, bodyHeight: number, isHar
 
   return {
     kitName,
+    cadFolderId,
+    drawingsFolderId,
     dxfFolderId: dxfId,
     pdfFolderId: pdfId,
     dxfFolderUrl: dxfId ? `https://drive.google.com/drive/folders/${dxfId}` : null,
@@ -217,6 +221,97 @@ export async function generateWorkOrder(
       parts: { create: parts },
     },
   })
+}
+
+// ── Job Drawings generation ──────────────────────────────────────────────────
+
+export async function generateJobDrawings(
+  jobId: string,
+  cadFolderId: string | null,
+  drawingsFolderId: string | null,
+  pdfFolderId: string | null,
+): Promise<void> {
+  if (!cadFolderId && !drawingsFolderId) return
+
+  // Delete existing drawings for this job (re-generate)
+  await prisma.jobDrawing.deleteMany({ where: { jobId } })
+
+  const drawings: Array<{
+    fileName: string; driveFileId: string; type: string
+    category: string; thumbnailUrl: string; mimeType: string; sortOrder: number
+  }> = []
+
+  let order = 0
+
+  // 1. Scan Drawings folder for PDFs NOT inside the PDF subfolder (these are assembly drawings)
+  if (drawingsFolderId) {
+    const drawingFiles = await listFolderFiles(drawingsFolderId)
+    for (const f of drawingFiles) {
+      // Skip subfolders (DXF, PDF folders)
+      if (f.mimeType === 'application/vnd.google-apps.folder') continue
+      // Only PDFs at the Drawings level are assembly drawings
+      if (f.mimeType === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')) {
+        drawings.push({
+          fileName: f.name,
+          driveFileId: f.id,
+          type: 'assembly',
+          category: categoriseDrawing(f.name),
+          thumbnailUrl: f.thumbnailLink || '',
+          mimeType: 'application/pdf',
+          sortOrder: order++,
+        })
+      }
+    }
+  }
+
+  // 2. Scan CAD folder for PDFs and STEP files at root level
+  if (cadFolderId) {
+    const cadFiles = await listFolderFiles(cadFolderId)
+    for (const f of cadFiles) {
+      if (f.mimeType === 'application/vnd.google-apps.folder') continue
+      const lower = f.name.toLowerCase()
+
+      if (lower.endsWith('.pdf') || f.mimeType === 'application/pdf') {
+        drawings.push({
+          fileName: f.name,
+          driveFileId: f.id,
+          type: 'assembly',
+          category: categoriseDrawing(f.name),
+          thumbnailUrl: f.thumbnailLink || '',
+          mimeType: 'application/pdf',
+          sortOrder: order++,
+        })
+      } else if (lower.endsWith('.step') || lower.endsWith('.stp')) {
+        drawings.push({
+          fileName: f.name,
+          driveFileId: f.id,
+          type: 'step',
+          category: 'tube-laser',
+          thumbnailUrl: '',
+          mimeType: 'application/step',
+          sortOrder: order++,
+        })
+      }
+    }
+  }
+
+  if (drawings.length === 0) return
+
+  await prisma.jobDrawing.createMany({ data: drawings.map(d => ({ ...d, jobId })) })
+}
+
+/** Guess drawing category from filename */
+function categoriseDrawing(name: string): string {
+  const lower = name.toLowerCase()
+  if (lower.includes('subframe') || lower.includes('sub-frame') || lower.includes('sub frame')) return 'subframe'
+  if (lower.includes('tailgate') || lower.includes('tail gate') || lower.includes('tail-gate')) return 'tailgate'
+  if (lower.includes('hoist')) return 'hoist'
+  if (lower.includes('chassis')) return 'chassis'
+  if (lower.includes('assembly') || lower.includes('assy')) return 'assembly'
+  if (lower.includes('body')) return 'body'
+  if (lower.includes('headboard') || lower.includes('head board')) return 'headboard'
+  if (lower.includes('ramp')) return 'ramp'
+  return 'body'
 }
 
 // ── Main agent ────────────────────────────────────────────────────────────────
@@ -380,6 +475,11 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
     } catch (e) {
       console.error('Work order generation failed:', e)
     }
+    try {
+      await generateJobDrawings(jobId, kitFiles.cadFolderId, kitFiles.drawingsFolderId, kitFiles.pdfFolderId)
+    } catch (e) {
+      console.error('Job drawings generation failed:', e)
+    }
   }
 
 }
@@ -424,6 +524,8 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
   let pdfFolderUrl: string | null = null
   let trailerDxfFolderId: string | null = null
   let trailerPdfFolderId: string | null = null
+  let trailerDrawingsFolderId: string | null = null
+  let trailerBodyLookupId: string | null = null
   let noBodyReason: string | null = null
 
   if (bodyFolderId) {
@@ -434,11 +536,13 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
         const lenFolder = await findChildFolder(bodyFolderId, `${bodyLength} Body`)
         if (lenFolder) lookupId = lenFolder
       }
+      trailerBodyLookupId = lookupId
       bodyFolderUrl = `https://drive.google.com/drive/folders/${lookupId}`
 
       // Navigate to Drawings/DXF and Drawings/PDF
       const drawingsId = await findChildFolder(lookupId, 'Drawings')
       if (drawingsId) {
+        trailerDrawingsFolderId = drawingsId
         const [dxfId, pdfId] = await Promise.all([
           findChildFolder(drawingsId, 'DXF'),
           findChildFolder(drawingsId, 'PDF'),
@@ -604,6 +708,15 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
       await generateWorkOrder(jobId, job.num, job.customer, trailerKitLabel, trailerDxfFolderId, trailerPdfFolderId)
     } catch (e) {
       console.error('Trailer work order generation failed:', e)
+    }
+  }
+
+  // ── Generate job drawings ──
+  if (trailerDrawingsFolderId || trailerBodyLookupId) {
+    try {
+      await generateJobDrawings(jobId, trailerBodyLookupId, trailerDrawingsFolderId, trailerPdfFolderId)
+    } catch (e) {
+      console.error('Trailer job drawings generation failed:', e)
     }
   }
 }

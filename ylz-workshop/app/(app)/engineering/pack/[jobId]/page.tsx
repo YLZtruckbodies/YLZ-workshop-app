@@ -59,6 +59,16 @@ interface WorkOrder {
   approvedBy: string
 }
 
+interface JobDrawing {
+  id: string
+  fileName: string
+  driveFileId: string
+  type: string   // assembly | step
+  category: string
+  thumbnailUrl: string
+  mimeType: string
+}
+
 interface BomItem {
   code: string
   name: string
@@ -94,11 +104,13 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
   const [quote, setQuote] = useState<Quote | null>(null)
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null)
   const [boms, setBoms] = useState<BomItem[]>([])
+  const [drawings, setDrawings] = useState<JobDrawing[]>([])
   const [vass, setVass] = useState<VassBooking | null>(null)
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [tebsLoading, setTebsLoading] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [generatingDrawings, setGeneratingDrawings] = useState(false)
   const [approving, setApproving] = useState(false)
   const [dispatchMsg, setDispatchMsg] = useState('')
 
@@ -127,6 +139,13 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
         if (Array.isArray(orders) && orders.length > 0) setWorkOrder(orders[0])
       }
 
+      // Fetch drawings
+      const drawRes = await fetch(`/api/jobs/${jobId}/drawings`)
+      if (drawRes.ok) {
+        const drawData = await drawRes.json()
+        if (Array.isArray(drawData)) setDrawings(drawData)
+      }
+
       // Fetch BOMs
       const bomRes = await fetch(`/api/jobs/${jobId}/boms`)
       if (bomRes.ok) {
@@ -151,6 +170,9 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
   const cfg = quote?.configuration || {} as QuoteConfig
   const buildType = (quote?.buildType || job?.type || '').toLowerCase()
   const isTrailer = buildType.includes('trailer') || buildType.includes('dog') || buildType.includes('semi') || buildType.includes('lead')
+
+  const assemblyDrawings = drawings.filter(d => d.type !== 'step')
+  const stepFiles = drawings.filter(d => d.type === 'step')
 
   const tebsInput: TEBSInput | null = isTrailer && cfg.axleCount && cfg.axleMake && cfg.axleType
     ? { axleCount: cfg.axleCount, axleMake: cfg.axleMake, axleType: cfg.axleType, vin: job?.vin || (cfg.vin as string) || '', jobNumber: job?.num || '' }
@@ -198,15 +220,15 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       key: 'drawings',
       label: 'Workshop Drawings',
       icon: '📐',
-      status: 'missing',
-      detail: 'Coming soon — Phase 3',
+      status: assemblyDrawings.length > 0 ? 'ready' : 'missing',
+      detail: assemblyDrawings.length > 0 ? `${assemblyDrawings.length} drawing${assemblyDrawings.length !== 1 ? 's' : ''} found` : 'No drawings generated yet',
     },
     {
       key: 'tube-laser',
       label: 'Tube Laser Files',
       icon: '🔬',
-      status: 'missing',
-      detail: 'Coming soon — Phase 4',
+      status: stepFiles.length > 0 ? 'ready' : 'missing',
+      detail: stepFiles.length > 0 ? `${stepFiles.length} STEP file${stepFiles.length !== 1 ? 's' : ''} found` : 'No STEP files found',
     },
   ]
 
@@ -235,6 +257,23 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       alert('Failed to generate work order')
     }
     setGenerating(false)
+  }
+
+  const handleGenerateDrawings = async () => {
+    setGeneratingDrawings(true)
+    try {
+      const res = await fetch(`/api/jobs/${jobId}/drawings/generate`, { method: 'POST' })
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) setDrawings(data)
+      } else {
+        const err = await res.json()
+        alert(err.error || 'Failed to scan for drawings')
+      }
+    } catch {
+      alert('Failed to scan for drawings')
+    }
+    setGeneratingDrawings(false)
   }
 
   const handleApproveWorkOrder = async () => {
@@ -468,8 +507,8 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       case 'tebs': return renderTEBS()
       case 'vass': return renderVASS()
       case 'axle-order': return renderAxleOrder()
-      case 'drawings': return renderPlaceholder('Workshop drawings will be auto-pulled from Drive kit folders.')
-      case 'tube-laser': return renderPlaceholder('Tube laser STEP files will be catalogued from kit folders.')
+      case 'drawings': return renderDrawings()
+      case 'tube-laser': return renderTubeLaser()
       default: return null
     }
   }
@@ -682,6 +721,132 @@ Regards,
 YLZ Truck Bodies
 03 5940 7620`}
         </div>
+      </div>
+    )
+  }
+
+  function renderDrawings() {
+    if (assemblyDrawings.length === 0) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ flex: 1, fontSize: 12, color: 'var(--text3)' }}>
+            No workshop drawings found. Click to scan Drive kit folders for assembly PDFs.
+          </div>
+          <button
+            onClick={handleGenerateDrawings}
+            disabled={generatingDrawings}
+            style={{ ...actionBtn('#3b82f6'), opacity: generatingDrawings ? 0.5 : 1 }}
+          >
+            {generatingDrawings ? 'Scanning...' : '📐 Scan for Drawings'}
+          </button>
+        </div>
+      )
+    }
+
+    // Group by category
+    const byCategory: Record<string, JobDrawing[]> = {}
+    for (const d of assemblyDrawings) {
+      const cat = d.category || 'Other'
+      if (!byCategory[cat]) byCategory[cat] = []
+      byCategory[cat].push(d)
+    }
+
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+            {assemblyDrawings.length} assembly drawing{assemblyDrawings.length !== 1 ? 's' : ''}
+          </div>
+          <button
+            onClick={handleGenerateDrawings}
+            disabled={generatingDrawings}
+            style={{ ...actionBtn('rgba(255,255,255,0.5)'), opacity: generatingDrawings ? 0.5 : 1 }}
+          >
+            {generatingDrawings ? 'Scanning...' : '↻ Re-scan'}
+          </button>
+        </div>
+
+        {Object.entries(byCategory).sort(([a], [b]) => a.localeCompare(b)).map(([cat, items]) => (
+          <div key={cat} style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: '#E8681A', marginBottom: 6 }}>
+              {cat}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
+              {items.map((d) => (
+                <a
+                  key={d.id}
+                  href={`/api/drive-files/${d.driveFileId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    padding: 10, background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)',
+                    borderRadius: 6, textDecoration: 'none', transition: 'border-color 0.15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#E8681A' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)' }}
+                >
+                  {d.thumbnailUrl ? (
+                    <img src={d.thumbnailUrl} alt={d.fileName} style={{ width: 140, height: 100, objectFit: 'contain', borderRadius: 3, background: '#fff', marginBottom: 6 }} />
+                  ) : (
+                    <div style={{ width: 140, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dark2)', borderRadius: 3, marginBottom: 6, fontSize: 28, color: 'var(--text3)' }}>
+                      📄
+                    </div>
+                  )}
+                  <div style={{ fontSize: 11, color: '#fff', fontWeight: 500, textAlign: 'center', wordBreak: 'break-word', lineHeight: 1.3 }}>
+                    {d.fileName.replace(/\.[^.]+$/, '')}
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  function renderTubeLaser() {
+    if (stepFiles.length === 0) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ flex: 1, fontSize: 12, color: 'var(--text3)' }}>
+            No STEP files found. They will be picked up when drawings are scanned from the CAD folder.
+          </div>
+          {assemblyDrawings.length === 0 && (
+            <button
+              onClick={handleGenerateDrawings}
+              disabled={generatingDrawings}
+              style={{ ...actionBtn('#3b82f6'), opacity: generatingDrawings ? 0.5 : 1 }}
+            >
+              {generatingDrawings ? 'Scanning...' : '📐 Scan CAD Folder'}
+            </button>
+          )}
+        </div>
+      )
+    }
+
+    return (
+      <div>
+        <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
+          {stepFiles.length} STEP file{stepFiles.length !== 1 ? 's' : ''} for tube laser cutting
+        </div>
+        {stepFiles.map((f) => (
+          <div key={f.id} style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '6px 10px',
+            borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 12,
+          }}>
+            <span style={{ fontSize: 16 }}>📦</span>
+            <span style={{ flex: 1, color: '#fff', fontWeight: 500 }}>{f.fileName}</span>
+            <a
+              href={`https://drive.google.com/file/d/${f.driveFileId}/view`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: 10, fontWeight: 700, color: '#3b82f6', padding: '3px 8px', border: '1px solid rgba(59,130,246,0.4)', borderRadius: 3, textDecoration: 'none' }}
+            >
+              View
+            </a>
+          </div>
+        ))}
       </div>
     )
   }

@@ -714,3 +714,18 @@ model WorkOrderPart {
 
   @@index([workOrderId])
 }
+
+model JobDrawing {
+  id           String   @id @default(cuid())
+  jobId        String
+  fileName     String
+  driveFileId  String
+  type         String   @default("assembly") // assembly | cutting | detail | step
+  category     String   @default("")         // body | subframe | tailgate | hoist | chassis
+  thumbnailUrl String   @default("")
+  mimeType     String   @default("application/pdf")
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([jobId])
+}
