@@ -407,7 +407,21 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Hoist Model', 'hoist')}
                   {cfgField('C/L Pivot to Rear (mm)', 'pivotCentre')}
                   {cfgField('Hoist Controls', 'controls')}
-                  {cfgField('PTO', 'pto')}
+                  {cfgField('Pump Type', 'pumpType')}
+                </div>
+
+                <div style={sectionLbl}>Valve Bank</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Valve Bank Type', 'valveBankType')}
+                  {cfgField('Valve Bank Location', 'valveBankLocation')}
+                  {cfgField('Valve Bank Notes', 'valveBankNotes')}
+                </div>
+
+                <div style={sectionLbl}>PTO Switch Type</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('PTO Type / Model', 'pto')}
+                  {cfgField('Switch Type', 'ptoSwitchType')}
+                  {cfgField('Switch Location', 'ptoSwitchLocation')}
                 </div>
 
                 <div style={sectionLbl}>Tailgate & Lock Flap</div>
@@ -418,7 +432,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 </div>
 
                 <div style={sectionLbl}>Hydraulics</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Hydraulic System', 'hydraulics')}
                   {cfgField('Hyd Tank Type', 'hydTankType')}
                   {cfgField('Hyd Tank Location', 'hydTankLocation')}
@@ -430,6 +444,18 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Tarp Colour', 'tarpColour')}
                   {cfgField('Paint Colour', 'paintColour')}
                   {cfgField('Coupling', 'coupling')}
+                </div>
+
+                <div style={sectionLbl}>Rear Signage</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Signage Type', 'rearSignageType')}
+                  {cfgField('Notes', 'rearSignageNotes')}
+                </div>
+
+                <div style={sectionLbl}>Reverse Buzzer / Squawker</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Type', 'reverseBuzzerType')}
+                  {cfgField('Location', 'reverseBuzzerLocation')}
                 </div>
 
                 <div style={sectionLbl}>Trailer / Chassis (if applicable)</div>
@@ -567,19 +593,31 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <div className="field"><div className="field-lbl">Hoist Model</div><div className="field-val">{c('hoist') || ''}</div>{!c('hoist') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{c('pivotCentre') || ''}</div>{!c('pivotCentre') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Hoist Controls</div><div className="field-val">{c('controls') || ''}</div>{!c('controls') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Valve Bank</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Pump Type</div><div className="field-blank" /></div>
             </div>
           </div>
         </div>
 
-        {/* PTO Controls */}
+        {/* Valve Bank */}
         <div className="section">
-          <div className="section-hdr">PTO Controls</div>
+          <div className="section-hdr">Valve Bank</div>
+          <div className="section-body">
+            <div className="field-row field-row-3">
+              <div className="field"><div className="field-lbl">Valve Bank Type</div><div className="field-val">{c('valveBankType') || ''}</div>{!c('valveBankType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Valve Bank Location</div><div className="field-val">{c('valveBankLocation') || ''}</div>{!c('valveBankLocation') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Notes</div><div className="field-val">{c('valveBankNotes') || ''}</div>{!c('valveBankNotes') && <div className="field-blank" />}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* PTO Switch Type */}
+        <div className="section">
+          <div className="section-hdr">PTO Switch Type</div>
           <div className="section-body">
             <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">PTO Type / Model</div><div className="field-val">{c('pto') || ''}</div>{!c('pto') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Pump Type</div><div className="field-blank" /></div>
-              <div className="field"><div className="field-lbl">PTO Switch Location</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Switch Type</div><div className="field-val">{c('ptoSwitchType') || ''}</div>{!c('ptoSwitchType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Switch Location</div><div className="field-val">{c('ptoSwitchLocation') || ''}</div>{!c('ptoSwitchLocation') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">PTO Notes</div><div className="field-blank" /></div>
             </div>
           </div>
@@ -632,6 +670,30 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <div className="field"><div className="field-lbl">Brake Coupling</div><div className="field-val">{c('brakeCoupling') || ''}</div>{!c('brakeCoupling') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Suspension</div><div className="field-val">{c('suspension') || ''}</div>{!c('suspension') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">PBS Rating</div><div className="field-val">{c('pbsRating') || ''}</div>{!c('pbsRating') && <div className="field-blank" />}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Rear Signage */}
+        <div className="section">
+          <div className="section-hdr">Rear Signage</div>
+          <div className="section-body">
+            <div className="field-row field-row-3">
+              <div className="field"><div className="field-lbl">Signage Type</div><div className="field-val">{c('rearSignageType') || ''}</div>{!c('rearSignageType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Notes</div><div className="field-val">{c('rearSignageNotes') || ''}</div>{!c('rearSignageNotes') && <div className="field-blank" />}</div>
+              <div className="field" />
+            </div>
+          </div>
+        </div>
+
+        {/* Reverse Buzzer / Squawker */}
+        <div className="section">
+          <div className="section-hdr">Reverse Buzzer / Squawker</div>
+          <div className="section-body">
+            <div className="field-row field-row-3">
+              <div className="field"><div className="field-lbl">Buzzer / Squawker Type</div><div className="field-val">{c('reverseBuzzerType') || ''}</div>{!c('reverseBuzzerType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Location</div><div className="field-val">{c('reverseBuzzerLocation') || ''}</div>{!c('reverseBuzzerLocation') && <div className="field-blank" />}</div>
+              <div className="field" />
             </div>
           </div>
         </div>
