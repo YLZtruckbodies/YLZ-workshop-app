@@ -207,8 +207,9 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
   const buildType = (quote?.buildType || job?.type || '').toLowerCase()
   const isTrailer = buildType.includes('trailer') || buildType.includes('dog') || buildType.includes('semi') || buildType.includes('lead')
 
-  const assemblyDrawings = drawings.filter(d => d.type !== 'step')
+  const assemblyDrawings = drawings.filter(d => d.type !== 'step' && d.category !== 'tube-laser')
   const stepFiles = drawings.filter(d => d.type === 'step')
+  const tubeLaserPdfs = drawings.filter(d => d.type !== 'step' && d.category === 'tube-laser')
 
   const tebsInput: TEBSInput | null = isTrailer && cfg.axleCount && cfg.axleMake && cfg.axleType
     ? { axleCount: cfg.axleCount, axleMake: cfg.axleMake, axleType: cfg.axleType, vin: job?.vin || (cfg.vin as string) || '', jobNumber: job?.num || '' }
@@ -271,13 +272,13 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       label: 'Tube Laser Files',
       icon: '🔬',
       status: stepFiles.length > 0 ? 'ready' : 'missing',
-      detail: stepFiles.length > 0 ? `${stepFiles.length} STEP file${stepFiles.length !== 1 ? 's' : ''} found` : 'No STEP files found',
+      detail: stepFiles.length > 0 ? `${stepFiles.length} STEP + ${tubeLaserPdfs.length} PDF` : 'No STEP files found',
     },
   ]
 
   const readyCount = packItems.filter(i => i.status === 'ready').length
   const applicableCount = packItems.filter(i => i.status !== 'not-applicable').length
-  const hasCriticalMissing = packItems.some(i => i.status === 'missing' && ['work-order', 'bom'].includes(i.key))
+  const hasCriticalMissing = packItems.some(i => i.status === 'missing' && i.key === 'work-order')
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -536,7 +537,7 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
         }}>
           <div style={{ fontSize: 12, color: 'var(--text3)' }}>
             {hasCriticalMissing
-              ? 'Critical items missing — generate work order and BOM before dispatching.'
+              ? 'Critical items missing — generate work order before dispatching.'
               : `${readyCount}/${applicableCount} pack items ready.`}
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -1122,18 +1123,22 @@ YLZ Truck Bodies
       )
     }
 
+    const allTubeLaser = [...stepFiles, ...tubeLaserPdfs]
     return (
       <div>
         <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
-          {stepFiles.length} STEP file{stepFiles.length !== 1 ? 's' : ''} for tube laser cutting
+          {stepFiles.length} STEP + {tubeLaserPdfs.length} PDF file{tubeLaserPdfs.length !== 1 ? 's' : ''} for tube laser cutting
         </div>
-        {stepFiles.map((f) => (
-          <div key={f.id} style={{
+        {allTubeLaser.map((f: any) => (
+          <div key={f.id || f.driveFileId} style={{
             display: 'flex', alignItems: 'center', gap: 12, padding: '6px 10px',
             borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 12,
           }}>
-            <span style={{ fontSize: 16 }}>📦</span>
+            <span style={{ fontSize: 16 }}>{f.type === 'step' ? '📦' : '📄'}</span>
             <span style={{ flex: 1, color: '#fff', fontWeight: 500 }}>{f.fileName}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase' as const }}>
+              {f.type === 'step' ? 'STEP' : 'PDF'}
+            </span>
             <a
               href={`https://drive.google.com/file/d/${f.driveFileId}/view`}
               target="_blank"

@@ -297,10 +297,11 @@ export async function generateJobDrawings(
     for (const f of cadFiles) {
       if (f.mimeType === 'application/vnd.google-apps.folder') continue
       const lower = f.name.toLowerCase()
-      if (lower.endsWith('.pdf') || f.mimeType === 'application/pdf') {
-        addFile(f, 'assembly', categoriseDrawing(f.name))
-      } else if (lower.endsWith('.step') || lower.endsWith('.stp')) {
+      if (lower.endsWith('.step') || lower.endsWith('.stp')) {
         addFile(f, 'step', 'tube-laser')
+      } else if (lower.endsWith('.pdf') || f.mimeType === 'application/pdf') {
+        // PDFs in CAD folder are tube laser drawings (paired with STEP files)
+        addFile(f, 'assembly', 'tube-laser')
       }
     }
   }
