@@ -324,7 +324,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                         alt={part.partName}
                         style={{
                           width: 116, height: 86, objectFit: 'contain', borderRadius: 2,
-                          background: '#fff', border: '2px solid #333',
+                          background: '#fff', border: '1px solid #ccc',
                         }}
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                       />
