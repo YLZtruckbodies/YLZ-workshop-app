@@ -44,35 +44,25 @@ export async function GET(
 
     const inputBuffer = Buffer.from(await imgRes.arrayBuffer())
 
-    // Request even higher res thumbnail for more detail
-    const hiRes2 = hiResUrl.replace(/=s\d+$/, '=s1600')
-    const imgRes2 = await fetch(hiRes2).catch(() => null)
-    const srcBuffer = (imgRes2?.ok)
-      ? Buffer.from(await imgRes2.arrayBuffer())
-      : inputBuffer
-
-    // Process: greyscale → 4x dilate passes → final threshold
-    // Each pass spreads dark pixels outward, making every line much thicker
-    let buf = await sharp(srcBuffer)
+    // Step 1: Greyscale + extreme contrast to make every faint line solid black
+    // linear(a,b) multiplies pixel values: darks get darker, lights stay white
+    let buf = await sharp(inputBuffer)
       .greyscale()
-      .negate()
-      .blur(4.0)
-      .negate()
-      .threshold(235)
+      .linear(3.0, -300)      // massively boost contrast — anything not white becomes very dark
+      .threshold(128)          // snap to pure black/white
       .toBuffer()
 
-    for (let i = 0; i < 3; i++) {
+    // Step 2: Dilate 5 times — each pass thickens all black lines
+    for (let i = 0; i < 5; i++) {
       buf = await sharp(buf)
         .negate()
-        .blur(3.5)
+        .blur(3.0)
         .negate()
-        .threshold(225)
+        .threshold(200)
         .toBuffer()
     }
 
-    // Final output — resize down to thumbnail size for crisp lines
     const bolded = await sharp(buf)
-      .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
       .png()
       .toBuffer()
 
