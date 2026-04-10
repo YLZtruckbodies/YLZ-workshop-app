@@ -44,28 +44,35 @@ export async function GET(
 
     const inputBuffer = Buffer.from(await imgRes.arrayBuffer())
 
-    // Process with sharp: greyscale → triple-dilate → threshold
-    // Three passes of negate→blur→negate makes lines very thick and bold
-    const pass1 = await sharp(inputBuffer)
+    // Request even higher res thumbnail for more detail
+    const hiRes2 = hiResUrl.replace(/=s\d+$/, '=s1600')
+    const imgRes2 = await fetch(hiRes2).catch(() => null)
+    const srcBuffer = (imgRes2?.ok)
+      ? Buffer.from(await imgRes2.arrayBuffer())
+      : inputBuffer
+
+    // Process: greyscale → 4x dilate passes → final threshold
+    // Each pass spreads dark pixels outward, making every line much thicker
+    let buf = await sharp(srcBuffer)
       .greyscale()
       .negate()
-      .blur(3.0)
+      .blur(4.0)
       .negate()
-      .threshold(230)
+      .threshold(235)
       .toBuffer()
 
-    const pass2 = await sharp(pass1)
-      .negate()
-      .blur(3.0)
-      .negate()
-      .threshold(220)
-      .toBuffer()
+    for (let i = 0; i < 3; i++) {
+      buf = await sharp(buf)
+        .negate()
+        .blur(3.5)
+        .negate()
+        .threshold(225)
+        .toBuffer()
+    }
 
-    const bolded = await sharp(pass2)
-      .negate()
-      .blur(2.5)
-      .negate()
-      .threshold(210)
+    // Final output — resize down to thumbnail size for crisp lines
+    const bolded = await sharp(buf)
+      .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
       .png()
       .toBuffer()
 
