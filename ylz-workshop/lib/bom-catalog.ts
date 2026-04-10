@@ -166,8 +166,14 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
   '500-86':  { code: '500-86',  name: 'Single Spool Valve', category: 'Hydraulics' },
   '500-224': { code: '500-224', name: 'Truck and Trailer Spool Valve', category: 'Hydraulics' },
   '500-233': { code: '500-233', name: 'Hydraulic Tank 135L Behind Cab', category: 'Hydraulics' },
-  '500-232': { code: '500-232', name: 'Hydraulic Tank 135L Chassis Mounted', category: 'Hydraulics' },
-  '500-231': { code: '500-231', name: 'Hydraulic Tank 200L Behind Cab', category: 'Hydraulics' },
+  '500-232': { code: '500-232', name: 'TKBRS135S Hydraulic Tank 135L', category: 'Hydraulics' },
+  '500-234': { code: '500-234', name: 'TKBRS150S Hydraulic Tank 150L', category: 'Hydraulics' },
+  '500-235': { code: '500-235', name: 'TKBRS200S Hydraulic Tank 200L', category: 'Hydraulics' },
+  '500-228': { code: '500-228', name: 'TKVER070S Hydraulic Tank 70L Sleeper Box', category: 'Hydraulics' },
+  '500-229': { code: '500-229', name: 'TKVER105S Hydraulic Tank 105L Sleeper Box', category: 'Hydraulics' },
+  '500-230': { code: '500-230', name: 'TKVER130S Hydraulic Tank 130L Sleeper Box', category: 'Hydraulics' },
+  '500-254': { code: '500-254', name: 'TKVER160S Hydraulic Tank 160L Sleeper Box', category: 'Hydraulics' },
+  '500-231': { code: '500-231', name: 'TKVER200S Hydraulic Tank 200L Sleeper Box', category: 'Hydraulics' },
   '500-245': { code: '500-245', name: 'Hydraulic Tank 200L Side Mount', category: 'Hydraulics' },
 
   // ── Controller ─────────────────────────────────────────

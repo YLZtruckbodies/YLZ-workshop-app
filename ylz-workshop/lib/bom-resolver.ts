@@ -41,9 +41,17 @@ function resolvePto(chassisMake: string, chassisModel: string): { part: string; 
 
 // ─── Hoist Lookup: Quote dropdown → MRPeasy Part ─────────────────────────────
 const HOIST_MAP: Record<string, string> = {
-  'binotto 3190':     '500-236',
-  'hyva alpha 092':   '500-83',
-  'hyva alpha 190':   '500-87',
+  'binotto 3190':           '500-236',
+  'hyva alpha 092':         '500-83',
+  'hyva alpha 190':         '500-87',
+  // MFB part number variants (auto-populated from body length lookup)
+  'mfb3126.3.2840':         '500-207',
+  'mfb3126.3.3190':         '500-236',
+  'mfb3128.3.2960':         '500-236',
+  'mfb3128.3.3190':         '500-236',
+  'mfb3126.4.3310':         '500-237',
+  'mfb3126.4.3450':         '500-237',
+  'mfcb3126.4.3805':        '500-47',
   // PH122 Kröger not in MRPeasy — will flag as TBD
 }
 
@@ -219,7 +227,11 @@ export function resolveBoms(
 
     // ── Hydraulic Tank ──
     const tankType = (cfg('hydTankType') || cfg('truckHydTankType')).toLowerCase()
-    if (tankType.includes('135') && tankType.includes('behind')) add('500-233', 'Hydraulic Tank')
+    // Match by TES part number embedded in option (e.g. "TKBRS135S (135L) — 500-232")
+    const tankPartMatch = tankType.match(/500-(\d+)/)
+    if (tankPartMatch) {
+      add(`500-${tankPartMatch[1]}`, 'Hydraulic Tank')
+    } else if (tankType.includes('135') && tankType.includes('behind')) add('500-233', 'Hydraulic Tank')
     else if (tankType.includes('135') && tankType.includes('chassis')) add('500-232', 'Hydraulic Tank')
     else if (tankType.includes('200') && tankType.includes('behind')) add('500-231', 'Hydraulic Tank')
     else if (tankType.includes('200') && tankType.includes('chassis')) add('500-245', 'Hydraulic Tank')
