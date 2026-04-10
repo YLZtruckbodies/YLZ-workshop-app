@@ -167,7 +167,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
         }
       `}</style>
 
-      <div className="wo-container" style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+      <div className="wo-container" style={{ padding: 24, maxWidth: 1200, margin: '0 auto', background: '#fff', color: '#1a1a1a', borderRadius: 8 }}>
         {/* Header */}
         <div className="wo-header" style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -176,14 +176,14 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
           <div>
             <div style={{
               fontFamily: "'League Spartan', sans-serif", fontSize: 24, fontWeight: 800,
-              letterSpacing: 2, textTransform: 'uppercase', color: '#fff',
+              letterSpacing: 2, textTransform: 'uppercase', color: '#1a1a1a',
             }}>
               Work Order — {order.jobNum}
             </div>
-            <div style={{ fontSize: 14, color: 'var(--text3)', marginTop: 4 }}>
+            <div style={{ fontSize: 14, color: '#555', marginTop: 4 }}>
               {order.kitName}{order.customer ? ` — ${order.customer}` : ''}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+            <div style={{ fontSize: 11, color: '#777', marginTop: 4 }}>
               Generated {new Date(order.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}
               {order.approvedAt && ` — Approved ${new Date(order.approvedAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })} by ${order.approvedBy}`}
             </div>
@@ -203,7 +203,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                 rel="noopener noreferrer"
                 style={{
                   fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 4,
-                  border: '1px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.7)',
+                  border: '1px solid #ccc', color: '#555',
                   textDecoration: 'none',
                 }}
               >
@@ -217,7 +217,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                 rel="noopener noreferrer"
                 style={{
                   fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 4,
-                  border: '1px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.7)',
+                  border: '1px solid #ccc', color: '#555',
                   textDecoration: 'none',
                 }}
               >
@@ -230,7 +230,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
               style={{
                 fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700,
                 padding: '6px 16px', borderRadius: 4, cursor: 'pointer',
-                border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: 'rgba(255,255,255,0.7)',
+                border: '1px solid #ccc', background: 'transparent', color: '#555',
                 opacity: regenerating ? 0.5 : 1,
               }}
             >
@@ -241,7 +241,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
               style={{
                 fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700,
                 padding: '6px 16px', borderRadius: 4, cursor: 'pointer',
-                border: '1px solid rgba(255,255,255,0.3)', background: 'transparent', color: 'rgba(255,255,255,0.7)',
+                border: '1px solid #ccc', background: 'transparent', color: '#555',
               }}
             >
               Print / PDF
@@ -265,7 +265,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
               style={{
                 fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700,
                 padding: '6px 16px', borderRadius: 4, cursor: 'pointer',
-                border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text3)',
+                border: '1px solid #ccc', background: 'transparent', color: '#555',
               }}
             >
               ← Back
@@ -287,9 +287,9 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
             {/* Column headers */}
             <div style={{
               display: 'grid', gridTemplateColumns: '84px 1fr 70px 80px 80px 100px',
-              padding: '6px 14px', borderBottom: '1px solid var(--border)',
+              padding: '6px 14px', borderBottom: '1px solid #ddd',
               fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
-              color: 'var(--text3)',
+              color: '#888',
             }}>
               <div></div>
               <div>Part</div>
@@ -307,7 +307,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                 style={{
                   display: 'grid', gridTemplateColumns: '84px 1fr 70px 80px 80px 100px',
                   alignItems: 'center', padding: '10px 14px',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  borderBottom: '1px solid #eee',
                 }}
               >
                 {/* Thumbnail — proxied from Drive, links to DXF */}
@@ -324,16 +324,16 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                         alt={part.partName}
                         style={{
                           width: 72, height: 54, objectFit: 'contain', borderRadius: 2,
-                          background: '#fff', border: '2px solid rgba(255,255,255,0.2)',
+                          background: '#fff', border: '2px solid #333',
                         }}
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                       />
                     </a>
                   ) : (
                     <div style={{
-                      width: 72, height: 54, borderRadius: 2, background: 'var(--dark2)',
+                      width: 72, height: 54, borderRadius: 2, background: '#f0f0f0',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 16, color: 'var(--text3)',
+                      fontSize: 16, color: '#999',
                     }}>
                       📄
                     </div>
@@ -342,10 +342,10 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
 
                 {/* Part name */}
                 <div>
-                  <div className="wo-part-name" style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>
+                  <div className="wo-part-name" style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>
                     {part.partName}
                   </div>
-                  <div className="wo-part-detail" style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>
+                  <div className="wo-part-detail" style={{ fontSize: 10, color: '#777', marginTop: 2 }}>
                     {part.thickness || material}
                   </div>
                 </div>
@@ -361,19 +361,19 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                     disabled={order.status !== 'draft'}
                     style={{
                       width: 48, textAlign: 'center', padding: '4px 6px', borderRadius: 3,
-                      border: '1px solid var(--border)', background: 'var(--dark2)', color: '#fff',
+                      border: '1px solid #ccc', background: '#f5f5f5', color: '#1a1a1a',
                       fontSize: 13, fontWeight: 600,
                     }}
                   />
                 </div>
 
                 {/* Cutting */}
-                <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text3)' }}>
+                <div style={{ textAlign: 'center', fontSize: 12, color: '#555' }}>
                   ☐ Cut
                 </div>
 
                 {/* Folding */}
-                <div style={{ textAlign: 'center', fontSize: 12, color: part.hasFlatPattern ? '#fff' : 'var(--text3)' }}>
+                <div style={{ textAlign: 'center', fontSize: 12, color: part.hasFlatPattern ? '#1a1a1a' : '#bbb' }}>
                   {part.hasFlatPattern ? '☐ Fold' : '—'}
                 </div>
 
@@ -415,9 +415,9 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
 
         {/* Summary */}
         <div style={{
-          marginTop: 16, padding: '12px 14px', background: 'var(--dark2)',
-          borderRadius: 4, border: '1px solid var(--border)',
-          fontSize: 12, color: 'var(--text3)',
+          marginTop: 16, padding: '12px 14px', background: '#f5f5f5',
+          borderRadius: 4, border: '1px solid #ddd',
+          fontSize: 12, color: '#555',
         }}>
           {order.parts.length} part{order.parts.length !== 1 ? 's' : ''} total
           — {Object.keys(groups).length} material group{Object.keys(groups).length !== 1 ? 's' : ''}
