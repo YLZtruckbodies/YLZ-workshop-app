@@ -45,20 +45,19 @@ export async function GET(
     const inputBuffer = Buffer.from(await imgRes.arrayBuffer())
 
     // Step 1: Greyscale + extreme contrast to make every faint line solid black
-    // linear(a,b) multiplies pixel values: darks get darker, lights stay white
     let buf = await sharp(inputBuffer)
       .greyscale()
-      .linear(3.0, -300)      // massively boost contrast — anything not white becomes very dark
-      .threshold(128)          // snap to pure black/white
+      .linear(5.0, -500)      // extreme contrast — anything not pure white becomes black
+      .threshold(100)          // very low threshold catches everything
       .toBuffer()
 
-    // Step 2: Dilate 5 times — each pass thickens all black lines
-    for (let i = 0; i < 5; i++) {
+    // Step 2: Dilate 8 times — each pass thickens all black lines significantly
+    for (let i = 0; i < 8; i++) {
       buf = await sharp(buf)
         .negate()
-        .blur(3.0)
+        .blur(4.0)
         .negate()
-        .threshold(200)
+        .threshold(180)
         .toBuffer()
     }
 
