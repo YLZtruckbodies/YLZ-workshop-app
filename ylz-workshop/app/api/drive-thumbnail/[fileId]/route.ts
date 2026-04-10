@@ -44,22 +44,27 @@ export async function GET(
 
     const inputBuffer = Buffer.from(await imgRes.arrayBuffer())
 
-    // Process with sharp: greyscale → negate → blur (dilate) → negate → threshold
-    // This makes thin lines thick and solid black on white background
+    // Process with sharp: greyscale → double-dilate → threshold
+    // Two passes of negate→blur→negate makes lines much thicker and bolder
     const processed = await sharp(inputBuffer)
       .greyscale()
-      // Negate so lines become white on black
+      // Pass 1: dilate lines
       .negate()
-      // Blur spreads the white lines outward (dilation effect)
-      .blur(1.5)
-      // Negate back so lines are black on white
+      .blur(2.5)
       .negate()
-      // Hard threshold: anything darker than 200 becomes pure black
-      .threshold(200)
+      .threshold(220)
+      .toBuffer()
+
+    // Pass 2: dilate again for extra thickness
+    const bolded = await sharp(processed)
+      .negate()
+      .blur(2.0)
+      .negate()
+      .threshold(210)
       .png()
       .toBuffer()
 
-    return new NextResponse(new Uint8Array(processed), {
+    return new NextResponse(new Uint8Array(bolded), {
       headers: {
         'Content-Type': 'image/png',
         'Cache-Control': 'public, max-age=86400',
