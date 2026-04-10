@@ -44,21 +44,26 @@ export async function GET(
 
     const inputBuffer = Buffer.from(await imgRes.arrayBuffer())
 
-    // Process with sharp: greyscale → double-dilate → threshold
-    // Two passes of negate→blur→negate makes lines much thicker and bolder
-    const processed = await sharp(inputBuffer)
+    // Process with sharp: greyscale → triple-dilate → threshold
+    // Three passes of negate→blur→negate makes lines very thick and bold
+    const pass1 = await sharp(inputBuffer)
       .greyscale()
-      // Pass 1: dilate lines
       .negate()
-      .blur(2.5)
+      .blur(3.0)
+      .negate()
+      .threshold(230)
+      .toBuffer()
+
+    const pass2 = await sharp(pass1)
+      .negate()
+      .blur(3.0)
       .negate()
       .threshold(220)
       .toBuffer()
 
-    // Pass 2: dilate again for extra thickness
-    const bolded = await sharp(processed)
+    const bolded = await sharp(pass2)
       .negate()
-      .blur(2.0)
+      .blur(2.5)
       .negate()
       .threshold(210)
       .png()
