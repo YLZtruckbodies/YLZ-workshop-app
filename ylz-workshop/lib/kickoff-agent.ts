@@ -14,6 +14,7 @@ import { resolveBoms } from './bom-resolver'
 import {
   BODY_KITS_FOLDER_ID,
   findChildFolder,
+  findFolderByPrefix,
   findFileInFolder,
   findJobFolder,
   downloadJsonFile,
@@ -87,14 +88,24 @@ interface LongLeadItem {
 // ── Drive navigation ──────────────────────────────────────────────────────────
 
 export async function findKitFiles(bodyLength: number, bodyHeight: number, isHardox: boolean): Promise<KitFiles | null> {
-  const matFolder = isHardox ? 'Hardox' : 'Aluminium'
+  const prefix = `YLZ${bodyLength}x${bodyHeight}`
   const matCode = isHardox ? 'H' : 'A'
-  const kitName = `YLZ${bodyLength}x${bodyHeight}-${matCode}-WM`
+  const kitName = `${prefix}-${matCode}-WM`
 
-  const matFolderId = await findChildFolder(BODY_KITS_FOLDER_ID, matFolder)
-  if (!matFolderId) return null
+  // Strategy 1: search directly under BODY_KITS_FOLDER_ID by dimension prefix —
+  // covers both Hardox (YLZ4600x1000-H-WM) and Aluminium (YLZ4600x1000-A-WM or YLZ4600x1000-AL)
+  // without requiring a material subfolder to exist.
+  let kitFolderId = await findFolderByPrefix(BODY_KITS_FOLDER_ID, prefix)
 
-  const kitFolderId = await findChildFolder(matFolderId, kitName)
+  // Strategy 2: fall back to the old material subfolder layout (Hardox / Aluminium)
+  if (!kitFolderId) {
+    const matFolder = isHardox ? 'Hardox' : 'Aluminium'
+    const matFolderId = await findChildFolder(BODY_KITS_FOLDER_ID, matFolder)
+    if (matFolderId) {
+      kitFolderId = await findFolderByPrefix(matFolderId, prefix)
+    }
+  }
+
   if (!kitFolderId) return null
 
   const cadFolderId = await findChildFolder(kitFolderId, 'CAD')
@@ -110,16 +121,18 @@ export async function findKitFiles(bodyLength: number, bodyHeight: number, isHar
 
   // Read metadata.json for mass and specs
   let massKg = 0
+  let resolvedKitName = kitName
   try {
     const metaId = await findFileInFolder(cadFolderId, 'metadata.json')
     if (metaId) {
       const meta = await downloadJsonFile(metaId)
       massKg = Math.round((meta.mass_kg as number) ?? 0)
+      if (typeof meta.kit_name === 'string') resolvedKitName = meta.kit_name
     }
   } catch { /* non-fatal */ }
 
   return {
-    kitName,
+    kitName: resolvedKitName,
     cadFolderId,
     drawingsFolderId,
     dxfFolderId: dxfId,
@@ -293,19 +306,26 @@ export async function generateJobDrawings(
     } catch { /* non-fatal — Drive may not have a folder for this job */ }
   }
 
-  async function scanFolderRecursive(folderId: string, depth: number): Promise<void> {
+  async function scanFolderRecursive(folderId: string, depth: number, folderName = ''): Promise<void> {
     if (depth > 3) return // limit recursion depth
     const files = await listFolderFiles(folderId)
+    const inCadFolder = folderName.toUpperCase() === 'CAD'
     for (const f of files) {
       if (f.mimeType === 'application/vnd.google-apps.folder') {
-        await scanFolderRecursive(f.id, depth + 1)
+        await scanFolderRecursive(f.id, depth + 1, f.name)
         continue
       }
       const lower = f.name.toLowerCase()
       if (lower.endsWith('.step') || lower.endsWith('.stp')) {
         addFile(f, 'step', 'tube-laser')
-      } else if ((lower.endsWith('.pdf') || f.mimeType === 'application/pdf') && (lower.includes('drawing') || lower.includes('assy') || lower.includes('assembly') || lower.includes('subframe') || lower.includes('body') || lower.includes('hoist') || lower.includes('tailgate'))) {
-        addFile(f, 'assembly', categoriseDrawing(f.name))
+      } else if (lower.endsWith('.pdf') || f.mimeType === 'application/pdf') {
+        // Always include PDFs from a CAD folder or _BW/_BF body drawings
+        const isBwBf = lower.endsWith('_bw.pdf') || lower.endsWith('_bf.pdf')
+        const hasKeyword = lower.includes('drawing') || lower.includes('assy') || lower.includes('assembly') ||
+          lower.includes('subframe') || lower.includes('body') || lower.includes('hoist') || lower.includes('tailgate')
+        if (inCadFolder || isBwBf || hasKeyword) {
+          addFile(f, 'assembly', categoriseDrawing(f.name))
+        }
       }
     }
   }

@@ -310,9 +310,9 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                   borderBottom: '1px solid rgba(255,255,255,0.06)',
                 }}
               >
-                {/* Thumbnail — proxied from Drive, links to DXF */}
+                {/* Thumbnail — use stored thumbnailUrl (PDF Drive thumb) first, fall back to proxy */}
                 <div>
-                  {(part.dxfFileId || part.pdfFileId) ? (
+                  {(part.thumbnailUrl || part.pdfFileId || part.dxfFileId) ? (
                     <a
                       href={part.dxfFileId ? `https://drive.google.com/file/d/${part.dxfFileId}/view` : undefined}
                       target="_blank"
@@ -320,7 +320,7 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                       style={{ display: 'block', cursor: part.dxfFileId ? 'pointer' : 'default' }}
                     >
                       <img
-                        src={`/api/drive-thumbnail/${part.dxfFileId || part.pdfFileId}`}
+                        src={part.thumbnailUrl || (part.pdfFileId ? `/api/drive-thumbnail/${part.pdfFileId}` : `/api/drive-thumbnail/${part.dxfFileId}`)}
                         alt={part.partName}
                         style={{
                           width: 72, height: 54, objectFit: 'contain', borderRadius: 2,
