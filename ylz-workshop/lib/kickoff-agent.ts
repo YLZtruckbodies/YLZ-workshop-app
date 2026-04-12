@@ -22,7 +22,7 @@ import {
   downloadDriveFile,
 } from './drive'
 import { extractPdfText } from './extractPdfText'
-import { extractMaterialFromText } from './work-order/extract-material'
+import { extractMaterialFromText, extractBomQuantities } from './work-order/extract-material'
 
 // BOM categories that are long lead-time and must be ordered immediately
 const LONG_LEAD_CATEGORIES = new Set(['Truck Tarp', 'Towbar', 'Hoist', 'PTO', 'Running Gear'])
@@ -169,16 +169,36 @@ export async function generateWorkOrder(
 
   if (dxfFiles.length === 0) return
 
-  // Build PDF lookup by stem (case-insensitive)
+  // Build PDF lookup by stem (case-insensitive, strips revision suffix e.g. ".A")
   const pdfByName = new Map<string, typeof pdfFiles[0]>()
   for (const f of pdfFiles) {
-    const stem = f.name.replace(/\.[^.]+$/, '').toUpperCase()
+    const stem = f.name.replace(/\.[^.]+$/, '').replace(/\.[A-Za-z]$/, '').toUpperCase()
     pdfByName.set(stem, f)
   }
 
-  // Match DXF ↔ PDF and extract material from PDFs (batch of 10 at a time)
+  // ── BOM quantity map ────────────────────────────────────────────────────────
+  // Parse _BW.pdf (Body Wall) and _BF.pdf (Body Floor) assembly drawings.
+  // These contain a SolidWorks BOM table listing every cut part with its qty.
+  const qtyMap = new Map<string, number>()
+  const bomFiles = pdfFiles.filter(f => {
+    const lower = f.name.toLowerCase()
+    return lower.endsWith('_bw.pdf') || lower.endsWith('_bf.pdf')
+  })
+  for (const bomFile of bomFiles) {
+    try {
+      const { buffer } = await downloadDriveFile(bomFile.id)
+      const text = await extractPdfText(buffer)
+      const bomQties = extractBomQuantities(text)
+      for (const [pn, qty] of bomQties) {
+        qtyMap.set(pn, (qtyMap.get(pn) || 0) + qty)
+      }
+    } catch { /* non-fatal — qty will default to 1 */ }
+  }
+
+  // ── Match DXF ↔ PDF, extract material, assign BOM quantity ─────────────────
   const parts: Array<{
     partName: string; material: string; thickness: string; hasFlatPattern: boolean
+    quantity: number
     dxfFileId: string; pdfFileId: string; dxfFileName: string; pdfFileName: string
     thumbnailUrl: string; sortOrder: number
   }> = []
@@ -189,7 +209,8 @@ export async function generateWorkOrder(
   for (let i = 0; i < dxfSorted.length; i += BATCH_SIZE) {
     const batch = dxfSorted.slice(i, i + BATCH_SIZE)
     const results = await Promise.all(batch.map(async (dxf, batchIdx) => {
-      const stem = dxf.name.replace(/\.[^.]+$/, '').toUpperCase()
+      // Strip extension and revision suffix for lookup
+      const stem = dxf.name.replace(/\.[^.]+$/, '').replace(/\.[A-Za-z]$/, '').toUpperCase()
       const matchedPdf = pdfByName.get(stem)
 
       let material = 'Unknown'
@@ -207,16 +228,20 @@ export async function generateWorkOrder(
         } catch { /* PDF extraction failed — leave as Unknown */ }
       }
 
+      // BOM quantity: use matched qty if found, fall back to 1
+      const quantity = qtyMap.get(stem) || 1
+
       return {
         partName: dxf.name.replace(/\.[^.]+$/, ''),
         material,
         thickness,
         hasFlatPattern,
+        quantity,
         dxfFileId: dxf.id,
         pdfFileId: matchedPdf?.id || '',
         dxfFileName: dxf.name,
         pdfFileName: matchedPdf?.name || '',
-        thumbnailUrl: (dxf.thumbnailLink || matchedPdf?.thumbnailLink || '').replace(/=s\d+$/, '=s800'),
+        thumbnailUrl: (matchedPdf?.thumbnailLink || dxf.thumbnailLink || '').replace(/=s\d+$/, '=s800'),
         sortOrder: i + batchIdx,
       }
     }))
