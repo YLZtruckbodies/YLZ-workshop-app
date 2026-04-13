@@ -75,15 +75,22 @@ export function extractMaterialFromText(text: string): PdfPartInfo {
     info.hasFlatPattern = true
   }
 
-  // Find material reference
+  // SolidWorks title blocks often split label/value onto separate lines.
+  // Run matching on both the original (multi-line) text and a space-collapsed
+  // version so patterns like "Hardox\n500\n-\n6mm" are still found.
+  const collapsed = text.replace(/\r?\n+/g, ' ').replace(/\s{2,}/g, ' ')
+
+  // Find material reference — try original text first, then collapsed
   let materialFound: string | null = null
-  for (const pattern of MATERIAL_PATTERNS) {
-    const match = text.match(pattern)
-    if (match) {
-      // Pattern with capture group (material: X) uses group 1; others use full match
-      materialFound = (match[1] || match[0]).trim()
-      break
+  for (const searchText of [text, collapsed]) {
+    for (const pattern of MATERIAL_PATTERNS) {
+      const match = searchText.match(pattern)
+      if (match) {
+        materialFound = (match[1] || match[0]).trim()
+        break
+      }
     }
+    if (materialFound) break
   }
 
   if (!materialFound) return info

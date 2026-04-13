@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       if (!dxfId) return NextResponse.json({ error: 'No DXF folder found in Drive' }, { status: 404 })
 
       const kitLabel = `${axles}-Axle ${isAlly ? 'Aluminium' : 'Steel'} Trailer Body`
-      await generateWorkOrder(jobId, job.num, job.customer, kitLabel, dxfId, pdfId)
+      await generateWorkOrder(jobId, job.num, job.customer, kitLabel, dxfId, pdfId, drawingsId)
 
     } else {
       // Truck body path
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `No standard kit found for YLZ${bodyLength}x${bodyHeight}-${matCode}-WM` }, { status: 404 })
       }
 
-      await generateWorkOrder(jobId, job.num, job.customer, kitFiles.kitName, kitFiles.dxfFolderId, kitFiles.pdfFolderId)
+      await generateWorkOrder(jobId, job.num, job.customer, kitFiles.kitName, kitFiles.dxfFolderId, kitFiles.pdfFolderId, kitFiles.drawingsFolderId)
     }
 
     // Return the created work order

@@ -158,29 +158,45 @@ function buildDisplayName(category: string, bomName: string, bodyLength: number,
 export async function generateWorkOrder(
   jobId: string, jobNum: string, customer: string,
   kitName: string, dxfFolderId: string | null, pdfFolderId: string | null,
+  drawingsFolderId?: string | null,
 ): Promise<void> {
   if (!dxfFolderId) return
 
-  // List DXF and PDF files from Drive
-  const [dxfFiles, pdfFiles] = await Promise.all([
+  // List DXF files + PDF files from the PDF subfolder + direct PDFs from Drawings folder
+  const [dxfFiles, pdfSubFiles, drawingsFiles] = await Promise.all([
     listFolderFiles(dxfFolderId),
     pdfFolderId ? listFolderFiles(pdfFolderId) : Promise.resolve([]),
+    drawingsFolderId ? listFolderFiles(drawingsFolderId) : Promise.resolve([]),
   ])
 
   if (dxfFiles.length === 0) return
 
+  // Combine all PDF sources — Drawings folder has _BW/_BF assembly drawings and
+  // sometimes also individual part PDFs that didn't get filed into the PDF subfolder
+  const allPdfFiles = [
+    ...pdfSubFiles,
+    ...drawingsFiles.filter(f =>
+      !f.mimeType.includes('folder') &&
+      (f.mimeType === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'))
+    ),
+  ]
+
   // Build PDF lookup by stem (case-insensitive, strips revision suffix e.g. ".A")
-  const pdfByName = new Map<string, typeof pdfFiles[0]>()
-  for (const f of pdfFiles) {
+  // pdfSubFiles take priority over drawingsFiles if same stem exists in both
+  const pdfByName = new Map<string, typeof allPdfFiles[0]>()
+  for (const f of [...drawingsFiles, ...pdfSubFiles]) {
+    const lower = f.name.toLowerCase()
+    if (!lower.endsWith('.pdf') && f.mimeType !== 'application/pdf') continue
     const stem = f.name.replace(/\.[^.]+$/, '').replace(/\.[A-Za-z]$/, '').toUpperCase()
-    pdfByName.set(stem, f)
+    pdfByName.set(stem, f) // later entries (pdfSubFiles) win
   }
 
   // ── BOM quantity map ────────────────────────────────────────────────────────
   // Parse _BW.pdf (Body Wall) and _BF.pdf (Body Floor) assembly drawings.
-  // These contain a SolidWorks BOM table listing every cut part with its qty.
+  // These live in the Drawings folder (alongside DXF/PDF subfolders), not inside PDF/.
+  // Also check the PDF subfolder in case they're stored there.
   const qtyMap = new Map<string, number>()
-  const bomFiles = pdfFiles.filter(f => {
+  const bomFiles = allPdfFiles.filter(f => {
     const lower = f.name.toLowerCase()
     return lower.endsWith('_bw.pdf') || lower.endsWith('_bf.pdf')
   })
@@ -589,7 +605,7 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
   // ── Generate Cold Form work order ──
   if (kitFiles) {
     try {
-      await generateWorkOrder(jobId, job.num, job.customer, kitFiles.kitName, kitFiles.dxfFolderId, kitFiles.pdfFolderId)
+      await generateWorkOrder(jobId, job.num, job.customer, kitFiles.kitName, kitFiles.dxfFolderId, kitFiles.pdfFolderId, kitFiles.drawingsFolderId)
     } catch (e) {
       console.error('Work order generation failed:', e)
     }
@@ -829,7 +845,7 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
   if (trailerDxfFolderId) {
     const trailerKitLabel = `${axles}-Axle ${isAlly ? 'Aluminium' : 'Steel'} Trailer (${bodyLength}mm)`
     try {
-      await generateWorkOrder(jobId, job.num, job.customer, trailerKitLabel, trailerDxfFolderId, trailerPdfFolderId)
+      await generateWorkOrder(jobId, job.num, job.customer, trailerKitLabel, trailerDxfFolderId, trailerPdfFolderId, trailerDrawingsFolderId)
     } catch (e) {
       console.error('Trailer work order generation failed:', e)
     }
