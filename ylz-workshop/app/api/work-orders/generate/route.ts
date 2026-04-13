@@ -7,6 +7,7 @@ import {
 } from '@/lib/drive'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60 // seconds — allow time for Drive API calls
 
 // Trailer body folder IDs (mirrored from kickoff-agent — those are module-private)
 const TRAILER_BODY_FOLDER_IDS: Record<string, string> = {

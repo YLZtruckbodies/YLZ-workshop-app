@@ -310,19 +310,19 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                   borderBottom: '1px solid rgba(255,255,255,0.06)',
                 }}
               >
-                {/* Thumbnail — always use PDF file ID via drive-thumbnail proxy (PDF files have
-                    Drive thumbnails; DXF files do not). The proxy adds supportsAllDrives so
-                    Shared Drive PDFs work correctly. */}
+                {/* Thumbnail from DXF file — Drive generates shape previews for DXF files.
+                    The proxy endpoint applies sharp processing (greyscale + line thickening)
+                    identical to what the Python work_order_generator.py does with ezdxf. */}
                 <div>
-                  {part.pdfFileId ? (
+                  {part.dxfFileId ? (
                     <a
-                      href={part.dxfFileId ? `https://drive.google.com/file/d/${part.dxfFileId}/view` : `https://drive.google.com/file/d/${part.pdfFileId}/view`}
+                      href={`https://drive.google.com/file/d/${part.dxfFileId}/view`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ display: 'block', cursor: 'pointer' }}
                     >
                       <img
-                        src={`/api/drive-thumbnail/${part.pdfFileId}`}
+                        src={`/api/drive-thumbnail/${part.dxfFileId}`}
                         alt={part.partName}
                         style={{
                           width: 72, height: 54, objectFit: 'contain', borderRadius: 2,
