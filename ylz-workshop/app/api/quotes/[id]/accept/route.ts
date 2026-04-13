@@ -4,8 +4,8 @@ import { deriveBtype } from '@/lib/jobTypes'
 import { resolveBoms } from '@/lib/bom-resolver'
 import { runKickoffAgent, runTrailerKickoffAgent } from '@/lib/kickoff-agent'
 
-// ─── Job number generator — pulls next available from Job Sheet Master ────────
-async function nextJobNumber(): Promise<string> {
+// ─── Job number generator — pulls next N available from Job Sheet Master ─────
+async function nextJobNumbers(count: number): Promise<string[]> {
   const [masters, jobs] = await Promise.all([
     prisma.jobMaster.findMany({ select: { jobNumber: true } }),
     prisma.job.findMany({ select: { num: true } }),
@@ -27,8 +27,12 @@ async function nextJobNumber(): Promise<string> {
     }
   }
 
-  const next = maxNum + 1
-  return `YLZ${next}`
+  return Array.from({ length: count }, (_, i) => `YLZ${maxNum + 1 + i}`)
+}
+
+async function nextJobNumber(): Promise<string> {
+  const [n] = await nextJobNumbers(1)
+  return n
 }
 
 function btypeToJobMasterType(btype: string): string {
@@ -78,6 +82,20 @@ function jobTypeString(quote: { buildType: string; configuration: any }): string
   }
 
   return quote.buildType
+}
+
+// ─── Split type strings for paired truck+trailer jobs ────────────────────────
+function truckOnlyTypeString(quote: { configuration: any }): string {
+  const cfg = quote.configuration as Record<string, any>
+  const mat = cfg.truckConfig?.material || cfg.material || ''
+  return `${mat} Truck Body`.trim()
+}
+
+function trailerOnlyTypeString(quote: { configuration: any }): string {
+  const cfg = quote.configuration as Record<string, any>
+  const mat = cfg.trailerConfig?.material || cfg.truckConfig?.material || cfg.material || ''
+  const tModel = cfg.trailerConfig?.trailerModel || cfg.trailerModel || 'Dog Trailer'
+  return `${mat} ${tModel}`.trim()
 }
 
 // ─── Email helper (graceful — no-ops if RESEND_API_KEY not set) ───────────────
@@ -163,9 +181,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const btype = deriveBtype(typeStr)
   const origin = req.headers.get('origin') || req.headers.get('x-forwarded-host') || 'http://localhost:3000'
 
+  const rawBuildType = (quote.buildType || '').toLowerCase()
+  const isPairedQuote = rawBuildType.includes('truck') && rawBuildType.includes('trailer') && !existingJobNum && !customJobNum
+
   let job: { id: string; num: string }
+  let pairedJob: { id: string; num: string } | null = null
   let isExisting = false
   let partsOrderId: string | null = null
+  let pairedPartsOrderId: string | null = null
 
   if (existingJobNum) {
     // ── Link to existing job ──
@@ -197,6 +220,140 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         },
       })
     }
+  } else if (isPairedQuote) {
+    // ── Create paired truck + trailer jobs (truck gets lower number) ──
+    const cfg = quote.configuration as Record<string, any>
+    const [truckNum, trailerNum] = await nextJobNumbers(2)
+    const chassisMake  = cfg.chassisMake  || cfg.truckConfig?.chassisMake  || ''
+    const chassisModel = cfg.chassisModel || cfg.truckConfig?.chassisModel || ''
+    const makeStr = [chassisMake, chassisModel].filter(Boolean).join(' ')
+
+    const truckTypeStr = truckOnlyTypeString(quote as any)
+    const trailerTypeStr = trailerOnlyTypeString(quote as any)
+    const truckBtype = deriveBtype(truckTypeStr)
+    const trailerBtype = deriveBtype(trailerTypeStr)
+
+    const truckJob = await prisma.job.create({
+      data: {
+        num: truckNum,
+        type: truckTypeStr,
+        customer: quote.customerName,
+        dealer: quote.dealerName,
+        stage: 'Requires Engineering',
+        prodGroup: 'pending',
+        btype: truckBtype,
+        make: makeStr,
+        notes: quote.notes || '',
+        sortOrder: 0,
+      },
+    })
+
+    const trailerJob = await prisma.job.create({
+      data: {
+        num: trailerNum,
+        type: trailerTypeStr,
+        customer: quote.customerName,
+        dealer: quote.dealerName,
+        stage: 'Requires Engineering',
+        prodGroup: 'pending',
+        btype: trailerBtype,
+        make: '',
+        notes: quote.notes || '',
+        sortOrder: 0,
+        pairedId: truckJob.id,
+      },
+    })
+
+    await prisma.job.update({
+      where: { id: truckJob.id },
+      data: { pairedId: trailerJob.id },
+    })
+
+    // BOM resolution — attach to truck job (combined list)
+    try {
+      const quoteConfig = (quote.configuration && typeof quote.configuration === 'object')
+        ? quote.configuration as Record<string, unknown>
+        : {}
+      const bomList = resolveBoms(quote.buildType, quoteConfig)
+      if (bomList.length > 0) {
+        await prisma.job.update({
+          where: { id: truckJob.id },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          data: { bomList: bomList as any },
+        })
+      }
+    } catch (bomErr) {
+      console.error('[BOM Resolver] Failed to resolve BOMs:', bomErr)
+    }
+
+    await prisma.jobMaster.upsert({
+      where: { jobNumber: truckJob.num },
+      update: { jobType: btypeToJobMasterType(truckBtype), customer: quote.customerName },
+      create: { jobNumber: truckJob.num, jobType: btypeToJobMasterType(truckBtype), customer: quote.customerName },
+    })
+    await prisma.jobMaster.upsert({
+      where: { jobNumber: trailerJob.num },
+      update: { jobType: btypeToJobMasterType(trailerBtype), customer: quote.customerName },
+      create: { jobNumber: trailerJob.num, jobType: btypeToJobMasterType(trailerBtype), customer: quote.customerName },
+    })
+
+    await prisma.jobFile.create({
+      data: {
+        jobId: truckJob.id,
+        fileName: `Job Sheets — ${truckJob.num}.pdf`,
+        fileType: 'generated/jsheet',
+        filePath: `jsheet:${truckJob.id}`,
+        fileSize: 0,
+        uploadedBy: 'system',
+      },
+    })
+    await prisma.jobFile.create({
+      data: {
+        jobId: trailerJob.id,
+        fileName: `Job Sheets — ${trailerJob.num}.pdf`,
+        fileType: 'generated/jsheet',
+        filePath: `jsheet:${trailerJob.id}`,
+        fileSize: 0,
+        uploadedBy: 'system',
+      },
+    })
+
+    // Full invoice on truck job only (review later)
+    await prisma.delivery.create({
+      data: {
+        jobId: truckJob.id,
+        jobNum: truckJob.num,
+        customer: quote.customerName,
+        type: `${truckTypeStr} + ${trailerTypeStr}`,
+        invoiceAmount: quote.overridePrice ?? quote.total,
+        paymentStatus: 'pending',
+      },
+    })
+
+    // Two separate parts orders so they can be ordered independently
+    const truckPartsOrder = await prisma.partsOrder.create({
+      data: {
+        jobId: truckJob.id,
+        jobNum: truckJob.num,
+        quoteId: quote.id,
+        status: 'draft',
+        notes: `Auto-created from quote ${quote.quoteNumber} (truck body portion). Review and send to suppliers.\n\nBuild: ${truckTypeStr}\nCustomer: ${quote.customerName}\nPaired with trailer: ${trailerJob.num}`,
+      },
+    })
+    const trailerPartsOrder = await prisma.partsOrder.create({
+      data: {
+        jobId: trailerJob.id,
+        jobNum: trailerJob.num,
+        quoteId: quote.id,
+        status: 'draft',
+        notes: `Auto-created from quote ${quote.quoteNumber} (trailer portion). Review and send to suppliers.\n\nBuild: ${trailerTypeStr}\nCustomer: ${quote.customerName}\nPaired with truck: ${truckJob.num}`,
+      },
+    })
+
+    job = truckJob
+    pairedJob = trailerJob
+    partsOrderId = truckPartsOrder.id
+    pairedPartsOrderId = trailerPartsOrder.id
   } else {
     // ── Create new job ──
     const cfg = quote.configuration as Record<string, any>
@@ -287,7 +444,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // ── Kick-off agent (non-fatal) ──
   if (!isExisting) {
     const bt = (quote.buildType || '').toLowerCase()
-    if (bt === 'trailer') {
+    if (isPairedQuote && pairedJob) {
+      runKickoffAgent(job.id, params.id).catch(err =>
+        console.error('[Kickoff Agent] Failed (truck):', err)
+      )
+      runTrailerKickoffAgent(pairedJob.id, params.id).catch(err =>
+        console.error('[Trailer Kickoff Agent] Failed:', err)
+      )
+    } else if (bt === 'trailer') {
       runTrailerKickoffAgent(job.id, params.id).catch(err =>
         console.error('[Trailer Kickoff Agent] Failed:', err)
       )
@@ -299,9 +463,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   // ── Send workshop email ──
+  const displayJobNumber = pairedJob ? `${job.num} (truck) + ${pairedJob.num} (trailer)` : job.num
   const emailResult = await sendWorkshopEmail({
     quoteNumber: quote.quoteNumber,
-    jobNumber: job.num,
+    jobNumber: displayJobNumber,
     customer: quote.customerName,
     buildType: typeStr,
     quoteId: quote.id,
@@ -326,7 +491,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           <div style="border:1px solid #eee;border-top:none;padding:24px;border-radius:0 0 6px 6px">
             <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
               <tr><td style="padding:8px 0;color:#666;font-size:13px;width:160px">Quote</td><td style="font-weight:700;font-size:15px">${quote.quoteNumber}</td></tr>
-              <tr><td style="padding:8px 0;color:#666;font-size:13px">Job Number</td><td style="font-weight:700;font-size:15px;color:#E8681A">${job.num}${isExisting ? ' (existing)' : ''}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:13px">Job Number</td><td style="font-weight:700;font-size:15px;color:#E8681A">${pairedJob ? `${job.num} (truck) + ${pairedJob.num} (trailer)` : `${job.num}${isExisting ? ' (existing)' : ''}`}</td></tr>
               <tr><td style="padding:8px 0;color:#666;font-size:13px">Customer</td><td style="font-weight:600">${quote.customerName}</td></tr>
               <tr><td style="padding:8px 0;color:#666;font-size:13px">Build Type</td><td style="font-weight:600">${typeStr}</td></tr>
               <tr><td style="padding:8px 0;color:#666;font-size:13px">Prepared By</td><td>${quote.preparedBy}</td></tr>
@@ -338,7 +503,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       await resend.emails.send({
         from: fromEmail,
         to: [peteEmail, nathanEmail],
-        subject: `Quote Accepted: ${quote.quoteNumber} — ${quote.customerName} → ${job.num}`,
+        subject: `Quote Accepted: ${quote.quoteNumber} — ${quote.customerName} → ${pairedJob ? `${job.num} + ${pairedJob.num}` : job.num}`,
         html,
       })
     } catch {
@@ -349,8 +514,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json({
     ok: true,
     job: { id: job.id, num: job.num },
+    pairedJob: pairedJob ? { id: pairedJob.id, num: pairedJob.num } : null,
     isExisting,
     partsOrderId,
+    pairedPartsOrderId,
     email: emailResult,
   }, { status: 200 })
 }
