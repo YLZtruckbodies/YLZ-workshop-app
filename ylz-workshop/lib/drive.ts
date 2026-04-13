@@ -388,6 +388,26 @@ export async function browseDriveFolder(folderId: string): Promise<BrowseItem[]>
 // ── Kit Lookup Helpers ────────────────────────────────────────────────────────
 
 /**
+ * Find a child folder whose name starts with the given prefix (case-insensitive).
+ * Used to locate body kit folders like "YLZ4600x1000-H-WM" or "YLZ4600x1000-AL"
+ * without needing to know the exact suffix.
+ */
+export async function findFolderByPrefix(parentId: string, prefix: string): Promise<string | null> {
+  const drive = await getDriveClient()
+  const safe = prefix.replace(/'/g, "\\'")
+  const res = await drive.files.list({
+    q: `'${parentId}' in parents and name contains '${safe}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+    fields: 'files(id, name)',
+    pageSize: 20,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
+  })
+  const upper = prefix.toUpperCase()
+  const match = (res.data.files || []).find(f => f.name!.toUpperCase().startsWith(upper))
+  return match?.id ?? null
+}
+
+/**
  * Find a child folder by exact name inside a parent folder.
  */
 export async function findChildFolder(parentId: string, name: string): Promise<string | null> {

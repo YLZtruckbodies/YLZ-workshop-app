@@ -14,6 +14,7 @@ import { resolveBoms } from './bom-resolver'
 import {
   BODY_KITS_FOLDER_ID,
   findChildFolder,
+  findFolderByPrefix,
   findFileInFolder,
   findJobFolder,
   downloadJsonFile,
@@ -21,7 +22,7 @@ import {
   downloadDriveFile,
 } from './drive'
 import { extractPdfText } from './extractPdfText'
-import { extractMaterialFromText } from './work-order/extract-material'
+import { extractBomEntries, BomEntry } from './work-order/extract-material'
 
 // BOM categories that are long lead-time and must be ordered immediately
 const LONG_LEAD_CATEGORIES = new Set(['Truck Tarp', 'Towbar', 'Hoist', 'PTO', 'Running Gear'])
@@ -87,14 +88,24 @@ interface LongLeadItem {
 // ── Drive navigation ──────────────────────────────────────────────────────────
 
 export async function findKitFiles(bodyLength: number, bodyHeight: number, isHardox: boolean): Promise<KitFiles | null> {
-  const matFolder = isHardox ? 'Hardox' : 'Aluminium'
+  const prefix = `YLZ${bodyLength}x${bodyHeight}`
   const matCode = isHardox ? 'H' : 'A'
-  const kitName = `YLZ${bodyLength}x${bodyHeight}-${matCode}-WM`
+  const kitName = `${prefix}-${matCode}-WM`
 
-  const matFolderId = await findChildFolder(BODY_KITS_FOLDER_ID, matFolder)
-  if (!matFolderId) return null
+  // Strategy 1: search directly under BODY_KITS_FOLDER_ID by dimension prefix —
+  // covers both Hardox (YLZ4600x1000-H-WM) and Aluminium (YLZ4600x1000-A-WM or YLZ4600x1000-AL)
+  // without requiring a material subfolder to exist.
+  let kitFolderId = await findFolderByPrefix(BODY_KITS_FOLDER_ID, prefix)
 
-  const kitFolderId = await findChildFolder(matFolderId, kitName)
+  // Strategy 2: fall back to the old material subfolder layout (Hardox / Aluminium)
+  if (!kitFolderId) {
+    const matFolder = isHardox ? 'Hardox' : 'Aluminium'
+    const matFolderId = await findChildFolder(BODY_KITS_FOLDER_ID, matFolder)
+    if (matFolderId) {
+      kitFolderId = await findFolderByPrefix(matFolderId, prefix)
+    }
+  }
+
   if (!kitFolderId) return null
 
   const cadFolderId = await findChildFolder(kitFolderId, 'CAD')
@@ -110,16 +121,18 @@ export async function findKitFiles(bodyLength: number, bodyHeight: number, isHar
 
   // Read metadata.json for mass and specs
   let massKg = 0
+  let resolvedKitName = kitName
   try {
     const metaId = await findFileInFolder(cadFolderId, 'metadata.json')
     if (metaId) {
       const meta = await downloadJsonFile(metaId)
       massKg = Math.round((meta.mass_kg as number) ?? 0)
+      if (typeof meta.kit_name === 'string') resolvedKitName = meta.kit_name
     }
   } catch { /* non-fatal */ }
 
   return {
-    kitName,
+    kitName: resolvedKitName,
     cadFolderId,
     drawingsFolderId,
     dxfFolderId: dxfId,
@@ -145,102 +158,101 @@ function buildDisplayName(category: string, bomName: string, bodyLength: number,
 export async function generateWorkOrder(
   jobId: string, jobNum: string, customer: string,
   kitName: string, dxfFolderId: string | null, pdfFolderId: string | null,
+  drawingsFolderId?: string | null,
 ): Promise<void> {
   if (!dxfFolderId) return
 
-  // List DXF and PDF files from Drive
-  const [dxfFiles, pdfFiles] = await Promise.all([
+  // ── 1. List files from Drive (3 parallel calls) ───────────────────────────
+  const [dxfFiles, pdfSubFiles, drawingsFiles] = await Promise.all([
     listFolderFiles(dxfFolderId),
     pdfFolderId ? listFolderFiles(pdfFolderId) : Promise.resolve([]),
+    drawingsFolderId ? listFolderFiles(drawingsFolderId) : Promise.resolve([]),
   ])
 
   if (dxfFiles.length === 0) return
 
-  // Build PDF lookup by stem (case-insensitive)
-  // Also index by base stem (stripping _BW/_BF suffix) so DXF files can find their PDF variants
-  const pdfByName = new Map<string, typeof pdfFiles[0]>()
-  const pdfByBaseStem = new Map<string, typeof pdfFiles[0][]>()
-  for (const f of pdfFiles) {
-    const stem = f.name.replace(/\.[^.]+$/, '').toUpperCase()
+  // ── 2. Build PDF lookup by stem (for file links, NOT thumbnails) ──────────
+  // pdfSubFiles entries win over drawingsFiles for the same stem.
+  const pdfByName = new Map<string, typeof pdfSubFiles[0]>()
+  for (const f of [...drawingsFiles, ...pdfSubFiles]) {
+    const lower = f.name.toLowerCase()
+    if (!lower.endsWith('.pdf') && f.mimeType !== 'application/pdf') continue
+    const stem = f.name.replace(/\.[^.]+$/, '').replace(/\.[A-Za-z]$/, '').toUpperCase()
     pdfByName.set(stem, f)
-    // Strip _BW/_BF suffix to get base stem for variant matching
-    const baseStem = stem.replace(/_(BW|BF)$/i, '')
-    if (!pdfByBaseStem.has(baseStem)) pdfByBaseStem.set(baseStem, [])
-    pdfByBaseStem.get(baseStem)!.push(f)
   }
 
-  // Match DXF ↔ PDF and extract material + quantity from PDFs (batch of 10 at a time)
-  const parts: Array<{
-    partName: string; material: string; thickness: string; hasFlatPattern: boolean
-    quantity: number
-    dxfFileId: string; pdfFileId: string; dxfFileName: string; pdfFileName: string
-    thumbnailUrl: string; sortOrder: number
-  }> = []
+  // ── 3. Find assembly BOM PDFs and extract qty + material ─────────────────
+  // Scans every PDF in the Drawings folder (not in a subfolder) because the
+  // assembly drawings (_BW / _BF) live there, not inside PDF/.
+  // We detect BOM files by name keywords; if none match by name we try all
+  // PDFs in drawingsFiles.  Only 1–2 downloads needed — much faster than
+  // downloading every individual part PDF.
+  const allFiles = [...drawingsFiles, ...pdfSubFiles]
+  const bomCandidates = allFiles.filter(f => {
+    const lower = f.name.toLowerCase()
+    return lower.endsWith('.pdf') || f.mimeType === 'application/pdf'
+  })
 
-  const dxfSorted = [...dxfFiles].sort((a, b) => a.name.localeCompare(b.name))
-  const BATCH_SIZE = 10
+  // Prefer files with _BW / _BF in the name; fall back to all Drawings PDFs
+  const namedBomFiles = bomCandidates.filter(f => {
+    const lower = f.name.toLowerCase()
+    return lower.includes('_bw') || lower.includes('_bf') ||
+           lower.includes('body wall') || lower.includes('body floor') ||
+           lower.includes(' bw') || lower.includes(' bf')
+  })
+  const bomFiles = namedBomFiles.length > 0 ? namedBomFiles : bomCandidates.slice(0, 4)
 
-  for (let i = 0; i < dxfSorted.length; i += BATCH_SIZE) {
-    const batch = dxfSorted.slice(i, i + BATCH_SIZE)
-    const results = await Promise.all(batch.map(async (dxf, batchIdx) => {
-      const stem = dxf.name.replace(/\.[^.]+$/, '').toUpperCase()
-      // Try exact match first, then fall back to _BW/_BF variants
-      let matchedPdf = pdfByName.get(stem)
-      const variantPdfs = pdfByBaseStem.get(stem) || []  // PDFs whose base stem matches this DXF
-
-      let material = 'Unknown'
-      let thickness = ''
-      let hasFlatPattern = false
-      let quantity = 1
-
-      // Extract info from exact-match PDF or variant PDFs (_BW/_BF)
-      const pdfsToProcess = matchedPdf ? [matchedPdf] : variantPdfs
-      if (!matchedPdf && variantPdfs.length > 0) {
-        matchedPdf = variantPdfs[0]  // use first variant as the linked PDF
+  const bomMap = new Map<string, BomEntry>()
+  await Promise.all(bomFiles.map(async (bomFile) => {
+    try {
+      const { buffer } = await downloadDriveFile(bomFile.id)
+      const text = await extractPdfText(buffer)
+      const entries = extractBomEntries(text)
+      for (const [pn, entry] of entries) {
+        const existing = bomMap.get(pn)
+        if (!existing) {
+          bomMap.set(pn, entry)
+        } else {
+          // Part appears in both BW and BF — sum quantities, keep material
+          bomMap.set(pn, { ...existing, qty: existing.qty + entry.qty })
+        }
       }
+    } catch { /* non-fatal */ }
+  }))
 
-      for (const pdf of pdfsToProcess) {
-        try {
-          const { buffer } = await downloadDriveFile(pdf.id)
-          const text = await extractPdfText(buffer)
-          const info = extractMaterialFromText(text)
-          // Take material from first PDF that has it
-          if (material === 'Unknown' && info.material !== 'Unknown') {
-            material = info.material
-            thickness = info.thickness
-          }
-          if (info.hasFlatPattern) hasFlatPattern = true
-          // Take quantity if found (prefer higher value — _BF and _BW should agree)
-          if (info.quantity > 0) quantity = info.quantity
-        } catch { /* PDF extraction failed — skip */ }
-      }
+  // ── 4. Build parts list ───────────────────────────────────────────────────
+  const parts = dxfFiles
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((dxf, idx) => {
+      const stem = dxf.name.replace(/\.[^.]+$/, '').replace(/\.[A-Za-z]$/, '').toUpperCase()
+      const matchedPdf = pdfByName.get(stem)
+      const bom = bomMap.get(stem)
 
       return {
         partName: dxf.name.replace(/\.[^.]+$/, ''),
-        material,
-        thickness,
-        hasFlatPattern,
-        quantity,
+        material: bom?.material ?? 'Unknown',
+        thickness: bom?.thickness ?? '',
+        hasFlatPattern: bom?.hasFlatPattern ?? false,
+        quantity: (bom && bom.qty > 0) ? bom.qty : 1,
         dxfFileId: dxf.id,
-        pdfFileId: matchedPdf?.id || '',
+        pdfFileId: matchedPdf?.id ?? '',
         dxfFileName: dxf.name,
-        pdfFileName: matchedPdf?.name || '',
-        thumbnailUrl: (dxf.thumbnailLink || matchedPdf?.thumbnailLink || '').replace(/=s\d+$/, '=s800'),
-        sortOrder: i + batchIdx,
+        pdfFileName: matchedPdf?.name ?? '',
+        // Leave thumbnailUrl empty — the display page calls /api/drive-thumbnail/{dxfFileId}
+        // which gets a fresh Drive-generated thumbnail for the DXF file on demand.
+        thumbnailUrl: '',
+        sortOrder: idx,
       }
-    }))
-    parts.push(...results)
-  }
+    })
 
-  // Create work order with all parts in one transaction
   await prisma.workOrder.create({
     data: {
       jobId,
       jobNum,
       kitName,
       customer,
-      dxfFolderId: dxfFolderId || '',
-      pdfFolderId: pdfFolderId || '',
+      dxfFolderId: dxfFolderId ?? '',
+      pdfFolderId: pdfFolderId ?? '',
       parts: { create: parts },
     },
   })
@@ -297,11 +309,10 @@ export async function generateJobDrawings(
     for (const f of cadFiles) {
       if (f.mimeType === 'application/vnd.google-apps.folder') continue
       const lower = f.name.toLowerCase()
-      if (lower.endsWith('.step') || lower.endsWith('.stp')) {
+      if (lower.endsWith('.pdf') || f.mimeType === 'application/pdf') {
+        addFile(f, 'assembly', categoriseDrawing(f.name))
+      } else if (lower.endsWith('.step') || lower.endsWith('.stp')) {
         addFile(f, 'step', 'tube-laser')
-      } else if (lower.endsWith('.pdf') || f.mimeType === 'application/pdf') {
-        // PDFs in CAD folder are tube laser drawings (paired with STEP files)
-        addFile(f, 'assembly', 'tube-laser')
       }
     }
   }
@@ -316,19 +327,26 @@ export async function generateJobDrawings(
     } catch { /* non-fatal — Drive may not have a folder for this job */ }
   }
 
-  async function scanFolderRecursive(folderId: string, depth: number): Promise<void> {
+  async function scanFolderRecursive(folderId: string, depth: number, folderName = ''): Promise<void> {
     if (depth > 3) return // limit recursion depth
     const files = await listFolderFiles(folderId)
+    const inCadFolder = folderName.toUpperCase() === 'CAD'
     for (const f of files) {
       if (f.mimeType === 'application/vnd.google-apps.folder') {
-        await scanFolderRecursive(f.id, depth + 1)
+        await scanFolderRecursive(f.id, depth + 1, f.name)
         continue
       }
       const lower = f.name.toLowerCase()
       if (lower.endsWith('.step') || lower.endsWith('.stp')) {
         addFile(f, 'step', 'tube-laser')
-      } else if ((lower.endsWith('.pdf') || f.mimeType === 'application/pdf') && (lower.includes('drawing') || lower.includes('assy') || lower.includes('assembly') || lower.includes('subframe') || lower.includes('body') || lower.includes('hoist') || lower.includes('tailgate'))) {
-        addFile(f, 'assembly', categoriseDrawing(f.name))
+      } else if (lower.endsWith('.pdf') || f.mimeType === 'application/pdf') {
+        // Always include PDFs from a CAD folder or _BW/_BF body drawings
+        const isBwBf = lower.endsWith('_bw.pdf') || lower.endsWith('_bf.pdf')
+        const hasKeyword = lower.includes('drawing') || lower.includes('assy') || lower.includes('assembly') ||
+          lower.includes('subframe') || lower.includes('body') || lower.includes('hoist') || lower.includes('tailgate')
+        if (inCadFolder || isBwBf || hasKeyword) {
+          addFile(f, 'assembly', categoriseDrawing(f.name))
+        }
       }
     }
   }
@@ -567,7 +585,7 @@ export async function runKickoffAgent(jobId: string, quoteId: string): Promise<v
   // ── Generate Cold Form work order ──
   if (kitFiles) {
     try {
-      await generateWorkOrder(jobId, job.num, job.customer, kitFiles.kitName, kitFiles.dxfFolderId, kitFiles.pdfFolderId)
+      await generateWorkOrder(jobId, job.num, job.customer, kitFiles.kitName, kitFiles.dxfFolderId, kitFiles.pdfFolderId, kitFiles.drawingsFolderId)
     } catch (e) {
       console.error('Work order generation failed:', e)
     }
@@ -807,7 +825,7 @@ export async function runTrailerKickoffAgent(jobId: string, quoteId: string): Pr
   if (trailerDxfFolderId) {
     const trailerKitLabel = `${axles}-Axle ${isAlly ? 'Aluminium' : 'Steel'} Trailer (${bodyLength}mm)`
     try {
-      await generateWorkOrder(jobId, job.num, job.customer, trailerKitLabel, trailerDxfFolderId, trailerPdfFolderId)
+      await generateWorkOrder(jobId, job.num, job.customer, trailerKitLabel, trailerDxfFolderId, trailerPdfFolderId, trailerDrawingsFolderId)
     } catch (e) {
       console.error('Trailer work order generation failed:', e)
     }

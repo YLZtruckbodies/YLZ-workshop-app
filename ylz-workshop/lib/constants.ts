@@ -1,4 +1,5 @@
 export const STAGE_COLORS: Record<string, string> = {
+  'Requires Sales': '#eab308',
   'Requires Engineering': '#f97316',
   'Ready to Start': '#06b6d4',
   Fab: '#3b9de8',
@@ -17,6 +18,7 @@ export const BTYPE_LABELS: Record<string, string> = {
 }
 
 export const STAGES = [
+  'Requires Sales',
   'Requires Engineering',
   'Ready to Start',
   'Fab',
