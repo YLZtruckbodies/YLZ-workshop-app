@@ -1,4 +1,4 @@
-export const STAGES = ['Requires Engineering', 'Ready to Start', 'Fab', 'Paint', 'Fitout', 'QC', 'Dispatch'] as const
+export const STAGES = ['Requires Sales', 'Requires Engineering', 'Ready to Start', 'Fab', 'Paint', 'Fitout', 'QC', 'Dispatch'] as const
 export type Stage = (typeof STAGES)[number]
 
 export function nextStage(current: string): string | null {
@@ -29,6 +29,8 @@ export function deriveBtype(type: string): string {
 
 export function stageToBuildProgress(stage: string): { label: string; color: string } {
   switch (stage) {
+    case 'Requires Sales':
+      return { label: 'Requires Sales', color: '#eab308' }
     case 'Requires Engineering':
       return { label: 'Requires Engineering', color: '#f97316' }
     case 'Ready to Start':
