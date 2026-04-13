@@ -310,17 +310,19 @@ export default function WorkOrderPage({ params }: { params: { jobId: string } })
                   borderBottom: '1px solid rgba(255,255,255,0.06)',
                 }}
               >
-                {/* Thumbnail — use stored thumbnailUrl (PDF Drive thumb) first, fall back to proxy */}
+                {/* Thumbnail — always use PDF file ID via drive-thumbnail proxy (PDF files have
+                    Drive thumbnails; DXF files do not). The proxy adds supportsAllDrives so
+                    Shared Drive PDFs work correctly. */}
                 <div>
-                  {(part.thumbnailUrl || part.pdfFileId || part.dxfFileId) ? (
+                  {part.pdfFileId ? (
                     <a
-                      href={part.dxfFileId ? `https://drive.google.com/file/d/${part.dxfFileId}/view` : undefined}
+                      href={part.dxfFileId ? `https://drive.google.com/file/d/${part.dxfFileId}/view` : `https://drive.google.com/file/d/${part.pdfFileId}/view`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ display: 'block', cursor: part.dxfFileId ? 'pointer' : 'default' }}
+                      style={{ display: 'block', cursor: 'pointer' }}
                     >
                       <img
-                        src={part.thumbnailUrl || (part.pdfFileId ? `/api/drive-thumbnail/${part.pdfFileId}` : `/api/drive-thumbnail/${part.dxfFileId}`)}
+                        src={`/api/drive-thumbnail/${part.pdfFileId}`}
                         alt={part.partName}
                         style={{
                           width: 72, height: 54, objectFit: 'contain', borderRadius: 2,

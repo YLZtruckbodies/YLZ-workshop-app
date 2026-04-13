@@ -22,10 +22,11 @@ export async function GET(
   try {
     const drive = await getDriveClient()
 
-    // Get fresh thumbnail link from Drive API
+    // Get fresh thumbnail link from Drive API (supportsAllDrives for Shared Drive files)
     const file = await drive.files.get({
       fileId: params.fileId,
       fields: 'thumbnailLink',
+      supportsAllDrives: true,
     })
 
     const thumbUrl = file.data.thumbnailLink
