@@ -22,7 +22,7 @@ import {
   downloadDriveFile,
 } from './drive'
 import { extractPdfText } from './extractPdfText'
-import { extractBomEntries, BomEntry } from './work-order/extract-material'
+import { extractMaterialFromText } from './work-order/extract-material'
 
 // BOM categories that are long lead-time and must be ordered immediately
 const LONG_LEAD_CATEGORIES = new Set(['Truck Tarp', 'Towbar', 'Hoist', 'PTO', 'Running Gear'])
@@ -162,7 +162,7 @@ export async function generateWorkOrder(
 ): Promise<void> {
   if (!dxfFolderId) return
 
-  // ── 1. List files from Drive (3 parallel calls) ───────────────────────────
+  // ── 1. List DXF and PDF files in parallel ────────────────────────────────
   const [dxfFiles, pdfSubFiles, drawingsFiles] = await Promise.all([
     listFolderFiles(dxfFolderId),
     pdfFolderId ? listFolderFiles(pdfFolderId) : Promise.resolve([]),
@@ -171,8 +171,8 @@ export async function generateWorkOrder(
 
   if (dxfFiles.length === 0) return
 
-  // ── 2. Build PDF lookup by stem (for file links, NOT thumbnails) ──────────
-  // pdfSubFiles entries win over drawingsFiles for the same stem.
+  // ── 2. Build PDF lookup by stem ───────────────────────────────────────────
+  // pdfSubFiles (PDF/ subfolder) wins over drawingsFiles for same stem.
   const pdfByName = new Map<string, typeof pdfSubFiles[0]>()
   for (const f of [...drawingsFiles, ...pdfSubFiles]) {
     const lower = f.name.toLowerCase()
@@ -181,65 +181,44 @@ export async function generateWorkOrder(
     pdfByName.set(stem, f)
   }
 
-  // ── 3. Find assembly BOM PDFs and extract qty + material ─────────────────
-  // Scans every PDF in the Drawings folder (not in a subfolder) because the
-  // assembly drawings (_BW / _BF) live there, not inside PDF/.
-  // We detect BOM files by name keywords; if none match by name we try all
-  // PDFs in drawingsFiles.  Only 1–2 downloads needed — much faster than
-  // downloading every individual part PDF.
-  const allFiles = [...drawingsFiles, ...pdfSubFiles]
-  const bomCandidates = allFiles.filter(f => {
-    const lower = f.name.toLowerCase()
-    return lower.endsWith('.pdf') || f.mimeType === 'application/pdf'
-  })
+  // ── 3. Download each individual part PDF and extract material ─────────────
+  // Matches the Python work_order_generator.py approach: for each DXF file,
+  // find the matching PDF (same filename stem), download it, and extract
+  // material from the SolidWorks title block using pdfplumber-equivalent
+  // position-sorted text extraction. Quantity defaults to 1 (same as Python).
+  const sortedDxf = [...dxfFiles].sort((a, b) => a.name.localeCompare(b.name))
 
-  // Prefer files with _BW / _BF in the name; fall back to all Drawings PDFs
-  const namedBomFiles = bomCandidates.filter(f => {
-    const lower = f.name.toLowerCase()
-    return lower.includes('_bw') || lower.includes('_bf') ||
-           lower.includes('body wall') || lower.includes('body floor') ||
-           lower.includes(' bw') || lower.includes(' bf')
-  })
-  const bomFiles = namedBomFiles.length > 0 ? namedBomFiles : bomCandidates.slice(0, 4)
+  interface PartInfo { material: string; thickness: string; hasFlatPattern: boolean }
+  const materialMap = new Map<string, PartInfo>()
 
-  const bomMap = new Map<string, BomEntry>()
-  await Promise.all(bomFiles.map(async (bomFile) => {
+  await Promise.all(sortedDxf.map(async (dxf) => {
+    const stem = dxf.name.replace(/\.[^.]+$/, '').replace(/\.[A-Za-z]$/, '').toUpperCase()
+    const pdf = pdfByName.get(stem)
+    if (!pdf) return
     try {
-      const { buffer } = await downloadDriveFile(bomFile.id)
+      const { buffer } = await downloadDriveFile(pdf.id)
       const text = await extractPdfText(buffer)
-      const entries = extractBomEntries(text)
-      for (const [pn, entry] of entries) {
-        const existing = bomMap.get(pn)
-        if (!existing) {
-          bomMap.set(pn, entry)
-        } else {
-          // Part appears in both BW and BF — sum quantities, keep material
-          bomMap.set(pn, { ...existing, qty: existing.qty + entry.qty })
-        }
-      }
-    } catch { /* non-fatal */ }
+      const info = extractMaterialFromText(text)
+      materialMap.set(stem, info)
+    } catch { /* non-fatal — part will show Unknown */ }
   }))
 
   // ── 4. Build parts list ───────────────────────────────────────────────────
-  const parts = dxfFiles
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((dxf, idx) => {
+  const parts = sortedDxf.map((dxf, idx) => {
       const stem = dxf.name.replace(/\.[^.]+$/, '').replace(/\.[A-Za-z]$/, '').toUpperCase()
       const matchedPdf = pdfByName.get(stem)
-      const bom = bomMap.get(stem)
+      const info = materialMap.get(stem)
 
       return {
         partName: dxf.name.replace(/\.[^.]+$/, ''),
-        material: bom?.material ?? 'Unknown',
-        thickness: bom?.thickness ?? '',
-        hasFlatPattern: bom?.hasFlatPattern ?? false,
-        quantity: (bom && bom.qty > 0) ? bom.qty : 1,
+        material: info?.material ?? 'Unknown',
+        thickness: info?.thickness ?? '',
+        hasFlatPattern: info?.hasFlatPattern ?? false,
+        quantity: 1,
         dxfFileId: dxf.id,
         pdfFileId: matchedPdf?.id ?? '',
         dxfFileName: dxf.name,
         pdfFileName: matchedPdf?.name ?? '',
-        // Leave thumbnailUrl empty — the display page calls /api/drive-thumbnail/{dxfFileId}
-        // which gets a fresh Drive-generated thumbnail for the DXF file on demand.
         thumbnailUrl: '',
         sortOrder: idx,
       }
