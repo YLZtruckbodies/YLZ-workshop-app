@@ -50,10 +50,59 @@ export function stageToBuildProgress(stage: string): { label: string; color: str
   }
 }
 
+/**
+ * Auto-derive prod group from job stage.
+ * - Requires Engineering → goahead (Jobs in Engineering)
+ * - Ready to Start through QC → issued (Jobs in Production)
+ * - Dispatch → finished
+ */
+export function deriveProdGroup(stage: string): string {
+  switch (stage) {
+    case 'Requires Sales':
+      return 'pending'
+    case 'Requires Engineering':
+      return 'goahead'
+    case 'Ready to Start':
+    case 'Fab':
+    case 'Paint':
+    case 'Fitout':
+    case 'QC':
+      return 'issued'
+    case 'Dispatch':
+      return 'finished'
+    default:
+      return 'issued'
+  }
+}
+
+/**
+ * Map stage to the section/team that should be notified.
+ */
+export function stageToNotifyTarget(stage: string): { role: string; section?: string } | null {
+  switch (stage) {
+    case 'Requires Sales':
+      return { role: 'sales' }  // Pete
+    case 'Ready to Start':
+      return { role: 'scheduler' }  // Keith
+    case 'Fab':
+      return { role: 'supervisor', section: 'fab' }
+    case 'Paint':
+      return { role: 'supervisor', section: 'paint' }
+    case 'Fitout':
+      return { role: 'supervisor', section: 'fitout' }
+    case 'QC':
+      return { role: 'supervisor', section: 'qc' }  // Matt
+    case 'Dispatch':
+      return { role: 'accounts' }  // Wendy
+    default:
+      return null
+  }
+}
+
 export const PROD_GROUPS = [
-  { key: 'issued', label: 'Jobs Issued to Floor', color: '#e84560' },
-  { key: 'goahead', label: 'Current Jobs — Go Ahead', color: '#3b9de8' },
-  { key: 'pending', label: 'Pending Jobs — Need Go Ahead', color: '#f5a623' },
+  { key: 'issued', label: 'Jobs in Production', color: '#e84560' },
+  { key: 'goahead', label: 'Jobs in Engineering', color: '#3b9de8' },
+  { key: 'pending', label: 'Jobs Waiting on Sales Team', color: '#f5a623' },
   { key: 'stock', label: 'Stock', color: '#22d07a' },
   { key: 'finished', label: 'Finished / Ready to Invoice', color: '#22d07a' },
 ] as const

@@ -29,11 +29,47 @@ interface MOSummary {
   drawingsFound: string[]
 }
 
-const TOOLS = ['Laser Pack Generator', 'Drive Browser'] as const
+// ── Checklist types ───────────────────────────────────────────────────────
+type ChecklistItem = {
+  id: string
+  section: string
+  label: string
+  details: Record<string, any>
+  notes: string
+  ordered: boolean
+  orderedBy: string
+  orderedAt: string | null
+  sortOrder: number
+}
+
+type Checklist = {
+  id: string
+  jobId: string
+  jobNum: string
+  customer: string
+  status: string
+  createdAt: string
+  items: ChecklistItem[]
+}
+
+const SECTION_META: Record<string, { icon: string; title: string; colour: string }> = {
+  'mrp-entry':   { icon: '\uD83D\uDCE6', title: 'MRP Entry',        colour: '#E8681A' },
+  'tarp':        { icon: '\uD83E\uDDF5', title: 'Tarp',             colour: '#3b82f6' },
+  'pto':         { icon: '\u2699\uFE0F',  title: 'PTO',              colour: '#8b5cf6' },
+  'hoist':       { icon: '\uD83D\uDEE0\uFE0F', title: 'Hoist',           colour: '#ef4444' },
+  'axles':       { icon: '\uD83D\uDE9B', title: 'Axles',            colour: '#10b981' },
+  'tube-laser':  { icon: '\uD83D\uDD25', title: 'Tube Laser',       colour: '#f59e0b' },
+  'other':       { icon: '\uD83D\uDCCB', title: 'Other Parts',      colour: '#6b7280' },
+}
+
+const SECTION_ORDER = ['mrp-entry', 'tarp', 'pto', 'hoist', 'axles', 'tube-laser', 'other']
+
+// ── Shared styles ─────────────────────────────────────────────────────────
+const TOOLS = ['Ordering Checklist', 'Laser Pack Generator', 'Drive Browser'] as const
 type Tool = (typeof TOOLS)[number]
 
 export default function MRPToolsPage() {
-  const [activeTool, setActiveTool] = useState<Tool>('Laser Pack Generator')
+  const [activeTool, setActiveTool] = useState<Tool>('Ordering Checklist')
 
   return (
     <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20, minHeight: '100%' }}>
@@ -43,7 +79,7 @@ export default function MRPToolsPage() {
         </div>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: 0 }}>YLZ MRP Tools</h1>
         <p style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>
-          Automation tools for MRPeasy workflows
+          Ordering checklists, laser packs & parts drive
         </p>
       </div>
 
@@ -72,11 +108,362 @@ export default function MRPToolsPage() {
         ))}
       </div>
 
+      {activeTool === 'Ordering Checklist' && <OrderingChecklistTool />}
       {activeTool === 'Laser Pack Generator' && <LaserPackTool />}
       {activeTool === 'Drive Browser' && <DriveBrowserTool />}
     </div>
   )
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// ORDERING CHECKLIST — Liz's main workflow
+// ══════════════════════════════════════════════════════════════════════════
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  if (!value) return null
+  return (
+    <div style={{ display: 'flex', gap: 8, fontSize: 13, padding: '2px 0' }}>
+      <span style={{ color: 'rgba(255,255,255,0.4)', minWidth: 110, flexShrink: 0, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
+      <span style={{ color: '#fff' }}>{value}</span>
+    </div>
+  )
+}
+
+function OrderingChecklistTool() {
+  const [checklists, setChecklists] = useState<Checklist[]>([])
+  const [loading, setLoading] = useState(true)
+  const [expandedJob, setExpandedJob] = useState<string | null>(null)
+  const [filter, setFilter] = useState<'all' | 'pending' | 'complete'>('all')
+
+  const loadChecklists = useCallback(async () => {
+    try {
+      const res = await fetch('/api/mrp-checklist')
+      const data = await res.json()
+      if (Array.isArray(data)) setChecklists(data)
+    } catch { /* ignore */ }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { loadChecklists() }, [loadChecklists])
+
+  const toggleOrdered = async (cl: Checklist, item: ChecklistItem) => {
+    const newOrdered = !item.ordered
+    // Optimistic update
+    setChecklists(prev => prev.map(c => {
+      if (c.id !== cl.id) return c
+      return {
+        ...c,
+        items: c.items.map(i => i.id === item.id ? { ...i, ordered: newOrdered, orderedAt: newOrdered ? new Date().toISOString() : null } : i),
+      }
+    }))
+    await fetch(`/api/mrp-checklist/${cl.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itemId: item.id, ordered: newOrdered, orderedBy: 'Liz' }),
+    })
+  }
+
+  const updateNotes = async (cl: Checklist, item: ChecklistItem, notes: string) => {
+    setChecklists(prev => prev.map(c => {
+      if (c.id !== cl.id) return c
+      return { ...c, items: c.items.map(i => i.id === item.id ? { ...i, notes } : i) }
+    }))
+    await fetch(`/api/mrp-checklist/${cl.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itemId: item.id, notes }),
+    })
+  }
+
+  const filtered = checklists.filter(cl => {
+    if (filter === 'all') return true
+    const allDone = cl.items.every(i => i.ordered)
+    if (filter === 'complete') return allDone
+    return !allDone // pending
+  })
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255,255,255,0.3)' }}>Loading checklists...</div>
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
+        Jobs approved from engineering appear here automatically. Tick off each section as parts are ordered.
+      </div>
+
+      {/* Filter tabs */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        {(['all', 'pending', 'complete'] as const).map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            style={{
+              padding: '6px 14px', borderRadius: 5, fontSize: 11, fontWeight: 700,
+              textTransform: 'uppercase', letterSpacing: 0.5, cursor: 'pointer',
+              border: `1px solid ${filter === f ? '#E8681A' : 'rgba(255,255,255,0.1)'}`,
+              background: filter === f ? 'rgba(232,104,26,0.12)' : 'transparent',
+              color: filter === f ? '#E8681A' : 'rgba(255,255,255,0.4)',
+            }}
+          >
+            {f} ({f === 'all' ? checklists.length : checklists.filter(cl => {
+              const allDone = cl.items.every(i => i.ordered)
+              return f === 'complete' ? allDone : !allDone
+            }).length})
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 && (
+        <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
+          {filter === 'all' ? "No MRP checklists yet. They're auto-created when engineering approves a job." : `No ${filter} checklists.`}
+        </div>
+      )}
+
+      {/* Checklist cards */}
+      {filtered.map(cl => {
+        const isExpanded = expandedJob === cl.id
+        const orderedCount = cl.items.filter(i => i.ordered).length
+        const totalCount = cl.items.length
+        const allDone = orderedCount === totalCount && totalCount > 0
+
+        return (
+          <div
+            key={cl.id}
+            style={{
+              background: 'var(--dark2, #141425)', border: `1px solid ${allDone ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.1)'}`,
+              borderRadius: 10, overflow: 'hidden',
+            }}
+          >
+            {/* Job header — click to expand/collapse */}
+            <div
+              onClick={() => setExpandedJob(isExpanded ? null : cl.id)}
+              style={{
+                padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer',
+                borderBottom: isExpanded ? '1px solid rgba(255,255,255,0.08)' : 'none',
+              }}
+            >
+              <div style={{
+                fontFamily: "'League Spartan', sans-serif", fontSize: 16, fontWeight: 800,
+                color: '#E8681A', minWidth: 90,
+              }}>
+                {cl.jobNum}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{cl.customer || '\u2014'}</div>
+              </div>
+
+              {/* Progress indicators — mini dots for each section */}
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                {SECTION_ORDER.map(sKey => {
+                  const item = cl.items.find(i => i.section === sKey)
+                  if (!item) return null
+                  const meta = SECTION_META[sKey]
+                  return (
+                    <div
+                      key={sKey}
+                      title={`${meta?.title || sKey}: ${item.ordered ? 'Ordered' : 'Pending'}`}
+                      style={{
+                        width: 10, height: 10, borderRadius: '50%',
+                        background: item.ordered ? '#10b981' : 'rgba(255,255,255,0.12)',
+                        border: `1px solid ${item.ordered ? '#10b981' : 'rgba(255,255,255,0.2)'}`,
+                      }}
+                    />
+                  )
+                })}
+              </div>
+
+              <div style={{
+                background: allDone ? 'rgba(16,185,129,0.15)' : 'rgba(232,104,26,0.15)',
+                border: `1px solid ${allDone ? 'rgba(16,185,129,0.4)' : 'rgba(232,104,26,0.4)'}`,
+                borderRadius: 5, padding: '3px 10px', fontSize: 11, fontWeight: 700,
+                color: allDone ? '#10b981' : '#E8681A',
+              }}>
+                {orderedCount}/{totalCount}
+              </div>
+
+              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', transition: 'transform 0.15s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                &#9660;
+              </span>
+            </div>
+
+            {/* Expanded — show all sections */}
+            {isExpanded && (
+              <div style={{ padding: '0' }}>
+                {SECTION_ORDER.map(sKey => {
+                  const item = cl.items.find(i => i.section === sKey)
+                  if (!item) return null
+                  const meta = SECTION_META[sKey] || { icon: '', title: sKey, colour: '#888' }
+                  const details = (typeof item.details === 'object' && item.details) ? item.details as Record<string, any> : {}
+
+                  return (
+                    <div key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      {/* Section row */}
+                      <div
+                        style={{
+                          padding: '12px 18px', display: 'flex', alignItems: 'flex-start', gap: 14,
+                          background: item.ordered ? 'rgba(16,185,129,0.04)' : 'transparent',
+                        }}
+                      >
+                        {/* Checkbox */}
+                        <div
+                          onClick={() => toggleOrdered(cl, item)}
+                          style={{
+                            width: 22, height: 22, borderRadius: 5, flexShrink: 0, cursor: 'pointer', marginTop: 2,
+                            background: item.ordered ? '#10b981' : 'transparent',
+                            border: `2px solid ${item.ordered ? '#10b981' : 'rgba(255,255,255,0.2)'}`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          {item.ordered && <span style={{ fontSize: 12, color: '#fff', fontWeight: 700 }}>&#10003;</span>}
+                        </div>
+
+                        {/* Section info */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontSize: 15 }}>{meta.icon}</span>
+                            <span style={{
+                              fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+                              color: meta.colour,
+                              textDecoration: item.ordered ? 'line-through' : 'none',
+                              opacity: item.ordered ? 0.5 : 1,
+                            }}>
+                              {meta.title}
+                            </span>
+                            {item.ordered && (
+                              <span style={{ fontSize: 10, color: '#10b981', fontWeight: 600 }}>
+                                Ordered {item.orderedAt ? new Date(item.orderedAt).toLocaleDateString('en-AU') : ''}
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>
+                            {item.label}
+                          </div>
+
+                          {/* Section-specific details */}
+                          {sKey === 'mrp-entry' && (
+                            <>
+                              <DetailRow label="BOM Items" value={String(details.bomCount || 0)} />
+                              {details.bomList && details.bomList !== 'No BOM resolved yet' && (
+                                <div style={{
+                                  background: '#0a0a0a', borderRadius: 5, padding: '8px 10px', marginTop: 6,
+                                  fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'pre-wrap',
+                                  maxHeight: 150, overflowY: 'auto', fontFamily: 'monospace',
+                                }}>
+                                  {details.bomList}
+                                </div>
+                              )}
+                              {details.bomList && details.bomList !== 'No BOM resolved yet' && (
+                                <button
+                                  onClick={() => { navigator.clipboard.writeText(details.bomList); alert('BOM list copied') }}
+                                  style={{
+                                    marginTop: 6, background: 'rgba(232,104,26,0.12)', border: '1px solid rgba(232,104,26,0.3)',
+                                    borderRadius: 4, padding: '4px 10px', color: '#E8681A', fontSize: 10,
+                                    fontWeight: 700, cursor: 'pointer',
+                                  }}
+                                >
+                                  Copy BOM List
+                                </button>
+                              )}
+                            </>
+                          )}
+
+                          {sKey === 'tarp' && details.system !== 'None' && (
+                            <>
+                              <DetailRow label="System" value={details.system} />
+                              <DetailRow label="Colour" value={details.colour} />
+                              <DetailRow label="Length" value={details.length} />
+                              <DetailRow label="Bow Size" value={details.bowSize} />
+                              <DetailRow label="Body" value={details.bodyLength ? `${details.bodyLength}L x ${details.bodyHeight || '?'}H mm` : ''} />
+                            </>
+                          )}
+
+                          {sKey === 'pto' && (
+                            <>
+                              <DetailRow label="PTO" value={details.pto} />
+                              <DetailRow label="Chassis" value={`${details.chassisMake || ''} ${details.chassisModel || ''}`.trim()} />
+                            </>
+                          )}
+
+                          {sKey === 'hoist' && (
+                            <>
+                              <DetailRow label="Hoist" value={details.hoist} />
+                              <DetailRow label="Pivot Centre" value={details.pivotCentre ? `${details.pivotCentre}mm` : ''} />
+                              <DetailRow label="Hyd Tank" value={details.hydTankType} />
+                              <DetailRow label="Hydraulics" value={details.hydraulics} />
+                              <DetailRow label="Controls" value={details.controls} />
+                            </>
+                          )}
+
+                          {sKey === 'axles' && (
+                            <>
+                              <DetailRow label="Make" value={details.make} />
+                              <DetailRow label="Count" value={details.count} />
+                              <DetailRow label="Type" value={details.type} />
+                              <DetailRow label="Suspension" value={details.suspension} />
+                              <DetailRow label="Stud Pattern" value={details.studPattern} />
+                              <DetailRow label="Axle Lift" value={details.axleLift} />
+                            </>
+                          )}
+
+                          {sKey === 'tube-laser' && (
+                            <>
+                              {Array.isArray(details.stepFiles) && details.stepFiles.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                  {details.stepFiles.map((f: any, i: number) => (
+                                    <a key={i} href={`https://drive.google.com/file/d/${f.fileId}/view`} target="_blank" rel="noopener noreferrer"
+                                      style={{ fontSize: 11, color: '#3b82f6', textDecoration: 'none' }}>
+                                      {f.name}
+                                    </a>
+                                  ))}
+                                  {Array.isArray(details.pdfFiles) && details.pdfFiles.map((f: any, i: number) => (
+                                    <a key={`pdf-${i}`} href={`https://drive.google.com/file/d/${f.fileId}/view`} target="_blank" rel="noopener noreferrer"
+                                      style={{ fontSize: 11, color: '#f59e0b', textDecoration: 'none' }}>
+                                      {f.name}
+                                    </a>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>No STEP files found</div>
+                              )}
+                            </>
+                          )}
+
+                          {/* Notes */}
+                          <textarea
+                            style={{
+                              marginTop: 8, width: '100%', boxSizing: 'border-box',
+                              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                              borderRadius: 5, padding: '6px 10px', color: '#fff', fontSize: 12,
+                              minHeight: 32, resize: 'vertical', outline: 'none',
+                            }}
+                            placeholder="Notes — order number, supplier, etc."
+                            value={item.notes}
+                            onChange={e => {
+                              const val = e.target.value
+                              setChecklists(prev => prev.map(c => {
+                                if (c.id !== cl.id) return c
+                                return { ...c, items: c.items.map(i => i.id === item.id ? { ...i, notes: val } : i) }
+                              }))
+                            }}
+                            onBlur={e => updateNotes(cl, item, e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// DRIVE BROWSER
+// ══════════════════════════════════════════════════════════════════════════
 
 function DriveBrowserTool() {
   const [items, setItems]             = useState<BrowseItem[]>([])
@@ -154,9 +541,9 @@ function DriveBrowserTool() {
   const files   = items.filter(i => !i.isFolder)
 
   const fileIcon = (mimeType: string) => {
-    if (mimeType === 'application/pdf') return '📄'
-    if (mimeType.startsWith('image/')) return '🖼️'
-    return '📎'
+    if (mimeType === 'application/pdf') return '\uD83D\uDCC4'
+    if (mimeType.startsWith('image/')) return '\uD83D\uDDBC\uFE0F'
+    return '\uD83D\uDCCE'
   }
 
   return (
@@ -213,18 +600,16 @@ function DriveBrowserTool() {
         </button>
       </form>
 
-      {/* Search results label */}
       {isSearching && (
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
           Search results for <span style={{ color: '#fff', fontWeight: 600 }}>&ldquo;{searchQuery}&rdquo;</span>
-          {' '}— {items.length} result{items.length !== 1 ? 's' : ''} ·{' '}
+          {' '}&mdash; {items.length} result{items.length !== 1 ? 's' : ''} &middot;{' '}
           <button onClick={clearSearch} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#E8681A', fontSize: 12, padding: 0 }}>
             Back to folder
           </button>
         </div>
       )}
 
-      {/* Breadcrumb — hidden during search */}
       {!isSearching && (
         <div style={{
           display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4,
@@ -233,7 +618,7 @@ function DriveBrowserTool() {
         }}>
           {breadcrumb.map((crumb, i) => (
             <span key={crumb.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              {i > 0 && <span style={{ color: 'rgba(255,255,255,0.2)' }}>›</span>}
+              {i > 0 && <span style={{ color: 'rgba(255,255,255,0.2)' }}>&rsaquo;</span>}
               <button
                 onClick={() => navigateTo(i)}
                 disabled={i === breadcrumb.length - 1}
@@ -256,7 +641,7 @@ function DriveBrowserTool() {
               color: 'rgba(255,255,255,0.3)', fontSize: 14, padding: '0 4px',
             }}
           >
-            ↻
+            &#8635;
           </button>
         </div>
       )}
@@ -272,7 +657,7 @@ function DriveBrowserTool() {
 
       {loading ? (
         <div style={{ padding: '32px 0', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-          Loading…
+          Loading&hellip;
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -282,7 +667,6 @@ function DriveBrowserTool() {
             </div>
           )}
 
-          {/* Folders first */}
           {folders.map(item => (
             <button
               key={item.id}
@@ -298,13 +682,12 @@ function DriveBrowserTool() {
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(232,104,26,0.08)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
             >
-              <span style={{ fontSize: 16, flexShrink: 0 }}>📁</span>
+              <span style={{ fontSize: 16, flexShrink: 0 }}>{'\uD83D\uDCC1'}</span>
               <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', flex: 1 }}>{item.name}</span>
-              <span style={{ fontSize: 18, color: 'rgba(255,255,255,0.2)' }}>›</span>
+              <span style={{ fontSize: 18, color: 'rgba(255,255,255,0.2)' }}>&rsaquo;</span>
             </button>
           ))}
 
-          {/* Files */}
           {files.map(item => (
             <a
               key={item.id}
@@ -323,7 +706,7 @@ function DriveBrowserTool() {
             >
               <span style={{ fontSize: 16, flexShrink: 0 }}>{fileIcon(item.mimeType)}</span>
               <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', flex: 1 }}>{item.name}</span>
-              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>↗ Open</span>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>&nearr; Open</span>
             </a>
           ))}
         </div>
@@ -331,6 +714,10 @@ function DriveBrowserTool() {
     </div>
   )
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// LASER PACK GENERATOR
+// ══════════════════════════════════════════════════════════════════════════
 
 function LaserPackTool() {
   const [moPdfs, setMoPdfs]     = useState<File[]>([])
@@ -424,14 +811,13 @@ function LaserPackTool() {
           >
             <input ref={inputRef} type="file" accept=".pdf" multiple style={{ display: 'none' }}
               onChange={e => { if (e.target.files?.length) handleFiles(e.target.files) }} />
-            <div style={{ fontSize: 28, marginBottom: 10 }}>↑</div>
+            <div style={{ fontSize: 28, marginBottom: 10 }}>&uarr;</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text2)', marginBottom: 4 }}>
               Drop MRPeasy MO PDFs here
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text3)' }}>or click to browse — multiple files supported</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)' }}>or click to browse &mdash; multiple files supported</div>
           </div>
 
-          {/* File chips */}
           {moPdfs.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {moPdfs.map((f, i) => (
@@ -440,7 +826,7 @@ function LaserPackTool() {
                   background: 'rgba(232,104,26,0.12)', border: '1px solid rgba(232,104,26,0.35)',
                   borderRadius: 5, padding: '5px 10px', fontSize: 12, color: '#fff',
                 }}>
-                  <span>📄 {f.name}</span>
+                  <span>{'\uD83D\uDCC4'} {f.name}</span>
                   <button
                     onClick={e => { e.stopPropagation(); removeFile(i) }}
                     style={{
@@ -449,20 +835,19 @@ function LaserPackTool() {
                       padding: '0 2px',
                     }}
                   >
-                    ✕
+                    &#10005;
                   </button>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Drive note */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10,
             background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: 6, padding: '10px 14px', fontSize: 12, color: 'var(--text3)',
           }}>
-            <span style={{ fontSize: 16 }}>📁</span>
+            <span style={{ fontSize: 16 }}>{'\uD83D\uDCC1'}</span>
             Drawings auto-fetched from <span style={{ color: 'rgba(255,255,255,0.6)', marginLeft: 4 }}>YLZparts Google Drive</span>
           </div>
 
@@ -489,7 +874,7 @@ function LaserPackTool() {
             }}
           >
             {loading
-              ? 'Searching Drive & Generating…'
+              ? 'Searching Drive & Generating\u2026'
               : moPdfs.length > 1
                 ? `Generate Combined Sheet (${moPdfs.length} MOs)`
                 : 'Generate Laser Sheet'}
@@ -505,7 +890,7 @@ function LaserPackTool() {
             <div style={{ fontSize: result.moNumbers.length > 1 ? 14 : 22, fontWeight: 700, color: '#fff' }}>
               {result.moNumbers.length === 1
                 ? result.moNumbers[0]
-                : result.moNumbers.join('  ·  ')}
+                : result.moNumbers.join('  \u00B7  ')}
             </div>
           </div>
 
@@ -544,7 +929,7 @@ function LaserPackTool() {
                     border: `1px solid ${hasDrawing ? '#E8681A' : 'rgba(255,255,255,0.12)'}`,
                     color: hasDrawing ? '#fff' : 'rgba(255,255,255,0.4)',
                   }}>
-                    {pn}{hasDrawing ? ' ✓' : ''}
+                    {pn}{hasDrawing ? ' \u2713' : ''}
                   </span>
                 )
               })}

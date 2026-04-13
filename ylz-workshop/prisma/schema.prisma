@@ -632,6 +632,8 @@ model VassBooking {
   ownerCity          String   @default("")
   ownerState         String   @default("VIC")
   ownerPostcode      String   @default("")
+  ownerEmail         String   @default("")
+  inspectionDate     String   @default("")
   vehicleMake        String   @default("")
   vehicleModel       String   @default("")
   engineType         String   @default("")
@@ -740,4 +742,36 @@ model DispatchLog {
   sentAt    DateTime @default(now())
 
   @@index([jobId])
+}
+
+// ── MRP Ordering Checklist ────────────────────────────────────────────────
+
+model MrpChecklist {
+  id        String             @id @default(cuid())
+  jobId     String             @unique
+  jobNum    String
+  customer  String             @default("")
+  status    String             @default("pending") // pending | in-progress | complete
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  items     MrpChecklistItem[]
+
+  @@index([jobId])
+  @@index([status])
+}
+
+model MrpChecklistItem {
+  id          String       @id @default(cuid())
+  checklistId String
+  section     String       // mrp-entry | tarp | pto | hoist | axles | tube-laser | other
+  label       String       @default("")
+  details     Json         @default("{}") // flexible key-value for section-specific data
+  notes       String       @default("")
+  ordered     Boolean      @default(false)
+  orderedBy   String       @default("")
+  orderedAt   DateTime?
+  sortOrder   Int          @default(0)
+  checklist   MrpChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  @@index([checklistId])
 }

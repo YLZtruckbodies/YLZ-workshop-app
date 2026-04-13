@@ -29,312 +29,307 @@ export default function VassPrintPage() {
         @media print {
           .print-bar { display: none !important; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          @page { margin: 10mm; size: A4; }
+          @page { margin: 12mm; size: A4; }
         }
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; background: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #000; }
-        .print-bar { background: #1a1a2e; padding: 10px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
-        .print-bar button { background: #E8681A; color: #fff; border: none; border-radius: 5px; padding: 7px 14px; font-weight: 700; font-size: 12px; cursor: pointer; }
-        .form-page { max-width: 210mm; margin: 0 auto; padding: 14px 18px; }
+        body { margin: 0; padding: 0; background: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; }
+        .print-bar { background: #1a1a2e; padding: 12px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
+        .print-bar button { border: none; border-radius: 6px; padding: 8px 16px; font-weight: 700; font-size: 12px; cursor: pointer; }
+        .form-page { max-width: 210mm; margin: 0 auto; padding: 16px 20px; }
 
-        /* ── Header ── */
-        .form-header { display: flex; justify-content: space-between; align-items: flex-start; border: 2px solid #000; padding: 8px 10px; margin-bottom: 4px; }
-        .form-header-left { flex: 1; }
-        .form-title { font-size: 18px; font-weight: 900; letter-spacing: 1px; line-height: 1; margin-bottom: 2px; }
-        .form-subtitle { font-size: 10px; color: #333; }
-        .form-email-block { text-align: right; font-size: 10px; line-height: 1.6; }
-        .form-email-block a { color: #000; }
+        /* CVC Header */
+        .cvc-header { text-align: center; border: 2px solid #000; padding: 12px; margin-bottom: 12px; }
+        .cvc-header .company-name { font-size: 16px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin: 0 0 2px 0; }
+        .cvc-header .form-title { font-size: 20px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin: 8px 0 4px 0; color: #000; }
+        .cvc-header .email-line { font-size: 11px; color: #333; margin: 4px 0 0 0; }
 
-        /* ── Section wrapper ── */
-        .section { border: 1px solid #000; margin-bottom: 4px; }
-        .section-hdr { font-size: 10px; font-weight: 700; text-transform: uppercase; background: #d0d0d0; padding: 3px 7px; letter-spacing: 0.5px; border-bottom: 1px solid #000; }
+        /* Sections */
+        .section { margin-bottom: 10px; }
+        .section-title {
+          font-size: 11px; font-weight: 700; text-transform: uppercase;
+          background: #000; color: #fff; padding: 4px 8px; margin-bottom: 0;
+          letter-spacing: 0.5px;
+        }
+        .section-body { border: 1px solid #000; border-top: none; padding: 8px; }
 
-        /* ── Two-column request grid (3 rows × 2 cols) ── */
-        .req-grid { display: grid; grid-template-columns: 1fr 1fr; }
-        .req-cell { padding: 4px 7px; border-right: 1px solid #000; border-bottom: 1px solid #000; }
-        .req-cell:nth-child(2n) { border-right: none; }
-        .req-cell:nth-last-child(-n+2) { border-bottom: none; }
-        .cell-label { font-size: 8px; font-weight: 700; text-transform: uppercase; color: #555; margin-bottom: 2px; }
-        .cell-value { font-size: 11px; min-height: 14px; }
+        /* Fields */
+        .row { display: flex; gap: 0; margin-bottom: 0; }
+        .field { flex: 1; display: flex; align-items: baseline; padding: 3px 4px; }
+        .field-label { font-size: 9px; font-weight: 700; text-transform: uppercase; white-space: nowrap; margin-right: 6px; min-width: fit-content; }
+        .field-value { border-bottom: 1px solid #666; flex: 1; min-height: 14px; padding: 1px 4px; font-size: 11px; }
+        .field-value.mono { font-family: 'Courier New', monospace; letter-spacing: 1.5px; }
 
-        /* ── Vehicle owners ── */
-        .owners-grid { display: grid; grid-template-columns: 1fr 1fr; }
-        .owners-cell { padding: 4px 7px; border-right: 1px solid #000; border-bottom: 1px solid #000; }
-        .owners-cell:nth-child(2n) { border-right: none; }
-        .owners-cell.full { grid-column: 1 / -1; border-right: none; }
-        .owners-cell:last-child { border-bottom: none; }
+        /* VASS codes table */
+        .codes-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        .codes-table th, .codes-table td { border: 1px solid #000; padding: 3px 6px; text-align: left; }
+        .codes-table th { background: #e0e0e0; font-weight: 700; font-size: 9px; text-transform: uppercase; }
 
-        /* ── Vehicle details two-column ── */
-        .veh-grid { display: grid; grid-template-columns: 1fr 1fr; }
-        .veh-cell { padding: 4px 7px; border-right: 1px solid #000; border-bottom: 1px solid #000; }
-        .veh-cell:nth-child(2n) { border-right: none; }
-        .veh-cell.full { grid-column: 1 / -1; border-right: none; }
-        .veh-cell:last-child, .veh-cell.last-row { border-bottom: none; }
+        /* Mod description box */
+        .mod-box { border: 1px solid #000; min-height: 50px; padding: 6px 8px; font-size: 11px; white-space: pre-wrap; }
 
-        /* ── Lookup link row ── */
-        .lookup-row { display: flex; gap: 12px; padding: 4px 7px; border-bottom: 1px solid #000; font-size: 9px; }
-        .lookup-row a { color: #00e; }
+        /* Attachments */
+        .attach-box { border: 1px solid #000; padding: 8px; font-size: 10px; }
 
-        /* ── VASS codes ── */
-        .codes-grid { display: grid; grid-template-columns: 52px 1fr; }
-        .code-cell { padding: 3px 6px; border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; font-size: 9px; }
-        .code-cell:nth-child(2n) { border-right: none; }
-        .code-cell.hdr { font-weight: 700; background: #eee; }
+        /* Links bar */
+        .links-bar { margin-top: 10px; padding: 6px 8px; background: #f5f5f5; border: 1px solid #ccc; font-size: 10px; display: flex; gap: 20px; flex-wrap: wrap; }
+        .links-bar a { color: #0066cc; text-decoration: none; }
+        .links-bar a:hover { text-decoration: underline; }
 
-        /* ── Description box ── */
-        .desc-box { padding: 6px 7px; min-height: 60px; font-size: 11px; white-space: pre-wrap; }
-
-        /* ── Instructions + Attachments ── */
-        .inst-attach { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #000; margin-bottom: 4px; }
-        .inst-col { padding: 6px 8px; border-right: 1px solid #000; font-size: 8.5px; line-height: 1.5; }
-        .inst-col h4 { margin: 0 0 4px 0; font-size: 9px; font-weight: 700; text-transform: uppercase; }
-        .attach-col { padding: 6px 8px; font-size: 8.5px; line-height: 1.5; }
-        .attach-col h4 { margin: 0 0 4px 0; font-size: 9px; font-weight: 700; text-transform: uppercase; color: #c00; }
-        .attach-col ul { margin: 0; padding-left: 14px; }
-        .attach-col li { margin-bottom: 2px; }
+        /* Footer */
+        .footer { margin-top: 16px; display: flex; justify-content: space-between; font-size: 9px; color: #999; border-top: 1px solid #ccc; padding-top: 6px; }
       `}</style>
 
       {/* Print bar */}
       <div className="print-bar">
-        <button onClick={() => window.print()}>Print / Save PDF</button>
-        <span style={{ color: '#fff', fontSize: 12, opacity: 0.7 }}>
-          CVC eVASS Booking Request — {booking.jobNumber || 'Draft'}
-        </span>
+        <button onClick={() => window.print()} style={{ background: '#E8681A', color: '#fff' }}>Print / Save PDF</button>
+        <button onClick={() => window.history.back()} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }}>Back</button>
+        <span style={{ color: '#fff', fontSize: 12, opacity: 0.7 }}>CVC eVASS Booking Request — {booking.jobNumber || 'Draft'}</span>
       </div>
 
       <div className="form-page">
-
-        {/* ── Header ── */}
-        <div className="form-header">
-          <div className="form-header-left">
-            <div className="form-title">VASS INSPECTION REQUEST</div>
-            <div className="form-subtitle">Vehicle Assessment Signatory Scheme — VSB 6</div>
-          </div>
-          <div className="form-email-block">
-            <div style={{ fontWeight: 700 }}>CVC Engineering</div>
-            <div>
-              Email to:{' '}
-              <a href="mailto:Info@cvc.net.au">Info@cvc.net.au</a>
-            </div>
-            <div>Ph: (03) 9791 7575</div>
-          </div>
+        {/* CVC Header */}
+        <div className="cvc-header">
+          <div className="company-name">Commercial Vehicle Compliance Pty Ltd</div>
+          <div className="form-title">VASS Inspection Request</div>
+          <div className="email-line">Email to: <strong>Info@cvc.net.au</strong></div>
         </div>
 
-        {/* ── Request Details (3 rows × 2 cols) ── */}
+        {/* Section 1: Request Details */}
         <div className="section">
-          <div className="section-hdr">Request Details</div>
-          <div className="req-grid">
-            <div className="req-cell">
-              <div className="cell-label">Date</div>
-              <div className="cell-value">{formatDateAU(booking.bookingDate)}</div>
-            </div>
-            <div className="req-cell">
-              <div className="cell-label">Inspection Date Requested</div>
-              <div className="cell-value">{formatDateAU(booking.finishDate)}</div>
-            </div>
-            <div className="req-cell">
-              <div className="cell-label">Name</div>
-              <div className="cell-value">{booking.requestedBy}</div>
-            </div>
-            <div className="req-cell">
-              <div className="cell-label">Email Address</div>
-              <div className="cell-value">{booking.companyEmail}</div>
-            </div>
-            <div className="req-cell">
-              <div className="cell-label">P/O Number</div>
-              <div className="cell-value">{booking.poNumber}</div>
-            </div>
-            <div className="req-cell">
-              <div className="cell-label">Job Number</div>
-              <div className="cell-value">{booking.jobNumber}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Vehicle Owners Details ── */}
-        <div className="section">
-          <div className="section-hdr">Vehicle Owners Details</div>
-          <div className="owners-grid">
-            <div className="owners-cell">
-              <div className="cell-label">Owners Email</div>
-              <div className="cell-value">{booking.ownerEmail || booking.companyEmail}</div>
-            </div>
-            <div className="owners-cell">
-              <div className="cell-label">Name</div>
-              <div className="cell-value">{booking.ownerName}</div>
-            </div>
-            <div className="owners-cell full">
-              <div className="cell-label">Address</div>
-              <div className="cell-value">{booking.ownerAddress}</div>
-            </div>
-            <div className="owners-cell">
-              <div className="cell-label">City / Suburb</div>
-              <div className="cell-value">{booking.ownerCity}</div>
-            </div>
-            <div className="owners-cell" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderRight: 'none', borderBottom: 'none', padding: 0 }}>
-              <div style={{ padding: '4px 7px', borderRight: '1px solid #000' }}>
-                <div className="cell-label">State</div>
-                <div className="cell-value">{booking.ownerState}</div>
+          <div className="section-title">Section 1 — Request Details</div>
+          <div className="section-body">
+            <div className="row">
+              <div className="field">
+                <span className="field-label">Date:</span>
+                <span className="field-value">{formatDateAU(booking.bookingDate)}</span>
               </div>
-              <div style={{ padding: '4px 7px' }}>
-                <div className="cell-label">Postcode</div>
-                <div className="cell-value">{booking.ownerPostcode}</div>
+              <div className="field" style={{ flex: 2 }}>
+                <span className="field-label">Name:</span>
+                <span className="field-value">{booking.requestedBy}</span>
+              </div>
+            </div>
+            <div className="row">
+              <div className="field">
+                <span className="field-label">P/O Number:</span>
+                <span className="field-value">{booking.poNumber}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">Inspection Date:</span>
+                <span className="field-value">{formatDateAU(booking.inspectionDate)}</span>
+              </div>
+            </div>
+            <div className="row">
+              <div className="field" style={{ flex: 2 }}>
+                <span className="field-label">Email Address:</span>
+                <span className="field-value">{booking.companyEmail}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">Job Number:</span>
+                <span className="field-value">{booking.jobNumber}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── Vehicle Details ── */}
+        {/* Section 2: Vehicle Owner Details */}
         <div className="section">
-          <div className="section-hdr">Vehicle Details</div>
-
-          {/* Lookup links */}
-          <div className="lookup-row">
-            <span style={{ fontWeight: 700 }}>Check:</span>
-            <a href="https://www.vicroads.vic.gov.au/registration/buy-sell-or-transfer-a-vehicle/check-vehicle-registration" target="_blank" rel="noopener noreferrer">VicRoad Rego Check</a>
-            <a href="https://www.infrastructure.gov.au/vehicles/vehicle_regulation/bulletin/rvcs/" target="_blank" rel="noopener noreferrer">RVCS Lookup</a>
-            <a href="https://rav.infrastructure.gov.au/" target="_blank" rel="noopener noreferrer">RAV Lookup</a>
-          </div>
-
-          <div className="veh-grid">
-            <div className="veh-cell">
-              <div className="cell-label">Make</div>
-              <div className="cell-value">{booking.vehicleMake}</div>
+          <div className="section-title">Section 2 — Vehicle Owners Details</div>
+          <div className="section-body">
+            <div className="row">
+              <div className="field" style={{ flex: 2 }}>
+                <span className="field-label">Owners Email:</span>
+                <span className="field-value">{booking.ownerEmail}</span>
+              </div>
             </div>
-            <div className="veh-cell">
-              <div className="cell-label">Model</div>
-              <div className="cell-value">{booking.vehicleModel}</div>
+            <div className="row">
+              <div className="field" style={{ flex: 2 }}>
+                <span className="field-label">Owners Name:</span>
+                <span className="field-value">{booking.ownerName}</span>
+              </div>
             </div>
-            <div className="veh-cell">
-              <div className="cell-label">Engine Type &amp; Size</div>
-              <div className="cell-value">{booking.engineType}</div>
+            <div className="row">
+              <div className="field" style={{ flex: 3 }}>
+                <span className="field-label">Address:</span>
+                <span className="field-value">{booking.ownerAddress}</span>
+              </div>
             </div>
-            <div className="veh-cell">
-              <div className="cell-label">Engine Number</div>
-              <div className="cell-value">{booking.engineNumber}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">Registration Number</div>
-              <div className="cell-value">{booking.rego}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">Compliance Plate Date</div>
-              <div className="cell-value">{booking.compPlateDate}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">Odometer Reading</div>
-              <div className="cell-value">{booking.odometer}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">Seating Capacity</div>
-              <div className="cell-value">{booking.seats}</div>
-            </div>
-            <div className="veh-cell full">
-              <div className="cell-label">VIN Number</div>
-              <div className="cell-value" style={{ fontFamily: 'monospace', letterSpacing: 1, fontSize: 12 }}>{booking.vinNumber}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">GVM (kg)</div>
-              <div className="cell-value">{booking.gvm}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">GCM (kg)</div>
-              <div className="cell-value">{booking.gcm}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">Front Axle Rating (kg)</div>
-              <div className="cell-value">{booking.frontAxleRating}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">Rear Axle Rating (kg)</div>
-              <div className="cell-value">{booking.rearAxleRating}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">Front Tyres (qty)</div>
-              <div className="cell-value">{booking.frontTyreCount}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">Front Tyre Size</div>
-              <div className="cell-value">{booking.frontTyreSize}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">Rear Tyres (qty)</div>
-              <div className="cell-value">{booking.rearTyreCount}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">Rear Tyre Size</div>
-              <div className="cell-value">{booking.rearTyreSize}</div>
-            </div>
-            <div className="veh-cell">
-              <div className="cell-label">Extreme Axle Spacing (mm)</div>
-              <div className="cell-value">{booking.extremeAxleSpacing}</div>
-            </div>
-            <div className="veh-cell last-row">
-              <div className="cell-label">New Tare Weight (kg)</div>
-              <div className="cell-value">{booking.newTareWeight}</div>
+            <div className="row">
+              <div className="field" style={{ flex: 2 }}>
+                <span className="field-label">City:</span>
+                <span className="field-value">{booking.ownerCity}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">State:</span>
+                <span className="field-value">{booking.ownerState}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">Post Code:</span>
+                <span className="field-value">{booking.ownerPostcode}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* ── VASS Modification Codes ── */}
+        {/* Section 3: Vehicle Details */}
+        <div className="section">
+          <div className="section-title">Section 3 — Vehicle Details</div>
+          <div className="section-body">
+            <div className="row">
+              <div className="field">
+                <span className="field-label">Make:</span>
+                <span className="field-value">{booking.vehicleMake}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">Model:</span>
+                <span className="field-value">{booking.vehicleModel}</span>
+              </div>
+            </div>
+            <div className="row">
+              <div className="field">
+                <span className="field-label">Engine Type & Size:</span>
+                <span className="field-value">{booking.engineType}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">Engine #:</span>
+                <span className="field-value">{booking.engineNumber}</span>
+              </div>
+            </div>
+            <div className="row">
+              <div className="field">
+                <span className="field-label">Rego:</span>
+                <span className="field-value">{booking.rego}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">Plate Date:</span>
+                <span className="field-value">{booking.compPlateDate}</span>
+              </div>
+            </div>
+            <div className="row">
+              <div className="field">
+                <span className="field-label">Odometer:</span>
+                <span className="field-value">{booking.odometer}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">No of Seats Including Driver:</span>
+                <span className="field-value">{booking.seats}</span>
+              </div>
+            </div>
+            <div className="row">
+              <div className="field">
+                <span className="field-label">GVM:</span>
+                <span className="field-value">{booking.gvm}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">GCM:</span>
+                <span className="field-value">{booking.gcm}</span>
+              </div>
+            </div>
+            <div className="row">
+              <div className="field">
+                <span className="field-label">Front Axle Rating:</span>
+                <span className="field-value">{booking.frontAxleRating}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">Rear Axle Rating:</span>
+                <span className="field-value">{booking.rearAxleRating}</span>
+              </div>
+            </div>
+            <div className="row">
+              <div className="field" style={{ flex: 3 }}>
+                <span className="field-label">VIN Number:</span>
+                <span className="field-value mono">{booking.vinNumber}</span>
+              </div>
+            </div>
+            <div className="row">
+              <div className="field">
+                <span className="field-label">Front Tyres:</span>
+                <span className="field-value">{booking.frontTyreCount}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">Size:</span>
+                <span className="field-value">{booking.frontTyreSize}</span>
+              </div>
+            </div>
+            <div className="row">
+              <div className="field">
+                <span className="field-label">Rear Tyres:</span>
+                <span className="field-value">{booking.rearTyreCount}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">Size:</span>
+                <span className="field-value">{booking.rearTyreSize}</span>
+              </div>
+            </div>
+            <div className="row">
+              <div className="field">
+                <span className="field-label">Extreme Wheelbase:</span>
+                <span className="field-value">{booking.extremeAxleSpacing}</span>
+              </div>
+              <div className="field">
+                <span className="field-label">New Tare Weight:</span>
+                <span className="field-value">{booking.newTareWeight}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* VASS Modification Codes */}
         {vassCodes.length > 0 && (
           <div className="section">
-            <div className="section-hdr">VASS Modification Codes</div>
-            <div className="codes-grid">
-              <div className="code-cell hdr">Code</div>
-              <div className="code-cell hdr">Description</div>
-              {vassCodes.map(c => (
-                <>
-                  <div key={`${c.code}-code`} className="code-cell" style={{ fontWeight: 700 }}>{c.code}</div>
-                  <div key={`${c.code}-desc`} className="code-cell">{c.description}</div>
-                </>
-              ))}
+            <div className="section-title">VASS Modification Codes</div>
+            <div className="section-body" style={{ padding: 0 }}>
+              <table className="codes-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 60 }}>Code</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vassCodes.map((c: { code: string; description: string }) => (
+                    <tr key={c.code}>
+                      <td style={{ fontWeight: 700 }}>{c.code}</td>
+                      <td>{c.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
-        {/* ── Description of Modification ── */}
+        {/* Section 4: Description of Modification */}
         <div className="section">
-          <div className="section-hdr">Description of Modification</div>
-          <div className="desc-box">{booking.modDescription || ''}</div>
+          <div className="section-title">Section 4 — Description of Modification</div>
+          <div className="mod-box">{booking.modDescription || '\u2014'}</div>
         </div>
 
-        {/* ── Instructions + Attachments ── */}
-        <div className="inst-attach">
-          <div className="inst-col">
-            <h4>Instructions</h4>
-            <p style={{ margin: '0 0 4px 0' }}>
-              Please email this completed form along with all required attachments to{' '}
-              <strong>Info@cvc.net.au</strong>.
-            </p>
-            <p style={{ margin: '0 0 4px 0' }}>
-              Once received, CVC will confirm the inspection date and provide a purchase order number.
-              Payment is required prior to or on the day of inspection.
-            </p>
-            <p style={{ margin: 0 }}>
-              Ensure the vehicle is available at the agreed time and location. Any modifications must
-              be complete and ready for inspection. Late cancellations (&lt;24 hrs) may incur a fee.
+        {/* Section 5: Attachments */}
+        <div className="section">
+          <div className="section-title">Section 5 — Attachments</div>
+          <div className="attach-box">
+            <p style={{ margin: '0 0 8px 0', fontWeight: 700 }}>Required attachments:</p>
+            <p style={{ margin: 0, lineHeight: 1.6 }}>
+              You must add photos of the <strong>VIN Stamp</strong>, <strong>Vehicle Compliance Plate / ID Plate</strong>,{' '}
+              <strong>Front</strong>, <strong>Left</strong>, <strong>Right</strong>, <strong>Rear Sides</strong>,{' '}
+              <strong>Modification</strong>, <strong>Seat Layout Drawing</strong>, <strong>Purchase Order</strong>,{' '}
+              <strong>WeighBridge Docket</strong> and whatever else can be provided.
             </p>
           </div>
-          <div className="attach-col">
-            <h4>Attachments Required</h4>
-            <ul>
-              <li>Completed VASS Booking Request Form</li>
-              <li>Engineering drawings / modification drawings</li>
-              <li>Calculation sheets (if applicable)</li>
-              <li>Photographs of the modification</li>
-              <li>Copy of current registration certificate</li>
-              <li>Any other supporting documentation</li>
-            </ul>
-          </div>
+        </div>
+
+        {/* Reference Links */}
+        <div className="links-bar">
+          <span style={{ fontWeight: 700, fontSize: 9, textTransform: 'uppercase', color: '#666' }}>Reference Links:</span>
+          <a href="https://www.vicroads.vic.gov.au/registration/limited-registration/vehicle-registration-check" target="_blank" rel="noopener noreferrer">VicRoads Rego Lookup</a>
+          <a href="https://www.infrastructure.gov.au/infrastructure-transport-vehicles/vehicles/rvcs" target="_blank" rel="noopener noreferrer">RVCS Lookup</a>
+          <a href="https://www.infrastructure.gov.au/infrastructure-transport-vehicles/vehicles/vehicle-safety-research/register-approved-vehicles-rav" target="_blank" rel="noopener noreferrer">RAV Lookup</a>
         </div>
 
         {/* Footer */}
-        <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', fontSize: 8, color: '#888', borderTop: '1px solid #ccc', paddingTop: 5 }}>
-          <span>YLZ Truck Bodies — CVC eVASS Booking Request</span>
-          <span>Printed: {new Date().toLocaleDateString('en-AU')}</span>
+        <div className="footer">
+          <span>YLZ Truck Bodies — CVC eVASS Inspection Request</span>
+          <span>Generated: {new Date().toLocaleDateString('en-AU')}</span>
         </div>
-
       </div>
     </>
   )
