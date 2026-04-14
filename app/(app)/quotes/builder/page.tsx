@@ -194,7 +194,7 @@ const CHASSIS_MODELS: Record<string, string[]> = {
 const MATERIALS = ['Hardox 500', 'Aluminium', 'Hardox 450', 'Steel']
 const MOUNT_TYPES = ['Well Mount Body', 'Front Mount Body']
 const HOISTS = ['Binotto 3190', 'Hyva Alpha 092', 'Hyva Alpha 190', 'PH122 Kröger',
-  'MFB3126.3.2840', 'MFB3128.3.2960', 'MFB3128.3.3190', 'MFB3126.4.3310', 'None']
+  'MFB3126.3.2840', 'MFB3126.3.2960', 'HPF3070-135-3-S3', 'MFB3126.3.3190', 'MFB3126.4.3310', 'None']
 
 // Auto-lookup: body width from material
 function calcBodyWidth(material: string): string {
@@ -252,11 +252,11 @@ function calcTarpBowHeight(material: string, isDogTrailer: boolean, bodyLength: 
 const TRUCK_BODY_HOIST_MAP: Record<string, { hoist: string; pivotCentre: string }> = {
   '4200': { hoist: 'MFB3126.3.2840', pivotCentre: '3500' },
   '4300': { hoist: 'MFB3126.3.2840', pivotCentre: '3570' },
-  '4400': { hoist: 'MFB3128.3.2960', pivotCentre: '3600' },
-  '4500': { hoist: 'MFB3128.3.3190', pivotCentre: '3800' },
-  '4600': { hoist: 'MFB3128.3.3190', pivotCentre: '3900' },
-  '4660': { hoist: 'MFB3128.3.3190', pivotCentre: '3900' },
-  '4700': { hoist: 'MFB3128.3.3190', pivotCentre: '3950' },
+  '4400': { hoist: 'MFB3126.3.2960', pivotCentre: '3600' },
+  '4500': { hoist: 'HPF3070-135-3-S3', pivotCentre: '3800' },
+  '4600': { hoist: 'MFB3126.3.3190', pivotCentre: '3900' },
+  '4660': { hoist: 'MFB3126.3.3190', pivotCentre: '3900' },
+  '4700': { hoist: 'MFB3126.3.3190', pivotCentre: '3950' },
   '4800': { hoist: 'MFB3126.4.3310', pivotCentre: '4150' },
   '4900': { hoist: 'MFB3126.4.3310', pivotCentre: '4200' },
 }

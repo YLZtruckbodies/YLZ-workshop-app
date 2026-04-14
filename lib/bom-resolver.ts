@@ -47,11 +47,13 @@ const HOIST_MAP: Record<string, string> = {
   // MFB part number variants (auto-populated from body length lookup)
   'mfb3126.3.2840':         '500-207',
   'mfb3126.3.3190':         '500-236',
-  'mfb3128.3.2960':         '500-236',
+  'mfb3126.3.2960':         'TBC-2960',
+  'mfb3128.3.2960':         'TBC-2960',
   'mfb3128.3.3190':         '500-236',
   'mfb3126.4.3310':         '500-237',
   'mfb3126.4.3450':         '500-237',
   'mfcb3126.4.3805':        '500-47',
+  'hpf3070-135-3-s3':       'TBC-HPF3070',
   // PH122 Kröger not in MRPeasy — will flag as TBD
 }
 
