@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDriveClient } from '@/lib/drive'
-import sharp from 'sharp'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 30
 
 /**
  * GET /api/drive-thumbnail/[fileId]
- * Proxies a Google Drive file thumbnail with image processing to make
- * thin DXF lines bold and clearly visible.
+ * Proxies a Google Drive file thumbnail with optional processing to make
+ * thin DXF lines visible at small sizes.
  *
- * Processing pipeline:
- * 1. Fetch hi-res thumbnail from Drive API
- * 2. Convert to greyscale
- * 3. Threshold to pure black/white (makes faint lines solid black)
- * 4. Dilate (thicken) all black lines by applying a blur then re-threshold
+ * If sharp processing fails (native binary issue on serverless), falls back
+ * to serving the raw Drive thumbnail.
  */
 export async function GET(
   req: NextRequest,
@@ -22,7 +19,7 @@ export async function GET(
   try {
     const drive = await getDriveClient()
 
-    // Get fresh thumbnail link from Drive API (supportsAllDrives for Shared Drive files)
+    // Get fresh thumbnail link from Drive API
     const file = await drive.files.get({
       fileId: params.fileId,
       fields: 'thumbnailLink',
@@ -35,9 +32,8 @@ export async function GET(
     }
 
     // Request higher resolution thumbnail
-    const hiResUrl = thumbUrl.replace(/=s\d+$/, '=s800')
+    const hiResUrl = thumbUrl.replace(/=s\d+$/, '=s400')
 
-    // Fetch the actual thumbnail image
     const imgRes = await fetch(hiResUrl)
     if (!imgRes.ok) {
       return new NextResponse(null, { status: 502 })
@@ -45,34 +41,43 @@ export async function GET(
 
     const inputBuffer = Buffer.from(await imgRes.arrayBuffer())
 
-    // Step 1: Greyscale + gamma to darken mid-tones, then extreme contrast
-    let buf = await sharp(inputBuffer)
-      .greyscale()
-      .gamma(0.3)              // gamma < 1 darkens mid-tones massively
-      .linear(10.0, -1200)     // nuclear contrast boost
-      .threshold(50)           // catch absolutely everything
-      .toBuffer()
+    // Try sharp processing, fall back to raw thumbnail if it fails
+    try {
+      const sharp = (await import('sharp')).default
 
-    // Step 2: Dilate 10 times with large blur for very thick lines
-    for (let i = 0; i < 10; i++) {
-      buf = await sharp(buf)
-        .negate()
-        .blur(5.0)
-        .negate()
-        .threshold(160)
+      // Single-pass: greyscale → gamma darken → threshold
+      const thresholded = await sharp(inputBuffer)
+        .greyscale()
+        .gamma(0.4)
+        .threshold(80)
         .toBuffer()
+
+      // One dilate pass to thicken lines
+      const bolded = await sharp(thresholded)
+        .negate()
+        .blur(3.0)
+        .negate()
+        .threshold(200)
+        .resize(232, 172, { fit: 'contain', background: { r: 255, g: 255, b: 255 } })
+        .png()
+        .toBuffer()
+
+      return new NextResponse(new Uint8Array(bolded), {
+        headers: {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'public, max-age=86400',
+        },
+      })
+    } catch (sharpErr: any) {
+      console.warn('Sharp processing failed, serving raw thumbnail:', sharpErr?.message)
+      // Serve the raw Drive thumbnail as-is
+      return new NextResponse(new Uint8Array(inputBuffer), {
+        headers: {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'public, max-age=86400',
+        },
+      })
     }
-
-    const bolded = await sharp(buf)
-      .png()
-      .toBuffer()
-
-    return new NextResponse(new Uint8Array(bolded), {
-      headers: {
-        'Content-Type': 'image/png',
-        'Cache-Control': 'public, max-age=86400',
-      },
-    })
   } catch (error: any) {
     console.error('Drive thumbnail error:', error?.message)
     return new NextResponse(null, { status: 500 })

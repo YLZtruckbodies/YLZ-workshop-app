@@ -24,7 +24,7 @@ const nextConfig = {
     ],
   },
   experimental: {
-    serverComponentsExternalPackages: ['pdfjs-dist', 'pdfkit', 'fontkit'],
+    serverComponentsExternalPackages: ['pdfjs-dist', 'pdfkit', 'fontkit', 'sharp'],
   },
 };
 
