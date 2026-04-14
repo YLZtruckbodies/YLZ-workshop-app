@@ -943,8 +943,14 @@ function parseTruckSection(text, d) {
     d.truck.oil_tank_type = loc.replace(/\s+/g," ") + (otm[2] ? " Upright" : "") + " " + mat + " " + otm[4] + "L";
   }
   
-  // Oil tank location
-  if (/behind\s*cab.*lhs/i.test(t)) d.truck.oil_tank_location = "Behind Cab LHS";
+  // Oil tank location — new subframe/chassis options
+  if (/lh\s*front\s*of\s*subframe/i.test(t)) d.truck.oil_tank_location = "LH Front of Subframe";
+  else if (/rh\s*front\s*of\s*subframe/i.test(t)) d.truck.oil_tank_location = "RH Front of Subframe";
+  else if (/centre\s*front\s*of\s*subframe/i.test(t)) d.truck.oil_tank_location = "Centre Front of Subframe";
+  else if (/chassis\s*lh/i.test(t)) d.truck.oil_tank_location = "Chassis LH";
+  else if (/chassis\s*rh/i.test(t)) d.truck.oil_tank_location = "Chassis RH";
+  // Legacy patterns (older quotes)
+  else if (/behind\s*cab.*lhs/i.test(t)) d.truck.oil_tank_location = "Behind Cab LHS";
   else if (/behind\s*cab.*rhs/i.test(t)) d.truck.oil_tank_location = "Behind Cab RHS";
   else if (/under\s*tray.*lhs.*front/i.test(t)) d.truck.oil_tank_location = "Under Tray LHS Front";
   else if (/under\s*tray.*rhs.*front/i.test(t)) d.truck.oil_tank_location = "Under Tray RHS Front";

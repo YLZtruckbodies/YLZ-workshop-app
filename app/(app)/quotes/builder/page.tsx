@@ -343,7 +343,13 @@ const HYD_TANK_TYPES = [
   'TKVER160S (160L) Sleeper Box — 500-254',
   'TKVER200S (200L) Sleeper Box — 500-231',
 ]
-const HYD_TANK_LOCATIONS = ['Centre', 'Drivers', 'Passenger']
+const HYD_TANK_LOCATIONS = [
+  'Centre Front of Subframe',
+  'LH Front of Subframe',
+  'RH Front of Subframe',
+  'Chassis LH',
+  'Chassis RH',
+]
 const BRAKE_COUPLINGS = ['Duomatic', 'Triomatic', 'Duomatic & Triomatic', 'None']
 const LADDER_TYPES = [
   '3-Step Pull out ladder c/w rungs',
@@ -613,7 +619,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
     truckSideLights: 'None', truckAntiSpray: 'No', truckShovelHolder: 'No', truckMudflaps: 'None',
     truckPto: 'None', truckHydTankType: 'Factory supplied',
-    truckHydTankLocation: 'Centre', truckDValue: '', truckCouplingLoad: '',
+    truckHydTankLocation: 'Centre Front of Subframe', truckDValue: '', truckCouplingLoad: '',
     truckBrakeCoupling: 'Duomatic',
     truckLadderType: '3-Step Pull out ladder c/w rungs',
     truckLadderPosition: 'Driverside Front',
@@ -755,7 +761,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckMudflaps = tc.mudflaps || 'None'
     form.truckPto = tc.pto || 'None'
     form.truckHydTankType = tc.hydTankType || 'Factory supplied'
-    form.truckHydTankLocation = tc.hydTankLocation || 'Centre'
+    form.truckHydTankLocation = tc.hydTankLocation || 'Centre Front of Subframe'
     form.truckDValue = tc.dValue || ''
     form.truckCouplingLoad = tc.couplingLoad || getCouplingLoad(form.truckCoupling)
     // Engineering details (trailer)
@@ -827,7 +833,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckMudflaps = cfg.mudflaps || 'None'
     form.truckPto = cfg.pto || 'None'
     form.truckHydTankType = cfg.hydTankType || 'Factory supplied'
-    form.truckHydTankLocation = cfg.hydTankLocation || 'Centre'
+    form.truckHydTankLocation = cfg.hydTankLocation || 'Centre Front of Subframe'
     form.truckDValue = cfg.dValue || ''
     form.truckCouplingLoad = cfg.couplingLoad || getCouplingLoad(form.truckCoupling)
     form.truckTarpLength = (cfg.tarpLength as string) || ''
