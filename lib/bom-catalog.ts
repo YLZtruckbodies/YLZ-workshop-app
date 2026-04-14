@@ -177,7 +177,7 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
   '500-245': { code: '500-245', name: 'Hydraulic Tank 200L Side Mount', category: 'Hydraulics' },
 
   // ── Controller ─────────────────────────────────────────
-  '500-95':  { code: '500-95',  name: 'Controller Blaze Wired 8CH E-Stop Truck & Trailer', category: 'Controls' },
+  '500-170': { code: '500-170', name: 'XFACTOR T&D CONTROL ONLY TIP DEADMAN (12/24V)', category: 'Controls' },
   '500-246': { code: '500-246', name: 'Small Hand Controller Dash Mount', category: 'Controls' },
 
   // ── Brake Couplings ────────────────────────────────────
