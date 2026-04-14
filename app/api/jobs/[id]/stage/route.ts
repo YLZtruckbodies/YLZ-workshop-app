@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { STAGES } from '@/lib/jobTypes'
+import { STAGES, deriveProdGroup } from '@/lib/jobTypes'
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const body = await req.json().catch(() => ({}))
@@ -17,7 +17,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const updated = await prisma.job.update({
     where: { id: params.id },
-    data: { stage },
+    data: { stage, prodGroup: deriveProdGroup(stage) },
   })
 
   await prisma.jobActivity.create({

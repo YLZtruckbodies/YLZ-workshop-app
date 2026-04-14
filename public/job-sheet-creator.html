@@ -101,7 +101,7 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
   <div class="card" id="card1">
     <div class="card-title"><span class="num">1</span> Import Quote</div>
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-      <div class="icon">&#128196;</div>
+      <div class="icon"></div>
       <div class="label">Drop a Xero Quote PDF here</div>
       <div class="hint">or click to browse</div>
     </div>
@@ -391,17 +391,17 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
   <div class="card hidden" id="card12">
     <div class="card-title"><span class="num">12</span> Generate Job Sheets</div>
     <div class="actions">
-      <button class="btn btn-success" id="btnGenerate" onclick="generateExcel()">&#128196; Generate Excel Job Sheets</button>
-      <button class="btn btn-primary" id="btnWorkOrder" onclick="showWorkOrderSection()">&#128230; Generate Work Order</button>
-      <button class="btn" style="background:#7c3aed;color:#fff" id="btnVASS" onclick="showVASSSection()">&#128203; Generate VASS Form</button>
-      <button class="btn btn-secondary" onclick="resetForm()">&#8635; Reset Form</button>
+      <button class="btn btn-success" id="btnGenerate" onclick="generateExcel()"> Generate Excel Job Sheets</button>
+      <button class="btn btn-primary" id="btnWorkOrder" onclick="showWorkOrderSection()"> Generate Work Order</button>
+      <button class="btn" style="background:#7c3aed;color:#fff" id="btnVASS" onclick="showVASSSection()"> Generate VASS Form</button>
+      <button class="btn btn-secondary" onclick="resetForm()">↻ Reset Form</button>
     </div>
     <div class="status" id="generateStatus"></div>
   </div>
 
   <!-- Card 13: Work Order Generator -->
   <div class="card hidden" id="card13">
-    <div class="card-title"><span class="num">&#128230;</span> Laser Cutting Work Order</div>
+    <div class="card-title"><span class="num"></span> Laser Cutting Work Order</div>
     <p style="color:var(--text2);font-size:13px;margin-bottom:16px">Select DXF files and optionally matching PDF drawings. The work order groups parts by material with Cut/Fold checkboxes — same format as the YLZ Work Order Generator.</p>
     <div class="form-grid">
       <div class="form-group">
@@ -434,13 +434,13 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
     <div style="margin-top:16px">
       <label class="form-label" style="margin-bottom:8px;display:block">DXF Files <span style="color:var(--text3)">(required — select all DXF flat pattern files)</span></label>
       <input type="file" id="wo_dxf_files" multiple accept=".dxf,.DXF" style="display:none" onchange="onDXFFilesSelected()">
-      <button class="btn btn-secondary" onclick="document.getElementById('wo_dxf_files').click()">&#128193; Select DXF Files...</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('wo_dxf_files').click()"> Select DXF Files...</button>
       <span id="wo_dxf_label" style="margin-left:10px;font-size:13px;color:var(--text2)">No files selected</span>
     </div>
     <div style="margin-top:12px">
       <label class="form-label" style="margin-bottom:8px;display:block">PDF Drawings <span style="color:var(--text3)">(optional — for material/thickness detection)</span></label>
       <input type="file" id="wo_pdf_files" multiple accept=".pdf,.PDF" style="display:none" onchange="onPDFFilesSelected()">
-      <button class="btn btn-secondary" onclick="document.getElementById('wo_pdf_files').click()">&#128196; Select PDF Files...</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('wo_pdf_files').click()"> Select PDF Files...</button>
       <span id="wo_pdf_label" style="margin-left:10px;font-size:13px;color:var(--text2)">No files selected</span>
     </div>
     <div id="wo_parts_preview" style="margin-top:16px;display:none">
@@ -448,16 +448,16 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
       <div id="wo_parts_list" style="font-size:12px;font-family:'JetBrains Mono',monospace;background:var(--surface2);padding:12px;border-radius:8px;max-height:200px;overflow-y:auto"></div>
     </div>
     <div class="actions" style="margin-top:16px">
-      <button class="btn btn-primary" id="btnGenerateWO" onclick="generateWorkOrderExcel()">&#128230; Generate Work Order</button>
-      <button class="btn btn-secondary" id="btnRegenWO" onclick="generateWorkOrderExcel()" style="display:none">&#8635; Regenerate Work Order</button>
-      <button class="btn btn-secondary" onclick="document.getElementById('card13').classList.add('hidden')">&#10005; Close</button>
+      <button class="btn btn-primary" id="btnGenerateWO" onclick="generateWorkOrderExcel()"> Generate Work Order</button>
+      <button class="btn btn-secondary" id="btnRegenWO" onclick="generateWorkOrderExcel()" style="display:none">↻ Regenerate Work Order</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('card13').classList.add('hidden')">✕ Close</button>
     </div>
     <div class="status" id="wo_status"></div>
   </div>
 
   <!-- Card 14: VASS / CVC Form -->
   <div class="card hidden" id="card14">
-    <div class="card-title"><span class="num">&#128203;</span> VASS / CVC Booking Request</div>
+    <div class="card-title"><span class="num"></span> VASS / CVC Booking Request</div>
     <p style="color:var(--text2);font-size:13px;margin-bottom:16px">Fills the CVC eVASS Booking Request PDF. Fields auto-populated from job sheet where possible.</p>
 
     <div class="section-header">Booking Details</div>
@@ -572,8 +572,8 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
     </div>
 
     <div class="actions" style="margin-top:16px">
-      <button class="btn" style="background:#7c3aed;color:#fff" onclick="generateVASSPDF()">&#128203; Generate VASS PDF</button>
-      <button class="btn btn-secondary" onclick="document.getElementById('card14').classList.add('hidden')">&#10005; Close</button>
+      <button class="btn" style="background:#7c3aed;color:#fff" onclick="generateVASSPDF()"> Generate VASS PDF</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('card14').classList.add('hidden')">✕ Close</button>
     </div>
     <div class="status" id="vass_status"></div>
   </div>
@@ -1525,7 +1525,7 @@ function resetForm() {
     if (checks[i].parentElement) checks[i].parentElement.classList.remove("checked");
   }
   dropZone.classList.remove("parsed");
-  dropZone.querySelector(".icon").innerHTML = "&#128196;";
+  dropZone.querySelector(".icon").innerHTML = "";
   dropZone.querySelector(".label").textContent = "Drop a Xero Quote PDF here";
   dropZone.querySelector(".hint").textContent = "or click to browse";
   document.getElementById("parsedSummary").classList.add("hidden");
@@ -2654,3 +2654,4 @@ function createTruckOrderSheet(wb, d) {
 </script>
 </body>
 </html>
+

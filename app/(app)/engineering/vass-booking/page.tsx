@@ -65,10 +65,12 @@ export default function VassBookingPage() {
     poNumber: '',
     finishDate: getNextWednesday(),
     ownerName: '',
+    ownerEmail: '',
     ownerAddress: '',
     ownerCity: '',
     ownerState: 'VIC',
     ownerPostcode: '',
+    inspectionDate: '',
     vehicleMake: '',
     vehicleModel: '',
     engineType: '',
@@ -443,9 +445,10 @@ export default function VassBookingPage() {
       {/* Booking Details */}
       <div style={sectionStyle}>
         <div style={sectionTitle}>Booking Details</div>
-        <div style={{ ...gridFour, marginBottom: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
           <Field label="Job Number"><input style={inputStyle} value={form.jobNumber} onChange={e => set('jobNumber', e.target.value)} placeholder="e.g. 1042" /></Field>
           <Field label="Booking Date"><input type="date" style={inputStyle} value={form.bookingDate} onChange={e => set('bookingDate', e.target.value)} /></Field>
+          <Field label="Inspection Date"><input type="date" style={inputStyle} value={form.inspectionDate} onChange={e => set('inspectionDate', e.target.value)} /></Field>
           <Field label="Finish Date"><input type="date" style={inputStyle} value={form.finishDate} onChange={e => set('finishDate', e.target.value)} /></Field>
           <Field label="PO Number"><input style={inputStyle} value={form.poNumber} onChange={e => set('poNumber', e.target.value)} placeholder="Optional" /></Field>
         </div>
@@ -466,10 +469,11 @@ export default function VassBookingPage() {
         <div style={sectionTitle}>Owner / Customer</div>
         <div style={{ ...gridThree, marginBottom: 12 }}>
           <Field label="Owner Name"><input style={inputStyle} value={form.ownerName} onChange={e => set('ownerName', e.target.value)} placeholder="Full name or company" /></Field>
+          <Field label="Owner Email"><input style={inputStyle} value={form.ownerEmail} onChange={e => set('ownerEmail', e.target.value)} placeholder="owner@example.com" /></Field>
           <Field label="Address"><input style={inputStyle} value={form.ownerAddress} onChange={e => set('ownerAddress', e.target.value)} /></Field>
-          <Field label="City / Suburb"><input style={inputStyle} value={form.ownerCity} onChange={e => set('ownerCity', e.target.value)} /></Field>
         </div>
-        <div style={gridThree}>
+        <div style={gridFour}>
+          <Field label="City / Suburb"><input style={inputStyle} value={form.ownerCity} onChange={e => set('ownerCity', e.target.value)} /></Field>
           <Field label="State">
             <select style={selectStyle} value={form.ownerState} onChange={e => set('ownerState', e.target.value)}>
               {STATES.map(s => <option key={s}>{s}</option>)}
@@ -643,8 +647,8 @@ export default function VassBookingPage() {
         />
       </div>
 
-      {/* Save button */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 40 }}>
+      {/* Save / View PDF / Approve buttons */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 40, flexWrap: 'wrap' }}>
         <button
           onClick={save}
           disabled={saving}
@@ -657,6 +661,43 @@ export default function VassBookingPage() {
         >
           {saving ? 'Saving...' : bookingId ? 'Update Booking' : 'Save Booking'}
         </button>
+        {bookingId && (
+          <button
+            onClick={() => window.open(`/vass/${bookingId}`, '_blank')}
+            style={{
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 7, padding: '12px 28px',
+              color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
+            }}
+          >
+            View PDF
+          </button>
+        )}
+        {bookingId && (
+          <button
+            onClick={async () => {
+              // Save first to ensure latest data
+              await save()
+              // Mark as approved
+              await fetch(`/api/vass/bookings/${bookingId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'approved' }) })
+              // Open mailto draft to CVC
+              const subj = encodeURIComponent(`VASS Inspection Request - ${form.jobNumber}`)
+              const body = encodeURIComponent(
+                `Hi CVC,\n\nPlease find attached the VASS Inspection Request for Job ${form.jobNumber}.\n\n` +
+                `Job Number: ${form.jobNumber}\nP/O Number: ${form.poNumber}\n` +
+                `Vehicle: ${form.vehicleMake} ${form.vehicleModel}\nRego: ${form.rego}\nVIN: ${form.vinNumber}\n\n` +
+                `Kind regards,\n${form.requestedBy}\nYLZ Truck Bodies`
+              )
+              window.open(`mailto:Info@cvc.net.au?subject=${subj}&body=${body}`, '_blank')
+              alert('Booking approved. Print the PDF from the View PDF page and attach to your email.')
+            }}
+            style={{
+              background: '#28a745', border: 'none', borderRadius: 7, padding: '12px 28px',
+              color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5,
+            }}
+          >
+            Approve & Email CVC
+          </button>
+        )}
         {saved && (
           <div style={{ fontSize: 13, color: '#4ade80', fontWeight: 600 }}>
             ✓ Saved successfully

@@ -147,6 +147,10 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
   '500-83':  { code: '500-83',  name: 'Hyva FEA169-4 Cylinder Well Mount', category: 'Hoist' },
   '500-87':  { code: '500-87',  name: 'Hyva FEA169-5 Cylinder Well Mount', category: 'Hoist' },
   '500-47':  { code: '500-47',  name: 'Binotto Front Mount Hoist Kit (MFCB3126.4.3805)', category: 'Hoist' },
+  // TBC — Binotto 2960 part number not yet confirmed in MRPeasy
+  'TBC-2960': { code: 'TBC-2960', name: 'Binotto 2960 Well-Mount Hoist Kit (MFB3126.3.2960) — TBC', category: 'Hoist' },
+  // TBC — HPF3070 hoist part number not yet confirmed in MRPeasy
+  'TBC-HPF3070': { code: 'TBC-HPF3070', name: 'HPF3070-135-3-S3 Hoist Kit — TBC', category: 'Hoist' },
 
   // ── PTO Kits (MRPeasy parts) ───────────────────────────
   '500-123': { code: '500-123', name: 'PTO Kit Mercedes G230-12 ISO 4B (TES)', category: 'PTO' },
@@ -185,3 +189,4 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
   '40-206': { code: '40-206', name: 'Duomatic Coupling Male – Trailer Side', category: 'Brake Coupling' },
   '40-277': { code: '40-277', name: 'Duomatic Coupling Assembly for Dog Rear', category: 'Brake Coupling' },
 }
+

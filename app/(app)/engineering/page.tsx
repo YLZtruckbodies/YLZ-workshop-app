@@ -265,6 +265,14 @@ export default function EngineeringPage() {
                     )
                   })()}
                   <button
+                    onClick={() => router.push('/mrp-tools')}
+                    style={btnStyle('#f59e0b')}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(245,158,11,0.12)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                  >
+                    MRP Tools
+                  </button>
+                  <button
                     onClick={() => approveJob(job.id)}
                     disabled={approving === job.id}
                     style={{

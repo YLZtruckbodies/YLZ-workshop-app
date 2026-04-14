@@ -126,7 +126,7 @@ export async function dispatchEngineeringPack(
         jobId,
         jobNum: job.num,
         type: 'parts-order',
-        message: `${job.num} engineering pack approved by ${approvedBy}. Enter BOM into MRPeasy.`,
+        message: `${job.num} engineering pack approved by ${approvedBy}. MRP checklist ready — enter BOM into MRPeasy.`,
       },
     })
     await prisma.jobTask.create({
@@ -140,6 +140,104 @@ export async function dispatchEngineeringPack(
     results.push({ target: 'liz', method: 'notification', status: 'sent', detail: 'Notified + task created' })
   } else {
     results.push({ target: 'liz', method: 'notification', status: 'skipped', detail: 'Liz user not found' })
+  }
+
+  // 6b. Auto-generate MRP checklist
+  try {
+    const existingChecklist = await prisma.mrpChecklist.findUnique({ where: { jobId } })
+    if (!existingChecklist) {
+      const drawings = await prisma.jobDrawing.findMany({ where: { jobId } })
+      const stepFiles = drawings.filter((d: any) => d.type === 'step')
+      const tubePdfs = drawings.filter((d: any) => d.category === 'tube-laser')
+
+      // Resolve BOM list
+      let bomList: any[] = []
+      try {
+        const savedJob = await prisma.job.findUnique({ where: { id: jobId }, select: { bomList: true } })
+        bomList = Array.isArray(savedJob?.bomList) ? savedJob.bomList as any[] : []
+      } catch { /* ignore */ }
+      const bomSummary = bomList.map((b: any) => `${b.code || b.partNumber || '?'} — ${b.name || b.description || ''}`).join('\n')
+
+      const tarpSystem = flatCfg.tarpSystem || trc.tarpSystem || ''
+      const items: any[] = [
+        {
+          section: 'mrp-entry', label: 'Enter BOM into MRPeasy', sortOrder: 0,
+          details: { bomCount: bomList.length, bomList: bomSummary || 'No BOM resolved yet' },
+        },
+        {
+          section: 'tarp', sortOrder: 1,
+          label: tarpSystem && tarpSystem !== 'None' ? tarpSystem : 'No tarp specified',
+          details: {
+            system: tarpSystem || 'None',
+            colour: flatCfg.tarpColour || trc.tarpColour || '',
+            length: flatCfg.tarpLength || trc.tarpLength || '',
+            bowSize: flatCfg.tarpBowSize || trc.tarpBowSize || '',
+            bodyLength: flatCfg.bodyLength || trc.bodyLength || '',
+            bodyHeight: flatCfg.bodyHeight || trc.bodyHeight || '',
+          },
+        },
+        {
+          section: 'pto', sortOrder: 2,
+          label: flatCfg.pto || 'PTO — check with engineering',
+          details: { pto: flatCfg.pto || '', chassisMake: flatCfg.chassisMake || '', chassisModel: flatCfg.chassisModel || '' },
+        },
+        {
+          section: 'hoist', sortOrder: 3,
+          label: flatCfg.hoist || trc.hoist || 'Hoist — check with engineering',
+          details: {
+            hoist: flatCfg.hoist || trc.hoist || '',
+            pivotCentre: flatCfg.pivotCentre || '',
+            hydTankType: flatCfg.hydTankType || '',
+            hydraulics: flatCfg.hydraulics || '',
+            controls: flatCfg.controls || '',
+          },
+        },
+      ]
+
+      // Axles (if trailer or has axle data)
+      const axleMake = flatCfg.axleMake || trc.axleMake || ''
+      if (axleMake || isTrailer) {
+        items.push({
+          section: 'axles', sortOrder: 4,
+          label: axleMake ? `${trc.axleCount || flatCfg.axleCount || ''}x ${axleMake} ${trc.axleType || flatCfg.axleType || ''}` : 'Axles — check with engineering',
+          details: {
+            make: axleMake, count: String(trc.axleCount || flatCfg.axleCount || ''),
+            type: trc.axleType || flatCfg.axleType || '',
+            suspension: trc.suspension || flatCfg.suspension || '',
+            studPattern: trc.studPattern || flatCfg.studPattern || '',
+            axleLift: trc.axleLift || flatCfg.axleLift || '',
+          },
+        })
+      }
+
+      // Tube laser
+      items.push({
+        section: 'tube-laser', sortOrder: 5,
+        label: stepFiles.length > 0 ? `${stepFiles.length} STEP + ${tubePdfs.length} PDF files` : 'No STEP files found yet',
+        details: {
+          stepFiles: stepFiles.map((f: any) => ({ name: f.fileName, fileId: f.driveFileId })),
+          pdfFiles: tubePdfs.map((f: any) => ({ name: f.fileName, fileId: f.driveFileId })),
+        },
+      })
+
+      // Other
+      items.push({ section: 'other', sortOrder: 6, label: 'Other parts / special orders', details: {} })
+
+      await prisma.mrpChecklist.create({
+        data: {
+          jobId,
+          jobNum: job.num,
+          customer: job.customer || '',
+          items: { create: items },
+        },
+      })
+      results.push({ target: 'mrp-checklist', method: 'notification', status: 'sent', detail: `Checklist created with ${items.length} sections` })
+    } else {
+      results.push({ target: 'mrp-checklist', method: 'notification', status: 'skipped', detail: 'Checklist already exists' })
+    }
+  } catch (e) {
+    console.error('MRP checklist creation failed:', e)
+    results.push({ target: 'mrp-checklist', method: 'notification', status: 'failed', detail: 'Auto-creation failed' })
   }
 
   // 7. Notify workshop
