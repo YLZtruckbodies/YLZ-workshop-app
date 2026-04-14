@@ -239,7 +239,7 @@ export function resolveBoms(
     // ── Controls ──
     const controls = cfg('controls') || cfg('truckControls')
     if (controls.toLowerCase().includes('electric hand')) {
-      add('500-95', 'Controls')
+      add('500-170', 'Controls')
     } else if (controls.toLowerCase().includes('in-cab')) {
       add('500-246', 'Controls')
     }
@@ -384,3 +384,4 @@ export function resolveBoms(
 
   return boms
 }
+

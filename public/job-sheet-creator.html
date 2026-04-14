@@ -6,6 +6,7 @@
 <title>YLZ Job Sheet Generator</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -100,7 +101,7 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
   <div class="card" id="card1">
     <div class="card-title"><span class="num">1</span> Import Quote</div>
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-      <div class="icon">&#128196;</div>
+      <div class="icon"></div>
       <div class="label">Drop a Xero Quote PDF here</div>
       <div class="hint">or click to browse</div>
     </div>
@@ -162,6 +163,9 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
       <div class="form-group"><label class="form-label">Hinged <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_hinged"><option value="">Select...</option><option>430mm Forward</option><option>250mm Forward &amp; Side</option><option>Rear Hinged</option><option>N/A</option></select></div>
       <div class="form-group"><label class="form-label">C/L Pivot to Rear <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_cl_pivot"><option value="">Select...</option><option>235mm</option><option>510mm - 3AD</option><option>190mm - 7700 Dog</option><option>330mm - 8300 Dog</option><option>250mm - 9200 Semi</option><option>395mm</option><option>N/A</option></select></div>
     </div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">Pivot Centres <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_pivot_centres" readonly placeholder="Auto from body length"></div>
+    </div>
     <div id="trailerBodyDimsSection" class="hidden">
       <div class="mode-label trailer-label" style="margin-top:20px">TRAILER BODY</div>
       <div class="form-grid-4">
@@ -206,7 +210,7 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
       <div class="form-grid-4">
         <div class="form-group"><label class="form-label">Subframe Length <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
         <div class="form-group"><label class="form-label">Subframe Width <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
-        <div class="form-group"><label class="form-label">Hoist Model <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_hoist_model"><option value="">Select...</option><option>Binotto 3190</option><option>Hyva Alpha 091-4</option><option>Hyva Alpha 092-4</option><option>Hyva Alpha 191-4</option><option>Hyva Alpha 201-4</option><option>Hyva Alpha 241-4</option><option>Palfinger PH T74</option><option>Palfinger PH T94</option><option>Other</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Hoist Model <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_hoist_model" placeholder="Auto from body length"></div>
         <div class="form-group"><label class="form-label">Valve Bank <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
       </div>
       <div class="form-grid-4" style="margin-top:14px">
@@ -267,11 +271,18 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
       <div class="form-group"><label class="form-label">Tarp Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_tarp_type"><option value="">Select...</option><option>Razor PVC Electric</option><option>Razor PVC Manual</option><option>Razor Mesh Electric</option><option>Razor Mesh Manual</option><option>EziTarp Electric</option><option>EziTarp Manual</option><option>Pulltarp Electric</option><option>Pulltarp Manual</option><option>Aero Easy Cover</option><option>Rollover Mesh</option><option>Rollover PVC</option><option>Side Tipper Tarp</option><option>N/A</option></select></div>
       <div class="form-group"><label class="form-label">Tarp Make/Model <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_tarp_make"></div>
     </div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">Tarp Length <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_tarp_length" readonly placeholder="Body Length − 400mm"></div>
+      <div class="form-group" id="bowHeightGroup"><label class="form-label">Bow Height <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_bow_height" readonly placeholder="Auto from body height (truck only)"></div>
+    </div>
     <div id="trailerTarpSection" class="hidden">
       <div class="mode-label trailer-label" style="margin-top:20px">TRAILER TARP</div>
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Tarp Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_t_tarp_type"><option value="">Select...</option><option>Razor PVC Electric</option><option>Razor PVC Manual</option><option>Razor Mesh Electric</option><option>Razor Mesh Manual</option><option>EziTarp Electric</option><option>EziTarp Manual</option><option>Pulltarp Electric</option><option>Pulltarp Manual</option><option>Aero Easy Cover</option><option>Rollover Mesh</option><option>Rollover PVC</option><option>Side Tipper Tarp</option><option>N/A</option></select></div>
         <div class="form-group"><label class="form-label">Tarp Make/Model <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_t_tarp_make"></div>
+      </div>
+      <div class="form-grid" style="margin-top:14px">
+        <div class="form-group"><label class="form-label">Trailer Tarp Length <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_t_tarp_length" readonly placeholder="Trailer Body Length − 400mm"></div>
       </div>
     </div>
   </div>
@@ -380,10 +391,191 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
   <div class="card hidden" id="card12">
     <div class="card-title"><span class="num">12</span> Generate Job Sheets</div>
     <div class="actions">
-      <button class="btn btn-success" id="btnGenerate" onclick="generateExcel()">&#128196; Generate Excel Job Sheets</button>
-      <button class="btn btn-secondary" onclick="resetForm()">&#8635; Reset Form</button>
+      <button class="btn btn-success" id="btnGenerate" onclick="generateExcel()"> Generate Excel Job Sheets</button>
+      <button class="btn btn-primary" id="btnWorkOrder" onclick="showWorkOrderSection()"> Generate Work Order</button>
+      <button class="btn" style="background:#7c3aed;color:#fff" id="btnVASS" onclick="showVASSSection()"> Generate VASS Form</button>
+      <button class="btn btn-secondary" onclick="resetForm()">↻ Reset Form</button>
     </div>
     <div class="status" id="generateStatus"></div>
+  </div>
+
+  <!-- Card 13: Work Order Generator -->
+  <div class="card hidden" id="card13">
+    <div class="card-title"><span class="num"></span> Laser Cutting Work Order</div>
+    <p style="color:var(--text2);font-size:13px;margin-bottom:16px">Select DXF files and optionally matching PDF drawings. The work order groups parts by material with Cut/Fold checkboxes — same format as the YLZ Work Order Generator.</p>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Work Order Number</label>
+        <input class="form-input" id="wo_wo_number" placeholder="e.g. WO-2026-001">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Customer</label>
+        <input class="form-input" id="wo_customer" placeholder="Customer name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Quote Number</label>
+        <input class="form-input" id="wo_quote">
+      </div>
+      <div class="form-group">
+        <label class="form-label">PO Number</label>
+        <input class="form-input" id="wo_po">
+      </div>
+    </div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="form-group">
+        <label class="form-label">Ordered Date</label>
+        <input class="form-input" id="wo_date" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <input class="form-input" id="wo_notes" placeholder="Vendor notes (optional)">
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <label class="form-label" style="margin-bottom:8px;display:block">DXF Files <span style="color:var(--text3)">(required — select all DXF flat pattern files)</span></label>
+      <input type="file" id="wo_dxf_files" multiple accept=".dxf,.DXF" style="display:none" onchange="onDXFFilesSelected()">
+      <button class="btn btn-secondary" onclick="document.getElementById('wo_dxf_files').click()"> Select DXF Files...</button>
+      <span id="wo_dxf_label" style="margin-left:10px;font-size:13px;color:var(--text2)">No files selected</span>
+    </div>
+    <div style="margin-top:12px">
+      <label class="form-label" style="margin-bottom:8px;display:block">PDF Drawings <span style="color:var(--text3)">(optional — for material/thickness detection)</span></label>
+      <input type="file" id="wo_pdf_files" multiple accept=".pdf,.PDF" style="display:none" onchange="onPDFFilesSelected()">
+      <button class="btn btn-secondary" onclick="document.getElementById('wo_pdf_files').click()"> Select PDF Files...</button>
+      <span id="wo_pdf_label" style="margin-left:10px;font-size:13px;color:var(--text2)">No files selected</span>
+    </div>
+    <div id="wo_parts_preview" style="margin-top:16px;display:none">
+      <div class="section-header">Parts Detected</div>
+      <div id="wo_parts_list" style="font-size:12px;font-family:'JetBrains Mono',monospace;background:var(--surface2);padding:12px;border-radius:8px;max-height:200px;overflow-y:auto"></div>
+    </div>
+    <div class="actions" style="margin-top:16px">
+      <button class="btn btn-primary" id="btnGenerateWO" onclick="generateWorkOrderExcel()"> Generate Work Order</button>
+      <button class="btn btn-secondary" id="btnRegenWO" onclick="generateWorkOrderExcel()" style="display:none">↻ Regenerate Work Order</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('card13').classList.add('hidden')">✕ Close</button>
+    </div>
+    <div class="status" id="wo_status"></div>
+  </div>
+
+  <!-- Card 14: VASS / CVC Form -->
+  <div class="card hidden" id="card14">
+    <div class="card-title"><span class="num"></span> VASS / CVC Booking Request</div>
+    <p style="color:var(--text2);font-size:13px;margin-bottom:16px">Fills the CVC eVASS Booking Request PDF. Fields auto-populated from job sheet where possible.</p>
+
+    <div class="section-header">Booking Details</div>
+    <div class="form-grid-4">
+      <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="vass_date"></div>
+      <div class="form-group"><label class="form-label">Inspection Date (next Wed)</label><input class="form-input" id="vass_inspection_date"></div>
+      <div class="form-group"><label class="form-label">Job Number</label><input class="form-input" id="vass_job_number" placeholder="e.g. YLZ1234"></div>
+      <div class="form-group"><label class="form-label">P/O Number</label><input class="form-input" id="vass_po_number"></div>
+    </div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">Requested By (Name)</label><input class="form-input" id="vass_requested_by" value="Chris Toppi"></div>
+      <div class="form-group"><label class="form-label">Requester Email</label><input class="form-input" id="vass_requester_email" value="chris@ylztruckbodies.com.au"></div>
+    </div>
+
+    <div class="section-header" style="margin-top:20px">Vehicle Owner Details</div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">Owner Name</label><input class="form-input" id="vass_owner_name"></div>
+      <div class="form-group"><label class="form-label">Owner Email</label><input class="form-input" id="vass_owner_email" placeholder="Email for eVASS delivery"></div>
+    </div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="form-group full"><label class="form-label">Address</label><input class="form-input" id="vass_address"></div>
+    </div>
+    <div class="form-grid-4" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">City</label><input class="form-input" id="vass_city"></div>
+      <div class="form-group"><label class="form-label">State</label><select class="form-select" id="vass_state"><option>VIC</option><option>NSW</option><option>ACT</option><option>TAS</option><option>QLD</option><option>SA</option><option>WA</option><option>NT</option></select></div>
+      <div class="form-group"><label class="form-label">Postcode</label><input class="form-input" id="vass_postcode"></div>
+    </div>
+
+    <div class="section-header" style="margin-top:20px">Vehicle Details</div>
+    <div class="form-grid-4" style="margin-top:14px">
+      <div class="form-group">
+        <label class="form-label">Make</label>
+        <select class="form-select" id="vass_make" onchange="onVASSMakeSelected()">
+          <option value="">Select...</option>
+          <option>UD</option><option>Iveco</option><option>Scania</option><option>Mercedes Benz</option>
+          <option>Hino</option><option>Isuzu</option><option>Kenworth</option><option>Mack</option>
+          <option>Volvo</option><option>DAF</option><option>MAN</option><option>Fuso</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Model</label>
+        <input class="form-input" id="vass_model" placeholder="e.g. Quon GW 26 460 KAA" list="vass_model_list">
+        <datalist id="vass_model_list"></datalist>
+      </div>
+      <div class="form-group"><label class="form-label">Engine Type &amp; Size</label><input class="form-input" id="vass_engine_type"></div>
+      <div class="form-group"><label class="form-label">Engine #</label><input class="form-input" id="vass_engine_num"></div>
+    </div>
+    <div class="form-grid-4" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">Rego</label><input class="form-input" id="vass_rego"></div>
+      <div class="form-group"><label class="form-label">VIN</label><input class="form-input" id="vass_vin"></div>
+      <div class="form-group"><label class="form-label">Odometer</label><input class="form-input" id="vass_odometer" placeholder="km"></div>
+      <div class="form-group"><label class="form-label">Compliance Plate Date</label><input class="form-input" id="vass_plate_date" placeholder="mm/yyyy"></div>
+    </div>
+    <div class="form-grid-4" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">No. of Seats (incl. driver)</label><input class="form-input" id="vass_seats" placeholder="Auto from model"></div>
+      <div class="form-group"><label class="form-label">GVM (kg)</label><input class="form-input" id="vass_gvm" placeholder="Auto from model"></div>
+      <div class="form-group"><label class="form-label">GCM (kg)</label><input class="form-input" id="vass_gcm" placeholder="Auto from model"></div>
+      <div class="form-group"><label class="form-label">Tare Weight (kg)</label><input class="form-input" id="vass_tare_weight"></div>
+    </div>
+    <div class="form-grid-4" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">Front Axle Rating (kg)</label><input class="form-input" id="vass_front_axle" placeholder="Auto from model"></div>
+      <div class="form-group"><label class="form-label">Rear Axle Rating (kg)</label><input class="form-input" id="vass_rear_axle" placeholder="Auto from model"></div>
+      <div class="form-group"><label class="form-label">Wheelbase (mm)</label><input class="form-input" id="vass_wheelbase"></div>
+    </div>
+    <div class="form-grid-4" style="margin-top:14px">
+      <div class="form-group"><label class="form-label">Front Tyre Size</label><input class="form-input" id="vass_front_tyre_size" placeholder="e.g. 315/80R22.5"></div>
+      <div class="form-group"><label class="form-label">No. Front Tyres</label><select class="form-select" id="vass_front_tyre_num"><option value="2">2</option><option value="4">4</option></select></div>
+      <div class="form-group"><label class="form-label">Rear Tyre Size</label><input class="form-input" id="vass_rear_tyre_size" placeholder="e.g. 315/80R22.5"></div>
+      <div class="form-group"><label class="form-label">No. Rear Tyres</label><select class="form-select" id="vass_rear_tyre_num"><option value="4">4</option><option value="2">2</option><option value="6">6</option><option value="8">8</option><option value="12">12</option></select></div>
+    </div>
+
+    <div class="section-header" style="margin-top:20px">VASS Modification Codes</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Select all applicable modification codes:</p>
+    <div class="check-grid" style="grid-template-columns:1fr 1fr 1fr">
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_A1">A1 – Engine Substitution</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_A2">A2 – Air Cleaner Sub/Additional</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_A4">A4 – Exhaust System Alterations</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_A5">A5 – Road Speed Limiter</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_B1">B1 – Transmission Substitution</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_C1">C1 – Tailshaft Alterations</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_D1">D1 – Rear Axle/s Installation</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_D2">D2 – Differential Substitution</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_E1">E1 – Front Axle Installation</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_E2">E2 – Steering System Alteration</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_F1">F1 – Suspension Substitution</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_G1">G1 – Air Brake Repositioning</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_G4">G4 – Brake System Certification</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_G5">G5 – Auxiliary Brake Installation</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_G7">G7 – Brake System Substitution</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_H1">H1 – Wheelbase Extension &gt;1st Option</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_H2">H2 – Wheelbase Reduction &lt;1st Option</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_H3">H3 – Wheelbase Change Within Option</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_H4">H4 – Chassis Frame Alteration</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_J1">J1 – Body Mounting</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_K1">K1 – Seating Capacity Alterations</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_M1">M1 – Fuel Tank Repositioning</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_P1">P1 – Tow Coupling Installation</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_P2">P2 – Fifth Wheel &amp; King Pin</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_Q1">Q1 – Truck Mounted Lifting (Slewing)</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_R1">R1 – Goods Loading Device</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_S1">S1 – GVM Rating Within Specs</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_S2">S2 – GVM Rating Non-Standard</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_S3">S3 – GCM Rating</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_S7">S7 – Trailer Rating</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_S8">S8 – Road Train Prime Mover</label>
+      <label class="check-item" onclick="toggle(this)"><input type="checkbox" id="vass_code_S9">S9 – B-Double Rating</label>
+    </div>
+
+    <div class="form-group full" style="margin-top:16px">
+      <label class="form-label">Description of Modification</label>
+      <textarea class="form-textarea" id="vass_description" rows="4" placeholder="Describe the modifications being certified..."></textarea>
+    </div>
+
+    <div class="actions" style="margin-top:16px">
+      <button class="btn" style="background:#7c3aed;color:#fff" onclick="generateVASSPDF()"> Generate VASS PDF</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('card14').classList.add('hidden')">✕ Close</button>
+    </div>
+    <div class="status" id="vass_status"></div>
   </div>
 
 </div>
@@ -401,6 +593,29 @@ var TRUCK_HEIGHTS = ["900mm","1000mm","1100mm","1150mm","1200mm","1300mm","1410m
 var TRAILER_HEIGHTS = ["1100mm","1410mm","1500mm","1000mm","1150mm","1520mm","N/A"];
 var TRUCK_MAINRUNNER = ["762mm","770mm","850mm","860mm","865mm"];
 var TRAILER_MAINRUNNER = ["965mm Inside","1000mm Inside","818mm Inside - Pig","N/A"];
+
+// Body Length → Hoist Model + Pivot Centres (Truck only) — from Body Length vs Hoist vs Pivot Centres.xlsx
+var TRUCK_HOIST_PIVOT_MAP = {
+  "4200mm": { pivot: "3500mm", hoist: "MFB3126.3.2840" },
+  "4300mm": { pivot: "3570mm", hoist: "MFB3126.3.2840" },
+  "4400mm": { pivot: "3600mm", hoist: "MFB3126.3.2960" },
+  "4500mm": { pivot: "3800mm", hoist: "HPF3070-135-3-S3" },
+  "4600mm": { pivot: "3900mm", hoist: "MFB3126.3.3190" },
+  "4660mm": { pivot: "3900mm", hoist: "MFB3126.3.3190" },
+  "4700mm": { pivot: "3950mm", hoist: "MFB3126.3.3190" },
+  "4770mm": { pivot: "4010mm", hoist: "MFB3126.3.3190" },
+  "4800mm": { pivot: "4150mm", hoist: "MFB3126.4.3310" },
+  "4900mm": { pivot: "4200mm", hoist: "MFB3126.4.3310" },
+};
+
+// Chassis database for VASS form
+var CHASSIS_DB = [
+  { make: "UD", model: "Quon GW 26 460 KAA", seats: "2", gvm: "26000", gcm: "60000", front_axle: "8200", rear_axle: "21000" },
+  { make: "UD", model: "Quon CW 26 460 KAA", seats: "2", gvm: "26000", gcm: "60000", front_axle: "8200", rear_axle: "21000" },
+  { make: "Iveco", model: "Stralis 460", seats: "2", gvm: "25100", gcm: "50000", front_axle: "", rear_axle: "" },
+  { make: "Scania", model: "P 280", seats: "2", gvm: "18600", gcm: "30000", front_axle: "7100", rear_axle: "11500" },
+  { make: "Mercedes Benz", model: "Actros", seats: "2", gvm: "26000", gcm: "", front_axle: "7100", rear_axle: "" },
+];
 
 // Chassis length mapping from trailer body length
 var CHASSIS_LENGTH_MAP = {
@@ -448,9 +663,10 @@ function updateModeOptions(mode) {
   }
 }
 
-// Auto-cascade: body length -> chassis length -> wheelbase
+// Auto-cascade: body length -> chassis length -> wheelbase (trailer)
+//               body length -> hoist model + pivot centres (truck)
 function autoCascade() {
-  // For trailer body length (main or trailer-specific in both mode)
+  // Trailer cascade
   var bodyLenEl = currentJobType === "both" ? document.getElementById("f_t_body_length") : (currentJobType === "trailer" ? document.getElementById("f_body_length") : null);
   if (bodyLenEl) {
     var bodyLen = bodyLenEl.value;
@@ -463,6 +679,64 @@ function autoCascade() {
       if (wbEl && wb) wbEl.value = wb;
     }
   }
+  // Truck body length → hoist model + pivot centres
+  if (currentJobType === "truck" || currentJobType === "both") {
+    var truckLenEl = document.getElementById("f_body_length");
+    if (truckLenEl) {
+      var lookup = TRUCK_HOIST_PIVOT_MAP[truckLenEl.value];
+      var pivotEl = document.getElementById("f_pivot_centres");
+      var hoistEl = document.getElementById("f_hoist_model");
+      if (lookup) {
+        if (pivotEl) pivotEl.value = lookup.pivot;
+        if (hoistEl) hoistEl.value = lookup.hoist;
+      } else {
+        if (pivotEl) pivotEl.value = "";
+        if (hoistEl && !hoistEl.value) hoistEl.value = "";
+      }
+    }
+  }
+  // Update tarp fields whenever body length changes
+  updateTarpFields();
+}
+
+// Tarp Length = Body Length - 400mm (auto)
+function updateTarpFields() {
+  function calcTarpLen(bodyLenStr) {
+    if (!bodyLenStr) return "";
+    var m = bodyLenStr.match(/(\d+)/);
+    if (!m) return "";
+    return (parseInt(m[1]) - 400) + "mm";
+  }
+  // Truck tarp length
+  if (currentJobType === "truck") {
+    var el = document.getElementById("f_body_length");
+    var tl = document.getElementById("f_tarp_length");
+    if (el && tl) tl.value = calcTarpLen(el.value);
+  } else if (currentJobType === "trailer") {
+    var el = document.getElementById("f_body_length");
+    var tl = document.getElementById("f_tarp_length");
+    if (el && tl) tl.value = calcTarpLen(el.value);
+  } else if (currentJobType === "both") {
+    var tbl = document.getElementById("f_t_body_length");
+    var ttl = document.getElementById("f_t_tarp_length");
+    if (tbl && ttl) ttl.value = calcTarpLen(tbl.value);
+    var bl = document.getElementById("f_body_length");
+    var tl = document.getElementById("f_tarp_length");
+    if (bl && tl) tl.value = calcTarpLen(bl.value);
+  }
+}
+
+// Bow Height auto-fill for truck bodies:  1000mm → 450mm,  1100mm → 380mm
+function updateBowHeight() {
+  var bowEl = document.getElementById("f_bow_height");
+  if (!bowEl) return;
+  if (currentJobType !== "truck") { bowEl.value = ""; return; }
+  var bhEl = document.getElementById("f_body_height");
+  if (!bhEl) return;
+  var bh = bhEl.value;
+  if (bh.includes("1000")) { bowEl.value = "450mm"; }
+  else if (bh.includes("1100")) { bowEl.value = "380mm"; }
+  else { bowEl.value = ""; }
 }
 
 // =================== DRAG & DROP ===================
@@ -482,16 +756,22 @@ document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("f_issue_date").value = today;
   // Initialize mode options
   updateModeOptions("trailer");
-  // Listen for body length changes to auto-cascade
+  // Listen for body length changes to auto-cascade + tarp length
   ["f_body_length","f_t_body_length"].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) el.addEventListener("change", autoCascade);
+    if (el) el.addEventListener("change", function() { autoCascade(); updateTarpFields(); });
   });
+  // Listen for body height changes to auto-fill bow height
+  var bHeightEl = document.getElementById("f_body_height");
+  if (bHeightEl) bHeightEl.addEventListener("change", updateBowHeight);
   // Set default C/L Pivot value
   var clPivot = document.getElementById("f_cl_pivot");
   if (clPivot) clPivot.value = "235mm";
   var tClPivot = document.getElementById("f_t_cl_pivot");
   if (tClPivot) tClPivot.value = "235mm";
+  // Pre-fill Work Order date
+  var woDateEl = document.getElementById("wo_date");
+  if (woDateEl) woDateEl.value = new Date().toISOString().split("T")[0];
   // Initialize "Other" options on all selects
   initOtherOptions();
 });
@@ -1100,6 +1380,8 @@ function selectJobType(type, el) {
   }
   updateModeOptions(type);
   applyModeVisibility();
+  updateBowHeight();
+  updateTarpFields();
 }
 
 function applyModeVisibility() {
@@ -1243,7 +1525,7 @@ function resetForm() {
     if (checks[i].parentElement) checks[i].parentElement.classList.remove("checked");
   }
   dropZone.classList.remove("parsed");
-  dropZone.querySelector(".icon").innerHTML = "&#128196;";
+  dropZone.querySelector(".icon").innerHTML = "";
   dropZone.querySelector(".label").textContent = "Drop a Xero Quote PDF here";
   dropZone.querySelector(".hint").textContent = "or click to browse";
   document.getElementById("parsedSummary").classList.add("hidden");
@@ -1310,7 +1592,11 @@ function collectFormData() {
     tailgate_type: gv("f_tailgate_type"), tailgate_lights: gv("f_tailgate_lights"),
     // Tarp
     tarp_type: gv("f_tarp_type"), tarp_make: gv("f_tarp_make"),
+    tarp_length: gv("f_tarp_length"), bow_height: gv("f_bow_height"),
     t_tarp_type: gv("f_t_tarp_type"), t_tarp_make: gv("f_t_tarp_make"),
+    t_tarp_length: gv("f_t_tarp_length"),
+    // Hoist & pivot centres (truck)
+    pivot_centres: gv("f_pivot_centres"),
     // Running gear
     axle_make: gv("f_axle_make"), axle_type: gv("f_axle_type"),
     axle_rating: gv("f_axle_rating"), num_axles: gv("f_num_axles"),
@@ -1726,19 +2012,22 @@ function createTruckSelectionSheet(wb, d, prefix) {
   lbl(ws, r, 1, "Subframe Length"); val(ws, r, 2, "Refer to Drawing");
   lbl(ws, r, 3, "Subframe Width"); val(ws, r, 4, "Refer to Drawing"); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
-  lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, "Refer to Drawing"); r++;
-  lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
-  lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
+  lbl(ws, r, 3, "Pivot Centres"); val(ws, r, 4, d.pivot_centres); r++;
+  lbl(ws, r, 1, "Valve Bank"); val(ws, r, 2, "Refer to Drawing");
+  lbl(ws, r, 3, "Oil Tank Type"); val(ws, r, 4, d.oil_tank_type); r++;
+  lbl(ws, r, 1, "Oil Tank Location"); val(ws, r, 2, d.oil_tank_location); r++;
 
   sectionTitle(ws, r, 1, "CONTROLS", 4); r++;
   lbl(ws, r, 1, "PTO"); val(ws, r, 2, d.pto);
   lbl(ws, r, 3, "Truck Hoist"); val(ws, r, 4, d.ctrl_truck_hoist); r++;
   lbl(ws, r, 1, "Truck Tailgate"); val(ws, r, 2, d.ctrl_truck_tailgate);
   lbl(ws, r, 3, "Truck Tarp"); val(ws, r, 4, d.ctrl_truck_tarp); r++;
-  
+
   sectionTitle(ws, r, 1, "TARP", 4); r++;
   lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);
   lbl(ws, r, 3, "Tarp Make/Model"); val(ws, r, 4, d.tarp_make); r++;
+  lbl(ws, r, 1, "Tarp Length"); val(ws, r, 2, d.tarp_length);
+  lbl(ws, r, 3, "Bow Height"); val(ws, r, 4, d.bow_height); r++;
   
   sectionTitle(ws, r, 1, "ACCESSORIES", 4); r++;
   lbl(ws, r, 1, "Tailgate Type"); val(ws, r, 2, d.tailgate_type);
@@ -1884,6 +2173,447 @@ function createTruckPaintSheet(wb, d, prefix) {
   val(ws, r, 1, d.notes, 4); r++;
 }
 
+// =================== WORK ORDER GENERATOR ===================
+
+var _woFiles = { dxf: [], pdf: [] };
+var _woParts = [];
+
+function showWorkOrderSection() {
+  var el = document.getElementById("card13");
+  if (el) {
+    el.classList.remove("hidden");
+    el.scrollIntoView({ behavior: "smooth" });
+    // Pre-fill from job sheet
+    var d = collectFormData();
+    var woNum = document.getElementById("wo_wo_number");
+    if (woNum && !woNum.value) woNum.value = d.job_number || "";
+    var woCust = document.getElementById("wo_customer");
+    if (woCust && !woCust.value) woCust.value = d.customer || "";
+    var woQuote = document.getElementById("wo_quote");
+    if (woQuote && !woQuote.value) woQuote.value = d.quote_number || "";
+  }
+}
+
+function showVASSSection() {
+  var el = document.getElementById("card14");
+  if (el) {
+    el.classList.remove("hidden");
+    el.scrollIntoView({ behavior: "smooth" });
+    autoPopulateVASS();
+  }
+}
+
+function onDXFFilesSelected() {
+  var input = document.getElementById("wo_dxf_files");
+  var label = document.getElementById("wo_dxf_label");
+  if (!input || !input.files.length) return;
+  _woFiles.dxf = Array.from(input.files);
+  label.textContent = _woFiles.dxf.length + " DXF file(s) selected";
+  processDXFFiles();
+}
+
+function onPDFFilesSelected() {
+  var input = document.getElementById("wo_pdf_files");
+  var label = document.getElementById("wo_pdf_label");
+  if (!input || !input.files.length) return;
+  _woFiles.pdf = Array.from(input.files);
+  label.textContent = _woFiles.pdf.length + " PDF file(s) selected";
+  processDXFFiles();
+}
+
+function parseDXFExtents(text) {
+  var lines = text.split(/\r?\n/);
+  var extmin_x, extmin_y, extmax_x, extmax_y;
+  for (var i = 0; i < lines.length - 1; i++) {
+    var code = lines[i].trim();
+    var next = lines[i + 1].trim();
+    if (code === '$EXTMIN') {
+      for (var j = i + 1; j < Math.min(i + 30, lines.length - 1); j++) {
+        var c = parseInt(lines[j].trim());
+        var v = parseFloat(lines[j + 1].trim());
+        if (c === 10) extmin_x = v;
+        if (c === 20) extmin_y = v;
+        j++;
+      }
+    }
+    if (code === '$EXTMAX') {
+      for (var j = i + 1; j < Math.min(i + 30, lines.length - 1); j++) {
+        var c = parseInt(lines[j].trim());
+        var v = parseFloat(lines[j + 1].trim());
+        if (c === 10) extmax_x = v;
+        if (c === 20) extmax_y = v;
+        j++;
+      }
+    }
+  }
+  if (extmin_x !== undefined && extmax_x !== undefined) {
+    return {
+      width: Math.abs(extmax_x - extmin_x).toFixed(2),
+      height: Math.abs(extmax_y - extmin_y).toFixed(2)
+    };
+  }
+  return { width: "0.00", height: "0.00" };
+}
+
+function readFileAsText(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function(e) { resolve(e.target.result); };
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+async function extractMaterialFromPDF(file) {
+  try {
+    var ab = await file.arrayBuffer();
+    var pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    var text = "";
+    for (var p = 1; p <= pdf.numPages; p++) {
+      var page = await pdf.getPage(p);
+      var content = await page.getTextContent();
+      text += content.items.map(function(i){ return i.str; }).join(" ") + "\n";
+    }
+    var material = "Unknown";
+    var hasFlatPattern = /flat\s*pattern/i.test(text);
+    var thickness = "";
+    var m = text.match(/(?:hardox\s*(\d+)\s*[-–]?\s*([\d.]+)\s*mm)/i);
+    if (m) { material = "Hardox " + m[1] + " - " + m[2] + "mm"; thickness = m[2] + "mm"; }
+    else {
+      m = text.match(/(?:mild\s*steel|ms)\s*(?:gr?\.?\s*)?350?\s*(?:HR)?\s*[-–]?\s*([\d.]+)\s*mm/i);
+      if (m) { material = "Mild Steel 350 HR - " + m[1] + "mm"; thickness = m[1] + "mm"; }
+      else {
+        m = text.match(/([\d.]+)\s*mm/);
+        if (m) { material = "Unknown - " + m[1] + "mm"; thickness = m[1] + "mm"; }
+      }
+    }
+    return { material: material, hasFlatPattern: hasFlatPattern, thickness: thickness };
+  } catch(e) {
+    return { material: "Unknown", hasFlatPattern: false, thickness: "" };
+  }
+}
+
+async function processDXFFiles() {
+  if (!_woFiles.dxf.length) return;
+  var partsDiv = document.getElementById("wo_parts_preview");
+  var partsList = document.getElementById("wo_parts_list");
+  if (!partsDiv || !partsList) return;
+  partsDiv.style.display = "block";
+  partsList.textContent = "Processing files...";
+  _woParts = [];
+
+  // Build PDF map by stem name
+  var pdfMap = {};
+  _woFiles.pdf.forEach(function(f) {
+    var stem = f.name.replace(/\.pdf$/i, "").toUpperCase();
+    pdfMap[stem] = f;
+  });
+
+  var lines = [];
+  for (var i = 0; i < _woFiles.dxf.length; i++) {
+    var dxfFile = _woFiles.dxf[i];
+    var stem = dxfFile.name.replace(/\.dxf$/i, "");
+    var stemUpper = stem.toUpperCase();
+    var text = await readFileAsText(dxfFile);
+    var extents = parseDXFExtents(text);
+    var pdfFile = pdfMap[stemUpper];
+    var matInfo = { material: "Unknown", hasFlatPattern: false };
+    if (pdfFile) matInfo = await extractMaterialFromPDF(pdfFile);
+    _woParts.push({
+      part_number: stem,
+      width: parseFloat(extents.width),
+      height: parseFloat(extents.height),
+      material: matInfo.material,
+      has_flat_pattern: matInfo.hasFlatPattern,
+      qty: 1
+    });
+    lines.push(stem + " → " + extents.width + "×" + extents.height + "mm  |  " + matInfo.material + (matInfo.hasFlatPattern ? "  [Flat Pattern]" : ""));
+  }
+  partsList.textContent = lines.join("\n");
+}
+
+async function generateWorkOrderExcel() {
+  if (!_woParts.length) {
+    showStatus("wo_status", "Please select DXF files first.", "error");
+    return;
+  }
+  showStatus("wo_status", "Generating work order...", "info");
+
+  var config = {
+    wo_number: document.getElementById("wo_wo_number").value,
+    customer: document.getElementById("wo_customer").value,
+    quote: document.getElementById("wo_quote").value,
+    po: document.getElementById("wo_po").value,
+    ordered_date: document.getElementById("wo_date").value,
+    notes: document.getElementById("wo_notes").value,
+  };
+
+  var CHECKBOX = "\u2610";
+  var SECTION_FILL = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF2F2F2" } };
+  var TITLE_FONT = { name: "Arial", bold: true, size: 18 };
+  var SUBTITLE_FONT = { name: "Arial", size: 10, color: { argb: "FF555555" } };
+  var SECTION_FONT = { name: "Arial", bold: true, size: 11 };
+  var NORMAL_FONT = { name: "Arial", size: 10 };
+  var HDR_FONT = { name: "Arial", bold: true, size: 9, color: { argb: "FF333333" } };
+  var THIN_BORDER = { top: { style: "thin", color: { argb: "FFCCCCCC" } }, left: { style: "thin", color: { argb: "FFCCCCCC" } }, bottom: { style: "thin", color: { argb: "FFCCCCCC" } }, right: { style: "thin", color: { argb: "FFCCCCCC" } } };
+
+  var wb = new ExcelJS.Workbook();
+  var ws = wb.addWorksheet("Work Order");
+  ws.getColumn(1).width = 16;
+  ws.getColumn(2).width = 32;
+  ws.getColumn(3).width = 8;
+  ws.getColumn(4).width = 14;
+  ws.getColumn(5).width = 14;
+
+  var r = 1;
+  ws.mergeCells("A" + r + ":B" + r);
+  var titleCell = ws.getCell("A" + r);
+  titleCell.value = "WORK ORDER: " + (config.wo_number || "");
+  titleCell.font = TITLE_FONT;
+  ws.getRow(r).height = 30;
+  r++;
+
+  var info = [
+    ["Customer:", config.customer],
+    ["Quote number:", config.quote],
+    ["PO number:", config.po],
+    ["Ordered date:", config.ordered_date],
+  ];
+  info.forEach(function(pair) {
+    ws.mergeCells("A" + r + ":B" + r);
+    var c = ws.getCell("A" + r);
+    c.value = pair[0] + " " + pair[1];
+    c.font = SUBTITLE_FONT;
+    ws.getRow(r).height = 18;
+    r++;
+  });
+  r++;
+
+  ws.mergeCells("A" + r + ":E" + r);
+  ws.getCell("A" + r).value = "Order notes";
+  ws.getCell("A" + r).font = { name: "Arial", bold: true, size: 12 };
+  r++;
+  if (config.notes) {
+    ws.mergeCells("A" + r + ":E" + r);
+    ws.getCell("A" + r).value = "Vendor notes: " + config.notes;
+    ws.getCell("A" + r).font = NORMAL_FONT;
+    r++;
+  }
+  r++;
+
+  // Group parts by material
+  var groups = {};
+  _woParts.forEach(function(p) {
+    if (!groups[p.material]) groups[p.material] = [];
+    groups[p.material].push(p);
+  });
+
+  Object.keys(groups).sort().forEach(function(mat) {
+    var parts = groups[mat];
+    ws.mergeCells("A" + r + ":E" + r);
+    var matCell = ws.getCell("A" + r);
+    matCell.value = mat;
+    matCell.font = SECTION_FONT;
+    matCell.fill = SECTION_FILL;
+    ws.getRow(r).height = 24;
+    r++;
+
+    ["", "Part details", "Qty", "Cutting", "Folding"].forEach(function(h, ci) {
+      var cell = ws.getCell(r, ci + 1);
+      cell.value = h;
+      cell.font = HDR_FONT;
+      cell.border = { bottom: { style: "thin", color: { argb: "FF999999" } } };
+    });
+    ws.getRow(r).height = 20;
+    r++;
+
+    parts.sort(function(a, b) { return a.part_number.localeCompare(b.part_number); }).forEach(function(part) {
+      ws.getRow(r).height = 70;
+      var sizeStr = part.width.toFixed(2) + " x " + part.height.toFixed(2) + " mm";
+      var bCell = ws.getCell("B" + r);
+      bCell.value = part.part_number + "\n" + sizeStr;
+      bCell.font = NORMAL_FONT;
+      bCell.alignment = { vertical: "middle", wrapText: true };
+      var qCell = ws.getCell("C" + r);
+      qCell.value = part.qty;
+      qCell.font = NORMAL_FONT;
+      qCell.alignment = { horizontal: "center", vertical: "middle" };
+      if (part.has_flat_pattern) {
+        var dCell = ws.getCell("D" + r);
+        dCell.value = "Cut  " + CHECKBOX;
+        dCell.font = NORMAL_FONT;
+        dCell.alignment = { horizontal: "center", vertical: "middle" };
+        var fCell = ws.getCell("E" + r);
+        fCell.value = "Fold  " + CHECKBOX;
+        fCell.font = NORMAL_FONT;
+        fCell.alignment = { horizontal: "center", vertical: "middle" };
+      } else {
+        ws.mergeCells("D" + r + ":E" + r);
+        var dCell = ws.getCell("D" + r);
+        dCell.value = "Cut Only  " + CHECKBOX;
+        dCell.font = NORMAL_FONT;
+        dCell.alignment = { horizontal: "center", vertical: "middle" };
+      }
+      for (var ci = 1; ci <= 5; ci++) ws.getCell(r, ci).border = THIN_BORDER;
+      r++;
+    });
+    r++;
+  });
+
+  var buf = await wb.xlsx.writeBuffer();
+  var blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  var fn = (config.wo_number || "WorkOrder") + "_WorkOrder.xlsx";
+  a.href = url; a.download = fn; a.click();
+  URL.revokeObjectURL(url);
+  showStatus("wo_status", "Work order generated: " + fn, "ok");
+
+  // Show regenerate button
+  var btnGen = document.getElementById("btnGenerateWO");
+  var btnRegen = document.getElementById("btnRegenWO");
+  if (btnGen) btnGen.style.display = "none";
+  if (btnRegen) btnRegen.style.display = "";
+}
+
+// =================== VASS / CVC FORM ===================
+
+function getNextWednesdayStr() {
+  var d = new Date();
+  var day = d.getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+  var daysAhead = 3 - day;
+  if (daysAhead <= 0) daysAhead += 7;
+  d.setDate(d.getDate() + daysAhead);
+  return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth()+1)).slice(-2) + '/' + d.getFullYear();
+}
+
+function autoPopulateVASS() {
+  var d = collectFormData();
+  var today = new Date();
+  var todayStr = ('0' + today.getDate()).slice(-2) + '/' + ('0' + (today.getMonth()+1)).slice(-2) + '/' + today.getFullYear();
+  var dateEl = document.getElementById("vass_date");
+  if (dateEl && !dateEl.value) dateEl.value = todayStr;
+  var inspEl = document.getElementById("vass_inspection_date");
+  if (inspEl && !inspEl.value) inspEl.value = getNextWednesdayStr();
+  var jobEl = document.getElementById("vass_job_number");
+  if (jobEl && !jobEl.value && d.job_number) jobEl.value = "YLZ" + d.job_number;
+  var makeEl = document.getElementById("vass_make");
+  if (makeEl && !makeEl.value && d.truck_make) {
+    makeEl.value = d.truck_make;
+    onVASSMakeSelected();
+  }
+  var modelEl = document.getElementById("vass_model");
+  if (modelEl && !modelEl.value && d.truck_model) modelEl.value = d.truck_model;
+}
+
+function onVASSMakeSelected() {
+  var make = document.getElementById("vass_make").value;
+  var dl = document.getElementById("vass_model_list");
+  if (!dl) return;
+  dl.innerHTML = "";
+  CHASSIS_DB.filter(function(e) { return e.make === make; }).forEach(function(e) {
+    var opt = document.createElement("option");
+    opt.value = e.model;
+    dl.appendChild(opt);
+  });
+  // Auto-fill if only one model
+  var matches = CHASSIS_DB.filter(function(e) { return e.make === make; });
+  if (matches.length === 1) fillVASSChassisData(matches[0]);
+}
+
+function fillVASSChassisData(entry) {
+  var fields = { vass_seats: entry.seats, vass_gvm: entry.gvm, vass_gcm: entry.gcm, vass_front_axle: entry.front_axle, vass_rear_axle: entry.rear_axle };
+  Object.keys(fields).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && fields[id]) el.value = fields[id];
+  });
+}
+
+function getSelectedVASSCodes() {
+  var codes = [];
+  var checks = document.querySelectorAll("#card14 .check-item input[type=checkbox]:checked");
+  checks.forEach(function(cb) {
+    var label = cb.parentElement.textContent.trim().split("–")[0].trim();
+    codes.push(label);
+  });
+  return codes.join(", ");
+}
+
+async function generateVASSPDF() {
+  showStatus("vass_status", "Loading PDF template...", "info");
+  try {
+    var { PDFDocument } = PDFLib;
+    var resp = await fetch("/cvc-evass-template.pdf");
+    if (!resp.ok) throw new Error("Could not load PDF template (status " + resp.status + "). Ensure cvc-evass-template.pdf is in the public folder.");
+    var templateBytes = await resp.arrayBuffer();
+    var pdfDoc = await PDFDocument.load(templateBytes, { ignoreEncryption: true });
+    var form = pdfDoc.getForm();
+
+    function setField(fieldName, value) {
+      if (!value) return;
+      try {
+        var field = form.getField(fieldName);
+        if (field.constructor.name === 'PDFTextField') field.setText(String(value));
+        else if (field.constructor.name === 'PDFDropdown') {
+          try { field.select(String(value)); } catch(e) { field.setText(String(value)); }
+        }
+      } catch(e) { /* field may not exist */ }
+    }
+
+    setField("Qxuvnp97LoQLjyC4lod8Xw", document.getElementById("vass_date").value);
+    setField("OmyyDF-5-vdgL54A4yE9dw", document.getElementById("vass_inspection_date").value);
+    setField("52KqTYnD34SMGdv-Pf-1eg", document.getElementById("vass_requested_by").value);
+    setField("GMwGgl7PDHDFA66UKSTpEA", document.getElementById("vass_requester_email").value);
+    setField("QWNQRbrPTWXr5VinzVLimg", document.getElementById("vass_po_number").value);
+    setField("pGxBZ53H25JgnKdsO64Acg", document.getElementById("vass_job_number").value);
+    setField("YCOOBJ1xg4uZYM1buXoZdg", document.getElementById("vass_owner_name").value);
+    setField("Email address to sent eVASS to", document.getElementById("vass_owner_email").value);
+    setField("B3dcw*Dm9zyYtKQn9gW*pw", document.getElementById("vass_address").value);
+    setField("dCcUCafVvTNlOqyT935AVg", document.getElementById("vass_city").value);
+    setField("STATE", document.getElementById("vass_state").value);
+    setField("YWcPYkevMHbrUBnta*mdzw", document.getElementById("vass_postcode").value);
+    setField("MggG21s-J47pWw5HEjfIXQ", document.getElementById("vass_make").value);
+    setField("uP2O6vX5HtgD1ohHIRq1Cw", document.getElementById("vass_model").value);
+    setField("ENGINE TYPE", document.getElementById("vass_engine_type").value);
+    setField("ENGINE #", document.getElementById("vass_engine_num").value);
+    setField("jkheAl6QfQAPNvd4zQNnfA", document.getElementById("vass_rego").value);
+    setField("9zHlenHz-gV-JsK9NY15Eg", document.getElementById("vass_odometer").value);
+    setField("lnP4RJFbFU22FFZsSRmWhQ", document.getElementById("vass_seats").value);
+    setField("dlcdpV99KhaCBNktM36fUA", document.getElementById("vass_plate_date").value);
+    setField("jv9A4DH2QWUtwCPB6Im0PA", document.getElementById("vass_gvm").value);
+    setField("tGs7nMVND55XT9kAFLO2iw", document.getElementById("vass_gcm").value);
+    setField("DFMrMfdHhdk18YINanrbxg", document.getElementById("vass_front_axle").value);
+    setField("j8CGfexbZvEStSczegdYgg", document.getElementById("vass_rear_axle").value);
+    setField("9U6Ahr-Ive1DxI7w4K3HOg", document.getElementById("vass_vin").value);
+    setField("Mz4cRSYcOYNf-UTnax7fGA", document.getElementById("vass_front_tyre_size").value);
+    setField("FVyeamRvaEHrsVFeaXvC4w", document.getElementById("vass_front_tyre_num").value);
+    setField("4FltGokVihPMByNbabhDJQ", document.getElementById("vass_rear_tyre_num").value);
+    setField("fuQtUtTKQFII2TI9NPnirQ", document.getElementById("vass_rear_tyre_size").value);
+    setField("-6P3OQJGJ5MGrGX8MEcB3w", document.getElementById("vass_wheelbase").value);
+    setField("cJ2-t2fCNFVrbh2jHKqdvg", document.getElementById("vass_tare_weight").value);
+    setField("zoqKj0f3D8GpKphj7Iazng", document.getElementById("vass_description").value);
+
+    // VASS codes — try to fill the codes description field with selected codes
+    var codesStr = getSelectedVASSCodes();
+    if (codesStr) setField("zoqKj0f3D8GpKphj7Iazng", (document.getElementById("vass_description").value + "\nCodes: " + codesStr).trim());
+
+    form.flatten();
+    var pdfBytes = await pdfDoc.save();
+    var blob = new Blob([pdfBytes], { type: "application/pdf" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var jn = document.getElementById("vass_job_number").value || "VASS";
+    var make = document.getElementById("vass_make").value || "";
+    a.download = "VASS_Booking_" + jn + (make ? "_" + make.replace(/\s+/g, "_") : "") + ".pdf";
+    a.href = url; a.click();
+    URL.revokeObjectURL(url);
+    showStatus("vass_status", "VASS PDF generated successfully.", "ok");
+  } catch(err) {
+    showStatus("vass_status", "Error: " + err.message, "error");
+    console.error(err);
+  }
+}
+
 function createTruckOrderSheet(wb, d) {
   var ws = wb.addWorksheet("Truck Order Sheet");
   setColWidths(ws, [22, 30, 22, 30]);
@@ -1909,11 +2639,13 @@ function createTruckOrderSheet(wb, d) {
   sectionTitle(ws, r, 1, "TARP", 4); r++;
   lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);
   lbl(ws, r, 3, "Tarp Make/Model"); val(ws, r, 4, d.tarp_make); r++;
-  
+  lbl(ws, r, 1, "Tarp Length"); val(ws, r, 2, d.tarp_length);
+  lbl(ws, r, 3, "Bow Height"); val(ws, r, 4, d.bow_height); r++;
+
   sectionTitle(ws, r, 1, "PAINT", 4); r++;
   lbl(ws, r, 1, "Body Paint"); val(ws, r, 2, d.body_paint);
   lbl(ws, r, 3, "Paint Code"); val(ws, r, 4, d.paint_code); r++;
-  
+
   sectionTitle(ws, r, 1, "QUOTE LINES", 4); r++;
   val(ws, r, 1, d.quote_lines, 4);
   ws.getRow(r).height = 200;
@@ -1922,3 +2654,4 @@ function createTruckOrderSheet(wb, d) {
 </script>
 </body>
 </html>
+
