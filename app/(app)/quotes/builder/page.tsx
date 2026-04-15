@@ -105,6 +105,7 @@ interface QuoteForm {
   trailerHubodometer: string
   trailerHubodoLocation: string
   trailerHubodoAxle: string
+  trailerHoseBurstValve: string
   // truck body extras
   truckBrakeCoupling: string
   truckLadderType: string
@@ -114,6 +115,7 @@ interface QuoteForm {
   truckReflectors: string
   truckCamera: string
   truckVibrator: string
+  truckHoseBurstValve: string
   // tarp breakdown (replaces single truckTarp dropdown in UI)
   truckTarpMaterial: string
   truckTarpColour: string
@@ -505,6 +507,7 @@ function generateTruckBodySpec(form: QuoteForm): string {
   if (form.truckReflectors) lines.push(`Reflectors: ${form.truckReflectors}`)
   if (form.truckCamera && form.truckCamera !== 'No') lines.push(`Camera: ${form.truckCamera}`)
   if (form.truckVibrator === 'Yes') lines.push('Vibrator fitted')
+  if (form.truckHoseBurstValve === 'Yes') lines.push('Hose burst valve fitted')
   lines.push('LED lighting throughout')
   if (form.truckPaintColour) lines.push(`Paint: ${form.truckPaintColour}`)
 
@@ -566,6 +569,7 @@ function generateTrailerSpec(form: QuoteForm): string {
     const axle = form.trailerHubodoAxle || 'TBC'
     lines.push(`Hubodometer — ${loc}, ${axle}`)
   }
+  if (form.trailerHoseBurstValve === 'Yes') lines.push('Hose burst valve fitted')
   lines.push('')
   if (form.trailerTarp !== 'None') {
     const bowH = calcTarpBowHeight(form.trailerMaterial, form.trailerModel.startsWith('DT-'), form.trailerBodyLength, form.trailerBodyHeight)
@@ -628,6 +632,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckReflectors: '',
     truckCamera: 'No',
     truckVibrator: 'No',
+    truckHoseBurstValve: 'No',
     truckTarpMaterial: 'PVC',
     truckTarpColour: '',
     truckTarpType: 'Hoop Type',
@@ -637,7 +642,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerHoist: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
     trailerChassisLength: '', trailerWheelbase: '',
     trailerTailgateLights: 'None', trailerTailLights: 'Use existing OEM tail lights', trailerLockFlap: 'No',
-    trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'No', trailerHubodoLocation: '', trailerHubodoAxle: '',
+    trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'No', trailerHubodoLocation: '', trailerHubodoAxle: '', trailerHoseBurstValve: 'No',
     lineItems: [],
     margin: 0, overhead: 0, discount: 0,
     useOverride: false, overridePrice: '', overrideNote: '',
@@ -762,6 +767,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckPto = tc.pto || 'None'
     form.truckHydTankType = tc.hydTankType || 'Factory supplied'
     form.truckHydTankLocation = tc.hydTankLocation || 'Centre Front of Subframe'
+    form.truckHoseBurstValve = tc.hoseBurstValve || 'No'
     form.truckDValue = tc.dValue || ''
     form.truckCouplingLoad = tc.couplingLoad || getCouplingLoad(form.truckCoupling)
     // Engineering details (trailer)
@@ -788,6 +794,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerHubodometer = trc.hubodometer || 'No'
     form.trailerHubodoLocation = trc.hubodoLocation || ''
     form.trailerHubodoAxle = trc.hubodoAxle || ''
+    form.trailerHoseBurstValve = trc.hoseBurstValve || 'No'
     form.specialRequirements = cfg.specialRequirements || ''
     // Line items from quick-quote
     if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
@@ -834,6 +841,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckPto = cfg.pto || 'None'
     form.truckHydTankType = cfg.hydTankType || 'Factory supplied'
     form.truckHydTankLocation = cfg.hydTankLocation || 'Centre Front of Subframe'
+    form.truckHoseBurstValve = (cfg.hoseBurstValve as string) || 'No'
     form.truckDValue = cfg.dValue || ''
     form.truckCouplingLoad = cfg.couplingLoad || getCouplingLoad(form.truckCoupling)
     form.truckTarpLength = (cfg.tarpLength as string) || ''
@@ -875,6 +883,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerHubodometer = cfg.hubodometer || 'No'
     form.trailerHubodoLocation = cfg.hubodoLocation || ''
     form.trailerHubodoAxle = cfg.hubodoAxle || ''
+    form.trailerHoseBurstValve = cfg.hoseBurstValve || 'No'
     form.specialRequirements = cfg.specialRequirements || ''
 
     if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
@@ -982,6 +991,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     pivotCentre: form.truckPivotCentre,
     tarpLength: form.truckTarpLength,
     tarpBowSize: calcTarpBowHeight(form.truckMaterial, false, form.truckBodyLength, form.truckBodyHeight),
+    hoseBurstValve: form.truckHoseBurstValve,
   }
   const trailerData = {
     trailerModel: form.trailerModel, trailerType: form.trailerType,
@@ -1002,6 +1012,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     tailgateLights: form.trailerTailgateLights, tailLights: form.trailerTailLights, lockFlap: form.trailerLockFlap,
     axleLift: form.trailerAxleLift, axleLiftAxle: form.trailerAxleLiftAxle,
     hubodometer: form.trailerHubodometer, hubodoLocation: form.trailerHubodoLocation, hubodoAxle: form.trailerHubodoAxle,
+    hoseBurstValve: form.trailerHoseBurstValve,
     tarpBowSize: calcTarpBowHeight(form.trailerMaterial, form.trailerModel.startsWith('DT-'), form.trailerBodyLength, form.trailerBodyHeight),
     axleSettings: getAxleSettings(form.trailerAxleMake, form.trailerAxleType, form.trailerAxleCount),
   }
@@ -1925,6 +1936,11 @@ function QuoteBuilderInner() {
                   {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
                 </select>
               </Field>
+              <Field label="Hose Burst Valve">
+                <select value={form.truckHoseBurstValve} onChange={(e) => set('truckHoseBurstValve', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
             </div>
           </SectionCard>
         )}
@@ -2381,6 +2397,11 @@ function QuoteBuilderInner() {
                   </Field>
                 </>
               )}
+              <Field label="Hose Burst Valve">
+                <select value={form.trailerHoseBurstValve} onChange={(e) => set('trailerHoseBurstValve', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
             </div>
           </SectionCard>
         )}

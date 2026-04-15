@@ -256,6 +256,12 @@ export function resolveBoms(
       addTbd('Brake Coupling', 'Triomatic coupling — confirm part numbers in MRPeasy')
     }
 
+    // ── Hose Burst Valve ──
+    const hoseBurst = cfg('hoseBurstValve') || cfg('truckHoseBurstValve')
+    if (hoseBurst.toLowerCase() === 'yes') {
+      addTbd('Hydraulics', 'Hose burst valve — confirm part number in MRPeasy')
+    }
+
     // ── Body Extras ──
     const sideLights = cfg('sideLights')
     if (sideLights && sideLights !== 'None') {
@@ -360,6 +366,12 @@ export function resolveBoms(
         if (tTarp.toLowerCase().includes('roll right')) add('MRP20-05', 'Roll Right Controller')
         const tBodyH = parseFloat(cfg('trailerBodyHeight') || cfg('bodyHeight') || '0')
         if (tBodyH >= 950 && tBodyH <= 1050) addTbd('Trailer Tarp', 'A73 Belt (1m wall) — no part number yet, order manually')
+      }
+
+      // ── Hose Burst Valve – Trailer ──
+      const tHoseBurst = cfg('hoseBurstValve') || cfg('trailerHoseBurstValve')
+      if (tHoseBurst.toLowerCase() === 'yes') {
+        addTbd('Trailer Hydraulics', 'Hose burst valve — confirm part number in MRPeasy')
       }
 
       // ── Wheels & Tyres ── default to 335 PCD (most common in real quotes)
