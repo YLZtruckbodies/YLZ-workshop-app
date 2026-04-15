@@ -481,6 +481,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Shovel Holder', 'shovelHolder')}
+                  {cfgField('Push Lugs', 'pushLugs')}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Rear CAT Markers', 'catMarkers')}
@@ -749,7 +750,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             </div>
             <div className="field-row field-row-2">
               <div className="field"><div className="field-lbl">Shovel Holder</div><div className="field-val">{c('shovelHolder') || ''}</div>{!c('shovelHolder') && <div className="field-blank" />}</div>
-              <div className="field" />
+              <div className="field"><div className="field-lbl">Push Lugs</div><div className="field-val">{c('pushLugs') || ''}</div>{!c('pushLugs') && <div className="field-blank" />}</div>
             </div>
             <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">Rear CAT Markers</div><div className="field-val">{c('catMarkers') || ''}</div>{!c('catMarkers') && <div className="field-blank" />}</div>

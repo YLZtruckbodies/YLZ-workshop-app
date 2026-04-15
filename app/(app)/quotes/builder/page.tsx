@@ -113,7 +113,6 @@ interface QuoteForm {
   truckLadderType: string
   truckLadderPosition: string
   truckSpreaderChain: string
-  truckPushLugs: string
   truckCatMarkers: string
   truckReflectors: string
   truckCamera: string
@@ -634,7 +633,6 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckLadderType: '3-Step Pull out ladder c/w rungs',
     truckLadderPosition: 'Driverside Front',
     truckSpreaderChain: 'No',
-    truckPushLugs: 'No',
     truckCatMarkers: 'Yes',
     truckReflectors: '',
     truckCamera: 'No',
@@ -1959,11 +1957,6 @@ function QuoteBuilderInner() {
               <Field label="Spreader Chain">
                 <select value={form.truckSpreaderChain} onChange={(e) => set('truckSpreaderChain', e.target.value)} style={selectStyle}>
                   {['Yes', 'No'].map((o) => <option key={o}>{o}</option>)}
-                </select>
-              </Field>
-              <Field label="Push Lugs">
-                <select value={form.truckPushLugs} onChange={(e) => set('truckPushLugs', e.target.value)} style={selectStyle}>
-                  {['No', 'Yes', 'Yes with Shute'].map((o) => <option key={o}>{o}</option>)}
                 </select>
               </Field>
               <Field label="Rear CAT Markers">
