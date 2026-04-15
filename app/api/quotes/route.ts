@@ -7,8 +7,9 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status')
     const search = searchParams.get('q')
     const jobId = searchParams.get('jobId')
+    const testMode = req.headers.get('X-Test-Mode') === 'true'
 
-    const where: any = {}
+    const where: any = { isTest: testMode }
     if (status) where.status = status
     if (jobId) where.jobId = jobId
     if (search) {
@@ -49,7 +50,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
+    const testMode = req.headers.get('X-Test-Mode') === 'true'
     const { lineItems, ...quoteData } = body
+    if (testMode) quoteData.isTest = true
 
   // Sanitise numeric fields
   const safeFloat = (v: any, fallback = 0): number => {

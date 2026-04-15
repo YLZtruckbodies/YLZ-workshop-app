@@ -158,6 +158,75 @@ async function sendWorkshopEmail(opts: {
   }
 }
 
+// ─── Test quote accept — creates isolated test job, skips all side effects ────
+async function nextTestJobNumbers(count: number): Promise<string[]> {
+  const testJobs = await prisma.job.findMany({
+    where: { isTest: true },
+    select: { num: true },
+  })
+  let maxNum = 0
+  for (const j of testJobs) {
+    const match = j.num.match(/TST(\d+)$/)
+    if (match) {
+      const n = parseInt(match[1], 10)
+      if (n > maxNum) maxNum = n
+    }
+  }
+  return Array.from({ length: count }, (_, i) => `TST${String(maxNum + 1 + i).padStart(3, '0')}`)
+}
+
+async function acceptTestQuote(quote: any): Promise<NextResponse> {
+  const isPaired = (quote.buildType || '').toLowerCase().includes('truck') &&
+    (quote.buildType || '').toLowerCase().includes('trailer')
+
+  if (isPaired) {
+    const [truckNum, trailerNum] = await nextTestJobNumbers(2)
+    const cfg = quote.configuration as Record<string, any>
+    const makeStr = [cfg.chassisMake || cfg.truckConfig?.chassisMake || '', cfg.chassisModel || cfg.truckConfig?.chassisModel || ''].filter(Boolean).join(' ')
+
+    const truckJob = await prisma.job.create({
+      data: {
+        num: truckNum, type: truckOnlyTypeString(quote), customer: quote.customerName,
+        dealer: quote.dealerName, stage: 'Requires Engineering', prodGroup: 'pending',
+        btype: deriveBtype(truckOnlyTypeString(quote)), make: makeStr,
+        notes: quote.notes || '', sortOrder: 0, isTest: true,
+      },
+    })
+    const trailerJob = await prisma.job.create({
+      data: {
+        num: trailerNum, type: trailerOnlyTypeString(quote), customer: quote.customerName,
+        dealer: quote.dealerName, stage: 'Requires Engineering', prodGroup: 'pending',
+        btype: deriveBtype(trailerOnlyTypeString(quote)), make: '', notes: quote.notes || '',
+        sortOrder: 0, pairedId: truckJob.id, isTest: true,
+      },
+    })
+    await prisma.job.update({ where: { id: truckJob.id }, data: { pairedId: trailerJob.id } })
+    await prisma.quote.update({ where: { id: quote.id }, data: { status: 'accepted', acceptedAt: new Date(), jobId: truckJob.id } })
+    return NextResponse.json({ ok: true, job: { id: truckJob.id, num: truckJob.num }, pairedJob: { id: trailerJob.id, num: trailerJob.num }, isExisting: false, partsOrderId: null, pairedPartsOrderId: null, email: { sent: false, reason: 'test mode' } })
+  }
+
+  const [jobNum] = await nextTestJobNumbers(1)
+  const typeStr = jobTypeString(quote)
+  const cfg = quote.configuration as Record<string, any>
+  const makeStr = [cfg.chassisMake || cfg.truckConfig?.chassisMake || '', cfg.chassisModel || cfg.truckConfig?.chassisModel || ''].filter(Boolean).join(' ')
+
+  const job = await prisma.job.create({
+    data: {
+      num: jobNum, type: typeStr, customer: quote.customerName, dealer: quote.dealerName,
+      stage: 'Requires Engineering', prodGroup: 'pending', btype: deriveBtype(typeStr),
+      make: makeStr, notes: quote.notes || '', sortOrder: 0, isTest: true,
+    },
+  })
+  try {
+    const quoteConfig = (quote.configuration && typeof quote.configuration === 'object') ? quote.configuration as Record<string, unknown> : {}
+    const bomList = resolveBoms(quote.buildType, quoteConfig)
+    if (bomList.length > 0) await prisma.job.update({ where: { id: job.id }, data: { bomList: bomList as any } })
+  } catch {}
+
+  await prisma.quote.update({ where: { id: quote.id }, data: { status: 'accepted', acceptedAt: new Date(), jobId: job.id } })
+  return NextResponse.json({ ok: true, job: { id: job.id, num: job.num }, pairedJob: null, isExisting: false, partsOrderId: null, pairedPartsOrderId: null, email: { sent: false, reason: 'test mode' } })
+}
+
 // ─── Accept endpoint ──────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -176,6 +245,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (quote.status === 'accepted') {
     return NextResponse.json({ error: 'Quote already accepted', jobId: quote.jobId }, { status: 409 })
   }
+
+  // ── Test quote — isolated flow, no emails, no kickoff, no side effects ──
+  if ((quote as any).isTest) return acceptTestQuote(quote)
 
   const typeStr = jobTypeString(quote as any)
   const btype = deriveBtype(typeStr)
