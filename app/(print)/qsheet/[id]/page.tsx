@@ -62,6 +62,7 @@ const pageCSS = `
   .field-row-2 { grid-template-columns: 1fr 1fr; }
   .field-row-3 { grid-template-columns: 1fr 1fr 1fr; }
   .field-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .field-row-5 { grid-template-columns: 1fr 1fr 1fr 1fr 1fr; }
   .field { padding: 6px 10px; border-right: 1px solid #f0f0f0; }
   .field:last-child { border-right: none; }
   .field-lbl { font-size: 7pt; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #999; margin-bottom: 3px; }
@@ -253,6 +254,12 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
                 <div className="field"><div className="field-lbl">Drawbar Length (mm)</div><div className="field-val">{c('drawbarLength')}</div>{!c('drawbarLength') && <div className="field-blank" />}</div>
               </div>
             )}
+            {!isTrailer && (
+              <div className="field-row field-row-2">
+                <div className="field"><div className="field-lbl">Chassis Extension</div><div className="field-val">{c('chassisExtension')}</div>{!c('chassisExtension') && <div className="field-blank" />}</div>
+                <div className="field" />
+              </div>
+            )}
           </div>
         </div>
 
@@ -260,11 +267,12 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
         <div className="section">
           <div className="section-hdr">Hoist &amp; Controls</div>
           <div className="section-body">
-            <div className="field-row field-row-4">
+            <div className="field-row field-row-5">
               <div className="field"><div className="field-lbl">Hoist Model</div><div className="field-val">{c('hoist')}</div>{!c('hoist') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{c('pivotCentre')}</div>{!c('pivotCentre') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Hoist Controls</div><div className="field-val">{c('controls')}</div>{!c('controls') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Pump Type</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Hose Burst Valve</div><div className="field-val">{c('hoseBurstValve')}</div>{!c('hoseBurstValve') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
