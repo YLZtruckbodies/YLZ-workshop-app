@@ -773,6 +773,14 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckHydTankLocation = tc.hydTankLocation || 'Centre Front of Subframe'
     form.truckHoseBurstValve = tc.hoseBurstValve || 'No'
     form.truckChassisExtension = tc.chassisExtension || 'No'
+    form.truckBrakeCoupling = tc.brakeCoupling || 'Duomatic'
+    form.truckLadderType = tc.ladderType || '3-Step Pull out ladder c/w rungs'
+    form.truckLadderPosition = tc.ladderPosition || 'Driverside Front'
+    form.truckSpreaderChain = tc.spreaderChain || 'No'
+    form.truckCatMarkers = tc.catMarkers || 'Yes'
+    form.truckReflectors = tc.reflectors || ''
+    form.truckCamera = tc.camera || 'No'
+    form.truckVibrator = tc.vibrator || 'No'
     form.truckDValue = tc.dValue || ''
     form.truckCouplingLoad = tc.couplingLoad || getCouplingLoad(form.truckCoupling)
     // Engineering details (trailer)
@@ -848,6 +856,14 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckHydTankLocation = cfg.hydTankLocation || 'Centre Front of Subframe'
     form.truckHoseBurstValve = (cfg.hoseBurstValve as string) || 'No'
     form.truckChassisExtension = (cfg.chassisExtension as string) || 'No'
+    form.truckBrakeCoupling = (cfg.brakeCoupling as string) || 'Duomatic'
+    form.truckLadderType = (cfg.ladderType as string) || '3-Step Pull out ladder c/w rungs'
+    form.truckLadderPosition = (cfg.ladderPosition as string) || 'Driverside Front'
+    form.truckSpreaderChain = (cfg.spreaderChain as string) || 'No'
+    form.truckCatMarkers = (cfg.catMarkers as string) || 'Yes'
+    form.truckReflectors = (cfg.reflectors as string) || ''
+    form.truckCamera = (cfg.camera as string) || 'No'
+    form.truckVibrator = (cfg.vibrator as string) || 'No'
     form.truckDValue = cfg.dValue || ''
     form.truckCouplingLoad = cfg.couplingLoad || getCouplingLoad(form.truckCoupling)
     form.truckTarpLength = (cfg.tarpLength as string) || ''
@@ -992,6 +1008,9 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     mainRunnerWidth: form.truckMainRunnerWidth,
     tailgateType: form.truckTailgateType, tailgateLights: form.truckTailgateLights, tailLights: form.truckTailLights,
     sideLights: form.truckSideLights, antiSpray: form.truckAntiSpray, shovelHolder: form.truckShovelHolder, mudflaps: form.truckMudflaps,
+    brakeCoupling: form.truckBrakeCoupling, ladderType: form.truckLadderType, ladderPosition: form.truckLadderPosition,
+    spreaderChain: form.truckSpreaderChain, catMarkers: form.truckCatMarkers,
+    reflectors: form.truckReflectors, camera: form.truckCamera, vibrator: form.truckVibrator,
     pto: form.truckPto, hydTankType: form.truckHydTankType,
     hydTankLocation: form.truckHydTankLocation,
     dValue: form.truckDValue, couplingLoad: form.truckCouplingLoad,

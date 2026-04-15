@@ -429,9 +429,8 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 </div>
 
                 <div style={sectionLbl}>Valve Bank</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Valve Bank Type', 'valveBankType')}
-                  {cfgField('Valve Bank Location', 'valveBankLocation')}
                   {cfgField('Valve Bank Notes', 'valveBankNotes')}
                 </div>
 
@@ -462,6 +461,26 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Tarp Colour', 'tarpColour')}
                   {cfgField('Paint Colour', 'paintColour')}
                   {cfgField('Coupling', 'coupling')}
+                </div>
+
+                <div style={sectionLbl}>Body Extras</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Ladder Type', 'ladderType')}
+                  {cfgField('Ladder Position', 'ladderPosition')}
+                  {cfgField('Brake Coupling', 'brakeCoupling')}
+                  {cfgField('Spreader Chain', 'spreaderChain')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Side Lights', 'sideLights')}
+                  {cfgField('Anti-Spray', 'antiSpray')}
+                  {cfgField('Mudflaps', 'mudflaps')}
+                  {cfgField('Shovel Holder', 'shovelHolder')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Rear CAT Markers', 'catMarkers')}
+                  {cfgField('Reflectors', 'reflectors')}
+                  {cfgField('Camera', 'camera')}
+                  {cfgField('Vibrator', 'vibrator')}
                 </div>
 
                 <div style={sectionLbl}>Rear Signage</div>
@@ -628,9 +647,8 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         <div className="section">
           <div className="section-hdr">Valve Bank</div>
           <div className="section-body">
-            <div className="field-row field-row-3">
+            <div className="field-row field-row-2">
               <div className="field"><div className="field-lbl">Valve Bank Type</div><div className="field-val">{c('valveBankType') || ''}</div>{!c('valveBankType') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Valve Bank Location</div><div className="field-val">{c('valveBankLocation') || ''}</div>{!c('valveBankLocation') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Notes</div><div className="field-val">{c('valveBankNotes') || ''}</div>{!c('valveBankNotes') && <div className="field-blank" />}</div>
             </div>
           </div>
@@ -642,7 +660,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-body">
             <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">PTO Type / Model</div><div className="field-val">{c('pto') || ''}</div>{!c('pto') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Switch Type</div><div className="field-val">{c('ptoSwitchType') || ''}</div>{!c('ptoSwitchType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Switch Type</div><div className="field-val">{c('ptoSwitchType') || c('controls') || ''}</div>{!c('ptoSwitchType') && !c('controls') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Switch Location</div><div className="field-val">{c('ptoSwitchLocation') || ''}</div>{!c('ptoSwitchLocation') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">PTO Notes</div><div className="field-blank" /></div>
             </div>
@@ -657,7 +675,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <div className="field"><div className="field-lbl">Tailgate Type</div><div className="field-val">{c('tailgateType') || ''}</div>{!c('tailgateType') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tailgate Lights</div><div className="field-val">{c('tailgateLights') || ''}</div>{!c('tailgateLights') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Lock Flap</div><div className="field-val">{c('lockFlap') || ''}</div>{!c('lockFlap') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Tailgate Controls</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Tailgate Controls</div><div className="field-val">{c('controls') || ''}</div>{!c('controls') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -696,6 +714,31 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <div className="field"><div className="field-lbl">Brake Coupling</div><div className="field-val">{c('brakeCoupling') || ''}</div>{!c('brakeCoupling') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Suspension</div><div className="field-val">{c('suspension') || ''}</div>{!c('suspension') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">PBS Rating</div><div className="field-val">{c('pbsRating') || ''}</div>{!c('pbsRating') && <div className="field-blank" />}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Body Extras */}
+        <div className="section">
+          <div className="section-hdr">Body Extras</div>
+          <div className="section-body">
+            <div className="field-row field-row-4">
+              <div className="field"><div className="field-lbl">Ladder Type</div><div className="field-val">{c('ladderType') || ''}</div>{!c('ladderType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Ladder Position</div><div className="field-val">{c('ladderPosition') || ''}</div>{!c('ladderPosition') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Brake Coupling</div><div className="field-val">{c('brakeCoupling') || ''}</div>{!c('brakeCoupling') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Spreader Chain</div><div className="field-val">{c('spreaderChain') || ''}</div>{!c('spreaderChain') && <div className="field-blank" />}</div>
+            </div>
+            <div className="field-row field-row-4">
+              <div className="field"><div className="field-lbl">Side Lights</div><div className="field-val">{c('sideLights') || ''}</div>{!c('sideLights') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Anti-Spray</div><div className="field-val">{c('antiSpray') || ''}</div>{!c('antiSpray') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Mudflaps</div><div className="field-val">{c('mudflaps') || ''}</div>{!c('mudflaps') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Shovel Holder</div><div className="field-val">{c('shovelHolder') || ''}</div>{!c('shovelHolder') && <div className="field-blank" />}</div>
+            </div>
+            <div className="field-row field-row-4">
+              <div className="field"><div className="field-lbl">Rear CAT Markers</div><div className="field-val">{c('catMarkers') || ''}</div>{!c('catMarkers') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Reflectors</div><div className="field-val">{c('reflectors') || ''}</div>{!c('reflectors') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Camera</div><div className="field-val">{c('camera') || ''}</div>{!c('camera') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Vibrator</div><div className="field-val">{c('vibrator') || ''}</div>{!c('vibrator') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
