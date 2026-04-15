@@ -81,7 +81,7 @@ export default function JobSheetsPage() {
           Job Sheet Creator
         </h1>
         <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, marginBottom: 20 }}>
-          Generate job sheets for accepted quotes. Use the filter to view other statuses.
+          Generate job sheets for accepted quotes — use the filter to view other statuses.
         </div>
 
         {/* Filters */}
