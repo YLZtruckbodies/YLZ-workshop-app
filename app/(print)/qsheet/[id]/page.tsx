@@ -130,12 +130,16 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
   if (!quote) return <div style={{ fontFamily: 'sans-serif', padding: 40, color: '#c00' }}>Quote not found</div>
 
   const cfg = quote.configuration || {}
+  // For truck-and-trailer builds, truck fields are nested under cfg.truckConfig.
   const c = (key: string) => {
     const val = cfg[key]
     if (val != null && val !== '') return String(val)
+    // Fall back to truckConfig for truck-and-trailer builds
+    const truckVal = (cfg.truckConfig as any)?.[key]
+    if (truckVal != null && truckVal !== '') return String(truckVal)
     // valveBankType maps to the 'hydraulics' field saved by the quote builder
     if (key === 'valveBankType') {
-      const hyd = cfg.hydraulics
+      const hyd = cfg.hydraulics || (cfg.truckConfig as any)?.hydraulics
       if (hyd == null || hyd === '') return ''
       const hydStr = String(hyd)
       const mat = cfg.material || (cfg.truckConfig as any)?.material || ''

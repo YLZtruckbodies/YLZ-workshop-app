@@ -280,13 +280,17 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
     || job.type?.toLowerCase().includes('semi')
   const bodyLabel = isTrailer ? 'Trailer Body' : 'Truck Body'
 
-  // Helper to get a value from quote config, with fallback
+  // Helper to get a value from quote config, with fallback.
+  // For truck-and-trailer builds, truck fields are nested under cfg.truckConfig.
   const c = (key: string) => {
     const val = job.cfg?.[key]
     if (val != null && val !== '') return String(val)
+    // Fall back to truckConfig for truck-and-trailer builds
+    const truckVal = (job.cfg?.truckConfig as any)?.[key]
+    if (truckVal != null && truckVal !== '') return String(truckVal)
     // valveBankType maps to the 'hydraulics' field saved by the quote builder
     if (key === 'valveBankType') {
-      const hyd = job.cfg?.hydraulics
+      const hyd = job.cfg?.hydraulics || (job.cfg?.truckConfig as any)?.hydraulics
       if (hyd == null || hyd === '') return ''
       const hydStr = String(hyd)
       const mat = job.cfg?.material || (job.cfg?.truckConfig as any)?.material || ''
