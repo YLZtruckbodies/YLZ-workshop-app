@@ -786,7 +786,40 @@ document.addEventListener("DOMContentLoaded", function() {
   if (woDateEl) woDateEl.value = new Date().toISOString().split("T")[0];
   // Initialize "Other" options on all selects
   initOtherOptions();
+  // Load quote data directly from DB if ?quoteId= is in the URL
+  var params = new URLSearchParams(window.location.search);
+  var quoteId = params.get('quoteId');
+  if (quoteId) { loadQuoteFields(quoteId); }
 });
+
+function loadQuoteFields(quoteId) {
+  fetch('/api/quotes/' + quoteId)
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(quote) {
+      if (!quote) return;
+      var cfg = quote.configuration || {};
+      var bt = (quote.buildType || '').toLowerCase();
+      var isCombo = bt.includes('truck') && bt.includes('trailer');
+      var isTruck = bt.includes('truck');
+      // For combo builds, truck config lives under cfg.truckConfig
+      var tc = isCombo ? (cfg.truckConfig || {}) : (isTruck ? cfg : {});
+
+      // Hydraulic System — map value to description + TES part number
+      var hyd = tc.hydraulics || cfg.hydraulics || '';
+      var hydDisplay = '';
+      if (/truck\s*and\s*trailer/i.test(hyd)) hydDisplay = 'Truck and Trailer spool valve — 500-224';
+      else if (/single\s*spool/i.test(hyd)) hydDisplay = 'Single spool valve — 500-86';
+      else hydDisplay = hyd;
+      var hydEl = document.getElementById('f_hydraulic_system');
+      if (hydEl && hydDisplay) hydEl.value = hydDisplay;
+
+      // Hyd Tank Location — use value directly from quote
+      var tankLoc = tc.hydTankLocation || cfg.hydTankLocation || '';
+      var tankEl = document.getElementById('f_oil_tank_location');
+      if (tankEl && tankLoc) tankEl.value = tankLoc;
+    })
+    .catch(function() {});
+}
 
 // =================== FILE HANDLING ===================
 function handleFile(file) {

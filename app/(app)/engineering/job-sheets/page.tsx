@@ -180,7 +180,7 @@ export default function JobSheetsPage() {
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{fmtDate(q.createdAt)}</div>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                     <button
-                      onClick={() => window.open(q.jobId ? `/jsheet/${q.jobId}` : `/qsheet/${q.id}`, '_blank')}
+                      onClick={() => window.open(q.jobId ? `/jsheet/${q.jobId}` : `/job-sheet-creator.html?quoteId=${q.id}`, '_blank')}
                       style={{
                         fontFamily: "'League Spartan', sans-serif",
                         fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
