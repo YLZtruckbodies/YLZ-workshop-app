@@ -224,7 +224,7 @@ const DATA = {
   wheels: ['Alcoa Machine Finished 285 PCD','Alcoa Machine Finished 335 PCD','Alcoa Dura Bright 285 PCD','Alcoa Dura Bright 335 PCD','Ogreen Machine 285 PCD','Ogreen Machine 335 PCD','Ogreen Polished 285 PCD','Ogreen Polished 335 PCD','Super Light Machined 285 PCD','Super Light Machined 335 PCD','Super Light Polished 285 PCD','Super Light Polished 335 PCD'],
   tyres: ['Adventurers LR188','Austyre ST01','Austyre Transit','Bridgestone R187','Loadrunner LR188','Remington R628','Austyre Adventurer'],
   oilTanks: ['TKBRS-40L - Behind cab steel 40L','TKBRS-60L - Behind cab steel 60L','TKBRS-80L - Behind cab steel 80L','TKVER-40L - Vertical steel 40L','TKVER-60L - Vertical steel 60L','TKBRS-40A - Behind cab alloy 40L','TKBRS-60A - Behind cab alloy 60L','TKBRS-80A - Behind cab alloy 80L','TKVER-40A - Vertical alloy 40L','TKVER-60A - Vertical alloy 60L'],
-  valveBanks: ['121.15.113 - Steel outboard','121.15.113 - Steel inside','121.15.104 - Alloy outboard','121.15.104 - Alloy inside'],
+  valveBanks: ['OMFB Twin Spool 121.15.113 (Steel body)','OMFB Twin Spool 121.15.104 (Aluminium body)'],
   pumpTypes: ['Permco','Parker','Casappa','Customer Supplied'],
   couplings: ['V Orlandi','Ringfeder','Rockhinger','Pintle Hook','Bartlett Ball','Holland'],
   lighting: ['113RMG - Stop/Tail','113AMG - Indicator','113WMG - Reverse','42ARB - Side marker amber','Hella Dura LED side','7030AB - Reflector amber','7030WB - Reflector white','7030RB - Reflector red','LED Beacon amber','LED reverse work light','LED number plate light','Narva combination rear','LED clearance lights'],
@@ -939,6 +939,12 @@ function prevStep() {
 // ============================================================
 function setState(key, value) {
   state[key] = value;
+  // Auto-pick valve bank from body material
+  if (key === 'material') {
+    state.valveBank = value === 'Aluminium'
+      ? 'OMFB Twin Spool 121.15.104 (Aluminium body)'
+      : 'OMFB Twin Spool 121.15.113 (Steel body)';
+  }
 }
 
 function selectBuildType(type) {
