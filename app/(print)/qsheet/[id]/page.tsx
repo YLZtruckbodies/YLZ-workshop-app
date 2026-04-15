@@ -131,7 +131,13 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
   const cfg = quote.configuration || {}
   const c = (key: string) => {
     const val = cfg[key]
-    return val != null && val !== '' ? String(val) : ''
+    if (val != null && val !== '') return String(val)
+    // valveBankType maps to the 'hydraulics' field saved by the quote builder
+    if (key === 'valveBankType') {
+      const hyd = cfg.hydraulics
+      return hyd != null && hyd !== '' ? String(hyd) : ''
+    }
+    return ''
   }
 
   const bt = (quote.buildType || '').toLowerCase()

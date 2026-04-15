@@ -282,7 +282,13 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
   // Helper to get a value from quote config, with fallback
   const c = (key: string) => {
     const val = job.cfg?.[key]
-    return val != null && val !== '' ? String(val) : ''
+    if (val != null && val !== '') return String(val)
+    // valveBankType maps to the 'hydraulics' field saved by the quote builder
+    if (key === 'valveBankType') {
+      const hyd = job.cfg?.hydraulics
+      return hyd != null && hyd !== '' ? String(hyd) : ''
+    }
+    return ''
   }
 
   // TEBS datasheet — only for trailers with axle config
