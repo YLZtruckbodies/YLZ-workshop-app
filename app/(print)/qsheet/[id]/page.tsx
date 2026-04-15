@@ -27,6 +27,17 @@ function today() {
   return new Date().toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+function calcBowHeight(material: string | undefined, bodyHeight: string | undefined): string {
+  if (!material || !bodyHeight) return ''
+  if (material === 'Aluminium') return '250mm'
+  const h = parseInt(bodyHeight, 10)
+  if (isNaN(h)) return ''
+  if (h <= 1000) return '450mm'
+  if (h === 1100) return '380mm'
+  if (h >= 1150) return '450mm'
+  return ''
+}
+
 // Shared CSS — identical to jsheet
 const pageCSS = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -351,7 +362,7 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
               <div className="field"><div className="field-lbl">Tarp Make / Model</div><div className="field-val">{c('tarpSystem')}</div>{!c('tarpSystem') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tarp Length (mm)</div><div className="field-val">{c('tarpLength')}</div>{!c('tarpLength') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tarp Colour</div><div className="field-val">{c('tarpColour')}</div>{!c('tarpColour') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Bow Height</div><div className="field-val">{c('tarpBowSize')}</div>{!c('tarpBowSize') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Bow Height</div><div className="field-val">{calcBowHeight(c('material') as string, c('bodyHeight') as string) || c('tarpBowSize') as string || ''}</div>{!calcBowHeight(c('material') as string, c('bodyHeight') as string) && !c('tarpBowSize') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
