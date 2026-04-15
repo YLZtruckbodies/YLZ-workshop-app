@@ -12,6 +12,7 @@ export interface BomEntry {
   category: string
   section: string   // Which part of the build this covers (e.g. "Truck Body", "Running Gear")
   auto: boolean     // true = auto-resolved, false = manually added
+  note?: string     // Optional extra info (e.g. tarp length)
 }
 
 // ─── PTO Lookup: Chassis Make → PTO Part ─────────────────────────────────────
@@ -92,7 +93,7 @@ export function resolveBoms(
   const added = new Set<string>()
 
   // Add a BOM/part to the list (deduped)
-  function add(code: string, section: string) {
+  function add(code: string, section: string, note?: string) {
     if (added.has(code)) return
     added.add(code)
     const info = BOM_CATALOG[code]
@@ -102,6 +103,7 @@ export function resolveBoms(
       category: info?.category ?? 'Unknown',
       section,
       auto: true,
+      ...(note ? { note } : {}),
     })
   }
 
@@ -177,7 +179,7 @@ export function resolveBoms(
       // Tarp is 400mm shorter than the body (clears headboard and tailgate)
       const tarpLen = bodyLen - 400
       const tarpBom = resolveTarpBom(isPVC, tarpLen)
-      if (tarpBom) add(tarpBom, 'Truck Tarp')
+      if (tarpBom) add(tarpBom, 'Truck Tarp', `${tarpLen}mm`)
       // Manual / Pull Out → handle kit
       const isManual = tarpInfo.toLowerCase().includes('manual') || tarpInfo.toLowerCase().includes('pull out')
       if (isManual) add('MRP20-14', 'Manual Tarp Handle')
@@ -366,7 +368,7 @@ export function resolveBoms(
       if (tTarp && !tTarp.toLowerCase().includes('none') && tBodyLen > 0) {
         const tIsPVC = tTarp.toLowerCase().includes('pvc') || !tTarp.toLowerCase().includes('mesh')
         const tarpBom = resolveTarpBom(tIsPVC, tBodyLen)
-        if (tarpBom) add(tarpBom, 'Trailer Tarp')
+        if (tarpBom) add(tarpBom, 'Trailer Tarp', `${tBodyLen}mm`)
         const tIsManual = tTarp.toLowerCase().includes('manual') || tTarp.toLowerCase().includes('pull out')
         if (tIsManual) add('MRP20-14', 'Manual Tarp Handle')
         if (tTarp.toLowerCase().includes('roll right')) add('MRP20-05', 'Roll Right Controller')
