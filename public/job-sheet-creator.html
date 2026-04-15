@@ -828,6 +828,54 @@ function loadQuoteFields(quoteId) {
       var tankLoc = tc.hydTankLocation || cfg.hydTankLocation || '';
       var tankEl = document.getElementById('f_oil_tank_location');
       if (tankEl && tankLoc) tankEl.value = tankLoc;
+
+      // Valve Bank — auto from material (already handled by updateValveBank)
+      updateValveBank();
+
+      // Hose Burst Valve
+      var hbv = tc.hoseBurstValve || cfg.hoseBurstValve || 'No';
+      var hbvEl = document.getElementById('f_hose_burst_valve');
+      if (hbvEl) hbvEl.value = hbv;
+
+      // Chassis Extension
+      var cex = tc.chassisExtension || cfg.chassisExtension || 'No';
+      var cexEl = document.getElementById('f_chassis_extension');
+      if (cexEl) cexEl.value = cex;
+
+      // Controls — map quote control type to job sheet dropdowns
+      var ctrl = tc.controls || cfg.controls || '';
+      function mapControl(quoteCtrl) {
+        if (!quoteCtrl || quoteCtrl === 'None') return 'N/A';
+        var lc = quoteCtrl.toLowerCase();
+        if (lc.includes('electric hand')) return '12V Hand Controller';
+        if (lc.includes('in-cab')) return 'OEM Switches in Cab';
+        if (lc.includes('oem')) return 'OEM Switches in Cab';
+        if (lc.includes('already supplied') || lc.includes('from remote')) return 'Existing Electric in Dash';
+        return quoteCtrl;
+      }
+      var mappedCtrl = mapControl(ctrl);
+      setSelectClosest('f_ctrl_truck_hoist', mappedCtrl);
+      setSelectClosest('f_ctrl_truck_tailgate', mappedCtrl);
+      setSelectClosest('f_ctrl_truck_tarp', mappedCtrl);
+
+      // For combo builds, also set trailer controls
+      if (isCombo) {
+        var trc = cfg.trailerConfig || {};
+        setSelectClosest('f_ctrl_trailer_hoist', mappedCtrl);
+        setSelectClosest('f_ctrl_trailer_tailgate', mappedCtrl);
+        setSelectClosest('f_ctrl_lockflap', mappedCtrl);
+        setSelectClosest('f_ctrl_trailer_tarp', mappedCtrl);
+
+        // Trailer hose burst valve
+        var thbv = trc.hoseBurstValve || 'No';
+        var thbvEl = document.getElementById('f_t_hose_burst_valve');
+        if (thbvEl) thbvEl.value = thbv;
+      }
+
+      // Tarp colour
+      var tarpCol = tc.tarpColour || cfg.tarpColour || '';
+      var tarpColEl = document.getElementById('f_tarp_colour');
+      if (tarpColEl && tarpCol) tarpColEl.value = tarpCol;
     })
     .catch(function() {});
 }
@@ -1624,6 +1672,14 @@ function gv(id) {
 }
 function gc(id) { var el = document.getElementById(id); return el ? el.checked : false; }
 
+// Switch location helper: hand controller → "Hand Controller", anything else → "See Notes"
+function switchLoc(ctrl) {
+  if (!ctrl) return "See Notes";
+  var lc = ctrl.toLowerCase();
+  if (lc.includes("hand controller")) return "Hand Controller";
+  return "See Notes";
+}
+
 function collectFormData() {
   return {
     job_type: currentJobType,
@@ -1653,6 +1709,7 @@ function collectFormData() {
     ctrl_truck_tarp: gv("f_ctrl_truck_tarp"), ctrl_trailer_tarp: gv("f_ctrl_trailer_tarp"),
     // Subframe (truck)
     hoist_model: gv("f_hoist_model"), valve_bank: gv("f_valve_bank"),
+    valve_bank_location: "Mounted off rear of hoist channel",
     hydraulic_system: gv("f_hydraulic_system"),
     oil_tank_type: gv("f_oil_tank_type"), oil_tank_location: gv("f_oil_tank_location"),
     hose_burst_valve: gv("f_hose_burst_valve"),
@@ -2011,12 +2068,12 @@ function createTrailerFitoutSheet(wb, d, prefix) {
   
   sectionTitle(ws, r, 1, "CONTROLS", 4); r++;
   lbl(ws, r, 1, "PTO"); val(ws, r, 2, d.pto);
-  lbl(ws, r, 3, "Truck Hoist"); val(ws, r, 4, d.ctrl_truck_hoist); r++;
-  lbl(ws, r, 1, "Trailer Hoist"); val(ws, r, 2, d.ctrl_trailer_hoist);
-  lbl(ws, r, 3, "Truck Tailgate"); val(ws, r, 4, d.ctrl_truck_tailgate); r++;
-  lbl(ws, r, 1, "Trailer Tailgate"); val(ws, r, 2, d.ctrl_trailer_tailgate);
-  lbl(ws, r, 3, "Trailer Lockflap"); val(ws, r, 4, d.ctrl_lockflap); r++;
-  lbl(ws, r, 1, "Truck Tarp"); val(ws, r, 2, d.ctrl_truck_tarp);
+  lbl(ws, r, 3, "Switch Type"); val(ws, r, 4, d.ctrl_truck_hoist); r++;
+  lbl(ws, r, 1, "Switch Location"); val(ws, r, 2, switchLoc(d.ctrl_truck_hoist));
+  lbl(ws, r, 3, "Truck Tarp"); val(ws, r, 4, d.ctrl_truck_tarp); r++;
+  lbl(ws, r, 1, "Tailgate Control (Truck)"); val(ws, r, 2, d.ctrl_truck_tailgate);
+  lbl(ws, r, 3, "Tailgate Control (Trailer)"); val(ws, r, 4, d.ctrl_trailer_tailgate); r++;
+  lbl(ws, r, 1, "Lockflap Control"); val(ws, r, 2, d.ctrl_lockflap);
   lbl(ws, r, 3, "Trailer Tarp"); val(ws, r, 4, d.ctrl_trailer_tarp); r++;
   lbl(ws, r, 1, "Hose Burst Valve (Truck)"); val(ws, r, 2, d.hose_burst_valve);
   lbl(ws, r, 3, "Hose Burst Valve (Trailer)"); val(ws, r, 4, d.t_hose_burst_valve); r++;
@@ -2100,17 +2157,20 @@ function createTruckSelectionSheet(wb, d, prefix) {
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
   lbl(ws, r, 3, "Pivot Centres"); val(ws, r, 4, d.pivot_centres); r++;
   lbl(ws, r, 1, "Hydraulic System"); val(ws, r, 2, d.hydraulic_system);
-  lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, d.valve_bank); r++;
+  lbl(ws, r, 3, "Valve Bank Type"); val(ws, r, 4, d.valve_bank); r++;
+  lbl(ws, r, 1, "Valve Bank Location"); val(ws, r, 2, d.valve_bank_location);
+  lbl(ws, r, 3, "Hose Burst Valve"); val(ws, r, 4, d.hose_burst_valve); r++;
   lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
   lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
-  lbl(ws, r, 1, "Hose Burst Valve"); val(ws, r, 2, d.hose_burst_valve);
-  lbl(ws, r, 3, "Chassis Extension"); val(ws, r, 4, d.chassis_extension); r++;
+  lbl(ws, r, 1, "Chassis Extension"); val(ws, r, 2, d.chassis_extension); r++;
 
   sectionTitle(ws, r, 1, "CONTROLS", 4); r++;
   lbl(ws, r, 1, "PTO"); val(ws, r, 2, d.pto);
-  lbl(ws, r, 3, "Truck Hoist"); val(ws, r, 4, d.ctrl_truck_hoist); r++;
-  lbl(ws, r, 1, "Truck Tailgate"); val(ws, r, 2, d.ctrl_truck_tailgate);
+  lbl(ws, r, 3, "Switch Type"); val(ws, r, 4, d.ctrl_truck_hoist); r++;
+  lbl(ws, r, 1, "Switch Location"); val(ws, r, 2, switchLoc(d.ctrl_truck_hoist));
   lbl(ws, r, 3, "Truck Tarp"); val(ws, r, 4, d.ctrl_truck_tarp); r++;
+  lbl(ws, r, 1, "Tailgate Control"); val(ws, r, 2, d.ctrl_truck_tailgate);
+  lbl(ws, r, 3, "Lockflap Control"); val(ws, r, 4, d.ctrl_lockflap); r++;
 
   sectionTitle(ws, r, 1, "TARP", 4); r++;
   lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);
@@ -2197,11 +2257,12 @@ function createTruckSubframeSheet(wb, d) {
 
   sectionTitle(ws, r, 1, "HYDRAULICS", 4); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
-  lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, d.valve_bank); r++;
-  lbl(ws, r, 1, "Hydraulic System"); val(ws, r, 2, d.hydraulic_system); r++;
-  lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
-  lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
+  lbl(ws, r, 3, "Hydraulic System"); val(ws, r, 4, d.hydraulic_system); r++;
+  lbl(ws, r, 1, "Valve Bank Type"); val(ws, r, 2, d.valve_bank);
+  lbl(ws, r, 3, "Valve Bank Location"); val(ws, r, 4, d.valve_bank_location); r++;
   lbl(ws, r, 1, "Hose Burst Valve"); val(ws, r, 2, d.hose_burst_valve);
+  lbl(ws, r, 3, "Oil Tank Type"); val(ws, r, 4, d.oil_tank_type); r++;
+  lbl(ws, r, 1, "Oil Tank Location"); val(ws, r, 2, d.oil_tank_location);
   lbl(ws, r, 3, "Chassis Extension"); val(ws, r, 4, d.chassis_extension); r++;
 
   sectionTitle(ws, r, 1, "NOTES", 4); r++;
@@ -2219,10 +2280,11 @@ function createTruckFitoutSheet(wb, d, prefix) {
   
   sectionTitle(ws, r, 1, "CONTROLS", 4); r++;
   lbl(ws, r, 1, "PTO"); val(ws, r, 2, d.pto);
-  lbl(ws, r, 3, "Truck Hoist"); val(ws, r, 4, d.ctrl_truck_hoist); r++;
-  lbl(ws, r, 1, "Truck Tailgate"); val(ws, r, 2, d.ctrl_truck_tailgate);
+  lbl(ws, r, 3, "Switch Type"); val(ws, r, 4, d.ctrl_truck_hoist); r++;
+  lbl(ws, r, 1, "Switch Location"); val(ws, r, 2, switchLoc(d.ctrl_truck_hoist));
   lbl(ws, r, 3, "Truck Tarp"); val(ws, r, 4, d.ctrl_truck_tarp); r++;
-  
+  lbl(ws, r, 1, "Tailgate Control"); val(ws, r, 2, d.ctrl_truck_tailgate); r++;
+
   sectionTitle(ws, r, 1, "TARP", 4); r++;
   lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);
   lbl(ws, r, 3, "Tarp Make/Model"); val(ws, r, 4, d.tarp_make); r++;
@@ -2728,10 +2790,18 @@ function createTruckOrderSheet(wb, d) {
   sectionTitle(ws, r, 1, "HYDRAULICS SUMMARY", 4); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
   lbl(ws, r, 3, "Hydraulic System"); val(ws, r, 4, d.hydraulic_system); r++;
-  lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
-  lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
+  lbl(ws, r, 1, "Valve Bank Type"); val(ws, r, 2, d.valve_bank);
+  lbl(ws, r, 3, "Valve Bank Location"); val(ws, r, 4, d.valve_bank_location); r++;
   lbl(ws, r, 1, "Hose Burst Valve"); val(ws, r, 2, d.hose_burst_valve);
+  lbl(ws, r, 3, "Oil Tank Type"); val(ws, r, 4, d.oil_tank_type); r++;
+  lbl(ws, r, 1, "Oil Tank Location"); val(ws, r, 2, d.oil_tank_location);
   lbl(ws, r, 3, "Chassis Extension"); val(ws, r, 4, d.chassis_extension); r++;
+
+  sectionTitle(ws, r, 1, "CONTROLS SUMMARY", 4); r++;
+  lbl(ws, r, 1, "Switch Type"); val(ws, r, 2, d.ctrl_truck_hoist);
+  lbl(ws, r, 3, "Switch Location"); val(ws, r, 4, switchLoc(d.ctrl_truck_hoist)); r++;
+  lbl(ws, r, 1, "Tailgate Control"); val(ws, r, 2, d.ctrl_truck_tailgate);
+  lbl(ws, r, 3, "Lockflap Control"); val(ws, r, 4, d.ctrl_lockflap); r++;
 
   sectionTitle(ws, r, 1, "TARP", 4); r++;
   lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);
