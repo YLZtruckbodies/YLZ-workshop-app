@@ -348,8 +348,8 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
           <div className="section-body">
             <div className="field-row field-row-3">
               <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('valveBankType')}</div>{!c('valveBankType') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Tank Type</div><div className="field-val">{c('hydTankType')}</div>{!c('hydTankType') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Tank Location</div><div className="field-val">{c('hydTankLocation')}</div>{!c('hydTankLocation') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Hydraulic Tank Type</div><div className="field-val">{c('hydTankType')}</div>{!c('hydTankType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Hydraulic Tank Location</div><div className="field-val">{c('hydTankLocation')}</div>{!c('hydTankLocation') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -520,8 +520,8 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
             {(c('hydraulics') || c('hydTankType') || c('hydTankLocation')) && (
               <div className="field-row field-row-3">
                 <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('valveBankType')}</div>{!c('valveBankType') && <div className="field-blank" />}</div>
-                <div className="field"><div className="field-lbl">Tank Type</div><div className="field-val">{c('hydTankType')}</div>{!c('hydTankType') && <div className="field-blank" />}</div>
-                <div className="field"><div className="field-lbl">Tank Location</div><div className="field-val">{c('hydTankLocation')}</div>{!c('hydTankLocation') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Hydraulic Tank Type</div><div className="field-val">{c('hydTankType')}</div>{!c('hydTankType') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Hydraulic Tank Location</div><div className="field-val">{c('hydTankLocation')}</div>{!c('hydTankLocation') && <div className="field-blank" />}</div>
               </div>
             )}
             {c('tarpSystem') && (
