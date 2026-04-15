@@ -691,7 +691,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-body">
             <div className="field-row field-row-3">
               <div className="field"><div className="field-lbl">Tailgate Type</div><div className="field-val">{c('tailgateType') || ''}</div>{!c('tailgateType') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Lock Flap</div><div className="field-val">{c('lockFlap') || ''}</div>{!c('lockFlap') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Lock Flap</div><div className="field-val">{c('lockFlap') || c('controls') || ''}</div>{!c('lockFlap') && !c('controls') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tailgate Controls</div><div className="field-val">{c('controls') || ''}</div>{!c('controls') && <div className="field-blank" />}</div>
             </div>
           </div>
@@ -716,7 +716,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-hdr">Hydraulics</div>
           <div className="section-body">
             <div className="field-row field-row-3">
-              <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('hydraulics') || ''}</div>{!c('hydraulics') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('valveBankType') || ''}</div>{!c('valveBankType') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tank Type</div><div className="field-val">{c('hydTankType') || ''}</div>{!c('hydTankType') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tank Location</div><div className="field-val">{c('hydTankLocation') || ''}</div>{!c('hydTankLocation') && <div className="field-blank" />}</div>
             </div>
@@ -911,7 +911,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             )}
             {(c('hydraulics') || c('hydTankType') || c('hydTankLocation')) && (
               <div className="field-row field-row-3">
-                <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('hydraulics') || ''}</div>{!c('hydraulics') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('valveBankType') || ''}</div>{!c('valveBankType') && <div className="field-blank" />}</div>
                 <div className="field"><div className="field-lbl">Tank Type</div><div className="field-val">{c('hydTankType') || ''}</div>{!c('hydTankType') && <div className="field-blank" />}</div>
                 <div className="field"><div className="field-lbl">Tank Location</div><div className="field-val">{c('hydTankLocation') || ''}</div>{!c('hydTankLocation') && <div className="field-blank" />}</div>
               </div>
