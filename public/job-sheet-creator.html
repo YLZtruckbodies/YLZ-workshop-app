@@ -214,8 +214,9 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
         <div class="form-group"><label class="form-label">Valve Bank <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_valve_bank" readonly placeholder="Select body material"></div>
       </div>
       <div class="form-grid-4" style="margin-top:14px">
+        <div class="form-group"><label class="form-label">Hydraulic System <span class="badge-auto">Auto</span></label><input class="form-input" id="f_hydraulic_system" placeholder="e.g. Single spool valve — 500-86"></div>
         <div class="form-group"><label class="form-label">Oil Tank Type <span class="badge-auto">Auto</span></label><input class="form-input" id="f_oil_tank_type" placeholder="e.g. TKBRS135S (TES part number)"></div>
-        <div class="form-group"><label class="form-label">Oil Tank Location <span class="badge-auto">Auto</span></label><input class="form-input" id="f_oil_tank_location" placeholder="e.g. Behind Cab LHS"></div>
+        <div class="form-group"><label class="form-label">Oil Tank Location <span class="badge-auto">Auto</span></label><input class="form-input" id="f_oil_tank_location" placeholder="e.g. Centre Front of Subframe"></div>
       </div>
     </div>
     <div id="trailerChassisSection">
@@ -954,6 +955,10 @@ function parseTruckSection(text, d) {
     d.truck.oil_tank_type = loc.replace(/\s+/g," ") + (otm[2] ? " Upright" : "") + " " + mat + " " + otm[4] + "L";
   }
   
+  // Hydraulic system (spool valve) with TES part number
+  if (/truck\s*and\s*trailer\s*spool/i.test(t)) d.truck.hydraulic_system = "Truck and Trailer spool valve — 500-224";
+  else if (/single\s*spool/i.test(t)) d.truck.hydraulic_system = "Single spool valve — 500-86";
+
   // Oil tank location — new subframe/chassis options
   if (/lh\s*front\s*of\s*subframe/i.test(t)) d.truck.oil_tank_location = "LH Front of Subframe";
   else if (/rh\s*front\s*of\s*subframe/i.test(t)) d.truck.oil_tank_location = "RH Front of Subframe";
@@ -1323,6 +1328,7 @@ function populateForm(d) {
     setSelectClosest("f_body_length", tr.body_length);
     setSelectClosest("f_body_width", tr.body_width);
     setSelectClosest("f_body_height", tr.body_height);
+    setVal("f_hydraulic_system", tr.hydraulic_system);
     setVal("f_oil_tank_type", tr.oil_tank_type);
     setVal("f_oil_tank_location", tr.oil_tank_location);
     setSelectClosest("f_tarp_type", tr.tarp_type);
@@ -1593,6 +1599,7 @@ function collectFormData() {
     ctrl_truck_tarp: gv("f_ctrl_truck_tarp"), ctrl_trailer_tarp: gv("f_ctrl_trailer_tarp"),
     // Subframe (truck)
     hoist_model: gv("f_hoist_model"), valve_bank: gv("f_valve_bank"),
+    hydraulic_system: gv("f_hydraulic_system"),
     oil_tank_type: gv("f_oil_tank_type"), oil_tank_location: gv("f_oil_tank_location"),
     // Chassis (trailer)
     chassis_length: gv("f_chassis_length"), wheelbase: gv("f_wheelbase"),
@@ -2031,9 +2038,10 @@ function createTruckSelectionSheet(wb, d, prefix) {
   lbl(ws, r, 3, "Subframe Width"); val(ws, r, 4, "Refer to Drawing"); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
   lbl(ws, r, 3, "Pivot Centres"); val(ws, r, 4, d.pivot_centres); r++;
-  lbl(ws, r, 1, "Valve Bank"); val(ws, r, 2, d.valve_bank);
-  lbl(ws, r, 3, "Oil Tank Type"); val(ws, r, 4, d.oil_tank_type); r++;
-  lbl(ws, r, 1, "Oil Tank Location"); val(ws, r, 2, d.oil_tank_location); r++;
+  lbl(ws, r, 1, "Hydraulic System"); val(ws, r, 2, d.hydraulic_system);
+  lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, d.valve_bank); r++;
+  lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
+  lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
 
   sectionTitle(ws, r, 1, "CONTROLS", 4); r++;
   lbl(ws, r, 1, "PTO"); val(ws, r, 2, d.pto);
@@ -2126,6 +2134,7 @@ function createTruckSubframeSheet(wb, d) {
   sectionTitle(ws, r, 1, "HYDRAULICS", 4); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
   lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, d.valve_bank); r++;
+  lbl(ws, r, 1, "Hydraulic System"); val(ws, r, 2, d.hydraulic_system); r++;
   lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
   lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
   
@@ -2651,8 +2660,9 @@ function createTruckOrderSheet(wb, d) {
   
   sectionTitle(ws, r, 1, "HYDRAULICS SUMMARY", 4); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
-  lbl(ws, r, 3, "Oil Tank Type"); val(ws, r, 4, d.oil_tank_type); r++;
-  lbl(ws, r, 1, "Oil Tank Location"); val(ws, r, 2, d.oil_tank_location); r++;
+  lbl(ws, r, 3, "Hydraulic System"); val(ws, r, 4, d.hydraulic_system); r++;
+  lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
+  lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
   
   sectionTitle(ws, r, 1, "TARP", 4); r++;
   lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);
