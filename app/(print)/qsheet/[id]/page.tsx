@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 // ─── If the quote is accepted (has a jobId), redirect to the jsheet so both
 //     paths produce the exact same document. ────────────────────────────────
@@ -111,7 +110,6 @@ const pageCSS = `
 `
 
 export default function QuoteSheetPage({ params }: { params: { id: string } }) {
-  const router = useRouter()
   const [quote, setQuote] = useState<Quote | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -119,16 +117,11 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
     fetch(`/api/quotes/${params.id}`)
       .then(r => r.json())
       .then((data: Quote) => {
-        // If accepted — redirect to the real job sheet so both paths are identical
-        if (data.jobId) {
-          router.replace(`/jsheet/${data.jobId}`)
-          return
-        }
         setQuote(data)
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [params.id, router])
+  }, [params.id])
 
   useEffect(() => {
     if (quote) {
