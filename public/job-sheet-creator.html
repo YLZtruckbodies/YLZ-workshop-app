@@ -211,7 +211,7 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
         <div class="form-group"><label class="form-label">Subframe Length <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
         <div class="form-group"><label class="form-label">Subframe Width <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
         <div class="form-group"><label class="form-label">Hoist Model <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_hoist_model" placeholder="Auto from body length"></div>
-        <div class="form-group"><label class="form-label">Valve Bank <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
+        <div class="form-group"><label class="form-label">Valve Bank <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_valve_bank" readonly placeholder="Select body material"></div>
       </div>
       <div class="form-grid-4" style="margin-top:14px">
         <div class="form-group"><label class="form-label">Oil Tank Type <span class="badge-auto">Auto</span></label><input class="form-input" id="f_oil_tank_type" placeholder="e.g. TKBRS135S (TES part number)"></div>
@@ -665,6 +665,14 @@ function updateModeOptions(mode) {
 
 // Auto-cascade: body length -> chassis length -> wheelbase (trailer)
 //               body length -> hoist model + pivot centres (truck)
+function updateValveBank() {
+  var vb = document.getElementById("f_valve_bank");
+  if (!vb) return;
+  var mat = (document.getElementById("f_material") || {}).value || "";
+  var twinPn = /alumin/i.test(mat) ? "121.15.104" : "121.15.113";
+  vb.value = "Twin Spool " + twinPn + " / Single Spool 121.8.185";
+}
+
 function autoCascade() {
   // Trailer cascade
   var bodyLenEl = currentJobType === "both" ? document.getElementById("f_t_body_length") : (currentJobType === "trailer" ? document.getElementById("f_body_length") : null);
@@ -761,6 +769,9 @@ document.addEventListener("DOMContentLoaded", function() {
     var el = document.getElementById(id);
     if (el) el.addEventListener("change", function() { autoCascade(); updateTarpFields(); });
   });
+  // Auto-populate Valve Bank from body material
+  var matEl = document.getElementById("f_material");
+  if (matEl) matEl.addEventListener("change", updateValveBank);
   // Listen for body height changes to auto-fill bow height
   var bHeightEl = document.getElementById("f_body_height");
   if (bHeightEl) bHeightEl.addEventListener("change", updateBowHeight);
@@ -1319,6 +1330,7 @@ function populateForm(d) {
     setSelectClosest("f_side_sheets", tr.side_sheets);
     setSelectClosest("f_front_sheet", tr.front_sheet);
     setSelectClosest("f_tailgate_sheet", tr.tailgate_sheet);
+    updateValveBank();
   }
   
   // Trailer fields
@@ -1580,7 +1592,7 @@ function collectFormData() {
     ctrl_trailer_tailgate: gv("f_ctrl_trailer_tailgate"), ctrl_lockflap: gv("f_ctrl_lockflap"),
     ctrl_truck_tarp: gv("f_ctrl_truck_tarp"), ctrl_trailer_tarp: gv("f_ctrl_trailer_tarp"),
     // Subframe (truck)
-    hoist_model: gv("f_hoist_model"),
+    hoist_model: gv("f_hoist_model"), valve_bank: gv("f_valve_bank"),
     oil_tank_type: gv("f_oil_tank_type"), oil_tank_location: gv("f_oil_tank_location"),
     // Chassis (trailer)
     chassis_length: gv("f_chassis_length"), wheelbase: gv("f_wheelbase"),
@@ -2019,7 +2031,7 @@ function createTruckSelectionSheet(wb, d, prefix) {
   lbl(ws, r, 3, "Subframe Width"); val(ws, r, 4, "Refer to Drawing"); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
   lbl(ws, r, 3, "Pivot Centres"); val(ws, r, 4, d.pivot_centres); r++;
-  lbl(ws, r, 1, "Valve Bank"); val(ws, r, 2, "Refer to Drawing");
+  lbl(ws, r, 1, "Valve Bank"); val(ws, r, 2, d.valve_bank);
   lbl(ws, r, 3, "Oil Tank Type"); val(ws, r, 4, d.oil_tank_type); r++;
   lbl(ws, r, 1, "Oil Tank Location"); val(ws, r, 2, d.oil_tank_location); r++;
 
@@ -2113,7 +2125,7 @@ function createTruckSubframeSheet(wb, d) {
 
   sectionTitle(ws, r, 1, "HYDRAULICS", 4); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
-  lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, "Refer to Drawing"); r++;
+  lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, d.valve_bank); r++;
   lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
   lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
   
