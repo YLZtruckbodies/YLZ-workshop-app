@@ -218,6 +218,7 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
         <div class="form-group"><label class="form-label">Oil Tank Type <span class="badge-auto">Auto</span></label><input class="form-input" id="f_oil_tank_type" placeholder="e.g. TKBRS135S (TES part number)"></div>
         <div class="form-group"><label class="form-label">Oil Tank Location <span class="badge-auto">Auto</span></label><input class="form-input" id="f_oil_tank_location" readonly placeholder="Auto from quote" style="background:var(--surface2);color:var(--text2);cursor:default;pointer-events:none;"></div>
         <div class="form-group"><label class="form-label">Hose Burst Valve</label><select class="form-select" id="f_hose_burst_valve"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+        <div class="form-group"><label class="form-label">Chassis Extension</label><select class="form-select" id="f_chassis_extension"><option value="No">No</option><option value="Yes">Yes</option></select></div>
       </div>
     </div>
     <div id="trailerChassisSection">
@@ -1644,6 +1645,7 @@ function collectFormData() {
     hydraulic_system: gv("f_hydraulic_system"),
     oil_tank_type: gv("f_oil_tank_type"), oil_tank_location: gv("f_oil_tank_location"),
     hose_burst_valve: gv("f_hose_burst_valve"),
+    chassis_extension: gv("f_chassis_extension"),
     // Chassis (trailer)
     chassis_length: gv("f_chassis_length"), wheelbase: gv("f_wheelbase"),
     drawbar_length: gv("f_drawbar_length"), t_hoist_model: gv("f_t_hoist_model"),
@@ -2088,7 +2090,8 @@ function createTruckSelectionSheet(wb, d, prefix) {
   lbl(ws, r, 3, "Valve Bank"); val(ws, r, 4, d.valve_bank); r++;
   lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
   lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
-  lbl(ws, r, 1, "Hose Burst Valve"); val(ws, r, 2, d.hose_burst_valve); r++;
+  lbl(ws, r, 1, "Hose Burst Valve"); val(ws, r, 2, d.hose_burst_valve);
+  lbl(ws, r, 3, "Chassis Extension"); val(ws, r, 4, d.chassis_extension); r++;
 
   sectionTitle(ws, r, 1, "CONTROLS", 4); r++;
   lbl(ws, r, 1, "PTO"); val(ws, r, 2, d.pto);
@@ -2184,7 +2187,8 @@ function createTruckSubframeSheet(wb, d) {
   lbl(ws, r, 1, "Hydraulic System"); val(ws, r, 2, d.hydraulic_system); r++;
   lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
   lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
-  lbl(ws, r, 1, "Hose Burst Valve"); val(ws, r, 2, d.hose_burst_valve); r++;
+  lbl(ws, r, 1, "Hose Burst Valve"); val(ws, r, 2, d.hose_burst_valve);
+  lbl(ws, r, 3, "Chassis Extension"); val(ws, r, 4, d.chassis_extension); r++;
 
   sectionTitle(ws, r, 1, "NOTES", 4); r++;
   val(ws, r, 1, d.notes, 4); r++;
@@ -2711,7 +2715,8 @@ function createTruckOrderSheet(wb, d) {
   lbl(ws, r, 3, "Hydraulic System"); val(ws, r, 4, d.hydraulic_system); r++;
   lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
   lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
-  lbl(ws, r, 1, "Hose Burst Valve"); val(ws, r, 2, d.hose_burst_valve); r++;
+  lbl(ws, r, 1, "Hose Burst Valve"); val(ws, r, 2, d.hose_burst_valve);
+  lbl(ws, r, 3, "Chassis Extension"); val(ws, r, 4, d.chassis_extension); r++;
 
   sectionTitle(ws, r, 1, "TARP", 4); r++;
   lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);

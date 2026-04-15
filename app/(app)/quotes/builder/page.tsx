@@ -116,6 +116,7 @@ interface QuoteForm {
   truckCamera: string
   truckVibrator: string
   truckHoseBurstValve: string
+  truckChassisExtension: string
   // tarp breakdown (replaces single truckTarp dropdown in UI)
   truckTarpMaterial: string
   truckTarpColour: string
@@ -508,6 +509,7 @@ function generateTruckBodySpec(form: QuoteForm): string {
   if (form.truckCamera && form.truckCamera !== 'No') lines.push(`Camera: ${form.truckCamera}`)
   if (form.truckVibrator === 'Yes') lines.push('Vibrator fitted')
   if (form.truckHoseBurstValve === 'Yes') lines.push('Hose burst valve fitted')
+  if (form.truckChassisExtension === 'Yes') lines.push('Chassis extension fitted')
   lines.push('LED lighting throughout')
   if (form.truckPaintColour) lines.push(`Paint: ${form.truckPaintColour}`)
 
@@ -633,6 +635,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckCamera: 'No',
     truckVibrator: 'No',
     truckHoseBurstValve: 'No',
+    truckChassisExtension: 'No',
     truckTarpMaterial: 'PVC',
     truckTarpColour: '',
     truckTarpType: 'Hoop Type',
@@ -768,6 +771,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckHydTankType = tc.hydTankType || 'Factory supplied'
     form.truckHydTankLocation = tc.hydTankLocation || 'Centre Front of Subframe'
     form.truckHoseBurstValve = tc.hoseBurstValve || 'No'
+    form.truckChassisExtension = tc.chassisExtension || 'No'
     form.truckDValue = tc.dValue || ''
     form.truckCouplingLoad = tc.couplingLoad || getCouplingLoad(form.truckCoupling)
     // Engineering details (trailer)
@@ -842,6 +846,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckHydTankType = cfg.hydTankType || 'Factory supplied'
     form.truckHydTankLocation = cfg.hydTankLocation || 'Centre Front of Subframe'
     form.truckHoseBurstValve = (cfg.hoseBurstValve as string) || 'No'
+    form.truckChassisExtension = (cfg.chassisExtension as string) || 'No'
     form.truckDValue = cfg.dValue || ''
     form.truckCouplingLoad = cfg.couplingLoad || getCouplingLoad(form.truckCoupling)
     form.truckTarpLength = (cfg.tarpLength as string) || ''
@@ -992,6 +997,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     tarpLength: form.truckTarpLength,
     tarpBowSize: calcTarpBowHeight(form.truckMaterial, false, form.truckBodyLength, form.truckBodyHeight),
     hoseBurstValve: form.truckHoseBurstValve,
+    chassisExtension: form.truckChassisExtension,
   }
   const trailerData = {
     trailerModel: form.trailerModel, trailerType: form.trailerType,
@@ -1938,6 +1944,11 @@ function QuoteBuilderInner() {
               </Field>
               <Field label="Hose Burst Valve">
                 <select value={form.truckHoseBurstValve} onChange={(e) => set('truckHoseBurstValve', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Chassis Extension">
+                <select value={form.truckChassisExtension} onChange={(e) => set('truckChassisExtension', e.target.value)} style={selectStyle}>
                   {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
                 </select>
               </Field>

@@ -152,6 +152,9 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
   // TBC — HPF3070 hoist part number not yet confirmed in MRPeasy
   'TBC-HPF3070': { code: 'TBC-HPF3070', name: 'HPF3070-135-3-S3 Hoist Kit — TBC', category: 'Hoist' },
 
+  // ── Chassis Extension — BOM number TBC ─────────────────
+  'BOMXXX': { code: 'BOMXXX', name: 'Chassis Extension Kit — BOM number TBC', category: 'Chassis Extension' },
+
   // ── PTO Kits (MRPeasy parts) ───────────────────────────
   '500-123': { code: '500-123', name: 'PTO Kit Mercedes G230-12 ISO 4B (TES)', category: 'PTO' },
   '500-220': { code: '500-220', name: 'PTO Kit Mercedes OMFB (MER014ISO)', category: 'PTO' },

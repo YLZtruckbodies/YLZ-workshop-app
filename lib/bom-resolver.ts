@@ -256,6 +256,12 @@ export function resolveBoms(
       addTbd('Brake Coupling', 'Triomatic coupling — confirm part numbers in MRPeasy')
     }
 
+    // ── Chassis Extension ──
+    const chassisExt = cfg('chassisExtension') || cfg('truckChassisExtension')
+    if (chassisExt.toLowerCase() === 'yes') {
+      add('BOMXXX', 'Chassis Extension')
+    }
+
     // ── Hose Burst Valve ──
     const hoseBurst = cfg('hoseBurstValve') || cfg('truckHoseBurstValve')
     if (hoseBurst.toLowerCase() === 'yes') {
