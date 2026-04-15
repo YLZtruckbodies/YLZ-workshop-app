@@ -381,7 +381,7 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
             </div>
             <div className="field-row field-row-2">
               <div className="field"><div className="field-lbl">Shovel Holder</div><div className="field-val">{c('shovelHolder')}</div>{!c('shovelHolder') && <div className="field-blank" />}</div>
-              <div className="field" />
+              <div className="field"><div className="field-lbl">Push Lugs</div><div className="field-val">{c('pushLugs')}</div>{!c('pushLugs') && <div className="field-blank" />}</div>
             </div>
             <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">Rear CAT Markers</div><div className="field-val">{c('catMarkers')}</div>{!c('catMarkers') && <div className="field-blank" />}</div>

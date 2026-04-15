@@ -113,6 +113,7 @@ interface QuoteForm {
   truckLadderType: string
   truckLadderPosition: string
   truckSpreaderChain: string
+  truckPushLugs: string
   truckCatMarkers: string
   truckReflectors: string
   truckCamera: string
@@ -633,6 +634,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckLadderType: '3-Step Pull out ladder c/w rungs',
     truckLadderPosition: 'Driverside Front',
     truckSpreaderChain: 'No',
+    truckPushLugs: 'No',
     truckCatMarkers: 'Yes',
     truckReflectors: '',
     truckCamera: 'No',
@@ -780,6 +782,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckLadderType = tc.ladderType || '3-Step Pull out ladder c/w rungs'
     form.truckLadderPosition = tc.ladderPosition || 'Driverside Front'
     form.truckSpreaderChain = tc.spreaderChain || 'No'
+    form.truckPushLugs = tc.pushLugs || 'No'
     form.truckCatMarkers = tc.catMarkers || 'Yes'
     form.truckReflectors = tc.reflectors || ''
     form.truckCamera = tc.camera || 'No'
@@ -863,6 +866,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckLadderType = (cfg.ladderType as string) || '3-Step Pull out ladder c/w rungs'
     form.truckLadderPosition = (cfg.ladderPosition as string) || 'Driverside Front'
     form.truckSpreaderChain = (cfg.spreaderChain as string) || 'No'
+    form.truckPushLugs = (cfg.pushLugs as string) || 'No'
     form.truckCatMarkers = (cfg.catMarkers as string) || 'Yes'
     form.truckReflectors = (cfg.reflectors as string) || ''
     form.truckCamera = (cfg.camera as string) || 'No'
@@ -1012,7 +1016,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     tailgateType: form.truckTailgateType, tailgateLights: form.truckTailgateLights, tailLights: form.truckTailLights,
     sideLights: form.truckSideLights, antiSpray: form.truckAntiSpray, shovelHolder: form.truckShovelHolder, mudflaps: form.truckMudflaps,
     brakeCoupling: form.truckBrakeCoupling, ladderType: form.truckLadderType, ladderPosition: form.truckLadderPosition,
-    spreaderChain: form.truckSpreaderChain, catMarkers: form.truckCatMarkers,
+    spreaderChain: form.truckSpreaderChain, pushLugs: form.truckPushLugs, catMarkers: form.truckCatMarkers,
     reflectors: form.truckReflectors, camera: form.truckCamera, vibrator: form.truckVibrator,
     pto: form.truckPto, hydTankType: form.truckHydTankType,
     hydTankLocation: form.truckHydTankLocation,
@@ -1955,6 +1959,11 @@ function QuoteBuilderInner() {
               <Field label="Spreader Chain">
                 <select value={form.truckSpreaderChain} onChange={(e) => set('truckSpreaderChain', e.target.value)} style={selectStyle}>
                   {['Yes', 'No'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Push Lugs">
+                <select value={form.truckPushLugs} onChange={(e) => set('truckPushLugs', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes', 'Yes with Shute'].map((o) => <option key={o}>{o}</option>)}
                 </select>
               </Field>
               <Field label="Rear CAT Markers">
