@@ -214,9 +214,9 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
         <div class="form-group"><label class="form-label">Valve Bank <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_valve_bank" readonly placeholder="Select body material"></div>
       </div>
       <div class="form-grid-4" style="margin-top:14px">
-        <div class="form-group"><label class="form-label">Hydraulic System <span class="badge-auto">Auto</span></label><input class="form-input" id="f_hydraulic_system" placeholder="e.g. Single spool valve — 500-86"></div>
+        <div class="form-group"><label class="form-label">Hydraulic System <span class="badge-auto">Auto</span></label><input class="form-input" id="f_hydraulic_system" readonly placeholder="Auto from quote" style="background:var(--surface2);color:var(--text2);cursor:default;pointer-events:none;"></div>
         <div class="form-group"><label class="form-label">Oil Tank Type <span class="badge-auto">Auto</span></label><input class="form-input" id="f_oil_tank_type" placeholder="e.g. TKBRS135S (TES part number)"></div>
-        <div class="form-group"><label class="form-label">Oil Tank Location <span class="badge-auto">Auto</span></label><input class="form-input" id="f_oil_tank_location" placeholder="e.g. Centre Front of Subframe"></div>
+        <div class="form-group"><label class="form-label">Oil Tank Location <span class="badge-auto">Auto</span></label><input class="form-input" id="f_oil_tank_location" readonly placeholder="Auto from quote" style="background:var(--surface2);color:var(--text2);cursor:default;pointer-events:none;"></div>
       </div>
     </div>
     <div id="trailerChassisSection">
@@ -955,22 +955,23 @@ function parseTruckSection(text, d) {
     d.truck.oil_tank_type = loc.replace(/\s+/g," ") + (otm[2] ? " Upright" : "") + " " + mat + " " + otm[4] + "L";
   }
   
-  // Hydraulic system (spool valve) with TES part number
-  if (/truck\s*and\s*trailer\s*spool/i.test(t)) d.truck.hydraulic_system = "Truck and Trailer spool valve — 500-224";
-  else if (/single\s*spool/i.test(t)) d.truck.hydraulic_system = "Single spool valve — 500-86";
+  // Hydraulic system — extract from "Hydraulic System <value>" label in qsheet PDF, then map to part number
+  var hsRaw = t.match(/hydraulic\s+system\s+(truck\s+and\s+trailer\s+spool\s+valve|single\s+spool\s+valve)/i);
+  if (hsRaw) {
+    var hsVal = hsRaw[1].trim().toLowerCase();
+    if (/truck\s+and\s+trailer/i.test(hsVal)) d.truck.hydraulic_system = "Truck and Trailer spool valve — 500-224";
+    else if (/single/i.test(hsVal)) d.truck.hydraulic_system = "Single spool valve — 500-86";
+  } else if (/truck\s*and\s*trailer\s*spool/i.test(t)) {
+    d.truck.hydraulic_system = "Truck and Trailer spool valve — 500-224";
+  } else if (/single\s*spool/i.test(t)) {
+    d.truck.hydraulic_system = "Single spool valve — 500-86";
+  }
 
-  // Oil tank location — new subframe/chassis options
-  if (/lh\s*front\s*of\s*subframe/i.test(t)) d.truck.oil_tank_location = "LH Front of Subframe";
-  else if (/rh\s*front\s*of\s*subframe/i.test(t)) d.truck.oil_tank_location = "RH Front of Subframe";
-  else if (/centre\s*front\s*of\s*subframe/i.test(t)) d.truck.oil_tank_location = "Centre Front of Subframe";
-  else if (/chassis\s*lh/i.test(t)) d.truck.oil_tank_location = "Chassis LH";
-  else if (/chassis\s*rh/i.test(t)) d.truck.oil_tank_location = "Chassis RH";
-  // Legacy patterns (older quotes)
-  else if (/behind\s*cab.*lhs/i.test(t)) d.truck.oil_tank_location = "Behind Cab LHS";
-  else if (/behind\s*cab.*rhs/i.test(t)) d.truck.oil_tank_location = "Behind Cab RHS";
-  else if (/under\s*tray.*lhs.*front/i.test(t)) d.truck.oil_tank_location = "Under Tray LHS Front";
-  else if (/under\s*tray.*rhs.*front/i.test(t)) d.truck.oil_tank_location = "Under Tray RHS Front";
-  else if (/under\s*tray.*centre/i.test(t)) d.truck.oil_tank_location = "Under Tray Centre";
+  // Oil tank location — extract from "Tank Location <value>" label in qsheet PDF
+  var tlRaw = t.match(/tank\s+location\s+([\w\s]+?)(?=\s{2,}|\bTank\b|\bHydraulic\b|\bTarp\b|\bControls\b|\bPTO\b|$)/i);
+  if (tlRaw) {
+    d.truck.oil_tank_location = tlRaw[1].trim();
+  }
   
   // Tarp
   if (/razor/i.test(t)) {
