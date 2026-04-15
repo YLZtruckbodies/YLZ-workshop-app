@@ -135,7 +135,13 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
     // valveBankType maps to the 'hydraulics' field saved by the quote builder
     if (key === 'valveBankType') {
       const hyd = cfg.hydraulics
-      return hyd != null && hyd !== '' ? String(hyd) : ''
+      if (hyd == null || hyd === '') return ''
+      const hydStr = String(hyd)
+      const mat = cfg.material || (cfg.truckConfig as any)?.material || ''
+      const twinPn = String(mat).toLowerCase().includes('aluminium') ? '121.15.104' : '121.15.113'
+      if (hydStr === 'Single spool valve') return 'Single spool valve — 121.8.185'
+      if (hydStr === 'Truck and Trailer spool valve') return `Truck and Trailer spool valve — ${twinPn}`
+      return hydStr
     }
     return ''
   }
