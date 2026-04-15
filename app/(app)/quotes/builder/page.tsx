@@ -757,6 +757,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckPaintColour = tc.paintColour || ''
     form.truckPivotCentre = tc.pivotCentre || ''
     form.truckTarpLength = tc.tarpLength || ''
+    form.truckTarpColour = tc.tarpColour || ''
     form.truckSerial = tc.serial || ''
     form.truckVin = tc.vin || ''
     form.truckMainRunnerWidth = tc.mainRunnerWidth || ''
@@ -850,6 +851,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckDValue = cfg.dValue || ''
     form.truckCouplingLoad = cfg.couplingLoad || getCouplingLoad(form.truckCoupling)
     form.truckTarpLength = (cfg.tarpLength as string) || ''
+    form.truckTarpColour = (cfg.tarpColour as string) || ''
     form.specialRequirements = cfg.specialRequirements || ''
     if (cfg.templateType === 'quick-quote' && template?.basePrice > 0) {
       form.lineItems = [{ section: 'Build', description: template.name, quantity: 1, unitPrice: template.basePrice, totalPrice: template.basePrice, sortOrder: 0 }]
@@ -995,6 +997,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     dValue: form.truckDValue, couplingLoad: form.truckCouplingLoad,
     pivotCentre: form.truckPivotCentre,
     tarpLength: form.truckTarpLength,
+    tarpColour: form.truckTarpColour,
     tarpBowSize: calcTarpBowHeight(form.truckMaterial, false, form.truckBodyLength, form.truckBodyHeight),
     hoseBurstValve: form.truckHoseBurstValve,
     chassisExtension: form.truckChassisExtension,

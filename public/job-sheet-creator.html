@@ -274,6 +274,7 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
     <div class="form-grid">
       <div class="form-group"><label class="form-label">Tarp Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_tarp_type"><option value="">Select...</option><option>Razor PVC Electric</option><option>Razor PVC Manual</option><option>Razor Mesh Electric</option><option>Razor Mesh Manual</option><option>EziTarp Electric</option><option>EziTarp Manual</option><option>Pulltarp Electric</option><option>Pulltarp Manual</option><option>Aero Easy Cover</option><option>Rollover Mesh</option><option>Rollover PVC</option><option>Side Tipper Tarp</option><option>N/A</option></select></div>
       <div class="form-group"><label class="form-label">Tarp Make/Model <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_tarp_make"></div>
+      <div class="form-group"><label class="form-label">Tarp Colour <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_tarp_colour" placeholder="e.g. Black"></div>
     </div>
     <div class="form-grid" style="margin-top:14px">
       <div class="form-group"><label class="form-label">Tarp Length <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_tarp_length" readonly placeholder="Body Length − 400mm"></div>
@@ -284,6 +285,7 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Tarp Type <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_t_tarp_type"><option value="">Select...</option><option>Razor PVC Electric</option><option>Razor PVC Manual</option><option>Razor Mesh Electric</option><option>Razor Mesh Manual</option><option>EziTarp Electric</option><option>EziTarp Manual</option><option>Pulltarp Electric</option><option>Pulltarp Manual</option><option>Aero Easy Cover</option><option>Rollover Mesh</option><option>Rollover PVC</option><option>Side Tipper Tarp</option><option>N/A</option></select></div>
         <div class="form-group"><label class="form-label">Tarp Make/Model <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_t_tarp_make"></div>
+        <div class="form-group"><label class="form-label">Tarp Colour <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_t_tarp_colour" placeholder="e.g. Black"></div>
       </div>
       <div class="form-grid" style="margin-top:14px">
         <div class="form-group"><label class="form-label">Trailer Tarp Length <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_t_tarp_length" readonly placeholder="Trailer Body Length − 400mm"></div>
@@ -1026,7 +1028,10 @@ function parseTruckSection(text, d) {
   } else if (/aero\s*easy/i.test(t)) d.truck.tarp_type = "Aero Easy Cover";
   else if (/rollover.*mesh/i.test(t)) d.truck.tarp_type = "Rollover Mesh";
   else if (/rollover.*pvc/i.test(t)) d.truck.tarp_type = "Rollover PVC";
-  
+  // Tarp colour — extract from "Tarp: PVC — Black — ..."
+  var tcm = t.match(/Tarp:\s*\w+\s*(?:—|[-–])\s*(\w[\w\s]*?)(?:\s*(?:—|[-–]))/i);
+  if (tcm) d.truck.tarp_colour = tcm[1].trim();
+
   // PTO type
   if (/chelsea|parker/i.test(t)) d.truck.pto_type = "Chelsea / Parker";
   else if (/muncie/i.test(t)) d.truck.pto_type = "Muncie";
@@ -1121,7 +1126,10 @@ function parseTrailerSection(text, d) {
   } else if (/aero\s*easy/i.test(t)) d.trailer.tarp_type = "Aero Easy Cover";
   else if (/rollover.*mesh/i.test(t)) d.trailer.tarp_type = "Rollover Mesh";
   else if (/rollover.*pvc/i.test(t)) d.trailer.tarp_type = "Rollover PVC";
-  
+  // Tarp colour
+  var ttcm = t.match(/Tarp:\s*\w+\s*(?:—|[-–])\s*(\w[\w\s]*?)(?:\s*(?:—|[-–]))/i);
+  if (ttcm) d.trailer.tarp_colour = ttcm[1].trim();
+
   // Trailer type
   if (/p\s*beam/i.test(t)) d.trailer.trailer_type = "P Beam";
   else if (/i\s*beam\s*drop/i.test(t)) d.trailer.trailer_type = "I Beam Drop Deck";
@@ -1375,13 +1383,14 @@ function populateForm(d) {
     setVal("f_oil_tank_type", tr.oil_tank_type);
     setVal("f_oil_tank_location", tr.oil_tank_location);
     setSelectClosest("f_tarp_type", tr.tarp_type);
+    setVal("f_tarp_colour", tr.tarp_colour);
     setSelectClosest("f_floor_sheets", tr.floor_sheets);
     setSelectClosest("f_side_sheets", tr.side_sheets);
     setSelectClosest("f_front_sheet", tr.front_sheet);
     setSelectClosest("f_tailgate_sheet", tr.tailgate_sheet);
     updateValveBank();
   }
-  
+
   // Trailer fields
   var tl = d.trailer || {};
   if (d.job_type === "trailer") {
@@ -1392,6 +1401,7 @@ function populateForm(d) {
     setSelectClosest("f_body_width", tl.body_width);
     setSelectClosest("f_body_height", tl.body_height);
     setSelectClosest("f_tarp_type", tl.tarp_type);
+    setVal("f_tarp_colour", tl.tarp_colour);
     setSelectClosest("f_floor_sheets", tl.floor_sheets);
     setSelectClosest("f_side_sheets", tl.side_sheets);
     setSelectClosest("f_front_sheet", tl.front_sheet);
@@ -1404,6 +1414,7 @@ function populateForm(d) {
     setSelectClosest("f_t_body_width", tl.body_width);
     setSelectClosest("f_t_body_height", tl.body_height);
     setSelectClosest("f_t_tarp_type", tl.tarp_type);
+    setVal("f_t_tarp_colour", tl.tarp_colour);
   }
   
   // Trailer running gear
@@ -1662,9 +1673,9 @@ function collectFormData() {
     side_pegs: gc("f_side_pegs"), rear_bumper: gc("f_rear_bumper"),
     tailgate_type: gv("f_tailgate_type"), tailgate_lights: gv("f_tailgate_lights"),
     // Tarp
-    tarp_type: gv("f_tarp_type"), tarp_make: gv("f_tarp_make"),
+    tarp_type: gv("f_tarp_type"), tarp_make: gv("f_tarp_make"), tarp_colour: gv("f_tarp_colour"),
     tarp_length: gv("f_tarp_length"), bow_height: gv("f_bow_height"),
-    t_tarp_type: gv("f_t_tarp_type"), t_tarp_make: gv("f_t_tarp_make"),
+    t_tarp_type: gv("f_t_tarp_type"), t_tarp_make: gv("f_t_tarp_make"), t_tarp_colour: gv("f_t_tarp_colour"),
     t_tarp_length: gv("f_t_tarp_length"),
     // Hoist & pivot centres (truck)
     pivot_centres: gv("f_pivot_centres"),
@@ -2012,10 +2023,12 @@ function createTrailerFitoutSheet(wb, d, prefix) {
 
   var tt = d.job_type === "both" ? d.t_tarp_type : d.tarp_type;
   var tm = d.job_type === "both" ? d.t_tarp_make : d.tarp_make;
+  var tc = d.job_type === "both" ? d.t_tarp_colour : d.tarp_colour;
   sectionTitle(ws, r, 1, "TARP", 4); r++;
   lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, tt);
   lbl(ws, r, 3, "Tarp Make/Model"); val(ws, r, 4, tm); r++;
-  
+  lbl(ws, r, 1, "Tarp Colour"); val(ws, r, 2, tc); r++;
+
   sectionTitle(ws, r, 1, "ELECTRICAL", 4); r++;
   lbl(ws, r, 1, "Rear Lights"); val(ws, r, 2, d.rear_lights);
   lbl(ws, r, 3, "Side Markers"); val(ws, r, 4, d.side_marker_lights); r++;
@@ -2102,9 +2115,10 @@ function createTruckSelectionSheet(wb, d, prefix) {
   sectionTitle(ws, r, 1, "TARP", 4); r++;
   lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);
   lbl(ws, r, 3, "Tarp Make/Model"); val(ws, r, 4, d.tarp_make); r++;
-  lbl(ws, r, 1, "Tarp Length"); val(ws, r, 2, d.tarp_length);
-  lbl(ws, r, 3, "Bow Height"); val(ws, r, 4, d.bow_height); r++;
-  
+  lbl(ws, r, 1, "Tarp Colour"); val(ws, r, 2, d.tarp_colour);
+  lbl(ws, r, 3, "Tarp Length"); val(ws, r, 4, d.tarp_length); r++;
+  lbl(ws, r, 1, "Bow Height"); val(ws, r, 2, d.bow_height); r++;
+
   sectionTitle(ws, r, 1, "ACCESSORIES", 4); r++;
   lbl(ws, r, 1, "Tailgate Type"); val(ws, r, 2, d.tailgate_type);
   lbl(ws, r, 3, "Tailgate Lights"); val(ws, r, 4, d.tailgate_lights); r++;
@@ -2212,7 +2226,8 @@ function createTruckFitoutSheet(wb, d, prefix) {
   sectionTitle(ws, r, 1, "TARP", 4); r++;
   lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);
   lbl(ws, r, 3, "Tarp Make/Model"); val(ws, r, 4, d.tarp_make); r++;
-  
+  lbl(ws, r, 1, "Tarp Colour"); val(ws, r, 2, d.tarp_colour); r++;
+
   sectionTitle(ws, r, 1, "ELECTRICAL", 4); r++;
   lbl(ws, r, 1, "Rear Lights"); val(ws, r, 2, d.rear_lights);
   lbl(ws, r, 3, "Side Markers"); val(ws, r, 4, d.side_marker_lights); r++;
@@ -2721,8 +2736,9 @@ function createTruckOrderSheet(wb, d) {
   sectionTitle(ws, r, 1, "TARP", 4); r++;
   lbl(ws, r, 1, "Tarp Type"); val(ws, r, 2, d.tarp_type);
   lbl(ws, r, 3, "Tarp Make/Model"); val(ws, r, 4, d.tarp_make); r++;
-  lbl(ws, r, 1, "Tarp Length"); val(ws, r, 2, d.tarp_length);
-  lbl(ws, r, 3, "Bow Height"); val(ws, r, 4, d.bow_height); r++;
+  lbl(ws, r, 1, "Tarp Colour"); val(ws, r, 2, d.tarp_colour);
+  lbl(ws, r, 3, "Tarp Length"); val(ws, r, 4, d.tarp_length); r++;
+  lbl(ws, r, 1, "Bow Height"); val(ws, r, 2, d.bow_height); r++;
 
   sectionTitle(ws, r, 1, "PAINT", 4); r++;
   lbl(ws, r, 1, "Body Paint"); val(ws, r, 2, d.body_paint);
