@@ -34,6 +34,7 @@ interface QuoteForm {
   truckFloorSheet: string
   truckSideSheet: string
   truckHoist: string
+  truckPushLugs: string
   truckTarp: string
   truckCoupling: string
   truckControls: string
@@ -92,6 +93,7 @@ interface QuoteForm {
   trailerFloorSheet: string
   trailerSideSheet: string
   trailerHoist: string
+  trailerPushLugs: string
   trailerDrawbarLength: string
   trailerMainRunnerWidth: string
   trailerChassisLength: string
@@ -598,6 +600,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckFloorSheet: '6mm Hardox 500',
     truckSideSheet: '5mm Hardox 500',
     truckHoist: 'Binotto 3190',
+    truckPushLugs: '',
     truckTarp: 'Razor PVC/MESH Electric',
     truckCoupling: 'V.Orlandi',
     truckControls: 'Electric hand controller',
@@ -642,7 +645,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckTarpStyle: 'Razor Electric',
     truckTarpLocation: 'Standard Out Front',
     trailerSerial: '', trailerVin: '', trailerFloorSheet: '', trailerSideSheet: '',
-    trailerHoist: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
+    trailerHoist: '', trailerPushLugs: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
     trailerChassisLength: '', trailerWheelbase: '',
     trailerTailgateLights: 'None', trailerTailLights: 'Use existing OEM tail lights', trailerLockFlap: 'No',
     trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'No', trailerHubodoLocation: '', trailerHubodoAxle: '', trailerHoseBurstValve: 'No',
@@ -1864,6 +1867,14 @@ function QuoteBuilderInner() {
                   {HOISTS.map((h) => <option key={h}>{h}</option>)}
                 </select>
               </Field>
+              <Field label="Push Lugs">
+                <select value={form.truckPushLugs} onChange={(e) => set('truckPushLugs', e.target.value)} style={selectStyle}>
+                  <option value="">Select...</option>
+                  <option>No</option>
+                  <option>Yes</option>
+                  <option>Yes with Shute between</option>
+                </select>
+              </Field>
               <Field label="Coupling">
                 <select value={form.truckCoupling} onChange={(e) => set('truckCoupling', e.target.value)} style={selectStyle}>
                   {COUPLINGS.map((c) => <option key={c}>{c}</option>)}
@@ -2383,6 +2394,14 @@ function QuoteBuilderInner() {
               </Field>
               <Field label="Hoist Model">
                 <input value={form.trailerHoist} onChange={(e) => set('trailerHoist', e.target.value)} placeholder="e.g. Binotto 4-stage" style={inputStyle} />
+              </Field>
+              <Field label="Push Lugs">
+                <select value={form.trailerPushLugs} onChange={(e) => set('trailerPushLugs', e.target.value)} style={selectStyle}>
+                  <option value="">Select...</option>
+                  <option>No</option>
+                  <option>Yes</option>
+                  <option>Yes with Shute between</option>
+                </select>
               </Field>
               <Field label="PBS Rating">
                 <input value={form.trailerPbs} onChange={(e) => set('trailerPbs', e.target.value)} placeholder="e.g. 56.5T GCM" style={inputStyle} />
