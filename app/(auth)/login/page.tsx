@@ -24,7 +24,7 @@ export default function LoginPage() {
   const pinRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetch('/api/users').then((r) => r.json()).then(setUsers)
+    fetch('/api/users').then((r) => r.json()).then((data: UserInfo[]) => setUsers(data))
   }, [])
 
   const filtered = users.filter(

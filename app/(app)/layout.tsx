@@ -625,6 +625,43 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
             })}
           </SortableContext>
         </DndContext>
+
+        {/* Test Lab — visible to all users, isolated from live data */}
+        <div style={{
+          margin: '16px 18px 4px',
+          fontSize: 9, fontWeight: 700, letterSpacing: 1.2,
+          textTransform: 'uppercase', color: '#E8681A',
+          borderTop: '1px solid rgba(232,104,26,0.3)',
+          paddingTop: 12,
+        }}>
+          DEV
+        </div>
+        <div
+          onClick={() => { setCurrentPath('test'); router.push('/test' as any) }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '9px 18px', cursor: 'pointer',
+            borderLeft: `3px solid ${currentPath === 'test' ? '#E8681A' : 'transparent'}`,
+            background: currentPath === 'test' ? 'rgba(232,104,26,0.08)' : 'transparent',
+            fontSize: 13, fontWeight: 500,
+            color: currentPath === 'test' ? '#E8681A' : 'rgba(232,104,26,0.7)',
+          }}
+          onMouseEnter={e => {
+            if (currentPath !== 'test') {
+              e.currentTarget.style.background = 'rgba(232,104,26,0.06)'
+              e.currentTarget.style.color = '#E8681A'
+            }
+          }}
+          onMouseLeave={e => {
+            if (currentPath !== 'test') {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.color = 'rgba(232,104,26,0.7)'
+            }
+          }}
+        >
+          <span style={{ fontSize: 16, width: 20, textAlign: 'center', flexShrink: 0 }}>🧪</span>
+          <span>Test Lab</span>
+        </div>
       </div>
 
       {/* Main Content */}

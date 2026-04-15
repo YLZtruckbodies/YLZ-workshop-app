@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       const csvBuffer = Buffer.from(csv, 'utf-8')
 
       await resend.emails.send({
-        from: 'YLZ Workshop <noreply@ylztruckbodies.com>',
+        from: process.env.FROM_EMAIL || 'YLZ Workshop <noreply@ylztruckbodies.com.au>',
         to: ['liz@ylztruckbodies.com', 'accounts@ylztruckbodies.com'],
         subject: `Timesheet Export — ${date || 'All'}`,
         text: `Timesheet export for ${date || 'all dates'}. See attached CSV.`,
