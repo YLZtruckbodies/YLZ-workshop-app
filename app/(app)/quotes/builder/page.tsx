@@ -1844,7 +1844,14 @@ function QuoteBuilderInner() {
             <div style={{ ...grid(2), marginTop: 16 }}>
               <Field label="Hydraulics">
                 <select value={form.truckHydraulics} onChange={(e) => set('truckHydraulics', e.target.value)} style={selectStyle}>
-                  {(form.buildType === 'truck-and-trailer' ? HYDRAULICS_TRUCK_AND_DOG : HYDRAULICS_TRUCK).map((h) => <option key={h}>{h}</option>)}
+                  {(form.buildType === 'truck-and-trailer' ? HYDRAULICS_TRUCK_AND_DOG : HYDRAULICS_TRUCK).map((h) => {
+                    const twinPn = form.truckMaterial === 'Aluminium' ? '121.15.104' : '121.15.113'
+                    const label =
+                      h === 'Truck and Trailer spool valve' ? `Truck and Trailer spool valve — ${twinPn}` :
+                      h === 'Single spool valve' ? `Single spool valve — 121.8.185` :
+                      h
+                    return <option key={h} value={h}>{label}</option>
+                  })}
                 </select>
               </Field>
             </div>
