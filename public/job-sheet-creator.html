@@ -804,12 +804,18 @@ function loadQuoteFields(quoteId) {
       // For combo builds, truck config lives under cfg.truckConfig
       var tc = isCombo ? (cfg.truckConfig || {}) : (isTruck ? cfg : {});
 
-      // Hydraulic System — map value to description + TES part number
+      // Hydraulic System — match part number logic from quote builder
       var hyd = tc.hydraulics || cfg.hydraulics || '';
+      var mat = tc.material || cfg.material || '';
       var hydDisplay = '';
-      if (/truck\s*and\s*trailer/i.test(hyd)) hydDisplay = 'Truck and Trailer spool valve — 500-224';
-      else if (/single\s*spool/i.test(hyd)) hydDisplay = 'Single spool valve — 500-86';
-      else hydDisplay = hyd;
+      if (/truck\s*and\s*trailer/i.test(hyd)) {
+        var twinPn = /alumin/i.test(mat) ? '121.15.104' : '121.15.113';
+        hydDisplay = 'Truck and Trailer spool valve — ' + twinPn;
+      } else if (/single\s*spool/i.test(hyd)) {
+        hydDisplay = 'Single spool valve — 121.8.185';
+      } else {
+        hydDisplay = hyd;
+      }
       var hydEl = document.getElementById('f_hydraulic_system');
       if (hydEl && hydDisplay) hydEl.value = hydDisplay;
 
