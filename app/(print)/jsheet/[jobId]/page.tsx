@@ -43,6 +43,7 @@ interface QuoteConfig {
   wheelbase?: string
   mainRunnerWidth?: string
   tailgateLights?: string
+  tailLights?: string
   lockFlap?: string
   specialRequirements?: string
   hydTankType?: string
@@ -442,10 +443,18 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 </div>
 
                 <div style={sectionLbl}>Tailgate & Lock Flap</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Tailgate Type', 'tailgateType')}
-                  {cfgField('Tailgate Lights', 'tailgateLights')}
                   {cfgField('Lock Flap', 'lockFlap')}
+                </div>
+
+                <div style={sectionLbl}>Lights & Mudflaps</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Tail Lights', 'tailLights')}
+                  {cfgField('Tailgate Lights', 'tailgateLights')}
+                  {cfgField('Side Lights', 'sideLights')}
+                  {cfgField('Anti-Spray', 'antiSpray')}
+                  {cfgField('Mudflaps', 'mudflaps')}
                 </div>
 
                 <div style={sectionLbl}>Hydraulics</div>
@@ -470,10 +479,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Brake Coupling', 'brakeCoupling')}
                   {cfgField('Spreader Chain', 'spreaderChain')}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
-                  {cfgField('Side Lights', 'sideLights')}
-                  {cfgField('Anti-Spray', 'antiSpray')}
-                  {cfgField('Mudflaps', 'mudflaps')}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Shovel Holder', 'shovelHolder')}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
@@ -671,11 +677,24 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         <div className="section">
           <div className="section-hdr">Tailgate &amp; Lock Flap</div>
           <div className="section-body">
-            <div className="field-row field-row-4">
+            <div className="field-row field-row-3">
               <div className="field"><div className="field-lbl">Tailgate Type</div><div className="field-val">{c('tailgateType') || ''}</div>{!c('tailgateType') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Tailgate Lights</div><div className="field-val">{c('tailgateLights') || ''}</div>{!c('tailgateLights') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Lock Flap</div><div className="field-val">{c('lockFlap') || ''}</div>{!c('lockFlap') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tailgate Controls</div><div className="field-val">{c('controls') || ''}</div>{!c('controls') && <div className="field-blank" />}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Lights & Mudflaps */}
+        <div className="section">
+          <div className="section-hdr">Lights &amp; Mudflaps</div>
+          <div className="section-body">
+            <div className="field-row field-row-5">
+              <div className="field"><div className="field-lbl">Tail Lights</div><div className="field-val">{c('tailLights') || ''}</div>{!c('tailLights') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Tailgate Lights</div><div className="field-val">{c('tailgateLights') || ''}</div>{!c('tailgateLights') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Side Lights</div><div className="field-val">{c('sideLights') || ''}</div>{!c('sideLights') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Anti-Spray</div><div className="field-val">{c('antiSpray') || ''}</div>{!c('antiSpray') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Mudflaps</div><div className="field-val">{c('mudflaps') || ''}</div>{!c('mudflaps') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -728,11 +747,9 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <div className="field"><div className="field-lbl">Brake Coupling</div><div className="field-val">{c('brakeCoupling') || ''}</div>{!c('brakeCoupling') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Spreader Chain</div><div className="field-val">{c('spreaderChain') || ''}</div>{!c('spreaderChain') && <div className="field-blank" />}</div>
             </div>
-            <div className="field-row field-row-4">
-              <div className="field"><div className="field-lbl">Side Lights</div><div className="field-val">{c('sideLights') || ''}</div>{!c('sideLights') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Anti-Spray</div><div className="field-val">{c('antiSpray') || ''}</div>{!c('antiSpray') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Mudflaps</div><div className="field-val">{c('mudflaps') || ''}</div>{!c('mudflaps') && <div className="field-blank" />}</div>
+            <div className="field-row field-row-2">
               <div className="field"><div className="field-lbl">Shovel Holder</div><div className="field-val">{c('shovelHolder') || ''}</div>{!c('shovelHolder') && <div className="field-blank" />}</div>
+              <div className="field" />
             </div>
             <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">Rear CAT Markers</div><div className="field-val">{c('catMarkers') || ''}</div>{!c('catMarkers') && <div className="field-blank" />}</div>

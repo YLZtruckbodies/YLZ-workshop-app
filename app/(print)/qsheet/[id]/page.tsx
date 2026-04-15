@@ -309,11 +309,24 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
         <div className="section">
           <div className="section-hdr">Tailgate &amp; Lock Flap</div>
           <div className="section-body">
-            <div className="field-row field-row-4">
+            <div className="field-row field-row-3">
               <div className="field"><div className="field-lbl">Tailgate Type</div><div className="field-val">{c('tailgateType')}</div>{!c('tailgateType') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Tailgate Lights</div><div className="field-val">{c('tailgateLights')}</div>{!c('tailgateLights') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Lock Flap</div><div className="field-val">{c('lockFlap')}</div>{!c('lockFlap') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tailgate Controls</div><div className="field-val">{c('controls')}</div>{!c('controls') && <div className="field-blank" />}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Lights & Mudflaps */}
+        <div className="section">
+          <div className="section-hdr">Lights &amp; Mudflaps</div>
+          <div className="section-body">
+            <div className="field-row field-row-5">
+              <div className="field"><div className="field-lbl">Tail Lights</div><div className="field-val">{c('tailLights')}</div>{!c('tailLights') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Tailgate Lights</div><div className="field-val">{c('tailgateLights')}</div>{!c('tailgateLights') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Side Lights</div><div className="field-val">{c('sideLights')}</div>{!c('sideLights') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Anti-Spray</div><div className="field-val">{c('antiSpray')}</div>{!c('antiSpray') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Mudflaps</div><div className="field-val">{c('mudflaps')}</div>{!c('mudflaps') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -366,11 +379,9 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
               <div className="field"><div className="field-lbl">Brake Coupling</div><div className="field-val">{c('brakeCoupling')}</div>{!c('brakeCoupling') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Spreader Chain</div><div className="field-val">{c('spreaderChain')}</div>{!c('spreaderChain') && <div className="field-blank" />}</div>
             </div>
-            <div className="field-row field-row-4">
-              <div className="field"><div className="field-lbl">Side Lights</div><div className="field-val">{c('sideLights')}</div>{!c('sideLights') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Anti-Spray</div><div className="field-val">{c('antiSpray')}</div>{!c('antiSpray') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Mudflaps</div><div className="field-val">{c('mudflaps')}</div>{!c('mudflaps') && <div className="field-blank" />}</div>
+            <div className="field-row field-row-2">
               <div className="field"><div className="field-lbl">Shovel Holder</div><div className="field-val">{c('shovelHolder')}</div>{!c('shovelHolder') && <div className="field-blank" />}</div>
+              <div className="field" />
             </div>
             <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">Rear CAT Markers</div><div className="field-val">{c('catMarkers')}</div>{!c('catMarkers') && <div className="field-blank" />}</div>
