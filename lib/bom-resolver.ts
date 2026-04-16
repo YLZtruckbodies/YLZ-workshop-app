@@ -192,9 +192,6 @@ export function resolveBoms(
       if (isManual) add('MRP20-14', 'Manual Tarp Handle')
       // Roll Right → controller kit
       if (tarpInfo.toLowerCase().includes('roll right')) add('MRP20-05', 'Roll Right Controller')
-      // 1m high wall → A73 belt (no part number yet — flagged TBD)
-      const bodyH = parseFloat(cfg('bodyHeight') || '0')
-      if (bodyH >= 950 && bodyH <= 1050) addTbd('Truck Tarp', 'A73 Belt (1m wall) — no part number yet, order manually')
     }
 
     // ── Hoist ──
@@ -259,6 +256,7 @@ export function resolveBoms(
     const controls = cfg('controls') || cfg('truckControls')
     if (controls.toLowerCase().includes('electric hand')) {
       add('500-170', 'Controls')
+      addTbd('Controls', 'Confirm Stock before placing order')
     } else if (controls.toLowerCase().includes('in-cab')) {
       add('500-246', 'Controls')
     }
@@ -282,7 +280,7 @@ export function resolveBoms(
     // ── Hose Burst Valve ──
     const hoseBurst = cfg('hoseBurstValve') || cfg('truckHoseBurstValve')
     if (hoseBurst.toLowerCase() === 'yes') {
-      addTbd('Hydraulics', 'Hose burst valve — confirm part number in MRPeasy')
+      add('500-227', 'HSV200P Hoist safety valve 200 l/min 1" BSPP air details')
     }
 
     // ── Body Extras ──
@@ -395,14 +393,12 @@ export function resolveBoms(
         const tIsManual = tTarp.toLowerCase().includes('manual') || tTarp.toLowerCase().includes('pull out')
         if (tIsManual) add('MRP20-14', 'Manual Tarp Handle')
         if (tTarp.toLowerCase().includes('roll right')) add('MRP20-05', 'Roll Right Controller')
-        const tBodyH = parseFloat(cfg('trailerBodyHeight') || cfg('bodyHeight') || '0')
-        if (tBodyH >= 950 && tBodyH <= 1050) addTbd('Trailer Tarp', 'A73 Belt (1m wall) — no part number yet, order manually')
       }
 
       // ── Hose Burst Valve – Trailer ──
       const tHoseBurst = cfg('hoseBurstValve') || cfg('trailerHoseBurstValve')
       if (tHoseBurst.toLowerCase() === 'yes') {
-        addTbd('Trailer Hydraulics', 'Hose burst valve — confirm part number in MRPeasy')
+        add('500-227', 'HSV200P Hoist safety valve 200 l/min 1" BSPP air details')
       }
 
       // ── Wheels & Tyres ── default to 335 PCD (most common in real quotes)
