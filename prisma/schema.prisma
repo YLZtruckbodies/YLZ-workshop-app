@@ -54,6 +54,7 @@ model Job {
   customerPhone  String   @default("")
   notifyOnAdvance Boolean @default(false)
   bomList        Json     @default("[]")
+  vass           String   @default("")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

@@ -47,6 +47,7 @@ const TABLE_COLUMNS = [
   'MRP',
   'Parts Order',
   'EBS File',
+  'VASS Engineering',
   'Notes',
   'Make & Model',
   'PO',
@@ -70,6 +71,7 @@ const DEFAULT_COL_WIDTHS: number[] = [
   80,   // MRP
   90,   // Parts Order
   80,   // EBS File
+  140,  // VASS Engineering
   160,  // Notes
   120,  // Make & Model
   80,   // PO
@@ -139,6 +141,8 @@ function getStatusPillColor(value: string): string {
   if (['finished', 'in progress'].includes(v)) return '#e2e2e2'
   if (['no', 'not started', 'to be done', 'to start'].includes(v)) return '#e84560'
   if (['n/a', 'na'].includes(v)) return 'rgba(255,255,255,0.15)'
+  if (v.includes('vass engineering performed')) return '#22d07a'
+  if (v.includes('vass engineering pending')) return '#f59e0b'
   return 'rgba(255,255,255,0.15)'
 }
 
@@ -268,11 +272,13 @@ function EditableStatusCell({
   jobId,
   field,
   onSave,
+  options = STATUS_OPTIONS,
 }: {
   value: string
   jobId: string
   field: string
   onSave: (jobId: string, field: string, newVal: string, oldVal: string) => void
+  options?: string[]
 }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ x: 0, y: 0 })
@@ -323,7 +329,7 @@ function EditableStatusCell({
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-          {STATUS_OPTIONS.map((opt) => {
+          {options.map((opt) => {
             const color = getStatusPillColor(opt)
             return (
               <div
@@ -593,6 +599,7 @@ function DraggableJobRow({
         <EditableStatusCell value={job.mrp || ''} jobId={job.id} field="mrp" onSave={onFieldSave} />
         <EditableStatusCell value={job.parts || ''} jobId={job.id} field="parts" onSave={onFieldSave} />
         <EditableStatusCell value={job.ebs || ''} jobId={job.id} field="ebs" onSave={onFieldSave} />
+        <EditableStatusCell value={(job as any).vass || ''} jobId={job.id} field="vass" onSave={onFieldSave} options={['VASS Engineering Pending', 'VASS Engineering Performed', '']} />
 
         {/* Notes */}
         <EditableTextCell value={job.notes || ''} jobId={job.id} field="notes" onSave={onFieldSave} style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text3)', fontSize: 10 }} />
@@ -1497,6 +1504,7 @@ export default function JobBoardPage() {
           <td style="padding:5px 8px;font-size:10px;text-transform:uppercase;font-weight:600;">${job.mrp || '-'}</td>
           <td style="padding:5px 8px;font-size:10px;text-transform:uppercase;font-weight:600;">${job.parts || '-'}</td>
           <td style="padding:5px 8px;font-size:10px;text-transform:uppercase;font-weight:600;">${job.ebs || '-'}</td>
+          <td style="padding:5px 8px;font-size:10px;font-weight:600;">${(job as any).vass || '-'}</td>
           <td style="padding:5px 8px;font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#777;">${job.notes || '-'}</td>
           <td style="padding:5px 8px;">${job.make || '-'}</td>
           <td style="padding:5px 8px;">${job.po || '-'}</td>
@@ -1512,7 +1520,7 @@ export default function JobBoardPage() {
         <table>
           <thead><tr>
             <th>Job No.</th><th>Type</th><th>Progress</th><th>Dealer</th><th>Customer</th><th>Due</th>
-            <th>On Site</th><th>Sheet</th><th>DWG</th><th>MRP</th><th>Parts</th><th>EBS</th>
+            <th>On Site</th><th>Sheet</th><th>DWG</th><th>MRP</th><th>Parts</th><th>EBS</th><th>VASS Engineering</th>
             <th>Notes</th><th>Make</th><th>PO</th><th>Dims</th><th>VIN</th>
           </tr></thead>
           <tbody>${rows}</tbody>
