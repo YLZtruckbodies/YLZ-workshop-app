@@ -174,6 +174,7 @@ const S = {
 
     @media print {
       .print-bar { display: none !important; }
+      .edit-panel { display: none !important; }
       .sheet { padding: 10mm 12mm; }
       @page { size: A4; margin: 0; }
       body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
@@ -375,7 +376,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
 
       {/* ═══ EDIT MODE PANEL ═══ */}
       {editMode && job && (
-        <div style={{
+        <div className="edit-panel" style={{
           background: '#111', borderBottom: '2px solid #E8681A', padding: '24px 32px',
           fontFamily: "'League Spartan', Arial, sans-serif",
         }}>
