@@ -100,6 +100,7 @@ interface QuoteForm {
   trailerFloorSheet: string
   trailerSideSheet: string
   trailerHoist: string
+  trailerPivotCentre: string
   trailerPushLugs: string
   trailerDrawbarLength: string
   trailerMainRunnerWidth: string
@@ -258,6 +259,19 @@ function calcTarpBowHeight(material: string, isDogTrailer: boolean, bodyLength: 
     if (height >= 1150) return '450mm'
   }
   return ''
+}
+
+// Trailer body length → C/L Pivot to Rear (mm)
+const TRAILER_PIVOT_MAP: Record<string, string> = {
+  '5400': '450',
+  '6000': '510',
+  '6100': '610',
+  '7700': '190',
+  '8300': '330',
+  '9200': '225',
+}
+function getTrailerPivotCentre(bodyLength: string): string {
+  return TRAILER_PIVOT_MAP[bodyLength?.toString().trim()] || ''
 }
 
 // Auto-lookup: truck body length → hoist model & pivot centre (mm)
@@ -658,7 +672,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckTarpStyle: 'Razor Electric',
     truckTarpLocation: 'Standard Out Front',
     trailerSerial: '', trailerVin: '', trailerFloorSheet: '', trailerSideSheet: '',
-    trailerHoist: '', trailerPushLugs: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
+    trailerHoist: '', trailerPivotCentre: '', trailerPushLugs: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
     trailerChassisLength: '', trailerWheelbase: '',
     trailerTailgateLights: 'None', trailerTailLights: 'Use existing OEM tail lights', trailerLockFlap: 'No',
     trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'No', trailerHubodoLocation: '', trailerHubodoAxle: '', trailerHoseBurstValve: 'No',
@@ -819,6 +833,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerFloorSheet = trc.floorSheet || ''
     form.trailerSideSheet = trc.sideSheet || ''
     form.trailerHoist = trc.hoist || ''
+    form.trailerPivotCentre = trc.pivotCentre || getTrailerPivotCentre(trc.bodyLength || '')
     form.trailerDrawbarLength = trc.drawbarLength || ''
     form.trailerMainRunnerWidth = trc.mainRunnerWidth || ''
     form.trailerChassisLength = trc.chassisLength || getChassisLength(trc.bodyLength || '')
@@ -926,6 +941,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerFloorSheet = cfg.floorSheet || ''
     form.trailerSideSheet = cfg.sideSheet || ''
     form.trailerHoist = cfg.hoist || ''
+    form.trailerPivotCentre = (cfg.pivotCentre as string) || getTrailerPivotCentre(cfg.bodyLength as string || '')
     form.trailerDrawbarLength = cfg.drawbarLength || ''
     form.trailerMainRunnerWidth = cfg.mainRunnerWidth || ''
     form.trailerChassisLength = cfg.chassisLength || getChassisLength(cfg.bodyLength || '')
@@ -1063,7 +1079,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     tarpSystem: form.trailerTarp,
     pbsRating: form.trailerPbs,
     floorSheet: form.trailerFloorSheet, sideSheet: form.trailerSideSheet,
-    hoist: form.trailerHoist, drawbarLength: form.trailerDrawbarLength,
+    hoist: form.trailerHoist, pivotCentre: form.trailerPivotCentre, drawbarLength: form.trailerDrawbarLength,
     bodyLength: form.trailerBodyLength, bodyWidth: calcBodyWidth(form.trailerMaterial),
     bodyHeight: form.trailerBodyHeight, bodyCapacity: calcBodyCapacity(form.trailerBodyLength, form.trailerMaterial, form.trailerBodyHeight, 'trailer'),
     gtm: form.trailerGtm, gcm: form.trailerGcm,
@@ -1278,10 +1294,15 @@ function QuoteBuilderInner() {
     }
   }, [session])
 
-  // Auto-calculate trailer chassis length from body length
+  // Auto-calculate trailer chassis length + pivot centre from body length
   useEffect(() => {
-    const calc = getChassisLength(form.trailerBodyLength)
-    if (calc) setForm((f) => ({ ...f, trailerChassisLength: calc }))
+    const chassis = getChassisLength(form.trailerBodyLength)
+    const pivot = getTrailerPivotCentre(form.trailerBodyLength)
+    setForm((f) => ({
+      ...f,
+      ...(chassis ? { trailerChassisLength: chassis } : {}),
+      ...(pivot ? { trailerPivotCentre: pivot } : {}),
+    }))
   }, [form.trailerBodyLength])
 
   // Auto-set coupling load from coupling selection
@@ -1341,7 +1362,6 @@ function QuoteBuilderInner() {
         const match = TRUCK_BODY_HOIST_MAP[val?.toString().trim()]
         if (match) {
           updated.truckHoist = match.hoist
-          updated.truckPivotCentre = match.pivotCentre
         }
         // Tarp length = body length - 400mm
         if (!isNaN(bodyLen) && bodyLen > 400) {
@@ -2699,7 +2719,7 @@ function QuoteBuilderInner() {
                 </Field>
               </div>
               {/* Row 4: chassis dimensions */}
-              <div style={{ ...grid(3), marginTop: 16 }}>
+              <div style={{ ...grid(4), marginTop: 16 }}>
                 <Field label="Chassis Length (mm)">
                   <div style={{ position: 'relative' }}>
                     <input
@@ -2720,6 +2740,19 @@ function QuoteBuilderInner() {
                 </Field>
                 <Field label="Drawbar Length (mm)">
                   <input value={form.trailerDrawbarLength} onChange={(e) => set('trailerDrawbarLength', e.target.value)} placeholder="e.g. 2400" style={inputStyle} />
+                </Field>
+                <Field label="C/L Pivot to Rear (mm)">
+                  <input
+                    value={form.trailerPivotCentre}
+                    onChange={(e) => set('trailerPivotCentre', e.target.value)}
+                    placeholder="Auto from body length"
+                    style={{ ...inputStyle, color: form.trailerPivotCentre ? '#E8681A' : 'rgba(255,255,255,0.3)' }}
+                  />
+                  {form.trailerBodyLength && getTrailerPivotCentre(form.trailerBodyLength) && (
+                    <div style={{ fontSize: 10, color: '#E8681A', marginTop: 3 }}>
+                      Auto: {getTrailerPivotCentre(form.trailerBodyLength)}mm
+                    </div>
+                  )}
                 </Field>
               </div>
               {/* Row 5: lighting + lock flap */}
