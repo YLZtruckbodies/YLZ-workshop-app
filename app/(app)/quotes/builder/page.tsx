@@ -393,8 +393,8 @@ function getChassisLength(bodyLength: string): string {
 
 function getCouplingLoad(coupling: string): string {
   if (!coupling || coupling === 'None') return ''
-  if (coupling.toLowerCase().includes('pintle')) return '8.1T Vertical Load'
-  if (coupling === 'V.Orlandi' || coupling.toLowerCase().includes('bartlett') || coupling === 'Ringfeder') return '2.5T Vertical Load'
+  if (coupling.toLowerCase().includes('pintle')) return '8.1T'
+  if (coupling === 'V.Orlandi' || coupling.toLowerCase().includes('bartlett') || coupling === 'Ringfeder') return '2.5T'
   return ''
 }
 const TRAILER_MODELS = [
