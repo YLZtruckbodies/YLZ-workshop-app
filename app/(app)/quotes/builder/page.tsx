@@ -85,6 +85,7 @@ interface QuoteForm {
   truckGrainDoors: string
   truckGrainLocks: string
   truckReverseBuzzer: string
+  truckBodySpigot: string
   truckPto: string
   truckHydTankType: string
   truckHydTankLocation: string
@@ -630,7 +631,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckSerial: '', truckVin: '', truckMainRunnerWidth: '',
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
     truckSideLights: 'None', truckAntiSpray: 'No', truckShovelHolder: 'No', truckMudflaps: 'None',
-    truckGrainDoors: 'No', truckGrainLocks: 'No', truckReverseBuzzer: 'None',
+    truckGrainDoors: 'No', truckGrainLocks: 'No', truckReverseBuzzer: 'None', truckBodySpigot: 'No',
     truckPto: 'None', truckHydTankType: 'Factory supplied',
     truckHydTankLocation: 'Centre Front of Subframe', truckDValue: '', truckCouplingLoad: '',
     truckBrakeCoupling: 'Duomatic',
@@ -778,6 +779,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckGrainDoors = tc.grainDoors || 'No'
     form.truckGrainLocks = tc.grainLocks || 'No'
     form.truckReverseBuzzer = tc.reverseBuzzer || 'None'
+    form.truckBodySpigot = tc.bodySpigot || 'No'
     form.truckPto = tc.pto || 'None'
     form.truckHydTankType = tc.hydTankType || 'Factory supplied'
     form.truckHydTankLocation = tc.hydTankLocation || 'Centre Front of Subframe'
@@ -865,6 +867,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckGrainDoors = cfg.grainDoors || 'No'
     form.truckGrainLocks = cfg.grainLocks || 'No'
     form.truckReverseBuzzer = cfg.reverseBuzzer || 'None'
+    form.truckBodySpigot = cfg.bodySpigot || 'No'
     form.truckPto = cfg.pto || 'None'
     form.truckHydTankType = cfg.hydTankType || 'Factory supplied'
     form.truckHydTankLocation = cfg.hydTankLocation || 'Centre Front of Subframe'
@@ -1024,6 +1027,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     tailgateType: form.truckTailgateType, tailgateLights: form.truckTailgateLights, tailLights: form.truckTailLights,
     sideLights: form.truckSideLights, antiSpray: form.truckAntiSpray, shovelHolder: form.truckShovelHolder, mudflaps: form.truckMudflaps,
     grainDoors: form.truckGrainDoors, grainLocks: form.truckGrainLocks, reverseBuzzer: form.truckReverseBuzzer,
+    bodySpigot: form.truckBodySpigot,
     brakeCoupling: form.truckBrakeCoupling, ladderType: form.truckLadderType, ladderPosition: form.truckLadderPosition,
     spreaderChain: form.truckSpreaderChain, pushLugs: form.truckPushLugs, catMarkers: form.truckCatMarkers,
     reflectors: form.truckReflectors, camera: form.truckCamera, vibrator: form.truckVibrator,
@@ -2774,6 +2778,13 @@ function QuoteBuilderInner() {
                   {['None', 'Existing', 'Buzzer', 'Squawker'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </Field>
+              {form.truckMaterial === 'Aluminium' && (
+                <Field label="Body Spigot">
+                  <select value={form.truckBodySpigot} onChange={(e) => set('truckBodySpigot', e.target.value)} style={selectStyle}>
+                    {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+              )}
             </div>
           </SectionCard>
         )}

@@ -536,6 +536,13 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Location', 'reverseBuzzerLocation')}
                 </div>
 
+                {(editCfg['material'] || '').toLowerCase().includes('aluminium') && (<>
+                  <div style={sectionLbl}>Body Spigot</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
+                    {cfgField('Body Spigot', 'bodySpigot')}
+                  </div>
+                </>)}
+
                 <div style={sectionLbl}>Trailer / Chassis (if applicable)</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Chassis Length (mm)', 'chassisLength')}
@@ -799,6 +806,18 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             </div>
           </div>
         </div>
+
+        {/* Body Spigot — Aluminium only */}
+        {String(c('material') || '').toLowerCase().includes('aluminium') && (
+          <div className="section">
+            <div className="section-hdr">Body Spigot</div>
+            <div className="section-body">
+              <div className="field-row field-row-2">
+                <div className="field"><div className="field-lbl">Body Spigot</div><div className="field-val">{c('bodySpigot') || ''}</div>{!c('bodySpigot') && <div className="field-blank" />}</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Rear Signage */}
         <div className="section">
