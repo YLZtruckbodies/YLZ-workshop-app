@@ -54,6 +54,14 @@ interface QuoteConfig {
   [key: string]: unknown
 }
 
+function deriveCouplingLoad(coupling: string): string {
+  if (!coupling || coupling === 'None') return ''
+  const c = coupling.toLowerCase()
+  if (c.includes('pintle')) return '8.1T'
+  if (c.includes('orlandi') || c.includes('bartlett') || c.includes('ringfeder')) return '2.5T'
+  return ''
+}
+
 function calcBowHeight(material: string | undefined, bodyHeight: string | undefined): string {
   if (!material || !bodyHeight) return ''
   if (material === 'Aluminium') return '250mm'
@@ -497,7 +505,10 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Paint Colour', 'paintColour')}
                   {cfgField('Coupling', 'coupling')}
                   {cfgField('D-Value (kN)', 'dValue')}
-                  {cfgField('Coupling Vertical Load', 'couplingLoad')}
+                  <div key="couplingLoad">
+                    <div style={lblStyle}>Coupling Vertical Load</div>
+                    <input style={inpStyle} value={editCfg['couplingLoad'] || deriveCouplingLoad(String(editCfg['coupling'] || ''))} onChange={e => setCfgField('couplingLoad', e.target.value)} />
+                  </div>
                 </div>
 
                 <div style={sectionLbl}>Body Extras</div>
@@ -780,7 +791,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             </div>
             <div className="field-row field-row-2">
               <div className="field"><div className="field-lbl">D-Value (kN)</div><div className="field-val">{c('dValue') || ''}</div>{!c('dValue') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Coupling Vertical Load</div><div className="field-val">{c('couplingLoad') || ''}</div>{!c('couplingLoad') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Coupling Vertical Load</div><div className="field-val">{c('couplingLoad') || deriveCouplingLoad(String(c('coupling') || ''))}</div>{!(c('couplingLoad') || deriveCouplingLoad(String(c('coupling') || ''))) && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
