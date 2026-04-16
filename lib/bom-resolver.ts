@@ -221,8 +221,16 @@ export function resolveBoms(
       addTbd('PTO', `Engine PTO — confirm part with TES (${cfg('chassisMake')} ${chassisModel})`)
     }
 
-    // ── Hydraulic Pump (always needed for truck tippers) ──
-    add('500-223', 'Hydraulic Pump')
+    // ── Hydraulic Pump ──
+    const pump = cfg('pump') || cfg('pumpType')
+    if (pump && pump !== 'None' && !pump.toLowerCase().includes('customer')) {
+      const pumpPartMatch = pump.match(/500-(\d+)/)
+      if (pumpPartMatch) {
+        add(`500-${pumpPartMatch[1]}`, 'Hydraulic Pump')
+      } else {
+        addTbd('Hydraulic Pump', `Pump required — confirm part number`)
+      }
+    }
 
     // ── Spool Valve ──
     const hydOption = cfg('hydraulics') || cfg('truckHydraulics')

@@ -459,7 +459,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Hoist Model', 'hoist')}
                   {cfgField('C/L Pivot to Rear (mm)', 'pivotCentre')}
                   {cfgField('Hoist Controls', 'controls')}
-                  {cfgField('Pump Type', 'pumpType')}
+                  {cfgField('Pump Type', 'pump')}
                   {cfgField('Hose Burst Valve', 'hoseBurstValve')}
                 </div>
 
@@ -698,7 +698,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <div className="field"><div className="field-lbl">Hoist Model</div><div className="field-val">{c('hoist') || ''}</div>{!c('hoist') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{c('pivotCentre') || ''}</div>{!c('pivotCentre') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Hoist Controls</div><div className="field-val">{c('controls') || ''}</div>{!c('controls') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Pump Type</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Pump Type</div><div className="field-val">{c('pump') || c('pumpType') || ''}</div>{!(c('pump') || c('pumpType')) && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Hose Burst Valve</div><div className="field-val">{c('hoseBurstValve') || ''}</div>{!c('hoseBurstValve') && <div className="field-blank" />}</div>
             </div>
           </div>

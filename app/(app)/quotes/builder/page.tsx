@@ -87,6 +87,7 @@ interface QuoteForm {
   truckReverseBuzzer: string
   truckBodySpigot: string
   truckPto: string
+  truckPump: string
   truckHydTankType: string
   truckHydTankLocation: string
   truckDValue: string
@@ -281,6 +282,11 @@ const CONTROLS = [
 ]
 const HYDRAULICS_TRUCK = ['Single spool valve', 'Truck and Trailer spool valve', 'None']
 const HYDRAULICS_TRUCK_AND_DOG = ['Truck and Trailer spool valve', 'None']
+const PUMP_OPTIONS = [
+  'None',
+  '500-223 — OMFB DTH182 ISO 82L (Standard)',
+  'Customer Supplied',
+]
 const PTO_OPTIONS = [
   'None',
   // Generic
@@ -632,7 +638,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
     truckSideLights: 'None', truckAntiSpray: 'No', truckShovelHolder: 'No', truckMudflaps: 'None',
     truckGrainDoors: 'No', truckGrainLocks: 'No', truckReverseBuzzer: 'None', truckBodySpigot: 'No',
-    truckPto: 'None', truckHydTankType: 'Factory supplied',
+    truckPto: 'None', truckPump: 'None', truckHydTankType: 'Factory supplied',
     truckHydTankLocation: 'Centre Front of Subframe', truckDValue: '', truckCouplingLoad: '',
     truckBrakeCoupling: 'Duomatic',
     truckLadderType: '3-Step Pull out ladder c/w rungs',
@@ -781,6 +787,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckReverseBuzzer = tc.reverseBuzzer || 'None'
     form.truckBodySpigot = tc.bodySpigot || 'No'
     form.truckPto = tc.pto || 'None'
+    form.truckPump = tc.pump || 'None'
     form.truckHydTankType = tc.hydTankType || 'Factory supplied'
     form.truckHydTankLocation = tc.hydTankLocation || 'Centre Front of Subframe'
     form.truckHoseBurstValve = tc.hoseBurstValve || 'No'
@@ -869,6 +876,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckReverseBuzzer = cfg.reverseBuzzer || 'None'
     form.truckBodySpigot = cfg.bodySpigot || 'No'
     form.truckPto = cfg.pto || 'None'
+    form.truckPump = (cfg.pump as string) || 'None'
     form.truckHydTankType = cfg.hydTankType || 'Factory supplied'
     form.truckHydTankLocation = cfg.hydTankLocation || 'Centre Front of Subframe'
     form.truckHoseBurstValve = (cfg.hoseBurstValve as string) || 'No'
@@ -1031,7 +1039,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     brakeCoupling: form.truckBrakeCoupling, ladderType: form.truckLadderType, ladderPosition: form.truckLadderPosition,
     spreaderChain: form.truckSpreaderChain, pushLugs: form.truckPushLugs, catMarkers: form.truckCatMarkers,
     reflectors: form.truckReflectors, camera: form.truckCamera, vibrator: form.truckVibrator,
-    pto: form.truckPto, hydTankType: form.truckHydTankType,
+    pto: form.truckPto, pump: form.truckPump, hydTankType: form.truckHydTankType,
     hydTankLocation: form.truckHydTankLocation,
     dValue: form.truckDValue, couplingLoad: form.truckCouplingLoad,
     pivotCentre: form.truckPivotCentre,
@@ -2584,7 +2592,7 @@ function QuoteBuilderInner() {
                 </Field>
               </div>
               {/* Row 4: controls detail */}
-              <div style={{ ...grid(3), marginTop: 16 }}>
+              <div style={{ ...grid(4), marginTop: 16 }}>
                 <Field label="PTO">
                   <input
                     list="pto-options"
@@ -2596,6 +2604,11 @@ function QuoteBuilderInner() {
                   <datalist id="pto-options">
                     {PTO_OPTIONS.map((o) => <option key={o} value={o} />)}
                   </datalist>
+                </Field>
+                <Field label="Pump">
+                  <select value={form.truckPump} onChange={(e) => set('truckPump', e.target.value)} style={selectStyle}>
+                    {PUMP_OPTIONS.map((o) => <option key={o}>{o}</option>)}
+                  </select>
                 </Field>
                 <Field label="Tailgate Type">
                   <select value={form.truckTailgateType} onChange={(e) => set('truckTailgateType', e.target.value)} style={selectStyle}>
