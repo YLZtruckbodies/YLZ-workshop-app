@@ -529,7 +529,10 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
 
                 <div style={sectionLbl}>Reverse Buzzer / Squawker</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
-                  {cfgField('Type', 'reverseBuzzerType')}
+                  <div key="reverseBuzzerType">
+                    <div style={lblStyle}>Type</div>
+                    <input style={inpStyle} value={editCfg['reverseBuzzerType'] || editCfg['reverseBuzzer'] || ''} onChange={e => setCfgField('reverseBuzzerType', e.target.value)} />
+                  </div>
                   {cfgField('Location', 'reverseBuzzerLocation')}
                 </div>
 
@@ -814,7 +817,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-hdr">Reverse Buzzer / Squawker</div>
           <div className="section-body">
             <div className="field-row field-row-3">
-              <div className="field"><div className="field-lbl">Buzzer / Squawker Type</div><div className="field-val">{c('reverseBuzzerType') || ''}</div>{!c('reverseBuzzerType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Buzzer / Squawker Type</div><div className="field-val">{c('reverseBuzzerType') || c('reverseBuzzer') || ''}</div>{!c('reverseBuzzerType') && !c('reverseBuzzer') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Location</div><div className="field-val">{c('reverseBuzzerLocation') || ''}</div>{!c('reverseBuzzerLocation') && <div className="field-blank" />}</div>
               <div className="field" />
             </div>
