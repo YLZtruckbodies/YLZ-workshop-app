@@ -639,18 +639,19 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="cell-val-sm">{job.type || '—'}</div>
           </div>
           <div className="cell">
-            <div className="cell-lbl">Chassis / Make</div>
-            <div className="cell-val-sm">{job.make || `${c('chassisMake')} ${c('chassisModel')}${c('chassisVariant') ? ` (${c('chassisVariant')})` : ''}`.trim() || ''}</div>
-            {!job.make && !c('chassisMake') && <div className="cell-blank" />}
+            <div className="cell-lbl">Chassis Make</div>
+            <div className="cell-val-sm">{c('chassisMake') || ''}</div>
+            {!c('chassisMake') && <div className="cell-blank" />}
+          </div>
+          <div className="cell">
+            <div className="cell-lbl">Chassis Model</div>
+            <div className="cell-val-sm">{c('chassisModel') || ''}</div>
+            {!c('chassisModel') && <div className="cell-blank" />}
           </div>
           <div className="cell">
             <div className="cell-lbl">Due Date</div>
             <div className="cell-val-sm">{job.due || ''}</div>
             {!job.due && <div className="cell-blank" />}
-          </div>
-          <div className="cell">
-            <div className="cell-lbl">Drawing / Ref</div>
-            <div className="cell-blank" />
           </div>
         </div>
 
@@ -914,7 +915,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         </div>
         <div className="divider" />
 
-        <div className="info-row info-row-4" style={{ marginBottom: 14 }}>
+        <div className="info-row info-row-4" style={{ marginBottom: 8 }}>
           <div className="cell">
             <div className="cell-lbl">Job Number</div>
             <div className="cell-val-num">{job.num}</div>
@@ -930,6 +931,18 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="cell">
             <div className="cell-lbl">Date</div>
             <div className="cell-val-sm">{today()}</div>
+          </div>
+        </div>
+        <div className="info-row info-row-2" style={{ marginBottom: 14 }}>
+          <div className="cell">
+            <div className="cell-lbl">Chassis Make</div>
+            <div className="cell-val-sm">{c('chassisMake') || ''}</div>
+            {!c('chassisMake') && <div className="cell-blank" />}
+          </div>
+          <div className="cell">
+            <div className="cell-lbl">Chassis Model</div>
+            <div className="cell-val-sm">{c('chassisModel') || ''}</div>
+            {!c('chassisModel') && <div className="cell-blank" />}
           </div>
         </div>
 
@@ -1045,7 +1058,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         </div>
         <div className="divider" />
 
-        <div className="info-row info-row-4" style={{ marginBottom: 14 }}>
+        <div className="info-row info-row-4" style={{ marginBottom: 8 }}>
           <div className="cell">
             <div className="cell-lbl">Job Number</div>
             <div className="cell-val-num">{job.num}</div>
@@ -1061,6 +1074,18 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="cell">
             <div className="cell-lbl">Date</div>
             <div className="cell-val-sm">{today()}</div>
+          </div>
+        </div>
+        <div className="info-row info-row-2" style={{ marginBottom: 14 }}>
+          <div className="cell">
+            <div className="cell-lbl">Chassis Make</div>
+            <div className="cell-val-sm">{c('chassisMake') || ''}</div>
+            {!c('chassisMake') && <div className="cell-blank" />}
+          </div>
+          <div className="cell">
+            <div className="cell-lbl">Chassis Model</div>
+            <div className="cell-val-sm">{c('chassisModel') || ''}</div>
+            {!c('chassisModel') && <div className="cell-blank" />}
           </div>
         </div>
 
