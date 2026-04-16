@@ -181,8 +181,11 @@ export function resolveBoms(
       const tarpBow = cfg('tarpBowSize') || cfg('bowSize')
       const tarpColour = cfg('tarpColour')
       const tarpBom = resolveTarpBom(isPVC, tarpLen)
-      const tarpNoteParts = [`${tarpLen}mm`, tarpBow ? `Bow ${tarpBow}` : '', tarpColour].filter(Boolean)
-      if (tarpBom) add(tarpBom, 'Truck Tarp', tarpNoteParts.join(', '))
+      const tarpWidth = cfg('material')?.toLowerCase().includes('aluminium') ? 2340 : 2400
+      const bowVal = tarpBow ? tarpBow.toString().replace(/mm$/i, '') : ''
+      const tarpDims = [String(tarpLen), String(tarpWidth), bowVal].filter(Boolean).join(' x ')
+      const tarpNote = tarpColour ? `${tarpDims} – ${tarpColour}` : tarpDims
+      if (tarpBom) add(tarpBom, 'Truck Tarp', tarpNote)
       // Manual / Pull Out → handle kit
       const isManual = tarpInfo.toLowerCase().includes('manual') || tarpInfo.toLowerCase().includes('pull out')
       if (isManual) add('MRP20-14', 'Manual Tarp Handle')
@@ -382,8 +385,11 @@ export function resolveBoms(
         const tTarpBow = cfg('tarpBowSize') || cfg('bowSize')
         const tTarpColour = cfg('tarpColour')
         const tarpBom = resolveTarpBom(tIsPVC, tTarpLen)
-        const tTarpNoteParts = [`${tTarpLen}mm`, tTarpBow ? `Bow ${tTarpBow}` : '', tTarpColour].filter(Boolean)
-        if (tarpBom) add(tarpBom, 'Trailer Tarp', tTarpNoteParts.join(', '))
+        const tTarpWidth = cfg('material')?.toLowerCase().includes('aluminium') ? 2340 : 2400
+        const tBowVal = tTarpBow ? tTarpBow.toString().replace(/mm$/i, '') : ''
+        const tTarpDims = [String(tTarpLen), String(tTarpWidth), tBowVal].filter(Boolean).join(' x ')
+        const tTarpNote = tTarpColour ? `${tTarpDims} – ${tTarpColour}` : tTarpDims
+        if (tarpBom) add(tarpBom, 'Trailer Tarp', tTarpNote)
         const tIsManual = tTarp.toLowerCase().includes('manual') || tTarp.toLowerCase().includes('pull out')
         if (tIsManual) add('MRP20-14', 'Manual Tarp Handle')
         if (tTarp.toLowerCase().includes('roll right')) add('MRP20-05', 'Roll Right Controller')
