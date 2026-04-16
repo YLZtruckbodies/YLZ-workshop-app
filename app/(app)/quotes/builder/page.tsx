@@ -86,6 +86,8 @@ interface QuoteForm {
   truckGrainLocks: string
   truckReverseBuzzer: string
   truckBodySpigot: string
+  truckRockSheet: string
+  truckLiner: string
   truckPto: string
   truckPump: string
   truckHydTankType: string
@@ -637,7 +639,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckSerial: '', truckVin: '', truckMainRunnerWidth: '',
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
     truckSideLights: 'None', truckAntiSpray: 'No', truckShovelHolder: 'No', truckMudflaps: 'None',
-    truckGrainDoors: 'No', truckGrainLocks: 'No', truckReverseBuzzer: 'None', truckBodySpigot: 'No',
+    truckGrainDoors: 'No', truckGrainLocks: 'No', truckReverseBuzzer: 'None', truckBodySpigot: 'No', truckRockSheet: 'No', truckLiner: 'No',
     truckPto: 'None', truckPump: 'None', truckHydTankType: 'Factory supplied',
     truckHydTankLocation: 'Centre Front of Subframe', truckDValue: '', truckCouplingLoad: '',
     truckBrakeCoupling: 'Duomatic',
@@ -786,6 +788,8 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckGrainLocks = tc.grainLocks || 'No'
     form.truckReverseBuzzer = tc.reverseBuzzer || 'None'
     form.truckBodySpigot = tc.bodySpigot || 'No'
+    form.truckRockSheet = tc.rockSheet || 'No'
+    form.truckLiner = tc.liner || 'No'
     form.truckPto = tc.pto || 'None'
     form.truckPump = tc.pump || 'None'
     form.truckHydTankType = tc.hydTankType || 'Factory supplied'
@@ -875,6 +879,8 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckGrainLocks = cfg.grainLocks || 'No'
     form.truckReverseBuzzer = cfg.reverseBuzzer || 'None'
     form.truckBodySpigot = cfg.bodySpigot || 'No'
+    form.truckRockSheet = (cfg.rockSheet as string) || 'No'
+    form.truckLiner = (cfg.liner as string) || 'No'
     form.truckPto = cfg.pto || 'None'
     form.truckPump = (cfg.pump as string) || 'None'
     form.truckHydTankType = cfg.hydTankType || 'Factory supplied'
@@ -1035,7 +1041,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     tailgateType: form.truckTailgateType, tailgateLights: form.truckTailgateLights, tailLights: form.truckTailLights,
     sideLights: form.truckSideLights, antiSpray: form.truckAntiSpray, shovelHolder: form.truckShovelHolder, mudflaps: form.truckMudflaps,
     grainDoors: form.truckGrainDoors, grainLocks: form.truckGrainLocks, reverseBuzzer: form.truckReverseBuzzer,
-    bodySpigot: form.truckBodySpigot,
+    bodySpigot: form.truckBodySpigot, rockSheet: form.truckRockSheet, liner: form.truckLiner,
     brakeCoupling: form.truckBrakeCoupling, ladderType: form.truckLadderType, ladderPosition: form.truckLadderPosition,
     spreaderChain: form.truckSpreaderChain, pushLugs: form.truckPushLugs, catMarkers: form.truckCatMarkers,
     reflectors: form.truckReflectors, camera: form.truckCamera, vibrator: form.truckVibrator,
@@ -2794,6 +2800,20 @@ function QuoteBuilderInner() {
               {form.truckMaterial === 'Aluminium' && (
                 <Field label="Body Spigot">
                   <select value={form.truckBodySpigot} onChange={(e) => set('truckBodySpigot', e.target.value)} style={selectStyle}>
+                    {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+              )}
+              {form.truckMaterial === 'Aluminium' && (
+                <Field label="Rock Sheet">
+                  <select value={form.truckRockSheet} onChange={(e) => set('truckRockSheet', e.target.value)} style={selectStyle}>
+                    {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+              )}
+              {form.truckMaterial === 'Aluminium' && (
+                <Field label="Liner">
+                  <select value={form.truckLiner} onChange={(e) => set('truckLiner', e.target.value)} style={selectStyle}>
                     {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
                   </select>
                 </Field>

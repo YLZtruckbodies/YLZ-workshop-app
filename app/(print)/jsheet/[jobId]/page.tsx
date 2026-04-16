@@ -552,9 +552,11 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 </div>
 
                 {(editCfg['material'] || '').toLowerCase().includes('aluminium') && (<>
-                  <div style={sectionLbl}>Body Spigot</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
+                  <div style={sectionLbl}>Body Spigot / Rock Sheet / Liner</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
                     {cfgField('Body Spigot', 'bodySpigot')}
+                    {cfgField('Rock Sheet', 'rockSheet')}
+                    {cfgField('Liner', 'liner')}
                   </div>
                 </>)}
 
@@ -826,13 +828,15 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         </div>
 
-        {/* Body Spigot — Aluminium only */}
+        {/* Body Spigot / Rock Sheet / Liner — Aluminium only */}
         {String(c('material') || '').toLowerCase().includes('aluminium') && (
           <div className="section">
-            <div className="section-hdr">Body Spigot</div>
+            <div className="section-hdr">Body Spigot / Rock Sheet / Liner</div>
             <div className="section-body">
-              <div className="field-row field-row-2">
+              <div className="field-row field-row-3">
                 <div className="field"><div className="field-lbl">Body Spigot</div><div className="field-val">{c('bodySpigot') || ''}</div>{!c('bodySpigot') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Rock Sheet</div><div className="field-val">{c('rockSheet') || ''}</div>{!c('rockSheet') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Liner</div><div className="field-val">{c('liner') || ''}</div>{!c('liner') && <div className="field-blank" />}</div>
               </div>
             </div>
           </div>
