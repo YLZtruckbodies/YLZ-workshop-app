@@ -449,7 +449,7 @@ function fmt(n: number) {
 function defaultSheets(material: string) {
   if (material === 'Hardox 500') return { floor: '6mm Hardox 500', side: '5mm Hardox 500' }
   if (material === 'Hardox 450') return { floor: '6mm Hardox 450', side: '5mm Hardox 450' }
-  if (material === 'Aluminium') return { floor: '5mm Aluminium', side: '5mm Aluminium' }
+  if (material === 'Aluminium') return { floor: '8mm Aluminium', side: '5mm Aluminium' }
   return { floor: '5mm Steel', side: '4mm Steel' }
 }
 
