@@ -515,6 +515,11 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Camera', 'camera')}
                   {cfgField('Vibrator', 'vibrator')}
                 </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Grain Doors', 'grainDoors')}
+                  {cfgField('Grain Locks', 'grainLocks')}
+                  {cfgField('Reverse Buzzer / Squawker', 'reverseBuzzer')}
+                </div>
 
                 <div style={sectionLbl}>Rear Signage</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
@@ -783,6 +788,11 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <div className="field"><div className="field-lbl">Reflectors</div><div className="field-val">{c('reflectors') || ''}</div>{!c('reflectors') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Camera</div><div className="field-val">{c('camera') || ''}</div>{!c('camera') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Vibrator</div><div className="field-val">{c('vibrator') || ''}</div>{!c('vibrator') && <div className="field-blank" />}</div>
+            </div>
+            <div className="field-row field-row-3">
+              <div className="field"><div className="field-lbl">Grain Doors</div><div className="field-val">{c('grainDoors') || ''}</div>{!c('grainDoors') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Grain Locks</div><div className="field-val">{c('grainLocks') || ''}</div>{!c('grainLocks') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Reverse Buzzer / Squawker</div><div className="field-val">{c('reverseBuzzer') || ''}</div>{!c('reverseBuzzer') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>

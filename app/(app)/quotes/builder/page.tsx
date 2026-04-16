@@ -82,6 +82,9 @@ interface QuoteForm {
   truckAntiSpray: string
   truckShovelHolder: string
   truckMudflaps: string
+  truckGrainDoors: string
+  truckGrainLocks: string
+  truckReverseBuzzer: string
   truckPto: string
   truckHydTankType: string
   truckHydTankLocation: string
@@ -627,6 +630,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckSerial: '', truckVin: '', truckMainRunnerWidth: '',
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
     truckSideLights: 'None', truckAntiSpray: 'No', truckShovelHolder: 'No', truckMudflaps: 'None',
+    truckGrainDoors: 'No', truckGrainLocks: 'No', truckReverseBuzzer: 'None',
     truckPto: 'None', truckHydTankType: 'Factory supplied',
     truckHydTankLocation: 'Centre Front of Subframe', truckDValue: '', truckCouplingLoad: '',
     truckBrakeCoupling: 'Duomatic',
@@ -771,6 +775,9 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckAntiSpray = tc.antiSpray || 'No'
     form.truckShovelHolder = tc.shovelHolder || 'No'
     form.truckMudflaps = tc.mudflaps || 'None'
+    form.truckGrainDoors = tc.grainDoors || 'No'
+    form.truckGrainLocks = tc.grainLocks || 'No'
+    form.truckReverseBuzzer = tc.reverseBuzzer || 'None'
     form.truckPto = tc.pto || 'None'
     form.truckHydTankType = tc.hydTankType || 'Factory supplied'
     form.truckHydTankLocation = tc.hydTankLocation || 'Centre Front of Subframe'
@@ -855,6 +862,9 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckAntiSpray = cfg.antiSpray || 'No'
     form.truckShovelHolder = cfg.shovelHolder || 'No'
     form.truckMudflaps = cfg.mudflaps || 'None'
+    form.truckGrainDoors = cfg.grainDoors || 'No'
+    form.truckGrainLocks = cfg.grainLocks || 'No'
+    form.truckReverseBuzzer = cfg.reverseBuzzer || 'None'
     form.truckPto = cfg.pto || 'None'
     form.truckHydTankType = cfg.hydTankType || 'Factory supplied'
     form.truckHydTankLocation = cfg.hydTankLocation || 'Centre Front of Subframe'
@@ -1013,6 +1023,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     mainRunnerWidth: form.truckMainRunnerWidth,
     tailgateType: form.truckTailgateType, tailgateLights: form.truckTailgateLights, tailLights: form.truckTailLights,
     sideLights: form.truckSideLights, antiSpray: form.truckAntiSpray, shovelHolder: form.truckShovelHolder, mudflaps: form.truckMudflaps,
+    grainDoors: form.truckGrainDoors, grainLocks: form.truckGrainLocks, reverseBuzzer: form.truckReverseBuzzer,
     brakeCoupling: form.truckBrakeCoupling, ladderType: form.truckLadderType, ladderPosition: form.truckLadderPosition,
     spreaderChain: form.truckSpreaderChain, pushLugs: form.truckPushLugs, catMarkers: form.truckCatMarkers,
     reflectors: form.truckReflectors, camera: form.truckCamera, vibrator: form.truckVibrator,
@@ -2746,6 +2757,21 @@ function QuoteBuilderInner() {
               <Field label="Underbody Shovel Holder">
                 <select value={form.truckShovelHolder} onChange={(e) => set('truckShovelHolder', e.target.value)} style={selectStyle}>
                   {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Grain Doors">
+                <select value={form.truckGrainDoors} onChange={(e) => set('truckGrainDoors', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Grain Locks">
+                <select value={form.truckGrainLocks} onChange={(e) => set('truckGrainLocks', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Reverse Buzzer / Squawker">
+                <select value={form.truckReverseBuzzer} onChange={(e) => set('truckReverseBuzzer', e.target.value)} style={selectStyle}>
+                  {['None', 'Existing', 'Buzzer', 'Squawker'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </Field>
             </div>
