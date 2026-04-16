@@ -186,6 +186,7 @@ export function resolveBoms(
       const tarpDims = [String(tarpLen), String(tarpWidth), bowVal].filter(Boolean).join(' x ')
       const tarpNote = tarpColour ? `${tarpDims} – ${tarpColour}` : tarpDims
       if (tarpBom) add(tarpBom, 'Truck Tarp', tarpNote)
+      if (bowVal === '450') addTbd('Truck Tarp', 'Extra Charge to be added on PO for 450mm Bows')
       // Manual / Pull Out → handle kit
       const isManual = tarpInfo.toLowerCase().includes('manual') || tarpInfo.toLowerCase().includes('pull out')
       if (isManual) add('MRP20-14', 'Manual Tarp Handle')
@@ -390,6 +391,7 @@ export function resolveBoms(
         const tTarpDims = [String(tTarpLen), String(tTarpWidth), tBowVal].filter(Boolean).join(' x ')
         const tTarpNote = tTarpColour ? `${tTarpDims} – ${tTarpColour}` : tTarpDims
         if (tarpBom) add(tarpBom, 'Trailer Tarp', tTarpNote)
+        if (tBowVal === '450') addTbd('Trailer Tarp', 'Extra Charge to be added on PO for 450mm Bows')
         const tIsManual = tTarp.toLowerCase().includes('manual') || tTarp.toLowerCase().includes('pull out')
         if (tIsManual) add('MRP20-14', 'Manual Tarp Handle')
         if (tTarp.toLowerCase().includes('roll right')) add('MRP20-05', 'Roll Right Controller')
