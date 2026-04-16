@@ -496,6 +496,8 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Tarp Colour', 'tarpColour')}
                   {cfgField('Paint Colour', 'paintColour')}
                   {cfgField('Coupling', 'coupling')}
+                  {cfgField('D-Value (kN)', 'dValue')}
+                  {cfgField('Coupling Vertical Load', 'couplingLoad')}
                 </div>
 
                 <div style={sectionLbl}>Body Extras</div>
@@ -775,6 +777,10 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <div className="field"><div className="field-lbl">Brake Coupling</div><div className="field-val">{c('brakeCoupling') || ''}</div>{!c('brakeCoupling') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Suspension</div><div className="field-val">{c('suspension') || ''}</div>{!c('suspension') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">PBS Rating</div><div className="field-val">{c('pbsRating') || ''}</div>{!c('pbsRating') && <div className="field-blank" />}</div>
+            </div>
+            <div className="field-row field-row-2">
+              <div className="field"><div className="field-lbl">D-Value (kN)</div><div className="field-val">{c('dValue') || ''}</div>{!c('dValue') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Coupling Vertical Load</div><div className="field-val">{c('couplingLoad') || ''}</div>{!c('couplingLoad') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
