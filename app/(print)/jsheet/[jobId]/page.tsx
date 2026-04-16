@@ -10,6 +10,7 @@ interface BomEntry {
   category: string
   section: string
   auto: boolean
+  note?: string
 }
 
 interface QuoteConfig {
@@ -219,6 +220,20 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             }
           }
         } catch { /* quote fetch failed — continue with job data only */ }
+
+        // Auto-refresh BOM if any tarp entry is missing a length note (legacy jobs)
+        const boms: BomEntry[] = Array.isArray(jobData.bomList) ? jobData.bomList : []
+        const needsRefresh = boms.some(b => b.section?.toLowerCase().includes('tarp') && !b.note)
+        if (needsRefresh && jobData.id) {
+          try {
+            const refreshRes = await fetch(`/api/jobs/${jobData.id}/boms`, { method: 'POST' })
+            if (refreshRes.ok) {
+              const refreshed = await fetch(`/api/jobs/${params.jobId}`).then(r => r.json())
+              jobData.bomList = refreshed.bomList
+            }
+          } catch { /* ignore refresh failure */ }
+        }
+
         setJob(jobData)
         // Initialise edit fields
         setEditMake(jobData.make || '')
@@ -1098,7 +1113,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 <tr key={`${bom.code}-${i}`} style={{ borderBottom: '1px solid #ddd' }}>
                   <td style={{ padding: '6px 10px', color: '#999', fontSize: '8.5pt' }}>{i + 1}</td>
                   <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontWeight: 700, color: bom.code === 'TBD' ? '#c0392b' : '#E8681A', fontSize: '10pt' }}>{bom.code}</td>
-                  <td style={{ padding: '6px 10px' }}>{bom.name}</td>
+                  <td style={{ padding: '6px 10px' }}>{bom.note ? `${bom.name} (${bom.note})` : bom.name}</td>
                   <td style={{ padding: '6px 10px', color: '#666', fontSize: '8.5pt' }}>{bom.section}</td>
                   <td style={{ padding: '6px 10px', textAlign: 'center', fontSize: '12pt' }}>☐</td>
                 </tr>
