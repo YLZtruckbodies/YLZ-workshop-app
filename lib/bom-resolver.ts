@@ -256,7 +256,7 @@ export function resolveBoms(
     const controls = cfg('controls') || cfg('truckControls')
     if (controls.toLowerCase().includes('electric hand')) {
       add('500-170', 'Controls')
-      addTbd('Controls', 'Confirm Stock before placing order')
+      addTbd('Controls', 'Confirm Stock before placing order of 500-170')
     } else if (controls.toLowerCase().includes('in-cab')) {
       add('500-246', 'Controls')
     }
@@ -280,7 +280,7 @@ export function resolveBoms(
     // ── Hose Burst Valve ──
     const hoseBurst = cfg('hoseBurstValve') || cfg('truckHoseBurstValve')
     if (hoseBurst.toLowerCase() === 'yes') {
-      add('500-227', 'HSV200P Hoist safety valve 200 l/min 1" BSPP air details')
+      add('500-227', 'Hydraulics')
     }
 
     // ── Body Extras ──
@@ -398,7 +398,7 @@ export function resolveBoms(
       // ── Hose Burst Valve – Trailer ──
       const tHoseBurst = cfg('hoseBurstValve') || cfg('trailerHoseBurstValve')
       if (tHoseBurst.toLowerCase() === 'yes') {
-        add('500-227', 'HSV200P Hoist safety valve 200 l/min 1" BSPP air details')
+        add('500-227', 'Hydraulics')
       }
 
       // ── Wheels & Tyres ── default to 335 PCD (most common in real quotes)

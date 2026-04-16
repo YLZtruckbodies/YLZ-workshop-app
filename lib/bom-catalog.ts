@@ -170,6 +170,7 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
 
   // ── Hydraulic Pump ─────────────────────────────────────
   '500-223': { code: '500-223', name: 'Tipper Gear Pump Kit ISO 82L (OMFB DTH182)', category: 'Hydraulics' },
+  '500-227': { code: '500-227', name: 'HSV200P Hoist safety valve 200 l/min 1" BSPP air details', category: 'Hydraulics' },
   '500-86':  { code: '500-86',  name: 'Single Spool Valve', category: 'Hydraulics' },
   '500-224': { code: '500-224', name: 'Truck and Trailer Spool Valve', category: 'Hydraulics' },
   '500-233': { code: '500-233', name: 'Hydraulic Tank 135L Behind Cab', category: 'Hydraulics' },
