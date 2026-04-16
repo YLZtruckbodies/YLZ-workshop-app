@@ -190,7 +190,7 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
 
   // ── Brake Couplings ────────────────────────────────────
   '40-205': { code: '40-205', name: 'Duomatic Coupling F/M 154mm Lever Female', category: 'Brake Coupling' },
-  '40-206': { code: '40-206', name: 'Duomatic Coupling Male – Trailer Side', category: 'Brake Coupling' },
+  '40-207': { code: '40-207', name: 'Trimatic Coupling Female', category: 'Brake Coupling' },
   '40-277': { code: '40-277', name: 'Duomatic Coupling Assembly for Dog Rear', category: 'Brake Coupling' },
 }
 

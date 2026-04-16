@@ -265,7 +265,7 @@ export function resolveBoms(
     const brakeCoupling = cfg('brakeCoupling') || cfg('truckBrakeCoupling')
     if (brakeCoupling.toLowerCase().includes('duomatic')) {
       add('40-205', 'Brake Coupling')
-      add('40-206', 'Brake Coupling')
+      add('40-207', 'Brake Coupling')
     }
     if (brakeCoupling.toLowerCase().includes('triomatic')) {
       addTbd('Brake Coupling', 'Triomatic coupling — confirm part numbers in MRPeasy')
