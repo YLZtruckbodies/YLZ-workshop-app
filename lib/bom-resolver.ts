@@ -178,8 +178,10 @@ export function resolveBoms(
       const isPVC = tarpInfo.toLowerCase().includes('pvc') || !tarpInfo.toLowerCase().includes('mesh')
       // Tarp is 400mm shorter than the body (clears headboard and tailgate)
       const tarpLen = cfgNum('tarpLength') || (bodyLen - 400)
+      const tarpBow = cfg('tarpBowSize') || cfg('bowSize')
       const tarpBom = resolveTarpBom(isPVC, tarpLen)
-      if (tarpBom) add(tarpBom, 'Truck Tarp', `${tarpLen}mm`)
+      const tarpNote = tarpBow ? `${tarpLen}mm, Bow ${tarpBow}` : `${tarpLen}mm`
+      if (tarpBom) add(tarpBom, 'Truck Tarp', tarpNote)
       // Manual / Pull Out → handle kit
       const isManual = tarpInfo.toLowerCase().includes('manual') || tarpInfo.toLowerCase().includes('pull out')
       if (isManual) add('MRP20-14', 'Manual Tarp Handle')
@@ -368,8 +370,10 @@ export function resolveBoms(
       if (tTarp && !tTarp.toLowerCase().includes('none') && tBodyLen > 0) {
         const tIsPVC = tTarp.toLowerCase().includes('pvc') || !tTarp.toLowerCase().includes('mesh')
         const tTarpLen = cfgNum('tarpLength') || tBodyLen
+        const tTarpBow = cfg('tarpBowSize') || cfg('bowSize')
         const tarpBom = resolveTarpBom(tIsPVC, tTarpLen)
-        if (tarpBom) add(tarpBom, 'Trailer Tarp', `${tTarpLen}mm`)
+        const tTarpNote = tTarpBow ? `${tTarpLen}mm, Bow ${tTarpBow}` : `${tTarpLen}mm`
+        if (tarpBom) add(tarpBom, 'Trailer Tarp', tTarpNote)
         const tIsManual = tTarp.toLowerCase().includes('manual') || tTarp.toLowerCase().includes('pull out')
         if (tIsManual) add('MRP20-14', 'Manual Tarp Handle')
         if (tTarp.toLowerCase().includes('roll right')) add('MRP20-05', 'Roll Right Controller')
