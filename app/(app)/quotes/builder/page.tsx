@@ -625,7 +625,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerGtm: '', trailerGcm: '',
     trailerTare: '', trailerPaintColour: '',
     specialRequirements: '',
-    truckPivotCentre: '',
+    truckPivotCentre: '235',
     truckTarpLength: '',
     truckSerial: '', truckVin: '', truckMainRunnerWidth: '',
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
@@ -762,7 +762,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckGvm = tc.gvm || ''
     form.truckTare = tc.tare || ''
     form.truckPaintColour = tc.paintColour || ''
-    form.truckPivotCentre = tc.pivotCentre || ''
+    form.truckPivotCentre = tc.pivotCentre || '235'
     form.truckTarpLength = tc.tarpLength || ''
     form.truckTarpColour = tc.tarpColour || ''
     form.truckSerial = tc.serial || ''
@@ -851,7 +851,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckGvm = cfg.gvm || ''
     form.truckTare = cfg.tare || ''
     form.truckPaintColour = cfg.paintColour || ''
-    form.truckPivotCentre = cfg.pivotCentre || ''
+    form.truckPivotCentre = cfg.pivotCentre || '235'
     form.truckSerial = cfg.serial || ''
     form.truckVin = cfg.vin || ''
     form.truckMainRunnerWidth = cfg.mainRunnerWidth || ''
