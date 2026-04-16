@@ -226,6 +226,8 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 jobData.make = `${jobData.cfg.chassisMake} ${jobData.cfg.chassisModel || ''}${jobData.cfg.chassisVariant ? ` (${jobData.cfg.chassisVariant})` : ''}`.trim()
               }
             }
+            // Always use quote customer name if available
+            if (fullQuote.customerName) jobData.customer = fullQuote.customerName
           }
         } catch { /* quote fetch failed — continue with job data only */ }
 
