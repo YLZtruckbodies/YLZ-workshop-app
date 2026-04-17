@@ -325,6 +325,11 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
   const c = (key: string) => {
     const val = job.cfg?.[key]
     if (val != null && val !== '') return String(val)
+    // For trailer job sheets, check trailerConfig first (truck-and-trailer builds)
+    if (isTrailer) {
+      const trailerVal = (job.cfg?.trailerConfig as any)?.[key]
+      if (trailerVal != null && trailerVal !== '') return String(trailerVal)
+    }
     // Fall back to truckConfig for truck-and-trailer builds
     const truckVal = (job.cfg?.truckConfig as any)?.[key]
     if (truckVal != null && truckVal !== '') return String(truckVal)
