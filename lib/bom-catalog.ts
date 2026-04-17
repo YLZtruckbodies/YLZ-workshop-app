@@ -147,8 +147,7 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
   '500-83':  { code: '500-83',  name: 'Hyva FEA169-4 Cylinder Well Mount', category: 'Hoist' },
   '500-87':  { code: '500-87',  name: 'Hyva FEA169-5 Cylinder Well Mount', category: 'Hoist' },
   '500-47':  { code: '500-47',  name: 'Binotto Front Mount Hoist Kit (MFCB3126.4.3805)', category: 'Hoist' },
-  // TBC — Binotto 2960 part number not yet confirmed in MRPeasy
-  'TBC-2960': { code: 'TBC-2960', name: 'Binotto 2960 Well-Mount Hoist Kit (MFB3126.3.2960) — TBC', category: 'Hoist' },
+  '500-297': { code: '500-297', name: 'Binotto 2960 Well-Mount Hoist Kit (MFB3126.3.2960)', category: 'Hoist' },
   // TBC — HPF3070 hoist part number not yet confirmed in MRPeasy
   'TBC-HPF3070': { code: 'TBC-HPF3070', name: 'HPF3070-135-3-S3 Hoist Kit — TBC', category: 'Hoist' },
 
@@ -170,6 +169,7 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
 
   // ── Hydraulic Pump ─────────────────────────────────────
   '500-223': { code: '500-223', name: 'Tipper Gear Pump Kit ISO 82L (OMFB DTH182)', category: 'Hydraulics' },
+  '500-227': { code: '500-227', name: 'HSV200P Hoist safety valve 200 l/min 1" BSPP air details', category: 'Hydraulics' },
   '500-86':  { code: '500-86',  name: 'Single Spool Valve', category: 'Hydraulics' },
   '500-224': { code: '500-224', name: 'Truck and Trailer Spool Valve', category: 'Hydraulics' },
   '500-233': { code: '500-233', name: 'Hydraulic Tank 135L Behind Cab', category: 'Hydraulics' },
@@ -189,7 +189,7 @@ export const BOM_CATALOG: Record<string, BomInfo> = {
 
   // ── Brake Couplings ────────────────────────────────────
   '40-205': { code: '40-205', name: 'Duomatic Coupling F/M 154mm Lever Female', category: 'Brake Coupling' },
-  '40-206': { code: '40-206', name: 'Duomatic Coupling Male – Trailer Side', category: 'Brake Coupling' },
+  '40-207': { code: '40-207', name: 'Trimatic Coupling Female', category: 'Brake Coupling' },
   '40-277': { code: '40-277', name: 'Duomatic Coupling Assembly for Dog Rear', category: 'Brake Coupling' },
 }
 

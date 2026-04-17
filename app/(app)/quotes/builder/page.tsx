@@ -34,6 +34,7 @@ interface QuoteForm {
   truckFloorSheet: string
   truckSideSheet: string
   truckHoist: string
+  truckPushLugs: string
   truckTarp: string
   truckCoupling: string
   truckControls: string
@@ -81,7 +82,14 @@ interface QuoteForm {
   truckAntiSpray: string
   truckShovelHolder: string
   truckMudflaps: string
+  truckGrainDoors: string
+  truckGrainLocks: string
+  truckReverseBuzzer: string
+  truckBodySpigot: string
+  truckRockSheet: string
+  truckLiner: string
   truckPto: string
+  truckPump: string
   truckHydTankType: string
   truckHydTankLocation: string
   truckDValue: string
@@ -92,6 +100,8 @@ interface QuoteForm {
   trailerFloorSheet: string
   trailerSideSheet: string
   trailerHoist: string
+  trailerPivotCentre: string
+  trailerPushLugs: string
   trailerDrawbarLength: string
   trailerMainRunnerWidth: string
   trailerChassisLength: string
@@ -242,13 +252,26 @@ function calcTarpBowHeight(material: string, isDogTrailer: boolean, bodyLength: 
   const height = parseInt(bodyHeight, 10)
   if (material === 'Aluminium') return '250mm'
   if (isDogTrailer) return '320mm'
-  // Steel / Hardox bodies — bow size based on body height + length
+  // Steel / Hardox bodies — bow size based on body height
   if (!isNaN(height)) {
-    if (height <= 1000) return '380mm'
-    if (height === 1100) return length <= 4700 ? '380mm' : '450mm'
+    if (height <= 1000) return '450mm'
+    if (height === 1100) return '380mm'
     if (height >= 1150) return '450mm'
   }
   return ''
+}
+
+// Trailer body length → C/L Pivot to Rear (mm)
+const TRAILER_PIVOT_MAP: Record<string, string> = {
+  '5400': '450',
+  '6000': '510',
+  '6100': '610',
+  '7700': '190',
+  '8300': '330',
+  '9200': '225',
+}
+function getTrailerPivotCentre(bodyLength: string): string {
+  return TRAILER_PIVOT_MAP[bodyLength?.toString().trim()] || ''
 }
 
 // Auto-lookup: truck body length → hoist model & pivot centre (mm)
@@ -275,6 +298,11 @@ const CONTROLS = [
 ]
 const HYDRAULICS_TRUCK = ['Single spool valve', 'Truck and Trailer spool valve', 'None']
 const HYDRAULICS_TRUCK_AND_DOG = ['Truck and Trailer spool valve', 'None']
+const PUMP_OPTIONS = [
+  'None',
+  '500-223 — OMFB DTH182 ISO 82L (Standard)',
+  'Customer Supplied',
+]
 const PTO_OPTIONS = [
   'None',
   // Generic
@@ -387,8 +415,8 @@ function getChassisLength(bodyLength: string): string {
 
 function getCouplingLoad(coupling: string): string {
   if (!coupling || coupling === 'None') return ''
-  if (coupling.toLowerCase().includes('pintle')) return '8.1T Vertical Load'
-  if (coupling === 'V.Orlandi' || coupling.toLowerCase().includes('bartlett') || coupling === 'Ringfeder') return '2.5T Vertical Load'
+  if (coupling.toLowerCase().includes('pintle')) return '8.1T'
+  if (coupling === 'V.Orlandi' || coupling.toLowerCase().includes('bartlett') || coupling === 'Ringfeder') return '2.5T'
   return ''
 }
 const TRAILER_MODELS = [
@@ -400,7 +428,7 @@ const TRAILER_TYPES = ['P Beam', 'I Beam', 'Converter Dolly']
 const AXLE_MAKES = ['SAF', 'BPW', 'Fuwa', 'TMC']
 const AXLE_TYPES = ['Drum', 'Disc', 'Drum or Disc (customer choice)']
 const STUD_PATTERNS = ['285PCD', '335PCD']
-const SUSPENSIONS = ['SAF Air Ride', 'Mechanical', 'Rubber']
+const SUSPENSIONS = ['Air', 'Mechanical']
 const BUILD_TYPES = [
   { value: 'truck-body', label: '🚛 Truck Body' },
   { value: 'trailer', label: '🚜 Trailer' },
@@ -435,7 +463,7 @@ function fmt(n: number) {
 function defaultSheets(material: string) {
   if (material === 'Hardox 500') return { floor: '6mm Hardox 500', side: '5mm Hardox 500' }
   if (material === 'Hardox 450') return { floor: '6mm Hardox 450', side: '5mm Hardox 450' }
-  if (material === 'Aluminium') return { floor: '5mm Aluminium', side: '5mm Aluminium' }
+  if (material === 'Aluminium') return { floor: '8mm Aluminium', side: '5mm Aluminium' }
   return { floor: '5mm Steel', side: '4mm Steel' }
 }
 
@@ -598,6 +626,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckFloorSheet: '6mm Hardox 500',
     truckSideSheet: '5mm Hardox 500',
     truckHoist: 'Binotto 3190',
+    truckPushLugs: '',
     truckTarp: 'Razor PVC/MESH Electric',
     truckCoupling: 'V.Orlandi',
     truckControls: 'Electric hand controller',
@@ -608,7 +637,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerAxleMake: 'SAF',
     trailerAxleCount: 4,
     trailerAxleType: 'Drum or Disc (customer choice)',
-    trailerSuspension: 'SAF Air Ride',
+    trailerSuspension: 'Air',
     trailerStudPattern: '285PCD',
     trailerTarp: 'Razor PVC/MESH Electric',
     trailerPbs: '',
@@ -619,12 +648,13 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerGtm: '', trailerGcm: '',
     trailerTare: '', trailerPaintColour: '',
     specialRequirements: '',
-    truckPivotCentre: '',
+    truckPivotCentre: '235',
     truckTarpLength: '',
     truckSerial: '', truckVin: '', truckMainRunnerWidth: '',
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
     truckSideLights: 'None', truckAntiSpray: 'No', truckShovelHolder: 'No', truckMudflaps: 'None',
-    truckPto: 'None', truckHydTankType: 'Factory supplied',
+    truckGrainDoors: 'No', truckGrainLocks: 'No', truckReverseBuzzer: 'None', truckBodySpigot: 'No', truckRockSheet: 'No', truckLiner: 'No',
+    truckPto: 'None', truckPump: 'None', truckHydTankType: 'Factory supplied',
     truckHydTankLocation: 'Centre Front of Subframe', truckDValue: '', truckCouplingLoad: '',
     truckBrakeCoupling: 'Duomatic',
     truckLadderType: '3-Step Pull out ladder c/w rungs',
@@ -642,7 +672,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckTarpStyle: 'Razor Electric',
     truckTarpLocation: 'Standard Out Front',
     trailerSerial: '', trailerVin: '', trailerFloorSheet: '', trailerSideSheet: '',
-    trailerHoist: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
+    trailerHoist: '', trailerPivotCentre: '', trailerPushLugs: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
     trailerChassisLength: '', trailerWheelbase: '',
     trailerTailgateLights: 'None', trailerTailLights: 'Use existing OEM tail lights', trailerLockFlap: 'No',
     trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'No', trailerHubodoLocation: '', trailerHubodoAxle: '', trailerHoseBurstValve: 'No',
@@ -741,7 +771,11 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     if (trc.axleMake) form.trailerAxleMake = trc.axleMake
     if (trc.axleCount) form.trailerAxleCount = Number(trc.axleCount)
     if (trc.axleType) form.trailerAxleType = trc.axleType
-    if (trc.suspension) form.trailerSuspension = trc.suspension
+    if (trc.suspension) {
+      const rawSusp = trc.suspension as string
+      // Normalise legacy values (SAF Air Ride, Air bag suspension, Rubber → Air or Mechanical)
+      form.trailerSuspension = rawSusp.toLowerCase().includes('mechanical') || rawSusp.toLowerCase().includes('rubber') ? 'Mechanical' : 'Air'
+    }
     if (trc.studPattern) form.trailerStudPattern = trc.studPattern
     if (trc.tarpSystem) form.trailerTarp = trc.tarpSystem
     form.trailerPbs = cfg.pbsRating || trc.pbsRating || ''
@@ -755,7 +789,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckGvm = tc.gvm || ''
     form.truckTare = tc.tare || ''
     form.truckPaintColour = tc.paintColour || ''
-    form.truckPivotCentre = tc.pivotCentre || ''
+    form.truckPivotCentre = tc.pivotCentre || '235'
     form.truckTarpLength = tc.tarpLength || ''
     form.truckTarpColour = tc.tarpColour || ''
     form.truckSerial = tc.serial || ''
@@ -768,11 +802,27 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckAntiSpray = tc.antiSpray || 'No'
     form.truckShovelHolder = tc.shovelHolder || 'No'
     form.truckMudflaps = tc.mudflaps || 'None'
+    form.truckGrainDoors = tc.grainDoors || 'No'
+    form.truckGrainLocks = tc.grainLocks || 'No'
+    form.truckReverseBuzzer = tc.reverseBuzzer || 'None'
+    form.truckBodySpigot = tc.bodySpigot || 'No'
+    form.truckRockSheet = tc.rockSheet || 'No'
+    form.truckLiner = tc.liner || 'No'
     form.truckPto = tc.pto || 'None'
+    form.truckPump = tc.pump || 'None'
     form.truckHydTankType = tc.hydTankType || 'Factory supplied'
     form.truckHydTankLocation = tc.hydTankLocation || 'Centre Front of Subframe'
     form.truckHoseBurstValve = tc.hoseBurstValve || 'No'
     form.truckChassisExtension = tc.chassisExtension || 'No'
+    form.truckBrakeCoupling = tc.brakeCoupling || 'Duomatic'
+    form.truckLadderType = tc.ladderType || '3-Step Pull out ladder c/w rungs'
+    form.truckLadderPosition = tc.ladderPosition || 'Driverside Front'
+    form.truckSpreaderChain = tc.spreaderChain || 'No'
+    form.truckPushLugs = tc.pushLugs || 'No'
+    form.truckCatMarkers = tc.catMarkers || 'Yes'
+    form.truckReflectors = tc.reflectors || ''
+    form.truckCamera = tc.camera || 'No'
+    form.truckVibrator = tc.vibrator || 'No'
     form.truckDValue = tc.dValue || ''
     form.truckCouplingLoad = tc.couplingLoad || getCouplingLoad(form.truckCoupling)
     // Engineering details (trailer)
@@ -787,6 +837,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerFloorSheet = trc.floorSheet || ''
     form.trailerSideSheet = trc.sideSheet || ''
     form.trailerHoist = trc.hoist || ''
+    form.trailerPivotCentre = trc.pivotCentre || getTrailerPivotCentre(trc.bodyLength || '')
     form.trailerDrawbarLength = trc.drawbarLength || ''
     form.trailerMainRunnerWidth = trc.mainRunnerWidth || ''
     form.trailerChassisLength = trc.chassisLength || getChassisLength(trc.bodyLength || '')
@@ -832,7 +883,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckGvm = cfg.gvm || ''
     form.truckTare = cfg.tare || ''
     form.truckPaintColour = cfg.paintColour || ''
-    form.truckPivotCentre = cfg.pivotCentre || ''
+    form.truckPivotCentre = cfg.pivotCentre || '235'
     form.truckSerial = cfg.serial || ''
     form.truckVin = cfg.vin || ''
     form.truckMainRunnerWidth = cfg.mainRunnerWidth || ''
@@ -843,11 +894,27 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckAntiSpray = cfg.antiSpray || 'No'
     form.truckShovelHolder = cfg.shovelHolder || 'No'
     form.truckMudflaps = cfg.mudflaps || 'None'
+    form.truckGrainDoors = cfg.grainDoors || 'No'
+    form.truckGrainLocks = cfg.grainLocks || 'No'
+    form.truckReverseBuzzer = cfg.reverseBuzzer || 'None'
+    form.truckBodySpigot = cfg.bodySpigot || 'No'
+    form.truckRockSheet = (cfg.rockSheet as string) || 'No'
+    form.truckLiner = (cfg.liner as string) || 'No'
     form.truckPto = cfg.pto || 'None'
+    form.truckPump = (cfg.pump as string) || 'None'
     form.truckHydTankType = cfg.hydTankType || 'Factory supplied'
     form.truckHydTankLocation = cfg.hydTankLocation || 'Centre Front of Subframe'
     form.truckHoseBurstValve = (cfg.hoseBurstValve as string) || 'No'
     form.truckChassisExtension = (cfg.chassisExtension as string) || 'No'
+    form.truckBrakeCoupling = (cfg.brakeCoupling as string) || 'Duomatic'
+    form.truckLadderType = (cfg.ladderType as string) || '3-Step Pull out ladder c/w rungs'
+    form.truckLadderPosition = (cfg.ladderPosition as string) || 'Driverside Front'
+    form.truckSpreaderChain = (cfg.spreaderChain as string) || 'No'
+    form.truckPushLugs = (cfg.pushLugs as string) || 'No'
+    form.truckCatMarkers = (cfg.catMarkers as string) || 'Yes'
+    form.truckReflectors = (cfg.reflectors as string) || ''
+    form.truckCamera = (cfg.camera as string) || 'No'
+    form.truckVibrator = (cfg.vibrator as string) || 'No'
     form.truckDValue = cfg.dValue || ''
     form.truckCouplingLoad = cfg.couplingLoad || getCouplingLoad(form.truckCoupling)
     form.truckTarpLength = (cfg.tarpLength as string) || ''
@@ -863,7 +930,10 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     if (cfg.axleMake) form.trailerAxleMake = cfg.axleMake
     if (cfg.axleCount) form.trailerAxleCount = Number(cfg.axleCount)
     if (cfg.axleType) form.trailerAxleType = cfg.axleType
-    if (cfg.suspension) form.trailerSuspension = cfg.suspension
+    if (cfg.suspension) {
+      const rawSusp = cfg.suspension as string
+      form.trailerSuspension = rawSusp.toLowerCase().includes('mechanical') || rawSusp.toLowerCase().includes('rubber') ? 'Mechanical' : 'Air'
+    }
     if (cfg.studPattern) form.trailerStudPattern = cfg.studPattern
     if (cfg.tarpSystem) form.trailerTarp = cfg.tarpSystem
     form.trailerPbs = cfg.pbsRating || ''
@@ -878,6 +948,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerFloorSheet = cfg.floorSheet || ''
     form.trailerSideSheet = cfg.sideSheet || ''
     form.trailerHoist = cfg.hoist || ''
+    form.trailerPivotCentre = (cfg.pivotCentre as string) || getTrailerPivotCentre(cfg.bodyLength as string || '')
     form.trailerDrawbarLength = cfg.drawbarLength || ''
     form.trailerMainRunnerWidth = cfg.mainRunnerWidth || ''
     form.trailerChassisLength = cfg.chassisLength || getChassisLength(cfg.bodyLength || '')
@@ -952,7 +1023,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerAxleMake = cfg.axleMake || cfg.trailerAxleMake || 'SAF'
     form.trailerAxleCount = cfg.axleCount || cfg.trailerAxleCount || 3
     form.trailerAxleType = cfg.axleType || cfg.trailerAxleType || 'Disc brakes'
-    form.trailerSuspension = cfg.suspension || cfg.trailerSuspension || 'Air bag suspension'
+    form.trailerSuspension = cfg.suspension || cfg.trailerSuspension || 'Air'
     form.trailerPbs = cfg.pbsRating || form.trailerPbs || ''
     form.chassisMake = cfg.chassisMake || ''
     form.chassisModel = cfg.chassisModel || ''
@@ -992,7 +1063,12 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     mainRunnerWidth: form.truckMainRunnerWidth,
     tailgateType: form.truckTailgateType, tailgateLights: form.truckTailgateLights, tailLights: form.truckTailLights,
     sideLights: form.truckSideLights, antiSpray: form.truckAntiSpray, shovelHolder: form.truckShovelHolder, mudflaps: form.truckMudflaps,
-    pto: form.truckPto, hydTankType: form.truckHydTankType,
+    grainDoors: form.truckGrainDoors, grainLocks: form.truckGrainLocks, reverseBuzzer: form.truckReverseBuzzer,
+    bodySpigot: form.truckBodySpigot, rockSheet: form.truckRockSheet, liner: form.truckLiner,
+    brakeCoupling: form.truckBrakeCoupling, ladderType: form.truckLadderType, ladderPosition: form.truckLadderPosition,
+    spreaderChain: form.truckSpreaderChain, pushLugs: form.truckPushLugs, catMarkers: form.truckCatMarkers,
+    reflectors: form.truckReflectors, camera: form.truckCamera, vibrator: form.truckVibrator,
+    pto: form.truckPto, pump: form.truckPump, hydTankType: form.truckHydTankType,
     hydTankLocation: form.truckHydTankLocation,
     dValue: form.truckDValue, couplingLoad: form.truckCouplingLoad,
     pivotCentre: form.truckPivotCentre,
@@ -1010,7 +1086,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     tarpSystem: form.trailerTarp,
     pbsRating: form.trailerPbs,
     floorSheet: form.trailerFloorSheet, sideSheet: form.trailerSideSheet,
-    hoist: form.trailerHoist, drawbarLength: form.trailerDrawbarLength,
+    hoist: form.trailerHoist, pivotCentre: form.trailerPivotCentre, drawbarLength: form.trailerDrawbarLength,
     bodyLength: form.trailerBodyLength, bodyWidth: calcBodyWidth(form.trailerMaterial),
     bodyHeight: form.trailerBodyHeight, bodyCapacity: calcBodyCapacity(form.trailerBodyLength, form.trailerMaterial, form.trailerBodyHeight, 'trailer'),
     gtm: form.trailerGtm, gcm: form.trailerGcm,
@@ -1225,10 +1301,15 @@ function QuoteBuilderInner() {
     }
   }, [session])
 
-  // Auto-calculate trailer chassis length from body length
+  // Auto-calculate trailer chassis length + pivot centre from body length
   useEffect(() => {
-    const calc = getChassisLength(form.trailerBodyLength)
-    if (calc) setForm((f) => ({ ...f, trailerChassisLength: calc }))
+    const chassis = getChassisLength(form.trailerBodyLength)
+    const pivot = getTrailerPivotCentre(form.trailerBodyLength)
+    setForm((f) => ({
+      ...f,
+      ...(chassis ? { trailerChassisLength: chassis } : {}),
+      ...(pivot ? { trailerPivotCentre: pivot } : {}),
+    }))
   }, [form.trailerBodyLength])
 
   // Auto-set coupling load from coupling selection
@@ -1282,13 +1363,28 @@ function QuoteBuilderInner() {
   const set = useCallback((key: keyof QuoteForm, val: any) => {
     setForm((f) => {
       const updated = { ...f, [key]: val }
+      // Auto-cascade: trailer material → floor/side sheet
+      if (key === 'trailerMaterial') {
+        const mat = String(val)
+        if (mat === 'Aluminium') {
+          updated.trailerFloorSheet = '8mm Aluminium'
+          updated.trailerSideSheet = '5mm Aluminium'
+        } else if (mat.startsWith('Hardox')) {
+          updated.trailerFloorSheet = `6mm ${mat}`
+          updated.trailerSideSheet = `5mm ${mat}`
+        }
+      }
+      // Auto-cascade: trailer model → axle count
+      if (key === 'trailerModel') {
+        const axleMatch = String(val).match(/\((\d+)-Axle/)
+        if (axleMatch) updated.trailerAxleCount = parseInt(axleMatch[1], 10)
+      }
       // Auto-cascade: truck body length → hoist + pivot centre + tarp length
       if (key === 'truckBodyLength') {
         const bodyLen = parseInt(val?.toString().trim(), 10)
         const match = TRUCK_BODY_HOIST_MAP[val?.toString().trim()]
         if (match) {
           updated.truckHoist = match.hoist
-          updated.truckPivotCentre = match.pivotCentre
         }
         // Tarp length = body length - 400mm
         if (!isNaN(bodyLen) && bodyLen > 400) {
@@ -1845,6 +1941,14 @@ function QuoteBuilderInner() {
                   {HOISTS.map((h) => <option key={h}>{h}</option>)}
                 </select>
               </Field>
+              <Field label="Push Lugs">
+                <select value={form.truckPushLugs} onChange={(e) => set('truckPushLugs', e.target.value)} style={selectStyle}>
+                  <option value="">Select...</option>
+                  <option>No</option>
+                  <option>Yes</option>
+                  <option>Yes with Shute between</option>
+                </select>
+              </Field>
               <Field label="Coupling">
                 <select value={form.truckCoupling} onChange={(e) => set('truckCoupling', e.target.value)} style={selectStyle}>
                   {COUPLINGS.map((c) => <option key={c}>{c}</option>)}
@@ -2317,7 +2421,7 @@ function QuoteBuilderInner() {
                 </select>
               </Field>
               <Field label="Axle Count">
-                <input type="number" value={form.trailerAxleCount} onChange={(e) => set('trailerAxleCount', parseInt(e.target.value) || 4)} style={inputStyle} min={2} max={6} />
+                <input type="number" value={form.trailerAxleCount} readOnly style={{ ...inputStyle, opacity: 0.7, cursor: 'default' }} />
               </Field>
               <Field label="Axle Type">
                 <select value={form.trailerAxleType} onChange={(e) => set('trailerAxleType', e.target.value)} style={selectStyle}>
@@ -2364,6 +2468,14 @@ function QuoteBuilderInner() {
               </Field>
               <Field label="Hoist Model">
                 <input value={form.trailerHoist} onChange={(e) => set('trailerHoist', e.target.value)} placeholder="e.g. Binotto 4-stage" style={inputStyle} />
+              </Field>
+              <Field label="Push Lugs">
+                <select value={form.trailerPushLugs} onChange={(e) => set('trailerPushLugs', e.target.value)} style={selectStyle}>
+                  <option value="">Select...</option>
+                  <option>No</option>
+                  <option>Yes</option>
+                  <option>Yes with Shute between</option>
+                </select>
               </Field>
               <Field label="PBS Rating">
                 <input value={form.trailerPbs} onChange={(e) => set('trailerPbs', e.target.value)} placeholder="e.g. 56.5T GCM" style={inputStyle} />
@@ -2529,7 +2641,7 @@ function QuoteBuilderInner() {
                 </Field>
               </div>
               {/* Row 4: controls detail */}
-              <div style={{ ...grid(3), marginTop: 16 }}>
+              <div style={{ ...grid(4), marginTop: 16 }}>
                 <Field label="PTO">
                   <input
                     list="pto-options"
@@ -2541,6 +2653,11 @@ function QuoteBuilderInner() {
                   <datalist id="pto-options">
                     {PTO_OPTIONS.map((o) => <option key={o} value={o} />)}
                   </datalist>
+                </Field>
+                <Field label="Pump">
+                  <select value={form.truckPump} onChange={(e) => set('truckPump', e.target.value)} style={selectStyle}>
+                    {PUMP_OPTIONS.map((o) => <option key={o}>{o}</option>)}
+                  </select>
                 </Field>
                 <Field label="Tailgate Type">
                   <select value={form.truckTailgateType} onChange={(e) => set('truckTailgateType', e.target.value)} style={selectStyle}>
@@ -2625,7 +2742,7 @@ function QuoteBuilderInner() {
                 </Field>
               </div>
               {/* Row 4: chassis dimensions */}
-              <div style={{ ...grid(3), marginTop: 16 }}>
+              <div style={{ ...grid(4), marginTop: 16 }}>
                 <Field label="Chassis Length (mm)">
                   <div style={{ position: 'relative' }}>
                     <input
@@ -2646,6 +2763,19 @@ function QuoteBuilderInner() {
                 </Field>
                 <Field label="Drawbar Length (mm)">
                   <input value={form.trailerDrawbarLength} onChange={(e) => set('trailerDrawbarLength', e.target.value)} placeholder="e.g. 2400" style={inputStyle} />
+                </Field>
+                <Field label="C/L Pivot to Rear (mm)">
+                  <input
+                    value={form.trailerPivotCentre}
+                    onChange={(e) => set('trailerPivotCentre', e.target.value)}
+                    placeholder="Auto from body length"
+                    style={{ ...inputStyle, color: form.trailerPivotCentre ? '#E8681A' : 'rgba(255,255,255,0.3)' }}
+                  />
+                  {form.trailerBodyLength && getTrailerPivotCentre(form.trailerBodyLength) && (
+                    <div style={{ fontSize: 10, color: '#E8681A', marginTop: 3 }}>
+                      Auto: {getTrailerPivotCentre(form.trailerBodyLength)}mm
+                    </div>
+                  )}
                 </Field>
               </div>
               {/* Row 5: lighting + lock flap */}
@@ -2708,6 +2838,42 @@ function QuoteBuilderInner() {
                   {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </Field>
+              <Field label="Grain Doors">
+                <select value={form.truckGrainDoors} onChange={(e) => set('truckGrainDoors', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Grain Locks">
+                <select value={form.truckGrainLocks} onChange={(e) => set('truckGrainLocks', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Reverse Buzzer / Squawker">
+                <select value={form.truckReverseBuzzer} onChange={(e) => set('truckReverseBuzzer', e.target.value)} style={selectStyle}>
+                  {['None', 'Existing', 'Buzzer', 'Squawker'].map(o => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              {form.truckMaterial === 'Aluminium' && (
+                <Field label="Body Spigot">
+                  <select value={form.truckBodySpigot} onChange={(e) => set('truckBodySpigot', e.target.value)} style={selectStyle}>
+                    {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+              )}
+              {form.truckMaterial === 'Aluminium' && (
+                <Field label="Rock Sheet">
+                  <select value={form.truckRockSheet} onChange={(e) => set('truckRockSheet', e.target.value)} style={selectStyle}>
+                    {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+              )}
+              {form.truckMaterial === 'Aluminium' && (
+                <Field label="Liner">
+                  <select value={form.truckLiner} onChange={(e) => set('truckLiner', e.target.value)} style={selectStyle}>
+                    {['No', 'Yes'].map(o => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+              )}
             </div>
           </SectionCard>
         )}

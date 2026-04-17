@@ -1110,15 +1110,13 @@ YLZ Truck Bodies
           <div style={{ flex: 1, fontSize: 12, color: 'var(--text3)' }}>
             No STEP files found. They will be picked up when drawings are scanned from the CAD folder.
           </div>
-          {assemblyDrawings.length === 0 && (
-            <button
-              onClick={handleGenerateDrawings}
-              disabled={generatingDrawings}
-              style={{ ...actionBtn('#3b82f6'), opacity: generatingDrawings ? 0.5 : 1 }}
-            >
-              {generatingDrawings ? 'Scanning...' : '📐 Scan CAD Folder'}
-            </button>
-          )}
+          <button
+            onClick={handleGenerateDrawings}
+            disabled={generatingDrawings}
+            style={{ ...actionBtn('#3b82f6'), opacity: generatingDrawings ? 0.5 : 1 }}
+          >
+            {generatingDrawings ? 'Scanning...' : '📐 Scan Folder'}
+          </button>
         </div>
       )
     }
@@ -1126,8 +1124,17 @@ YLZ Truck Bodies
     const allTubeLaser = [...stepFiles, ...tubeLaserPdfs]
     return (
       <div>
-        <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
-          {stepFiles.length} STEP + {tubeLaserPdfs.length} PDF file{tubeLaserPdfs.length !== 1 ? 's' : ''} for tube laser cutting
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          <div style={{ flex: 1, fontSize: 12, color: 'var(--text3)' }}>
+            {stepFiles.length} STEP + {tubeLaserPdfs.length} PDF file{tubeLaserPdfs.length !== 1 ? 's' : ''} for tube laser cutting
+          </div>
+          <button
+            onClick={handleGenerateDrawings}
+            disabled={generatingDrawings}
+            style={{ ...actionBtn('#3b82f6'), opacity: generatingDrawings ? 0.5 : 1 }}
+          >
+            {generatingDrawings ? 'Scanning...' : '📐 Scan Folder'}
+          </button>
         </div>
         {allTubeLaser.map((f: any) => (
           <div key={f.id || f.driveFileId} style={{

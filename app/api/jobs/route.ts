@@ -6,8 +6,9 @@ export async function GET(req: NextRequest) {
   const stage = searchParams.get('stage')
   const prodGroup = searchParams.get('prodGroup')
   const search = searchParams.get('q')
+  const testMode = req.headers.get('X-Test-Mode') === 'true'
 
-  const where: any = {}
+  const where: any = { isTest: testMode }
   if (stage) where.stage = stage
   if (prodGroup) where.prodGroup = prodGroup
   if (search) {

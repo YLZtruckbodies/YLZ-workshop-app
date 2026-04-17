@@ -12,6 +12,7 @@ export interface BomEntry {
   category: string
   section: string   // Which part of the build this covers (e.g. "Truck Body", "Running Gear")
   auto: boolean     // true = auto-resolved, false = manually added
+  note?: string     // Optional extra info (e.g. tarp length)
 }
 
 // ─── PTO Lookup: Chassis Make → PTO Part ─────────────────────────────────────
@@ -47,8 +48,8 @@ const HOIST_MAP: Record<string, string> = {
   // MFB part number variants (auto-populated from body length lookup)
   'mfb3126.3.2840':         '500-207',
   'mfb3126.3.3190':         '500-236',
-  'mfb3126.3.2960':         'TBC-2960',
-  'mfb3128.3.2960':         'TBC-2960',
+  'mfb3126.3.2960':         '500-297',
+  'mfb3128.3.2960':         '500-297',
   'mfb3128.3.3190':         '500-236',
   'mfb3126.4.3310':         '500-237',
   'mfb3126.4.3450':         '500-237',
@@ -92,7 +93,7 @@ export function resolveBoms(
   const added = new Set<string>()
 
   // Add a BOM/part to the list (deduped)
-  function add(code: string, section: string) {
+  function add(code: string, section: string, note?: string) {
     if (added.has(code)) return
     added.add(code)
     const info = BOM_CATALOG[code]
@@ -102,6 +103,7 @@ export function resolveBoms(
       category: info?.category ?? 'Unknown',
       section,
       auto: true,
+      ...(note ? { note } : {}),
     })
   }
 
@@ -175,17 +177,21 @@ export function resolveBoms(
       // tarpSystem stores "PVC Razor Electric" / "Mesh Manual" etc — or legacy "Razor PVC/MESH Electric"
       const isPVC = tarpInfo.toLowerCase().includes('pvc') || !tarpInfo.toLowerCase().includes('mesh')
       // Tarp is 400mm shorter than the body (clears headboard and tailgate)
-      const tarpLen = bodyLen - 400
+      const tarpLen = cfgNum('tarpLength') || (bodyLen - 400)
+      const tarpBow = cfg('tarpBowSize') || cfg('bowSize')
+      const tarpColour = cfg('tarpColour')
       const tarpBom = resolveTarpBom(isPVC, tarpLen)
-      if (tarpBom) add(tarpBom, 'Truck Tarp')
+      const tarpWidth = cfg('material')?.toLowerCase().includes('aluminium') ? 2340 : 2400
+      const bowVal = tarpBow ? tarpBow.toString().replace(/mm$/i, '') : ''
+      const tarpDims = [String(tarpLen), String(tarpWidth), bowVal].filter(Boolean).join(' x ')
+      const tarpNote = tarpColour ? `${tarpDims} – ${tarpColour}` : tarpDims
+      if (tarpBom) add(tarpBom, 'Truck Tarp', tarpNote)
+      if (bowVal === '450') addTbd('Truck Tarp', 'Extra Charge to be added on PO for 450mm Bows')
       // Manual / Pull Out → handle kit
       const isManual = tarpInfo.toLowerCase().includes('manual') || tarpInfo.toLowerCase().includes('pull out')
       if (isManual) add('MRP20-14', 'Manual Tarp Handle')
       // Roll Right → controller kit
       if (tarpInfo.toLowerCase().includes('roll right')) add('MRP20-05', 'Roll Right Controller')
-      // 1m high wall → A73 belt (no part number yet — flagged TBD)
-      const bodyH = parseFloat(cfg('bodyHeight') || '0')
-      if (bodyH >= 950 && bodyH <= 1050) addTbd('Truck Tarp', 'A73 Belt (1m wall) — no part number yet, order manually')
     }
 
     // ── Hoist ──
@@ -216,8 +222,16 @@ export function resolveBoms(
       addTbd('PTO', `Engine PTO — confirm part with TES (${cfg('chassisMake')} ${chassisModel})`)
     }
 
-    // ── Hydraulic Pump (always needed for truck tippers) ──
-    add('500-223', 'Hydraulic Pump')
+    // ── Hydraulic Pump ──
+    const pump = cfg('pump') || cfg('pumpType')
+    if (pump && pump !== 'None' && !pump.toLowerCase().includes('customer')) {
+      const pumpPartMatch = pump.match(/500-(\d+)/)
+      if (pumpPartMatch) {
+        add(`500-${pumpPartMatch[1]}`, 'Hydraulic Pump')
+      } else {
+        addTbd('Hydraulic Pump', `Pump required — confirm part number`)
+      }
+    }
 
     // ── Spool Valve ──
     const hydOption = cfg('hydraulics') || cfg('truckHydraulics')
@@ -242,6 +256,7 @@ export function resolveBoms(
     const controls = cfg('controls') || cfg('truckControls')
     if (controls.toLowerCase().includes('electric hand')) {
       add('500-170', 'Controls')
+      addTbd('Controls', 'Confirm Stock before placing order of 500-170')
     } else if (controls.toLowerCase().includes('in-cab')) {
       add('500-246', 'Controls')
     }
@@ -250,7 +265,7 @@ export function resolveBoms(
     const brakeCoupling = cfg('brakeCoupling') || cfg('truckBrakeCoupling')
     if (brakeCoupling.toLowerCase().includes('duomatic')) {
       add('40-205', 'Brake Coupling')
-      add('40-206', 'Brake Coupling')
+      add('40-207', 'Brake Coupling')
     }
     if (brakeCoupling.toLowerCase().includes('triomatic')) {
       addTbd('Brake Coupling', 'Triomatic coupling — confirm part numbers in MRPeasy')
@@ -265,7 +280,7 @@ export function resolveBoms(
     // ── Hose Burst Valve ──
     const hoseBurst = cfg('hoseBurstValve') || cfg('truckHoseBurstValve')
     if (hoseBurst.toLowerCase() === 'yes') {
-      addTbd('Hydraulics', 'Hose burst valve — confirm part number in MRPeasy')
+      add('500-227', 'Hydraulics')
     }
 
     // ── Body Extras ──
@@ -365,19 +380,25 @@ export function resolveBoms(
       const tTarp = cfg('tarpSystem') || cfg('trailerTarp')
       if (tTarp && !tTarp.toLowerCase().includes('none') && tBodyLen > 0) {
         const tIsPVC = tTarp.toLowerCase().includes('pvc') || !tTarp.toLowerCase().includes('mesh')
-        const tarpBom = resolveTarpBom(tIsPVC, tBodyLen)
-        if (tarpBom) add(tarpBom, 'Trailer Tarp')
+        const tTarpLen = cfgNum('tarpLength') || tBodyLen
+        const tTarpBow = cfg('tarpBowSize') || cfg('bowSize')
+        const tTarpColour = cfg('tarpColour')
+        const tarpBom = resolveTarpBom(tIsPVC, tTarpLen)
+        const tTarpWidth = cfg('material')?.toLowerCase().includes('aluminium') ? 2340 : 2400
+        const tBowVal = tTarpBow ? tTarpBow.toString().replace(/mm$/i, '') : ''
+        const tTarpDims = [String(tTarpLen), String(tTarpWidth), tBowVal].filter(Boolean).join(' x ')
+        const tTarpNote = tTarpColour ? `${tTarpDims} – ${tTarpColour}` : tTarpDims
+        if (tarpBom) add(tarpBom, 'Trailer Tarp', tTarpNote)
+        if (tBowVal === '450') addTbd('Trailer Tarp', 'Extra Charge to be added on PO for 450mm Bows')
         const tIsManual = tTarp.toLowerCase().includes('manual') || tTarp.toLowerCase().includes('pull out')
         if (tIsManual) add('MRP20-14', 'Manual Tarp Handle')
         if (tTarp.toLowerCase().includes('roll right')) add('MRP20-05', 'Roll Right Controller')
-        const tBodyH = parseFloat(cfg('trailerBodyHeight') || cfg('bodyHeight') || '0')
-        if (tBodyH >= 950 && tBodyH <= 1050) addTbd('Trailer Tarp', 'A73 Belt (1m wall) — no part number yet, order manually')
       }
 
       // ── Hose Burst Valve – Trailer ──
       const tHoseBurst = cfg('hoseBurstValve') || cfg('trailerHoseBurstValve')
       if (tHoseBurst.toLowerCase() === 'yes') {
-        addTbd('Trailer Hydraulics', 'Hose burst valve — confirm part number in MRPeasy')
+        add('500-227', 'Hydraulics')
       }
 
       // ── Wheels & Tyres ── default to 335 PCD (most common in real quotes)

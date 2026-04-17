@@ -287,7 +287,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   )
 
   useEffect(() => {
-    setCurrentPath(window.location.pathname.replace('/', ''))
+    setCurrentPath(window.location.pathname.replace(/^\//, ''))
   }, [])
 
   // Cmd+K / Ctrl+K global search shortcut
@@ -634,34 +634,44 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           borderTop: '1px solid rgba(232,104,26,0.3)',
           paddingTop: 12,
         }}>
-          DEV
+          TEST ENV
         </div>
-        <div
-          onClick={() => { setCurrentPath('test'); router.push('/test' as any) }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '9px 18px', cursor: 'pointer',
-            borderLeft: `3px solid ${currentPath === 'test' ? '#E8681A' : 'transparent'}`,
-            background: currentPath === 'test' ? 'rgba(232,104,26,0.08)' : 'transparent',
-            fontSize: 13, fontWeight: 500,
-            color: currentPath === 'test' ? '#E8681A' : 'rgba(232,104,26,0.7)',
-          }}
-          onMouseEnter={e => {
-            if (currentPath !== 'test') {
-              e.currentTarget.style.background = 'rgba(232,104,26,0.06)'
-              e.currentTarget.style.color = '#E8681A'
-            }
-          }}
-          onMouseLeave={e => {
-            if (currentPath !== 'test') {
-              e.currentTarget.style.background = 'transparent'
-              e.currentTarget.style.color = 'rgba(232,104,26,0.7)'
-            }
-          }}
-        >
-          <span style={{ fontSize: 16, width: 20, textAlign: 'center', flexShrink: 0 }}>🧪</span>
-          <span>Test Lab</span>
-        </div>
+        {([
+          { key: 'test', label: 'Test Lab', icon: '🧪', path: '/test' },
+          { key: 'test/quotes', label: 'Test: Quoting', icon: '💲', path: '/test/quotes' },
+          { key: 'test/engineering', label: 'Test: Engineering', icon: '📐', path: '/test/engineering' },
+        ] as { key: string; label: string; icon: string; path: string }[]).map(item => {
+          const active = currentPath === item.key || currentPath.startsWith(item.key + '/')
+          return (
+            <div
+              key={item.key}
+              onClick={() => { setCurrentPath(item.key); router.push(item.path as any) }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 18px', cursor: 'pointer',
+                borderLeft: `3px solid ${active ? '#E8681A' : 'transparent'}`,
+                background: active ? 'rgba(232,104,26,0.08)' : 'transparent',
+                fontSize: 13, fontWeight: 500,
+                color: active ? '#E8681A' : 'rgba(232,104,26,0.6)',
+              }}
+              onMouseEnter={e => {
+                if (!active) {
+                  e.currentTarget.style.background = 'rgba(232,104,26,0.05)'
+                  e.currentTarget.style.color = '#E8681A'
+                }
+              }}
+              onMouseLeave={e => {
+                if (!active) {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.color = 'rgba(232,104,26,0.6)'
+                }
+              }}
+            >
+              <span style={{ fontSize: 16, width: 20, textAlign: 'center', flexShrink: 0 }}>{item.icon}</span>
+              <span>{item.label}</span>
+            </div>
+          )
+        })}
       </div>
 
       {/* Main Content */}

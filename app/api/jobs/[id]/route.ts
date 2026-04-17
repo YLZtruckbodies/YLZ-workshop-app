@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-const TRACKED_FIELDS = ['stage', 'due', 'notes', 'prodGroup', 'estimatedHours', 'startDate', 'flag', 'make', 'po', 'dims', 'vin']
+const TRACKED_FIELDS = ['stage', 'due', 'notes', 'prodGroup', 'estimatedHours', 'startDate', 'flag', 'make', 'po', 'dims', 'vin', 'vass']
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const job = await prisma.job.findUnique({ where: { id: params.id } })

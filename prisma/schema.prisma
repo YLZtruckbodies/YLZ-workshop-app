@@ -30,6 +30,7 @@ model Job {
   customer  String   @default("")
   stage     String   @default("Fab")
   flag      Boolean  @default(false)
+  isTest    Boolean  @default(false)
   pairedId  String?
   due       String   @default("")
   btype     String   @default("")
@@ -53,6 +54,7 @@ model Job {
   customerPhone  String   @default("")
   notifyOnAdvance Boolean @default(false)
   bomList        Json     @default("[]")
+  vass           String   @default("")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -285,6 +287,7 @@ model Quote {
   terms         String   @default("")
 
   jobId         String?
+  isTest        Boolean  @default(false)
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -296,6 +299,7 @@ model Quote {
 
   @@index([status])
   @@index([customerName])
+  @@index([isTest])
 }
 
 model QuoteLineItem {

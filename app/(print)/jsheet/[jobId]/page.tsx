@@ -10,6 +10,7 @@ interface BomEntry {
   category: string
   section: string
   auto: boolean
+  note?: string
 }
 
 interface QuoteConfig {
@@ -43,6 +44,7 @@ interface QuoteConfig {
   wheelbase?: string
   mainRunnerWidth?: string
   tailgateLights?: string
+  tailLights?: string
   lockFlap?: string
   specialRequirements?: string
   hydTankType?: string
@@ -50,6 +52,25 @@ interface QuoteConfig {
   tailgateType?: string
   brakeCoupling?: string
   [key: string]: unknown
+}
+
+function deriveCouplingLoad(coupling: string): string {
+  if (!coupling || coupling === 'None') return ''
+  const c = coupling.toLowerCase()
+  if (c.includes('pintle')) return '8.1T'
+  if (c.includes('orlandi') || c.includes('bartlett') || c.includes('ringfeder')) return '2.5T'
+  return ''
+}
+
+function calcBowHeight(material: string | undefined, bodyHeight: string | undefined): string {
+  if (!material || !bodyHeight) return ''
+  if (material === 'Aluminium') return '250mm'
+  const h = parseInt(bodyHeight, 10)
+  if (isNaN(h)) return ''
+  if (h <= 1000) return '450mm'
+  if (h === 1100) return '380mm'
+  if (h >= 1150) return '450mm'
+  return ''
 }
 
 interface Job {
@@ -115,6 +136,7 @@ const S = {
     .field-row-2 { grid-template-columns: 1fr 1fr; }
     .field-row-3 { grid-template-columns: 1fr 1fr 1fr; }
     .field-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .field-row-5 { grid-template-columns: 1fr 1fr 1fr 1fr 1fr; }
     .field { padding: 6px 10px; border-right: 1px solid #f0f0f0; }
     .field:last-child { border-right: none; }
     .field-lbl { font-size: 7pt; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #999; margin-bottom: 3px; }
@@ -152,6 +174,7 @@ const S = {
 
     @media print {
       .print-bar { display: none !important; }
+      .edit-panel { display: none !important; }
       .sheet { padding: 10mm 12mm; }
       @page { size: A4; margin: 0; }
       body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
@@ -204,8 +227,25 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 jobData.make = `${jobData.cfg.chassisMake} ${jobData.cfg.chassisModel || ''}${jobData.cfg.chassisVariant ? ` (${jobData.cfg.chassisVariant})` : ''}`.trim()
               }
             }
+            // Always use quote customer name and dealer if available
+            if (fullQuote.customerName) jobData.customer = fullQuote.customerName
+            if (fullQuote.dealerName) jobData.dealer = fullQuote.dealerName
           }
         } catch { /* quote fetch failed — continue with job data only */ }
+
+        // Auto-refresh BOM if any tarp entry is missing a length note (legacy jobs)
+        const boms: BomEntry[] = Array.isArray(jobData.bomList) ? jobData.bomList : []
+        const needsRefresh = boms.some(b => b.section?.toLowerCase().includes('tarp') && !b.note)
+        if (needsRefresh && jobData.id) {
+          try {
+            const refreshRes = await fetch(`/api/jobs/${jobData.id}/boms`, { method: 'POST' })
+            if (refreshRes.ok) {
+              const refreshed = await fetch(`/api/jobs/${params.jobId}`).then(r => r.json())
+              jobData.bomList = refreshed.bomList
+            }
+          } catch { /* ignore refresh failure */ }
+        }
+
         setJob(jobData)
         // Initialise edit fields
         setEditMake(jobData.make || '')
@@ -279,10 +319,26 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
     || job.type?.toLowerCase().includes('semi')
   const bodyLabel = isTrailer ? 'Trailer Body' : 'Truck Body'
 
-  // Helper to get a value from quote config, with fallback
+  // Helper to get a value from quote config, with fallback.
+  // For truck-and-trailer builds, truck fields are nested under cfg.truckConfig.
   const c = (key: string) => {
     const val = job.cfg?.[key]
-    return val != null && val !== '' ? String(val) : ''
+    if (val != null && val !== '') return String(val)
+    // Fall back to truckConfig for truck-and-trailer builds
+    const truckVal = (job.cfg?.truckConfig as any)?.[key]
+    if (truckVal != null && truckVal !== '') return String(truckVal)
+    // valveBankType maps to the 'hydraulics' field saved by the quote builder
+    if (key === 'valveBankType') {
+      const hyd = job.cfg?.hydraulics || (job.cfg?.truckConfig as any)?.hydraulics
+      if (hyd == null || hyd === '') return ''
+      const hydStr = String(hyd)
+      const mat = job.cfg?.material || (job.cfg?.truckConfig as any)?.material || ''
+      const twinPn = String(mat).toLowerCase().includes('aluminium') ? '121.15.104' : '121.15.113'
+      if (hydStr === 'Single spool valve') return 'Single spool valve — 121.8.185'
+      if (hydStr === 'Truck and Trailer spool valve') return `Truck and Trailer spool valve — ${twinPn}`
+      return hydStr
+    }
+    return ''
   }
 
   // TEBS datasheet — only for trailers with axle config
@@ -321,7 +377,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
 
       {/* ═══ EDIT MODE PANEL ═══ */}
       {editMode && job && (
-        <div style={{
+        <div className="edit-panel" style={{
           background: '#111', borderBottom: '2px solid #E8681A', padding: '24px 32px',
           fontFamily: "'League Spartan', Arial, sans-serif",
         }}>
@@ -403,17 +459,20 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 </div>
 
                 <div style={sectionLbl}>Hoist & Controls</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Hoist Model', 'hoist')}
-                  {cfgField('C/L Pivot to Rear (mm)', 'pivotCentre')}
+                  <div key="pivotCentre">
+                    <div style={lblStyle}>C/L Pivot to Rear (mm)</div>
+                    <input style={inpStyle} value={editCfg['pivotCentre'] || '235'} onChange={e => setCfgField('pivotCentre', e.target.value)} />
+                  </div>
                   {cfgField('Hoist Controls', 'controls')}
-                  {cfgField('Pump Type', 'pumpType')}
+                  {cfgField('Pump Type', 'pump')}
+                  {cfgField('Hose Burst Valve', 'hoseBurstValve')}
                 </div>
 
                 <div style={sectionLbl}>Valve Bank</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Valve Bank Type', 'valveBankType')}
-                  {cfgField('Valve Bank Location', 'valveBankLocation')}
                   {cfgField('Valve Bank Notes', 'valveBankNotes')}
                 </div>
 
@@ -425,17 +484,25 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 </div>
 
                 <div style={sectionLbl}>Tailgate & Lock Flap</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Tailgate Type', 'tailgateType')}
-                  {cfgField('Tailgate Lights', 'tailgateLights')}
                   {cfgField('Lock Flap', 'lockFlap')}
+                </div>
+
+                <div style={sectionLbl}>Lights & Mudflaps</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Tail Lights', 'tailLights')}
+                  {cfgField('Tailgate Lights', 'tailgateLights')}
+                  {cfgField('Side Lights', 'sideLights')}
+                  {cfgField('Anti-Spray', 'antiSpray')}
+                  {cfgField('Mudflaps', 'mudflaps')}
                 </div>
 
                 <div style={sectionLbl}>Hydraulics</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Hydraulic System', 'hydraulics')}
-                  {cfgField('Hyd Tank Type', 'hydTankType')}
-                  {cfgField('Hyd Tank Location', 'hydTankLocation')}
+                  {cfgField('Hydraulic Tank Type', 'hydTankType')}
+                  {cfgField('Hydraulic Tank Location', 'hydTankLocation')}
                 </div>
 
                 <div style={sectionLbl}>Tarp & Paint</div>
@@ -444,6 +511,34 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Tarp Colour', 'tarpColour')}
                   {cfgField('Paint Colour', 'paintColour')}
                   {cfgField('Coupling', 'coupling')}
+                  {cfgField('D-Value (kN)', 'dValue')}
+                  <div key="couplingLoad">
+                    <div style={lblStyle}>Coupling Vertical Load</div>
+                    <input style={inpStyle} value={editCfg['couplingLoad'] || deriveCouplingLoad(String(editCfg['coupling'] || ''))} onChange={e => setCfgField('couplingLoad', e.target.value)} />
+                  </div>
+                </div>
+
+                <div style={sectionLbl}>Body Extras</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Ladder Type', 'ladderType')}
+                  {cfgField('Ladder Position', 'ladderPosition')}
+                  {cfgField('Brake Coupling', 'brakeCoupling')}
+                  {cfgField('Spreader Chain', 'spreaderChain')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Shovel Holder', 'shovelHolder')}
+                  {cfgField('Push Lugs', 'pushLugs')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Rear CAT Markers', 'catMarkers')}
+                  {cfgField('Reflectors', 'reflectors')}
+                  {cfgField('Camera', 'camera')}
+                  {cfgField('Vibrator', 'vibrator')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Grain Doors', 'grainDoors')}
+                  {cfgField('Grain Locks', 'grainLocks')}
+                  {cfgField('Reverse Buzzer / Squawker', 'reverseBuzzer')}
                 </div>
 
                 <div style={sectionLbl}>Rear Signage</div>
@@ -454,16 +549,29 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
 
                 <div style={sectionLbl}>Reverse Buzzer / Squawker</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
-                  {cfgField('Type', 'reverseBuzzerType')}
+                  <div key="reverseBuzzerType">
+                    <div style={lblStyle}>Type</div>
+                    <input style={inpStyle} value={editCfg['reverseBuzzerType'] || editCfg['reverseBuzzer'] || ''} onChange={e => setCfgField('reverseBuzzerType', e.target.value)} />
+                  </div>
                   {cfgField('Location', 'reverseBuzzerLocation')}
                 </div>
 
+                {(editCfg['material'] || '').toLowerCase().includes('aluminium') && (<>
+                  <div style={sectionLbl}>Body Spigot / Rock Sheet / Liner</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
+                    {cfgField('Body Spigot', 'bodySpigot')}
+                    {cfgField('Rock Sheet', 'rockSheet')}
+                    {cfgField('Liner', 'liner')}
+                  </div>
+                </>)}
+
                 <div style={sectionLbl}>Trailer / Chassis (if applicable)</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Chassis Length (mm)', 'chassisLength')}
                   {cfgField('Wheelbase (mm)', 'wheelbase')}
                   {cfgField('Drawbar Length (mm)', 'drawbarLength')}
                   {cfgField('Suspension', 'suspension')}
+                  {cfgField('Chassis Extension', 'chassisExtension')}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Axle Make', 'axleMake')}
@@ -531,18 +639,19 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="cell-val-sm">{job.type || '—'}</div>
           </div>
           <div className="cell">
-            <div className="cell-lbl">Chassis / Make</div>
-            <div className="cell-val-sm">{job.make || `${c('chassisMake')} ${c('chassisModel')}${c('chassisVariant') ? ` (${c('chassisVariant')})` : ''}`.trim() || ''}</div>
-            {!job.make && !c('chassisMake') && <div className="cell-blank" />}
+            <div className="cell-lbl">Chassis Make</div>
+            <div className="cell-val-sm">{c('chassisMake') || ''}</div>
+            {!c('chassisMake') && <div className="cell-blank" />}
+          </div>
+          <div className="cell">
+            <div className="cell-lbl">Chassis Model</div>
+            <div className="cell-val-sm">{c('chassisModel') || ''}</div>
+            {!c('chassisModel') && <div className="cell-blank" />}
           </div>
           <div className="cell">
             <div className="cell-lbl">Due Date</div>
             <div className="cell-val-sm">{job.due || ''}</div>
             {!job.due && <div className="cell-blank" />}
-          </div>
-          <div className="cell">
-            <div className="cell-lbl">Drawing / Ref</div>
-            <div className="cell-blank" />
           </div>
         </div>
 
@@ -582,6 +691,12 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 <div className="field"><div className="field-lbl">Drawbar Length (mm)</div><div className="field-val">{c('drawbarLength') || ''}</div>{!c('drawbarLength') && <div className="field-blank" />}</div>
               </div>
             )}
+            {!isTrailer && (
+              <div className="field-row field-row-2">
+                <div className="field"><div className="field-lbl">Chassis Extension</div><div className="field-val">{c('chassisExtension') || ''}</div>{!c('chassisExtension') && <div className="field-blank" />}</div>
+                <div className="field" />
+              </div>
+            )}
           </div>
         </div>
 
@@ -589,11 +704,12 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         <div className="section">
           <div className="section-hdr">Hoist &amp; Controls</div>
           <div className="section-body">
-            <div className="field-row field-row-4">
+            <div className="field-row field-row-5">
               <div className="field"><div className="field-lbl">Hoist Model</div><div className="field-val">{c('hoist') || ''}</div>{!c('hoist') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{c('pivotCentre') || ''}</div>{!c('pivotCentre') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{c('pivotCentre') || '235'}</div></div>
               <div className="field"><div className="field-lbl">Hoist Controls</div><div className="field-val">{c('controls') || ''}</div>{!c('controls') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Pump Type</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Pump Type</div><div className="field-val">{c('pump') || c('pumpType') || ''}</div>{!(c('pump') || c('pumpType')) && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Hose Burst Valve</div><div className="field-val">{c('hoseBurstValve') || ''}</div>{!c('hoseBurstValve') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -602,9 +718,8 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         <div className="section">
           <div className="section-hdr">Valve Bank</div>
           <div className="section-body">
-            <div className="field-row field-row-3">
+            <div className="field-row field-row-2">
               <div className="field"><div className="field-lbl">Valve Bank Type</div><div className="field-val">{c('valveBankType') || ''}</div>{!c('valveBankType') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Valve Bank Location</div><div className="field-val">{c('valveBankLocation') || ''}</div>{!c('valveBankLocation') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Notes</div><div className="field-val">{c('valveBankNotes') || ''}</div>{!c('valveBankNotes') && <div className="field-blank" />}</div>
             </div>
           </div>
@@ -616,7 +731,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-body">
             <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">PTO Type / Model</div><div className="field-val">{c('pto') || ''}</div>{!c('pto') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Switch Type</div><div className="field-val">{c('ptoSwitchType') || ''}</div>{!c('ptoSwitchType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Switch Type</div><div className="field-val">{c('ptoSwitchType') || c('controls') || ''}</div>{!c('ptoSwitchType') && !c('controls') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Switch Location</div><div className="field-val">{c('ptoSwitchLocation') || ''}</div>{!c('ptoSwitchLocation') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">PTO Notes</div><div className="field-blank" /></div>
             </div>
@@ -627,11 +742,24 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         <div className="section">
           <div className="section-hdr">Tailgate &amp; Lock Flap</div>
           <div className="section-body">
-            <div className="field-row field-row-4">
+            <div className="field-row field-row-3">
               <div className="field"><div className="field-lbl">Tailgate Type</div><div className="field-val">{c('tailgateType') || ''}</div>{!c('tailgateType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Lock Flap</div><div className="field-val">{c('lockFlap') || c('controls') || ''}</div>{!c('lockFlap') && !c('controls') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Tailgate Controls</div><div className="field-val">{c('controls') || ''}</div>{!c('controls') && <div className="field-blank" />}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Lights & Mudflaps */}
+        <div className="section">
+          <div className="section-hdr">Lights &amp; Mudflaps</div>
+          <div className="section-body">
+            <div className="field-row field-row-5">
+              <div className="field"><div className="field-lbl">Tail Lights</div><div className="field-val">{c('tailLights') || ''}</div>{!c('tailLights') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tailgate Lights</div><div className="field-val">{c('tailgateLights') || ''}</div>{!c('tailgateLights') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Lock Flap</div><div className="field-val">{c('lockFlap') || ''}</div>{!c('lockFlap') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Tailgate Controls</div><div className="field-blank" /></div>
+              <div className="field"><div className="field-lbl">Side Lights</div><div className="field-val">{c('sideLights') || ''}</div>{!c('sideLights') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Anti-Spray</div><div className="field-val">{c('antiSpray') || ''}</div>{!c('antiSpray') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Mudflaps</div><div className="field-val">{c('mudflaps') || ''}</div>{!c('mudflaps') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -641,9 +769,9 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-hdr">Hydraulics</div>
           <div className="section-body">
             <div className="field-row field-row-3">
-              <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('hydraulics') || ''}</div>{!c('hydraulics') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Tank Type</div><div className="field-val">{c('hydTankType') || ''}</div>{!c('hydTankType') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Tank Location</div><div className="field-val">{c('hydTankLocation') || ''}</div>{!c('hydTankLocation') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('valveBankType') || ''}</div>{!c('valveBankType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Hydraulic Tank Type</div><div className="field-val">{c('hydTankType') || ''}</div>{!c('hydTankType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Hydraulic Tank Location</div><div className="field-val">{c('hydTankLocation') || ''}</div>{!c('hydTankLocation') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -656,7 +784,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <div className="field"><div className="field-lbl">Tarp Make / Model</div><div className="field-val">{c('tarpSystem') || ''}</div>{!c('tarpSystem') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tarp Length (mm)</div><div className="field-val">{c('tarpLength') || ''}</div>{!c('tarpLength') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tarp Colour</div><div className="field-val">{c('tarpColour') || ''}</div>{!c('tarpColour') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Bow Height</div><div className="field-val">{c('tarpBowSize') || ''}</div>{!c('tarpBowSize') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Bow Height</div><div className="field-val">{calcBowHeight(c('material') as string, c('bodyHeight') as string) || c('tarpBowSize') as string || ''}</div>{!calcBowHeight(c('material') as string, c('bodyHeight') as string) && !c('tarpBowSize') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
@@ -671,8 +799,54 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <div className="field"><div className="field-lbl">Suspension</div><div className="field-val">{c('suspension') || ''}</div>{!c('suspension') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">PBS Rating</div><div className="field-val">{c('pbsRating') || ''}</div>{!c('pbsRating') && <div className="field-blank" />}</div>
             </div>
+            <div className="field-row field-row-2">
+              <div className="field"><div className="field-lbl">D-Value (kN)</div><div className="field-val">{c('dValue') || ''}</div>{!c('dValue') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Coupling Vertical Load</div><div className="field-val">{c('couplingLoad') || deriveCouplingLoad(String(c('coupling') || ''))}</div>{!(c('couplingLoad') || deriveCouplingLoad(String(c('coupling') || ''))) && <div className="field-blank" />}</div>
+            </div>
           </div>
         </div>
+
+        {/* Body Extras */}
+        <div className="section">
+          <div className="section-hdr">Body Extras</div>
+          <div className="section-body">
+            <div className="field-row field-row-4">
+              <div className="field"><div className="field-lbl">Ladder Type</div><div className="field-val">{c('ladderType') || ''}</div>{!c('ladderType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Ladder Position</div><div className="field-val">{c('ladderPosition') || ''}</div>{!c('ladderPosition') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Brake Coupling</div><div className="field-val">{c('brakeCoupling') || ''}</div>{!c('brakeCoupling') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Spreader Chain</div><div className="field-val">{c('spreaderChain') || ''}</div>{!c('spreaderChain') && <div className="field-blank" />}</div>
+            </div>
+            <div className="field-row field-row-2">
+              <div className="field"><div className="field-lbl">Shovel Holder</div><div className="field-val">{c('shovelHolder') || ''}</div>{!c('shovelHolder') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Push Lugs</div><div className="field-val">{c('pushLugs') || ''}</div>{!c('pushLugs') && <div className="field-blank" />}</div>
+            </div>
+            <div className="field-row field-row-4">
+              <div className="field"><div className="field-lbl">Rear CAT Markers</div><div className="field-val">{c('catMarkers') || ''}</div>{!c('catMarkers') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Reflectors</div><div className="field-val">{c('reflectors') || ''}</div>{!c('reflectors') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Camera</div><div className="field-val">{c('camera') || ''}</div>{!c('camera') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Vibrator</div><div className="field-val">{c('vibrator') || ''}</div>{!c('vibrator') && <div className="field-blank" />}</div>
+            </div>
+            <div className="field-row field-row-3">
+              <div className="field"><div className="field-lbl">Grain Doors</div><div className="field-val">{c('grainDoors') || ''}</div>{!c('grainDoors') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Grain Locks</div><div className="field-val">{c('grainLocks') || ''}</div>{!c('grainLocks') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Reverse Buzzer / Squawker</div><div className="field-val">{c('reverseBuzzer') || ''}</div>{!c('reverseBuzzer') && <div className="field-blank" />}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Body Spigot / Rock Sheet / Liner — Aluminium only */}
+        {String(c('material') || '').toLowerCase().includes('aluminium') && (
+          <div className="section">
+            <div className="section-hdr">Body Spigot / Rock Sheet / Liner</div>
+            <div className="section-body">
+              <div className="field-row field-row-3">
+                <div className="field"><div className="field-lbl">Body Spigot</div><div className="field-val">{c('bodySpigot') || ''}</div>{!c('bodySpigot') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Rock Sheet</div><div className="field-val">{c('rockSheet') || ''}</div>{!c('rockSheet') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Liner</div><div className="field-val">{c('liner') || ''}</div>{!c('liner') && <div className="field-blank" />}</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Rear Signage */}
         <div className="section">
@@ -691,7 +865,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-hdr">Reverse Buzzer / Squawker</div>
           <div className="section-body">
             <div className="field-row field-row-3">
-              <div className="field"><div className="field-lbl">Buzzer / Squawker Type</div><div className="field-val">{c('reverseBuzzerType') || ''}</div>{!c('reverseBuzzerType') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Buzzer / Squawker Type</div><div className="field-val">{c('reverseBuzzerType') || c('reverseBuzzer') || ''}</div>{!c('reverseBuzzerType') && !c('reverseBuzzer') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Location</div><div className="field-val">{c('reverseBuzzerLocation') || ''}</div>{!c('reverseBuzzerLocation') && <div className="field-blank" />}</div>
               <div className="field" />
             </div>
@@ -741,7 +915,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         </div>
         <div className="divider" />
 
-        <div className="info-row info-row-4" style={{ marginBottom: 14 }}>
+        <div className="info-row info-row-4" style={{ marginBottom: 8 }}>
           <div className="cell">
             <div className="cell-lbl">Job Number</div>
             <div className="cell-val-num">{job.num}</div>
@@ -757,6 +931,18 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="cell">
             <div className="cell-lbl">Date</div>
             <div className="cell-val-sm">{today()}</div>
+          </div>
+        </div>
+        <div className="info-row info-row-2" style={{ marginBottom: 14 }}>
+          <div className="cell">
+            <div className="cell-lbl">Chassis Make</div>
+            <div className="cell-val-sm">{c('chassisMake') || ''}</div>
+            {!c('chassisMake') && <div className="cell-blank" />}
+          </div>
+          <div className="cell">
+            <div className="cell-lbl">Chassis Model</div>
+            <div className="cell-val-sm">{c('chassisModel') || ''}</div>
+            {!c('chassisModel') && <div className="cell-blank" />}
           </div>
         </div>
 
@@ -813,9 +999,9 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             )}
             {(c('hydraulics') || c('hydTankType') || c('hydTankLocation')) && (
               <div className="field-row field-row-3">
-                <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('hydraulics') || ''}</div>{!c('hydraulics') && <div className="field-blank" />}</div>
-                <div className="field"><div className="field-lbl">Tank Type</div><div className="field-val">{c('hydTankType') || ''}</div>{!c('hydTankType') && <div className="field-blank" />}</div>
-                <div className="field"><div className="field-lbl">Tank Location</div><div className="field-val">{c('hydTankLocation') || ''}</div>{!c('hydTankLocation') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('valveBankType') || ''}</div>{!c('valveBankType') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Hydraulic Tank Type</div><div className="field-val">{c('hydTankType') || ''}</div>{!c('hydTankType') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Hydraulic Tank Location</div><div className="field-val">{c('hydTankLocation') || ''}</div>{!c('hydTankLocation') && <div className="field-blank" />}</div>
               </div>
             )}
             {c('tarpSystem') && (
@@ -872,7 +1058,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         </div>
         <div className="divider" />
 
-        <div className="info-row info-row-4" style={{ marginBottom: 14 }}>
+        <div className="info-row info-row-4" style={{ marginBottom: 8 }}>
           <div className="cell">
             <div className="cell-lbl">Job Number</div>
             <div className="cell-val-num">{job.num}</div>
@@ -888,6 +1074,18 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="cell">
             <div className="cell-lbl">Date</div>
             <div className="cell-val-sm">{today()}</div>
+          </div>
+        </div>
+        <div className="info-row info-row-2" style={{ marginBottom: 14 }}>
+          <div className="cell">
+            <div className="cell-lbl">Chassis Make</div>
+            <div className="cell-val-sm">{c('chassisMake') || ''}</div>
+            {!c('chassisMake') && <div className="cell-blank" />}
+          </div>
+          <div className="cell">
+            <div className="cell-lbl">Chassis Model</div>
+            <div className="cell-val-sm">{c('chassisModel') || ''}</div>
+            {!c('chassisModel') && <div className="cell-blank" />}
           </div>
         </div>
 
@@ -1000,7 +1198,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 <tr key={`${bom.code}-${i}`} style={{ borderBottom: '1px solid #ddd' }}>
                   <td style={{ padding: '6px 10px', color: '#999', fontSize: '8.5pt' }}>{i + 1}</td>
                   <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontWeight: 700, color: bom.code === 'TBD' ? '#c0392b' : '#E8681A', fontSize: '10pt' }}>{bom.code}</td>
-                  <td style={{ padding: '6px 10px' }}>{bom.name}</td>
+                  <td style={{ padding: '6px 10px' }}>{bom.note ? `${bom.name} (${bom.note})` : bom.name}</td>
                   <td style={{ padding: '6px 10px', color: '#666', fontSize: '8.5pt' }}>{bom.section}</td>
                   <td style={{ padding: '6px 10px', textAlign: 'center', fontSize: '12pt' }}>☐</td>
                 </tr>

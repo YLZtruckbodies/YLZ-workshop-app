@@ -211,6 +211,7 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
         <div class="form-group"><label class="form-label">Subframe Length <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
         <div class="form-group"><label class="form-label">Subframe Width <span class="badge-eng">Eng</span></label><div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text2);font-style:italic;">Refer to Drawing</div></div>
         <div class="form-group"><label class="form-label">Hoist Model <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_hoist_model" placeholder="Auto from body length"></div>
+        <div class="form-group"><label class="form-label">Push Lugs</label><select class="form-select" id="f_push_lugs"><option value="">Select...</option><option>No</option><option>Yes</option><option>Yes with Shute between</option></select></div>
         <div class="form-group"><label class="form-label">Valve Bank <span class="badge-auto">Auto</span></label><input class="form-input auto-filled" id="f_valve_bank" readonly placeholder="Select body material"></div>
       </div>
       <div class="form-grid-4" style="margin-top:14px">
@@ -219,6 +220,7 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
         <div class="form-group"><label class="form-label">Oil Tank Location <span class="badge-auto">Auto</span></label><input class="form-input" id="f_oil_tank_location" readonly placeholder="Auto from quote" style="background:var(--surface2);color:var(--text2);cursor:default;pointer-events:none;"></div>
         <div class="form-group"><label class="form-label">Hose Burst Valve</label><select class="form-select" id="f_hose_burst_valve"><option value="No">No</option><option value="Yes">Yes</option></select></div>
         <div class="form-group"><label class="form-label">Chassis Extension</label><select class="form-select" id="f_chassis_extension"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+        <div class="form-group"><label class="form-label">Push Lugs <span class="badge-auto">Auto</span></label><input class="form-input" id="f_push_lugs" readonly placeholder="Auto from quote" style="background:var(--surface2);color:var(--text2);cursor:default;pointer-events:none;"></div>
       </div>
     </div>
     <div id="trailerChassisSection">
@@ -228,6 +230,7 @@ h1{font-size:22px;font-weight:700;color:var(--text)}
         <div class="form-group"><label class="form-label">Wheelbase <span class="badge-auto">Auto</span></label><select class="form-select auto-filled" id="f_wheelbase"><option value="">Select...</option><option>3240mm</option><option>3760mm</option><option>5700mm</option><option>6150mm</option><option>6610mm</option><option>6685/6235mm</option><option>7615/7165mm</option><option>N/A</option></select></div>
         <div class="form-group"><label class="form-label">Drawbar Length <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_drawbar_length"><option value="">Select...</option><option>3000mm</option><option>3200mm</option><option>3400mm</option><option>3800mm</option><option>4000mm</option><option>5000mm</option><option>N/A</option></select></div>
         <div class="form-group"><label class="form-label">Hoist Model <span class="badge-eng">Eng</span></label><select class="form-select eng-input" id="f_t_hoist_model"><option value="">Select...</option><option>Binotto 3190</option><option>Hyva Alpha 091-4</option><option>Hyva Alpha 092-4</option><option>Hyva Alpha 191-4</option><option>Hyva Alpha 201-4</option><option>Hyva Alpha 241-4</option><option>Palfinger PH T74</option><option>Palfinger PH T94</option><option>Other</option><option>N/A</option></select></div>
+        <div class="form-group"><label class="form-label">Push Lugs</label><select class="form-select" id="f_t_push_lugs"><option value="">Select...</option><option>No</option><option>Yes</option><option>Yes with Shute between</option></select></div>
         <div class="form-group"><label class="form-label">Hose Burst Valve</label><select class="form-select" id="f_t_hose_burst_valve"><option value="No">No</option><option value="Yes">Yes</option></select></div>
       </div>
     </div>
@@ -828,6 +831,11 @@ function loadQuoteFields(quoteId) {
       var tankLoc = tc.hydTankLocation || cfg.hydTankLocation || '';
       var tankEl = document.getElementById('f_oil_tank_location');
       if (tankEl && tankLoc) tankEl.value = tankLoc;
+
+      // Push Lugs — use value directly from quote
+      var pushLugs = tc.pushLugs || cfg.pushLugs || '';
+      var pushEl = document.getElementById('f_push_lugs');
+      if (pushEl && pushLugs) pushEl.value = pushLugs;
 
       // Valve Bank — auto from material (already handled by updateValveBank)
       updateValveBank();
@@ -1708,15 +1716,17 @@ function collectFormData() {
     ctrl_trailer_tailgate: gv("f_ctrl_trailer_tailgate"), ctrl_lockflap: gv("f_ctrl_lockflap"),
     ctrl_truck_tarp: gv("f_ctrl_truck_tarp"), ctrl_trailer_tarp: gv("f_ctrl_trailer_tarp"),
     // Subframe (truck)
-    hoist_model: gv("f_hoist_model"), valve_bank: gv("f_valve_bank"),
+    hoist_model: gv("f_hoist_model"), push_lugs: gv("f_push_lugs"), valve_bank: gv("f_valve_bank"),
     valve_bank_location: "Mounted off rear of hoist channel",
     hydraulic_system: gv("f_hydraulic_system"),
     oil_tank_type: gv("f_oil_tank_type"), oil_tank_location: gv("f_oil_tank_location"),
     hose_burst_valve: gv("f_hose_burst_valve"),
     chassis_extension: gv("f_chassis_extension"),
+    push_lugs: gv("f_push_lugs"),
     // Chassis (trailer)
     chassis_length: gv("f_chassis_length"), wheelbase: gv("f_wheelbase"),
     drawbar_length: gv("f_drawbar_length"), t_hoist_model: gv("f_t_hoist_model"),
+    t_push_lugs: gv("f_t_push_lugs"),
     t_hose_burst_valve: gv("f_t_hose_burst_valve"),
     // Sheets
     floor_sheets: gv("f_floor_sheets"), side_sheets: gv("f_side_sheets"),
@@ -1916,7 +1926,8 @@ function createTrailerSelectionSheet(wb, d, prefix) {
   lbl(ws, r, 3, "Wheelbase"); val(ws, r, 4, d.wheelbase); r++;
   lbl(ws, r, 1, "Drawbar Length"); val(ws, r, 2, d.drawbar_length);
   lbl(ws, r, 3, "Hoist Model"); val(ws, r, 4, d.t_hoist_model); r++;
-  
+  lbl(ws, r, 1, "Push Lugs"); val(ws, r, 2, d.t_push_lugs); r++;
+
   // Running gear
   sectionTitle(ws, r, 1, "RUNNING GEAR", 4); r++;
   lbl(ws, r, 1, "Axle Make"); val(ws, r, 2, d.axle_make);
@@ -2021,7 +2032,8 @@ function createTrailerChassisSheet(wb, d) {
   lbl(ws, r, 3, "Wheelbase"); val(ws, r, 4, d.wheelbase); r++;
   lbl(ws, r, 1, "Drawbar Length"); val(ws, r, 2, d.drawbar_length);
   lbl(ws, r, 3, "Hoist Model"); val(ws, r, 4, d.t_hoist_model); r++;
-  
+  lbl(ws, r, 1, "Push Lugs"); val(ws, r, 2, d.t_push_lugs); r++;
+
   sectionTitle(ws, r, 1, "RUNNING GEAR", 4); r++;
   lbl(ws, r, 1, "Axle Make"); val(ws, r, 2, d.axle_make);
   lbl(ws, r, 3, "Axle Type"); val(ws, r, 4, d.axle_type); r++;
@@ -2156,13 +2168,15 @@ function createTruckSelectionSheet(wb, d, prefix) {
   lbl(ws, r, 3, "Subframe Width"); val(ws, r, 4, "Refer to Drawing"); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
   lbl(ws, r, 3, "Pivot Centres"); val(ws, r, 4, d.pivot_centres); r++;
+  lbl(ws, r, 1, "Push Lugs"); val(ws, r, 2, d.push_lugs); r++;
   lbl(ws, r, 1, "Hydraulic System"); val(ws, r, 2, d.hydraulic_system);
   lbl(ws, r, 3, "Valve Bank Type"); val(ws, r, 4, d.valve_bank); r++;
   lbl(ws, r, 1, "Valve Bank Location"); val(ws, r, 2, d.valve_bank_location);
   lbl(ws, r, 3, "Hose Burst Valve"); val(ws, r, 4, d.hose_burst_valve); r++;
   lbl(ws, r, 1, "Oil Tank Type"); val(ws, r, 2, d.oil_tank_type);
   lbl(ws, r, 3, "Oil Tank Location"); val(ws, r, 4, d.oil_tank_location); r++;
-  lbl(ws, r, 1, "Chassis Extension"); val(ws, r, 2, d.chassis_extension); r++;
+  lbl(ws, r, 1, "Chassis Extension"); val(ws, r, 2, d.chassis_extension);
+  lbl(ws, r, 3, "Push Lugs"); val(ws, r, 4, d.push_lugs); r++;
 
   sectionTitle(ws, r, 1, "CONTROLS", 4); r++;
   lbl(ws, r, 1, "PTO"); val(ws, r, 2, d.pto);
@@ -2258,12 +2272,14 @@ function createTruckSubframeSheet(wb, d) {
   sectionTitle(ws, r, 1, "HYDRAULICS", 4); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
   lbl(ws, r, 3, "Hydraulic System"); val(ws, r, 4, d.hydraulic_system); r++;
+  lbl(ws, r, 1, "Push Lugs"); val(ws, r, 2, d.push_lugs); r++;
   lbl(ws, r, 1, "Valve Bank Type"); val(ws, r, 2, d.valve_bank);
   lbl(ws, r, 3, "Valve Bank Location"); val(ws, r, 4, d.valve_bank_location); r++;
   lbl(ws, r, 1, "Hose Burst Valve"); val(ws, r, 2, d.hose_burst_valve);
   lbl(ws, r, 3, "Oil Tank Type"); val(ws, r, 4, d.oil_tank_type); r++;
   lbl(ws, r, 1, "Oil Tank Location"); val(ws, r, 2, d.oil_tank_location);
   lbl(ws, r, 3, "Chassis Extension"); val(ws, r, 4, d.chassis_extension); r++;
+  lbl(ws, r, 1, "Push Lugs"); val(ws, r, 2, d.push_lugs); r++;
 
   sectionTitle(ws, r, 1, "NOTES", 4); r++;
   val(ws, r, 1, d.notes, 4); r++;
@@ -2790,12 +2806,14 @@ function createTruckOrderSheet(wb, d) {
   sectionTitle(ws, r, 1, "HYDRAULICS SUMMARY", 4); r++;
   lbl(ws, r, 1, "Hoist Model"); val(ws, r, 2, d.hoist_model);
   lbl(ws, r, 3, "Hydraulic System"); val(ws, r, 4, d.hydraulic_system); r++;
+  lbl(ws, r, 1, "Push Lugs"); val(ws, r, 2, d.push_lugs); r++;
   lbl(ws, r, 1, "Valve Bank Type"); val(ws, r, 2, d.valve_bank);
   lbl(ws, r, 3, "Valve Bank Location"); val(ws, r, 4, d.valve_bank_location); r++;
   lbl(ws, r, 1, "Hose Burst Valve"); val(ws, r, 2, d.hose_burst_valve);
   lbl(ws, r, 3, "Oil Tank Type"); val(ws, r, 4, d.oil_tank_type); r++;
   lbl(ws, r, 1, "Oil Tank Location"); val(ws, r, 2, d.oil_tank_location);
   lbl(ws, r, 3, "Chassis Extension"); val(ws, r, 4, d.chassis_extension); r++;
+  lbl(ws, r, 1, "Push Lugs"); val(ws, r, 2, d.push_lugs); r++;
 
   sectionTitle(ws, r, 1, "CONTROLS SUMMARY", 4); r++;
   lbl(ws, r, 1, "Switch Type"); val(ws, r, 2, d.ctrl_truck_hoist);

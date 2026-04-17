@@ -156,7 +156,10 @@ export async function dispatchEngineeringPack(
         const savedJob = await prisma.job.findUnique({ where: { id: jobId }, select: { bomList: true } })
         bomList = Array.isArray(savedJob?.bomList) ? savedJob.bomList as any[] : []
       } catch { /* ignore */ }
-      const bomSummary = bomList.map((b: any) => `${b.code || b.partNumber || '?'} — ${b.name || b.description || ''}`).join('\n')
+      const bomSummary = bomList.map((b: any) => {
+        const base = `${b.code || b.partNumber || '?'} — ${b.name || b.description || ''}`
+        return b.note ? `${base} (${b.note})` : base
+      }).join('\n')
 
       const tarpSystem = flatCfg.tarpSystem || trc.tarpSystem || ''
       const items: any[] = [

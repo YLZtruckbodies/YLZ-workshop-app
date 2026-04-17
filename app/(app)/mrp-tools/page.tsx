@@ -353,16 +353,32 @@ function OrderingChecklistTool() {
                                 </div>
                               )}
                               {details.bomList && details.bomList !== 'No BOM resolved yet' && (
-                                <button
-                                  onClick={() => { navigator.clipboard.writeText(details.bomList); alert('BOM list copied') }}
-                                  style={{
-                                    marginTop: 6, background: 'rgba(232,104,26,0.12)', border: '1px solid rgba(232,104,26,0.3)',
-                                    borderRadius: 4, padding: '4px 10px', color: '#E8681A', fontSize: 10,
-                                    fontWeight: 700, cursor: 'pointer',
-                                  }}
-                                >
-                                  Copy BOM List
-                                </button>
+                                <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                                  <button
+                                    onClick={() => { navigator.clipboard.writeText(details.bomList); alert('BOM list copied') }}
+                                    style={{
+                                      background: 'rgba(232,104,26,0.12)', border: '1px solid rgba(232,104,26,0.3)',
+                                      borderRadius: 4, padding: '4px 10px', color: '#E8681A', fontSize: 10,
+                                      fontWeight: 700, cursor: 'pointer',
+                                    }}
+                                  >
+                                    Copy BOM List
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      const res = await fetch(`/api/jobs/${cl.jobId}/boms`, { method: 'POST' })
+                                      if (res.ok) { alert('BOM refreshed — reload to see updated list'); loadChecklists() }
+                                      else alert('Failed to refresh BOM')
+                                    }}
+                                    style={{
+                                      background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)',
+                                      borderRadius: 4, padding: '4px 10px', color: 'rgba(255,255,255,0.5)', fontSize: 10,
+                                      fontWeight: 700, cursor: 'pointer',
+                                    }}
+                                  >
+                                    Refresh BOM
+                                  </button>
+                                </div>
                               )}
                             </>
                           )}
