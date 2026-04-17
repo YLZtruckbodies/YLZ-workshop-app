@@ -712,28 +712,6 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         </div>
 
-        {/* Booster Settings & Slack Lengths — trailer only */}
-        {isTrailer && (() => {
-          const axleSettings = (job.cfg?.axleSettings || (job.cfg?.trailerConfig as any)?.axleSettings) as { boosters: string[]; slacks: string[] } | undefined
-          if (!axleSettings) return null
-          return (
-            <div className="section">
-              <div className="section-hdr">Booster Settings &amp; Slack Lengths</div>
-              <div className="section-body">
-                <div className="field-row field-row-2">
-                  <div className="field">
-                    <div className="field-lbl">Booster Settings</div>
-                    <div className="field-val">{axleSettings.boosters.map((v, i) => `${i + 1}: ${v}`).join('  |  ')}</div>
-                  </div>
-                  <div className="field">
-                    <div className="field-lbl">Slack Lengths</div>
-                    <div className="field-val">{axleSettings.slacks.map((v, i) => `${i + 1}: ${v}mm`).join('  |  ')}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })()}
 
         {/* Hoist & Controls */}
         <div className="section">
@@ -1060,6 +1038,29 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             )}
           </div>
         </div>
+
+        {/* Booster Settings & Slack Lengths — trailer only */}
+        {isTrailer && (() => {
+          const axleSettings = (job.cfg?.axleSettings || (job.cfg?.trailerConfig as any)?.axleSettings) as { boosters: string[]; slacks: string[] } | undefined
+          if (!axleSettings) return null
+          return (
+            <div className="section" style={{ marginTop: 10 }}>
+              <div className="section-hdr">Booster Settings &amp; Slack Lengths</div>
+              <div className="section-body">
+                <div className="field-row field-row-2">
+                  <div className="field">
+                    <div className="field-lbl">Booster Settings</div>
+                    <div className="field-val">{axleSettings.boosters.map((v, i) => `${i + 1}: ${v}`).join('  |  ')}</div>
+                  </div>
+                  <div className="field">
+                    <div className="field-lbl">Slack Lengths</div>
+                    <div className="field-val">{axleSettings.slacks.map((v, i) => `${i + 1}: ${v}mm`).join('  |  ')}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Wheels & Tyres — trailer only */}
         {isTrailer && (c('tyre') || c('wheels')) && (
