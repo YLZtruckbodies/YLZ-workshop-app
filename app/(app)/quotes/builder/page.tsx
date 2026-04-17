@@ -119,12 +119,14 @@ interface QuoteForm {
   trailerHubodoAxle: string
   trailerHoseBurstValve: string
   trailerTyre: string
-  trailerWheels: string
+  trailerInnerWheels: string
+  trailerOuterWheels: string
   // trailer tarp extras
   trailerTarpColour: string
   trailerTarpMaterial: string
   trailerTarpType: string
   trailerTarpLocation: string
+  trailerTarpLength: string
   trailerSideLights: string
   trailerSideLightsCustom: string
   trailerGrainDoors: string
@@ -733,8 +735,8 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerChassisLength: '', trailerWheelbase: '',
     trailerTailgateType: 'Single Drop', trailerTailgateLights: 'None', trailerTailLights: '4 hole round LEDs c/w chrome surround', trailerLockFlap: 'No',
     trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'Yes', trailerHubodoLocation: '', trailerHubodoAxle: '', trailerHoseBurstValve: 'Yes',
-    trailerTyre: '', trailerWheels: '',
-    trailerTarpColour: '', trailerTarpMaterial: 'PVC', trailerTarpType: 'Hoop Type', trailerTarpLocation: 'Standard Out Front',
+    trailerTyre: '', trailerInnerWheels: '', trailerOuterWheels: '',
+    trailerTarpColour: '', trailerTarpMaterial: 'PVC', trailerTarpType: 'Hoop Type', trailerTarpLocation: 'Standard Out Front', trailerTarpLength: '',
     trailerSideLights: 'None', trailerSideLightsCustom: '', trailerGrainDoors: 'No', trailerGrainLocks: 'No',
     trailerRockSheet: 'No', trailerLiner: 'No',
     trailerRearLadder: 'No', trailerCentreChain: 'No', trailerCatMarkers: 'No', trailerReflectors: 'Yes (Amber)', trailerCamera: 'No', trailerVibrator: 'No',
@@ -916,11 +918,13 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerHubodoAxle = trc.hubodoAxle || ''
     form.trailerHoseBurstValve = 'Yes'
     form.trailerTyre = trc.tyre || ''
-    form.trailerWheels = trc.wheels || ''
+    form.trailerInnerWheels = trc.innerWheels || ''
+    form.trailerOuterWheels = trc.outerWheels || ''
     form.trailerTarpColour = trc.tarpColour || ''
     form.trailerTarpMaterial = trc.tarpMaterial || 'PVC'
     form.trailerTarpType = trc.tarpType || 'Hoop Type'
     form.trailerTarpLocation = trc.tarpLocation || 'Standard Out Front'
+    form.trailerTarpLength = trc.tarpLength || ''
     form.trailerSideLights = trc.sideLights || 'None'
     form.trailerSideLightsCustom = trc.sideLightsCustom || ''
     form.trailerGrainDoors = trc.grainDoors || 'No'
@@ -1047,11 +1051,13 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerHubodoAxle = cfg.hubodoAxle || ''
     form.trailerHoseBurstValve = 'Yes'
     form.trailerTyre = cfg.tyre || ''
-    form.trailerWheels = cfg.wheels || ''
+    form.trailerInnerWheels = cfg.innerWheels || ''
+    form.trailerOuterWheels = cfg.outerWheels || ''
     form.trailerTarpColour = cfg.tarpColour || ''
     form.trailerTarpMaterial = cfg.tarpMaterial || 'PVC'
     form.trailerTarpType = cfg.tarpType || 'Hoop Type'
     form.trailerTarpLocation = cfg.tarpLocation || 'Standard Out Front'
+    form.trailerTarpLength = cfg.tarpLength || ''
     form.trailerSideLights = cfg.sideLights || 'None'
     form.trailerSideLightsCustom = cfg.sideLightsCustom || ''
     form.trailerGrainDoors = cfg.grainDoors || 'No'
@@ -1200,9 +1206,9 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     axleLift: form.trailerAxleLift, axleLiftAxle: form.trailerAxleLiftAxle,
     hubodometer: form.trailerHubodometer, hubodoLocation: form.trailerHubodoLocation, hubodoAxle: form.trailerHubodoAxle,
     hoseBurstValve: form.trailerHoseBurstValve,
-    tyre: form.trailerTyre, wheels: form.trailerWheels,
+    tyre: form.trailerTyre, innerWheels: form.trailerInnerWheels, outerWheels: form.trailerOuterWheels,
     tarpColour: form.trailerTarpColour, tarpMaterial: form.trailerTarpMaterial,
-    tarpType: form.trailerTarpType, tarpLocation: form.trailerTarpLocation,
+    tarpType: form.trailerTarpType, tarpLocation: form.trailerTarpLocation, tarpLength: form.trailerTarpLength,
     sideLights: form.trailerSideLights, sideLightsCustom: form.trailerSideLightsCustom,
     grainDoors: form.trailerGrainDoors, grainLocks: form.trailerGrainLocks,
     rockSheet: form.trailerRockSheet, liner: form.trailerLiner,
@@ -1477,12 +1483,15 @@ function QuoteBuilderInner() {
       // Auto-cascade: stud pattern change → clear wheels if mismatched
       if (key === 'trailerStudPattern') {
         const pcd = String(val).replace('PCD', '')
-        if (f.trailerWheels && !f.trailerWheels.endsWith(`- ${pcd}`)) updated.trailerWheels = ''
+        if (f.trailerInnerWheels && !f.trailerInnerWheels.endsWith(`- ${pcd}`)) updated.trailerInnerWheels = ''
+        if (f.trailerOuterWheels && !f.trailerOuterWheels.endsWith(`- ${pcd}`)) updated.trailerOuterWheels = ''
       }
-      // Auto-cascade: trailer body length → hoist model
+      // Auto-cascade: trailer body length → hoist model + tarp length
       if (key === 'trailerBodyLength') {
         const hoist = TRAILER_HOIST_MAP[String(val).trim()]
         if (hoist) updated.trailerHoist = hoist
+        const bodyLen = parseInt(String(val), 10)
+        if (!isNaN(bodyLen) && bodyLen > 400) updated.trailerTarpLength = String(bodyLen - 400)
       }
       // Auto-cascade: trailer material → floor/side sheet + main runner width + clear body height
       if (key === 'trailerMaterial') {
@@ -2608,15 +2617,21 @@ function QuoteBuilderInner() {
             {/* Wheels & Tyres */}
             <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Wheels &amp; Tyres</div>
-            <div style={grid(2)}>
+            <div style={grid(3)}>
               <Field label="Tyre">
                 <select value={form.trailerTyre} onChange={(e) => set('trailerTyre', e.target.value)} style={selectStyle}>
                   <option value="">Select...</option>
                   {TRAILER_TYRES.map((t) => <option key={t}>{t}</option>)}
                 </select>
               </Field>
-              <Field label="Wheels">
-                <select value={form.trailerWheels} onChange={(e) => set('trailerWheels', e.target.value)} style={selectStyle}>
+              <Field label="Inner Wheels">
+                <select value={form.trailerInnerWheels} onChange={(e) => set('trailerInnerWheels', e.target.value)} style={selectStyle}>
+                  <option value="">Select...</option>
+                  {TRAILER_WHEELS.filter((w) => !form.trailerStudPattern || w.endsWith(`- ${form.trailerStudPattern.replace('PCD', '')}`)).map((w) => <option key={w}>{w}</option>)}
+                </select>
+              </Field>
+              <Field label="Outer Wheels">
+                <select value={form.trailerOuterWheels} onChange={(e) => set('trailerOuterWheels', e.target.value)} style={selectStyle}>
                   <option value="">Select...</option>
                   {TRAILER_WHEELS.filter((w) => !form.trailerStudPattern || w.endsWith(`- ${form.trailerStudPattern.replace('PCD', '')}`)).map((w) => <option key={w}>{w}</option>)}
                 </select>
@@ -2652,6 +2667,14 @@ function QuoteBuilderInner() {
               </Field>
               <Field label="Tarp Bow Height">
                 <input value={trailerBowHeight} readOnly placeholder="Auto from material + height" style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: trailerBowHeight ? '#E8681A' : 'rgba(255,255,255,0.3)' }} />
+              </Field>
+              <Field label="Tarp Length (mm)">
+                <input
+                  value={form.trailerTarpLength}
+                  onChange={(e) => set('trailerTarpLength', e.target.value)}
+                  placeholder="Auto from body length"
+                  style={{ ...inputStyle, color: form.trailerTarpLength ? '#fff' : 'rgba(255,255,255,0.3)' }}
+                />
               </Field>
             </div>
             <div style={{ ...grid(4), marginTop: 16 }}>

@@ -600,9 +600,10 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 </div>
 
                 <div style={sectionLbl}>Wheels &amp; Tyres (Trailer)</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Tyre', 'tyre')}
-                  {cfgField('Wheels', 'wheels')}
+                  {cfgField('Inner Wheels', 'innerWheels')}
+                  {cfgField('Outer Wheels', 'outerWheels')}
                 </div>
 
                 <div style={sectionLbl}>Tarp (Trailer)</div>
@@ -1079,13 +1080,14 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         </div>
 
         {/* Wheels & Tyres — trailer only */}
-        {isTrailer && (c('tyre') || c('wheels')) && (
+        {isTrailer && (
           <div className="section" style={{ marginTop: 10 }}>
             <div className="section-hdr">Wheels &amp; Tyres</div>
             <div className="section-body">
-              <div className="field-row field-row-2">
+              <div className="field-row field-row-3">
                 <div className="field"><div className="field-lbl">Tyre</div><div className="field-val">{c('tyre') || ''}</div>{!c('tyre') && <div className="field-blank" />}</div>
-                <div className="field"><div className="field-lbl">Wheels</div><div className="field-val">{c('wheels') || ''}</div>{!c('wheels') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Inner Wheels</div><div className="field-val">{c('innerWheels') || ''}</div>{!c('innerWheels') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Outer Wheels</div><div className="field-val">{c('outerWheels') || ''}</div>{!c('outerWheels') && <div className="field-blank" />}</div>
               </div>
             </div>
           </div>
