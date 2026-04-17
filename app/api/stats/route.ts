@@ -29,27 +29,43 @@ function buildWorkerJobHours(timesheets: any[], jobNumLookup: Record<string, str
   return result
 }
 
-// Per-worker, per-week hours: { workerName: { weekKey: { total, ot } } }
+// Per-worker, per-week hours with job breakdown
 function buildWorkerWeeklyHours(timesheets: any[]) {
-  const result: Record<string, Record<string, { total: number; ot: number; days: Set<string> }>> = {}
+  const result: Record<string, Record<string, { total: number; ot: number; days: Set<string>; jobs: Record<string, number>; leave: boolean; sick: boolean }>> = {}
   for (const t of timesheets) {
-    if (t.startTime === 'LEAVE' || t.startTime === 'SICK') continue
     const w = t.workerName
     const weekKey = getWeekMonday(t.date)
     if (!result[w]) result[w] = {}
-    if (!result[w][weekKey]) result[w][weekKey] = { total: 0, ot: 0, days: new Set() }
+    if (!result[w][weekKey]) result[w][weekKey] = { total: 0, ot: 0, days: new Set(), jobs: {}, leave: false, sick: false }
+
+    if (t.startTime === 'LEAVE') { result[w][weekKey].leave = true; result[w][weekKey].days.add(t.date); continue }
+    if (t.startTime === 'SICK') { result[w][weekKey].sick = true; result[w][weekKey].days.add(t.date); continue }
+
     result[w][weekKey].total += t.hours
     result[w][weekKey].days.add(t.date)
+    result[w][weekKey].jobs[t.jobNum] = (result[w][weekKey].jobs[t.jobNum] || 0) + t.hours
     if (t.section === 'overtime' || t.section === 'early_ot') {
       result[w][weekKey].ot += t.hours
     }
   }
   // Convert Sets to counts for JSON
-  const out: Record<string, Record<string, { total: number; ot: number; days: number }>> = {}
+  const out: Record<string, Record<string, { total: number; ot: number; days: number; jobs: Record<string, number>; leave: boolean; sick: boolean }>> = {}
   for (const w in result) {
     out[w] = {}
     for (const wk in result[w]) {
-      out[w][wk] = { total: Math.round(result[w][wk].total * 10) / 10, ot: Math.round(result[w][wk].ot * 10) / 10, days: result[w][wk].days.size }
+      // Round job hours
+      const roundedJobs: Record<string, number> = {}
+      for (const j in result[w][wk].jobs) {
+        roundedJobs[j] = Math.round(result[w][wk].jobs[j] * 10) / 10
+      }
+      out[w][wk] = {
+        total: Math.round(result[w][wk].total * 10) / 10,
+        ot: Math.round(result[w][wk].ot * 10) / 10,
+        days: result[w][wk].days.size,
+        jobs: roundedJobs,
+        leave: result[w][wk].leave,
+        sick: result[w][wk].sick,
+      }
     }
   }
   return out

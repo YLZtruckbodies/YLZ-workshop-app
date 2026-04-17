@@ -261,10 +261,9 @@ export default function AnalyticsPage() {
           />
         )}
 
-        {/* Worker Comparison */}
-        {stats.workerJobHours && stats.workerWeeklyHours && (
-          <WorkerComparison
-            workerJobHours={stats.workerJobHours}
+        {/* Worker Performance */}
+        {stats.workerWeeklyHours && (
+          <WorkerPerformance
             workerWeeklyHours={stats.workerWeeklyHours}
             workerHours={stats.workerHours}
           />
@@ -464,191 +463,165 @@ const WS_COLORS: Record<string, string> = {
   '': '#555',
 }
 
-function WorkerComparison({
-  workerJobHours,
+function WorkerPerformance({
   workerWeeklyHours,
   workerHours,
 }: {
-  workerJobHours: Record<string, Record<string, number>>
-  workerWeeklyHours: Record<string, Record<string, { total: number; ot: number; days: number }>>
+  workerWeeklyHours: Record<string, Record<string, { total: number; ot: number; days: number; jobs: Record<string, number>; leave?: boolean; sick?: boolean }>>
   workerHours: any[]
 }) {
   const allWorkers = workerHours.filter((w: any) => w.hours > 0).map((w: any) => w.name).sort()
-  const [workerA, setWorkerA] = useState('Rav')
-  const [workerB, setWorkerB] = useState('JD')
+  const [selected, setSelected] = useState('JD')
+  const [expandedWeek, setExpandedWeek] = useState<string | null>(null)
 
-  const aJobs = workerJobHours[workerA] || {}
-  const bJobs = workerJobHours[workerB] || {}
-  const allJobs = [...new Set([...Object.keys(aJobs), ...Object.keys(bJobs)])].sort()
-  const sharedJobs = allJobs.filter(j => (aJobs[j] || 0) > 0 && (bJobs[j] || 0) > 0)
-
-  const aWeeks = workerWeeklyHours[workerA] || {}
-  const bWeeks = workerWeeklyHours[workerB] || {}
-  const allWeeks = [...new Set([...Object.keys(aWeeks), ...Object.keys(bWeeks)])].sort((a, b) => {
+  const weeks = workerWeeklyHours[selected] || {}
+  const sortedWeeks = Object.keys(weeks).sort((a, b) => {
     const [ad, am, ay] = a.split('/')
     const [bd, bm, by] = b.split('/')
-    return new Date(2000 + parseInt(ay), parseInt(am) - 1, parseInt(ad)).getTime() - new Date(2000 + parseInt(by), parseInt(bm) - 1, parseInt(bd)).getTime()
+    return new Date(2000 + parseInt(by), parseInt(bm) - 1, parseInt(bd)).getTime() - new Date(2000 + parseInt(ay), parseInt(am) - 1, parseInt(ad)).getTime()
   })
 
-  const aTotalH = Object.values(aJobs).reduce((s, h) => s + h, 0)
-  const bTotalH = Object.values(bJobs).reduce((s, h) => s + h, 0)
-  const aAvgWeek = allWeeks.length > 0 ? Object.values(aWeeks).reduce((s, w) => s + w.total, 0) / Object.keys(aWeeks).length : 0
-  const bAvgWeek = allWeeks.length > 0 ? Object.values(bWeeks).reduce((s, w) => s + w.total, 0) / Object.keys(bWeeks).length : 0
-  const aOT = Object.values(aWeeks).reduce((s, w) => s + w.ot, 0)
-  const bOT = Object.values(bWeeks).reduce((s, w) => s + w.ot, 0)
-
-  const selectStyle: React.CSSProperties = {
-    background: '#111', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6,
-    padding: '8px 12px', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-    fontFamily: "'League Spartan', sans-serif", letterSpacing: 1,
-  }
+  const totalH = Object.values(weeks).reduce((s, w) => s + w.total, 0)
+  const totalOT = Object.values(weeks).reduce((s, w) => s + w.ot, 0)
+  const weeksWorked = sortedWeeks.filter(wk => weeks[wk].total > 0).length
+  const avgWeek = weeksWorked > 0 ? totalH / weeksWorked : 0
+  const totalDays = Object.values(weeks).reduce((s, w) => s + w.days, 0)
+  const maxWeekH = Math.max(...Object.values(weeks).map(w => w.total), 1)
 
   return (
     <div style={{ background: 'var(--dark2)', border: '1px solid var(--border)', borderRadius: 4, overflow: 'hidden', marginBottom: 14 }}>
       <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', background: 'var(--dark3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 14, fontWeight: 800, letterSpacing: 1.5, color: '#fff' }}>
-            WORKER COMPARISON
+            WORKER PERFORMANCE
           </div>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-            Side-by-side hours breakdown
+            Weekly hours, jobs worked, and overtime
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <select value={workerA} onChange={(e) => setWorkerA(e.target.value)} style={selectStyle}>
-            {allWorkers.map((w: string) => <option key={w} value={w}>{w}</option>)}
-          </select>
-          <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 700 }}>vs</span>
-          <select value={workerB} onChange={(e) => setWorkerB(e.target.value)} style={selectStyle}>
-            {allWorkers.map((w: string) => <option key={w} value={w}>{w}</option>)}
-          </select>
-        </div>
+        <select
+          value={selected}
+          onChange={(e) => { setSelected(e.target.value); setExpandedWeek(null) }}
+          style={{
+            background: '#111', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6,
+            padding: '10px 16px', color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer',
+            fontFamily: "'League Spartan', sans-serif", letterSpacing: 1, minWidth: 140,
+          }}
+        >
+          {allWorkers.map((w: string) => <option key={w} value={w}>{w}</option>)}
+        </select>
       </div>
 
-      {/* Summary stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0, borderBottom: '1px solid var(--border)' }}>
-        <div style={{ padding: '16px 20px', borderRight: '1px solid var(--border)' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 8 }}>Total Hours</div>
-          <div style={{ display: 'flex', gap: 20 }}>
-            <div>
-              <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 26, fontWeight: 900, color: '#3b82f6' }}>{Math.round(aTotalH)}h</div>
-              <div style={{ fontSize: 10, color: 'var(--text3)' }}>{workerA}</div>
-            </div>
-            <div>
-              <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 26, fontWeight: 900, color: '#22c55e' }}>{Math.round(bTotalH)}h</div>
-              <div style={{ fontSize: 10, color: 'var(--text3)' }}>{workerB}</div>
-            </div>
+      {/* Summary stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0, borderBottom: '1px solid var(--border)' }}>
+        {[
+          { label: 'Total Hours', value: `${Math.round(totalH)}h`, color: '#fff' },
+          { label: 'Avg / Week', value: `${avgWeek.toFixed(1)}h`, color: avgWeek < 35 ? '#ef4444' : avgWeek < 40 ? '#f5a623' : '#22c55e' },
+          { label: 'Overtime', value: `${Math.round(totalOT)}h`, color: '#f5a623' },
+          { label: 'Days Worked', value: `${totalDays}`, color: '#3b82f6' },
+        ].map((s, i) => (
+          <div key={s.label} style={{ padding: '16px 20px', borderRight: i < 3 ? '1px solid var(--border)' : 'none' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 6 }}>{s.label}</div>
+            <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 28, fontWeight: 900, color: s.color }}>{s.value}</div>
           </div>
-        </div>
-        <div style={{ padding: '16px 20px', borderRight: '1px solid var(--border)' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 8 }}>Avg Hours / Week</div>
-          <div style={{ display: 'flex', gap: 20 }}>
-            <div>
-              <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 26, fontWeight: 900, color: '#3b82f6' }}>{aAvgWeek.toFixed(1)}h</div>
-              <div style={{ fontSize: 10, color: 'var(--text3)' }}>{workerA}</div>
-            </div>
-            <div>
-              <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 26, fontWeight: 900, color: '#22c55e' }}>{bAvgWeek.toFixed(1)}h</div>
-              <div style={{ fontSize: 10, color: 'var(--text3)' }}>{workerB}</div>
-            </div>
-          </div>
-        </div>
-        <div style={{ padding: '16px 20px' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 8 }}>Overtime Hours</div>
-          <div style={{ display: 'flex', gap: 20 }}>
-            <div>
-              <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 26, fontWeight: 900, color: '#3b82f6' }}>{Math.round(aOT)}h</div>
-              <div style={{ fontSize: 10, color: 'var(--text3)' }}>{workerA}</div>
-            </div>
-            <div>
-              <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 26, fontWeight: 900, color: '#22c55e' }}>{Math.round(bOT)}h</div>
-              <div style={{ fontSize: 10, color: 'var(--text3)' }}>{workerB}</div>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Weekly breakdown */}
-      <div style={{ padding: '14px 20px 6px', fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text3)' }}>
-        Weekly Breakdown
-      </div>
+      {/* Weekly rows */}
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            {['Week of', `${workerA} Hours`, `${workerA} OT`, `${workerA} Days`, `${workerB} Hours`, `${workerB} OT`, `${workerB} Days`, 'Difference'].map((h) => (
-              <th key={h} style={{ padding: '8px 16px', fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--text3)', textAlign: 'left', borderBottom: '1px solid var(--border2)' }}>
+            {['Week of', 'Hours', 'OT', 'Days', 'Jobs', ''].map((h) => (
+              <th key={h} style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--text3)', textAlign: 'left', borderBottom: '1px solid var(--border2)' }}>
                 {h}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {allWeeks.map((wk) => {
-            const a = aWeeks[wk] || { total: 0, ot: 0, days: 0 }
-            const b = bWeeks[wk] || { total: 0, ot: 0, days: 0 }
-            const diff = a.total - b.total
+          {sortedWeeks.map((wk) => {
+            const w = weeks[wk]
+            const isExpanded = expandedWeek === wk
+            const jobEntries = Object.entries(w.jobs || {}).sort((a: any, b: any) => b[1] - a[1])
+            const barPct = (w.total / maxWeekH) * 100
+            const isLow = w.total > 0 && w.total < 35
+            const statusNotes: string[] = []
+            if (w.leave) statusNotes.push('Leave')
+            if (w.sick) statusNotes.push('Sick')
+
             return (
-              <tr key={wk} style={{ borderBottom: '1px solid var(--border)' }}>
-                <td style={{ padding: '8px 16px', fontSize: 12, fontWeight: 600 }}>{wk}</td>
-                <td style={{ padding: '8px 16px', fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, color: '#3b82f6' }}>{a.total}h</td>
-                <td style={{ padding: '8px 16px', fontSize: 11, color: a.ot > 0 ? '#f5a623' : 'var(--text3)' }}>{a.ot > 0 ? `${a.ot}h` : '—'}</td>
-                <td style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text3)' }}>{a.days > 0 ? `${a.days}d` : '—'}</td>
-                <td style={{ padding: '8px 16px', fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, color: '#22c55e' }}>{b.total}h</td>
-                <td style={{ padding: '8px 16px', fontSize: 11, color: b.ot > 0 ? '#f5a623' : 'var(--text3)' }}>{b.ot > 0 ? `${b.ot}h` : '—'}</td>
-                <td style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text3)' }}>{b.days > 0 ? `${b.days}d` : '—'}</td>
-                <td style={{ padding: '8px 16px', fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, color: diff > 0 ? '#3b82f6' : diff < 0 ? '#22c55e' : 'var(--text3)' }}>
-                  {diff > 0 ? `+${diff.toFixed(1)}h` : diff < 0 ? `${diff.toFixed(1)}h` : '—'}
-                </td>
-              </tr>
+              <React.Fragment key={wk}>
+                <tr
+                  onClick={() => setExpandedWeek(isExpanded ? null : wk)}
+                  style={{
+                    borderBottom: '1px solid var(--border)',
+                    cursor: 'pointer',
+                    background: isExpanded ? 'rgba(255,255,255,0.03)' : isLow ? 'rgba(239,68,68,0.04)' : 'transparent',
+                  }}
+                  onMouseEnter={(e) => { if (!isExpanded) e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
+                  onMouseLeave={(e) => { if (!isExpanded) e.currentTarget.style.background = isLow ? 'rgba(239,68,68,0.04)' : 'transparent' }}
+                >
+                  <td style={{ padding: '10px 16px', fontSize: 13, fontWeight: 700 }}>
+                    {isExpanded ? '▾' : '▸'} {wk}
+                    {statusNotes.length > 0 && (
+                      <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 3, background: 'rgba(234,179,8,0.15)', color: '#eab308' }}>
+                        {statusNotes.join(' + ')}
+                      </span>
+                    )}
+                  </td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <span style={{
+                      fontFamily: "'League Spartan', sans-serif", fontSize: 15, fontWeight: 900,
+                      color: w.total === 0 ? 'var(--text3)' : isLow ? '#ef4444' : '#fff',
+                    }}>
+                      {w.total > 0 ? `${w.total}h` : '—'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 16px', fontSize: 12, color: w.ot > 0 ? '#f5a623' : 'var(--text3)', fontWeight: 600 }}>
+                    {w.ot > 0 ? `${w.ot}h` : '—'}
+                  </td>
+                  <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text3)' }}>
+                    {w.days > 0 ? `${w.days}d` : '—'}
+                  </td>
+                  <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--text2)' }}>
+                    {jobEntries.length > 0 ? jobEntries.map(([j]) => j).join(', ') : '—'}
+                  </td>
+                  <td style={{ padding: '10px 16px', width: '20%' }}>
+                    <div style={{ height: 12, borderRadius: 2, overflow: 'hidden', background: 'rgba(255,255,255,0.04)' }}>
+                      <div style={{
+                        width: `${barPct}%`, height: '100%', borderRadius: 2,
+                        background: isLow ? '#ef4444' : '#3b82f6',
+                      }} />
+                    </div>
+                  </td>
+                </tr>
+
+                {isExpanded && jobEntries.map(([jobNum, hrs]) => {
+                  const jobBarPct = ((hrs as number) / w.total) * 100
+                  return (
+                    <tr key={`${wk}-${jobNum}`} style={{ background: 'rgba(255,255,255,0.015)', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                      <td style={{ padding: '7px 16px 7px 40px' }}>
+                        <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 12, fontWeight: 700, color: '#E8681A', letterSpacing: 0.5 }}>{jobNum}</span>
+                      </td>
+                      <td style={{ padding: '7px 16px' }}>
+                        <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, color: '#3b82f6' }}>{(hrs as number).toFixed(1)}h</span>
+                      </td>
+                      <td colSpan={2} style={{ padding: '7px 16px', fontSize: 11, color: 'var(--text3)' }}>
+                        {Math.round(jobBarPct)}% of week
+                      </td>
+                      <td colSpan={2} style={{ padding: '7px 16px' }}>
+                        <div style={{ height: 8, borderRadius: 2, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', maxWidth: 200 }}>
+                          <div style={{ width: `${jobBarPct}%`, height: '100%', background: '#E8681A', borderRadius: 2 }} />
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </React.Fragment>
             )
           })}
         </tbody>
       </table>
-
-      {/* Shared jobs comparison */}
-      {sharedJobs.length > 0 && (
-        <>
-          <div style={{ padding: '14px 20px 6px', fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text3)' }}>
-            Shared Jobs ({sharedJobs.length})
-          </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                {['Job #', `${workerA}`, `${workerB}`, 'Total', 'Split'].map((h) => (
-                  <th key={h} style={{ padding: '8px 16px', fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--text3)', textAlign: 'left', borderBottom: '1px solid var(--border2)' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sharedJobs.sort((a, b) => ((aJobs[b] || 0) + (bJobs[b] || 0)) - ((aJobs[a] || 0) + (bJobs[a] || 0))).map((job) => {
-                const ah = Math.round((aJobs[job] || 0) * 10) / 10
-                const bh = Math.round((bJobs[job] || 0) * 10) / 10
-                const total = ah + bh
-                const aPct = total > 0 ? (ah / total) * 100 : 0
-                const bPct = total > 0 ? (bh / total) * 100 : 0
-                return (
-                  <tr key={job} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '8px 16px' }}>
-                      <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, color: '#E8681A' }}>{job}</span>
-                    </td>
-                    <td style={{ padding: '8px 16px', fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, color: '#3b82f6' }}>{ah}h</td>
-                    <td style={{ padding: '8px 16px', fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, color: '#22c55e' }}>{bh}h</td>
-                    <td style={{ padding: '8px 16px', fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, color: '#fff' }}>{total}h</td>
-                    <td style={{ padding: '8px 16px', width: '30%' }}>
-                      <div style={{ display: 'flex', height: 16, borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{ width: `${aPct}%`, background: '#3b82f6', minWidth: 2 }} />
-                        <div style={{ width: `${bPct}%`, background: '#22c55e', minWidth: 2 }} />
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </>
-      )}
     </div>
   )
 }
