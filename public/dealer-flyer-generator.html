@@ -231,21 +231,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .spec-row:last-child{border-bottom:none}
 .spec-key{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,0.3)}
 .spec-val{font-size:11px;font-weight:600;color:#fff;text-align:right}
-.payload-strip{
-  margin-top:4px;padding:7px 10px;
-  background:rgba(37,99,235,0.15);border:1px solid rgba(37,99,235,0.35);
-  display:flex;justify-content:space-between;align-items:center;
-}
-.payload-lbl{font-size:8px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--blue-lt)}
-.payload-val{font-size:13px;font-weight:900}
-.payload-val.tbd{font-size:10px;color:rgba(255,255,255,0.35);font-weight:600}
-.price-strip{
-  margin-top:4px;padding:8px 10px;
-  background:rgba(232,104,26,0.15);border:1px solid rgba(232,104,26,0.35);
-  display:flex;justify-content:space-between;align-items:center;
-}
-.price-lbl{font-size:8px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#E8681A}
-.price-val{font-size:14px;font-weight:900;color:#fff}
+.spec-val.tbd{color:rgba(255,255,255,0.35);font-weight:600}
+.spec-row-price{background:rgba(232,104,26,0.1);margin:0 -15px;padding:5px 15px;border-bottom:none}
+.spec-val.price-highlight{color:#E8681A;font-size:12px;font-weight:900}
 
 /* CTA */
 .flyer-cta{
@@ -491,7 +479,7 @@ const PRODUCTS = [
       {k:'Width',       v:'2250mm'},
       {k:'Hoist',       v:'HPF4090-154-4'},
       {k:'Tarp',        v:'Razor PVC Electric'},
-      {k:'Suspension',  v:'SAF'},
+      {k:'Suspension',  v:'SAF 5 Year Warranty'},
     ]
   },
   {
@@ -502,7 +490,7 @@ const PRODUCTS = [
       {k:'Width',       v:'2250mm'},
       {k:'Hoist',       v:'HPF5730-174-5'},
       {k:'Tarp',        v:'Razor PVC Electric'},
-      {k:'Suspension',  v:'SAF'},
+      {k:'Suspension',  v:'SAF 5 Year Warranty'},
     ]
   },
   {
@@ -524,7 +512,7 @@ const PRODUCTS = [
       {k:'Width',       v:'2290mm'},
       {k:'Hoist',       v:'HPF5730-174-5'},
       {k:'Tarp',        v:'Razor PVC Electric'},
-      {k:'Suspension',  v:'SAF'},
+      {k:'Suspension',  v:'SAF 5 Year Warranty'},
     ]
   },
 ];
@@ -757,18 +745,18 @@ function renderProductSections() {
 
 function renderCard(product, featured) {
   const payload = state.payloads[product.id];
-  const payloadHtml = payload
-    ? `<div class="payload-strip"><span class="payload-lbl">Est. Payload</span><span class="payload-val">${escHtml(payload)}</span></div>`
-    : `<div class="payload-strip"><span class="payload-lbl">Est. Payload</span><span class="payload-val tbd">TBC</span></div>`;
-
   const price = state.prices[product.id];
-  const priceHtml = price
-    ? `<div class="price-strip"><span class="price-lbl">Price (ex GST)</span><span class="price-val">${escHtml(price)}</span></div>`
-    : '';
 
-  const specsHtml = product.specs.map(s =>
-    `<div class="spec-row"><span class="spec-key">${escHtml(s.k)}</span><span class="spec-val">${escHtml(s.v)}</span></div>`
-  ).join('');
+  // Build spec rows including payload and price inline
+  const allSpecs = [...product.specs];
+  allSpecs.push({k:'Est. Payload', v: payload || 'TBC'});
+  if (price) allSpecs.push({k:'Price (ex GST)', v: price});
+
+  const specsHtml = allSpecs.map(s => {
+    const isPrice = s.k === 'Price (ex GST)';
+    const isTBC = s.k === 'Est. Payload' && s.v === 'TBC';
+    return `<div class="spec-row${isPrice ? ' spec-row-price' : ''}"><span class="spec-key">${escHtml(s.k)}</span><span class="spec-val${isTBC ? ' tbd' : isPrice ? ' price-highlight' : ''}">${escHtml(s.v)}</span></div>`;
+  }).join('');
 
   // Use custom image if uploaded, otherwise fall back to default path
   const imgSrc = state.customImages[product.id] || product.img.replace(/ /g, '%20');
@@ -779,8 +767,6 @@ function renderCard(product, featured) {
       <div class="p-card-body">
         <div class="p-card-name">${escHtml(product.label)}</div>
         <div class="spec-table">${specsHtml}</div>
-        ${payloadHtml}
-        ${priceHtml}
       </div>
     </div>`;
 }
