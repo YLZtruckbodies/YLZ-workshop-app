@@ -107,6 +107,7 @@ interface QuoteForm {
   trailerMainRunnerWidth: string
   trailerChassisLength: string
   trailerWheelbase: string
+  trailerTailgateType: string
   trailerTailgateLights: string
   trailerTailLights: string
   trailerLockFlap: string
@@ -730,7 +731,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerSerial: '', trailerVin: '', trailerFloorSheet: '', trailerSideSheet: '',
     trailerHoist: '', trailerPivotCentre: '', trailerPushLugs: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
     trailerChassisLength: '', trailerWheelbase: '',
-    trailerTailgateLights: 'None', trailerTailLights: '4 hole round LEDs c/w chrome surround', trailerLockFlap: 'No',
+    trailerTailgateType: 'Single Drop', trailerTailgateLights: 'None', trailerTailLights: '4 hole round LEDs c/w chrome surround', trailerLockFlap: 'No',
     trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'Yes', trailerHubodoLocation: '', trailerHubodoAxle: '', trailerHoseBurstValve: 'Yes',
     trailerTyre: '', trailerWheels: '',
     trailerTarpColour: '', trailerTarpMaterial: 'PVC', trailerTarpType: 'Hoop Type', trailerTarpLocation: 'Standard Out Front',
@@ -904,6 +905,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerMainRunnerWidth = trc.mainRunnerWidth || ''
     form.trailerChassisLength = trc.chassisLength || getChassisLength(trc.bodyLength || '')
     form.trailerWheelbase = trc.wheelbase || ''
+    form.trailerTailgateType = trc.tailgateType || 'Single Drop'
     form.trailerTailgateLights = trc.tailgateLights || 'None'
     form.trailerTailLights = trc.tailLights && trc.tailLights !== 'Use existing OEM tail lights' ? trc.tailLights : '4 hole round LEDs c/w chrome surround'
     form.trailerLockFlap = trc.lockFlap || 'No'
@@ -1034,6 +1036,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerMainRunnerWidth = cfg.mainRunnerWidth || ''
     form.trailerChassisLength = cfg.chassisLength || getChassisLength(cfg.bodyLength || '')
     form.trailerWheelbase = cfg.wheelbase || ''
+    form.trailerTailgateType = cfg.tailgateType || 'Single Drop'
     form.trailerTailgateLights = cfg.tailgateLights || 'None'
     form.trailerTailLights = cfg.tailLights && cfg.tailLights !== 'Use existing OEM tail lights' ? cfg.tailLights : '4 hole round LEDs c/w chrome surround'
     form.trailerLockFlap = cfg.lockFlap || 'No'
@@ -1193,7 +1196,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     serial: form.trailerSerial, vin: form.trailerVin,
     mainRunnerWidth: form.trailerMainRunnerWidth,
     chassisLength: form.trailerChassisLength, wheelbase: form.trailerWheelbase,
-    tailgateLights: form.trailerTailgateLights, tailLights: form.trailerTailLights, lockFlap: form.trailerLockFlap,
+    tailgateType: form.trailerTailgateType, tailgateLights: form.trailerTailgateLights, tailLights: form.trailerTailLights, lockFlap: form.trailerLockFlap,
     axleLift: form.trailerAxleLift, axleLiftAxle: form.trailerAxleLiftAxle,
     hubodometer: form.trailerHubodometer, hubodoLocation: form.trailerHubodoLocation, hubodoAxle: form.trailerHubodoAxle,
     hoseBurstValve: form.trailerHoseBurstValve,
@@ -2994,6 +2997,11 @@ function QuoteBuilderInner() {
               </div>
               {/* Row 5: lighting + lock flap */}
               <div style={{ ...grid(3), marginTop: 16 }}>
+                <Field label="Tailgate Type">
+                  <select value={form.trailerTailgateType} onChange={(e) => set('trailerTailgateType', e.target.value)} style={selectStyle}>
+                    {TAILGATE_TYPES.map((o) => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
                 <Field label="Tail Lights">
                   <select value={form.trailerTailLights} onChange={(e) => set('trailerTailLights', e.target.value)} style={selectStyle}>
                     {TAIL_LIGHTS.map((o) => <option key={o}>{o}</option>)}
