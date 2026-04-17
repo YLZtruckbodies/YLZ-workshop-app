@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YLZ Body Build Hours — Rav & JD</title>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#000;color:#fff;min-height:100vh;padding:32px}
+
+.header{max-width:1100px;margin:0 auto 28px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.header h1{font-family:'League Spartan',sans-serif;font-size:28px;font-weight:900;letter-spacing:2px;text-transform:uppercase}
+.header h1 span{color:#E8681A}
+.header .sub{font-size:12px;color:rgba(255,255,255,0.4);margin-top:4px}
+.header .stats{display:flex;gap:20px}
+.stat-box{text-align:center;padding:10px 18px;background:#111;border:1px solid rgba(255,255,255,0.08);border-radius:6px}
+.stat-box .val{font-family:'League Spartan',sans-serif;font-size:22px;font-weight:900}
+.stat-box .lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-top:2px}
+.stat-box.rav .val{color:#3b82f6}
+.stat-box.jd .val{color:#22c55e}
+.stat-box.avg .val{color:#E8681A}
+
+.table-wrap{max-width:1100px;margin:0 auto;background:#111;border:1px solid rgba(255,255,255,0.1);border-radius:8px;overflow:hidden}
+
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{
+  font-family:'League Spartan',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.3);
+  padding:12px 16px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.1);
+  background:#0a0a0a;position:sticky;top:0;
+}
+.tbl th.right{text-align:right}
+.tbl td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px}
+.tbl td.right{text-align:right}
+.tbl tr:hover{background:rgba(255,255,255,0.03)}
+
+.job-num{font-family:'League Spartan',sans-serif;font-weight:800;color:#E8681A;letter-spacing:0.5px}
+.days{font-size:11px;color:rgba(255,255,255,0.35)}
+.rav-hours{color:#3b82f6;font-weight:700;font-family:'League Spartan',sans-serif}
+.jd-hours{color:#22c55e;font-weight:700;font-family:'League Spartan',sans-serif}
+.total-hours{font-weight:800;font-family:'League Spartan',sans-serif;font-size:14px}
+
+.bar-cell{padding:12px 16px}
+.bar-wrap{display:flex;height:18px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,0.04)}
+.bar-rav{background:#3b82f6;min-width:1px;transition:width 0.3s}
+.bar-jd{background:#22c55e;min-width:1px;transition:width 0.3s}
+
+.legend{max-width:1100px;margin:16px auto 0;display:flex;gap:20px;font-size:11px;color:rgba(255,255,255,0.4)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend .dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.dot-rav{background:#3b82f6}
+.dot-jd{background:#22c55e}
+
+.footer{max-width:1100px;margin:24px auto 0;font-size:10px;color:rgba(255,255,255,0.2);text-align:center}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Body Build <span>Hours</span></h1>
+    <div class="sub">Rav & JD — Hardox bodies — All logged time</div>
+  </div>
+  <div class="stats" id="stats"></div>
+</div>
+
+<div class="legend">
+  <span><span class="dot dot-rav"></span> Rav</span>
+  <span><span class="dot dot-jd"></span> JD</span>
+</div>
+
+<div class="table-wrap" style="margin-top:12px">
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>Job</th>
+        <th class="right">Rav (h)</th>
+        <th class="right">Rav Days</th>
+        <th class="right">JD (h)</th>
+        <th class="right">JD Days</th>
+        <th class="right">Total (h)</th>
+        <th style="width:30%">Split</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="footer">
+  Data from YLZ Workshop App timesheets &mdash; Updated 17/04/2026
+</div>
+
+<script>
+const DATA = [
+  {job:"YLZ1020",ravHours:3.3,jdHours:0,totalHours:3.3,ravDays:1,jdDays:0},
+  {job:"YLZ1065",ravHours:21,jdHours:13.3,totalHours:34.3,ravDays:3,jdDays:2},
+  {job:"YLZ1068",ravHours:29.3,jdHours:8.8,totalHours:38,ravDays:4,jdDays:1},
+  {job:"YLZ1077",ravHours:18.5,jdHours:12.3,totalHours:30.8,ravDays:3,jdDays:2},
+  {job:"YLZ1078",ravHours:1,jdHours:4,totalHours:5,ravDays:1,jdDays:1},
+  {job:"YLZ1079",ravHours:13.8,jdHours:8.8,totalHours:22.5,ravDays:2,jdDays:1},
+  {job:"YLZ1081",ravHours:13,jdHours:0,totalHours:13,ravDays:2,jdDays:0},
+  {job:"YLZ1085",ravHours:10.8,jdHours:10.3,totalHours:21,ravDays:2,jdDays:2},
+  {job:"YLZ1086",ravHours:19.5,jdHours:21,totalHours:40.5,ravDays:2,jdDays:3},
+  {job:"YLZ1087",ravHours:17.3,jdHours:7.8,totalHours:25,ravDays:3,jdDays:2},
+  {job:"YLZ1088",ravHours:19.5,jdHours:19.8,totalHours:39.3,ravDays:4,jdDays:3},
+  {job:"YLZ1090",ravHours:11.5,jdHours:19,totalHours:30.5,ravDays:2,jdDays:3},
+  {job:"YLZ1091",ravHours:10.5,jdHours:7,totalHours:17.5,ravDays:1,jdDays:2},
+  {job:"YLZ1092",ravHours:12.8,jdHours:10,totalHours:22.8,ravDays:2,jdDays:2},
+  {job:"YLZ1096",ravHours:26,jdHours:0,totalHours:26,ravDays:3,jdDays:0},
+  {job:"YLZ1104",ravHours:28,jdHours:15.5,totalHours:43.5,ravDays:4,jdDays:2},
+  {job:"YLZ972",ravHours:23.3,jdHours:0,totalHours:23.3,ravDays:4,jdDays:0},
+];
+
+// Stats
+const totalRav = DATA.reduce((s,d) => s + d.ravHours, 0);
+const totalJD = DATA.reduce((s,d) => s + d.jdHours, 0);
+const avgPerJob = DATA.reduce((s,d) => s + d.totalHours, 0) / DATA.length;
+
+document.getElementById('stats').innerHTML = `
+  <div class="stat-box rav"><div class="val">${totalRav.toFixed(0)}h</div><div class="lbl">Rav Total</div></div>
+  <div class="stat-box jd"><div class="val">${totalJD.toFixed(0)}h</div><div class="lbl">JD Total</div></div>
+  <div class="stat-box avg"><div class="val">${avgPerJob.toFixed(0)}h</div><div class="lbl">Avg / Job</div></div>
+`;
+
+// Find max total for bar scaling
+const maxTotal = Math.max(...DATA.map(d => d.totalHours));
+
+// Table
+const tbody = document.getElementById('tbody');
+// Sort by total hours descending
+const sorted = [...DATA].sort((a,b) => b.totalHours - a.totalHours);
+
+sorted.forEach(d => {
+  const ravPct = (d.ravHours / maxTotal) * 100;
+  const jdPct = (d.jdHours / maxTotal) * 100;
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><span class="job-num">${d.job}</span></td>
+    <td class="right"><span class="rav-hours">${d.ravHours.toFixed(1)}</span></td>
+    <td class="right"><span class="days">${d.ravDays}d</span></td>
+    <td class="right"><span class="jd-hours">${d.jdHours > 0 ? d.jdHours.toFixed(1) : '—'}</span></td>
+    <td class="right"><span class="days">${d.jdDays > 0 ? d.jdDays + 'd' : '—'}</span></td>
+    <td class="right"><span class="total-hours">${d.totalHours.toFixed(1)}</span></td>
+    <td class="bar-cell">
+      <div class="bar-wrap">
+        <div class="bar-rav" style="width:${ravPct}%"></div>
+        <div class="bar-jd" style="width:${jdPct}%"></div>
+      </div>
+    </td>
+  `;
+  tbody.appendChild(tr);
+});
+</script>
+</body>
+</html>
