@@ -1452,6 +1452,11 @@ function QuoteBuilderInner() {
   const set = useCallback((key: keyof QuoteForm, val: any) => {
     setForm((f) => {
       const updated = { ...f, [key]: val }
+      // Auto-cascade: stud pattern change → clear wheels if mismatched
+      if (key === 'trailerStudPattern') {
+        const pcd = String(val).replace('PCD', '')
+        if (f.trailerWheels && !f.trailerWheels.endsWith(`- ${pcd}`)) updated.trailerWheels = ''
+      }
       // Auto-cascade: trailer body length → hoist model
       if (key === 'trailerBodyLength') {
         const hoist = TRAILER_HOIST_MAP[String(val).trim()]
@@ -2588,7 +2593,7 @@ function QuoteBuilderInner() {
               <Field label="Wheels">
                 <select value={form.trailerWheels} onChange={(e) => set('trailerWheels', e.target.value)} style={selectStyle}>
                   <option value="">Select...</option>
-                  {TRAILER_WHEELS.map((w) => <option key={w}>{w}</option>)}
+                  {TRAILER_WHEELS.filter((w) => !form.trailerStudPattern || w.endsWith(`- ${form.trailerStudPattern.replace('PCD', '')}`)).map((w) => <option key={w}>{w}</option>)}
                 </select>
               </Field>
             </div>
