@@ -80,6 +80,7 @@ interface QuoteForm {
   // body extras
   truckSideLights: string
   truckSideLightsCustom: string
+  truckIndicators: string
   truckAntiSpray: string
   truckShovelHolder: string
   truckMudflaps: string
@@ -129,6 +130,7 @@ interface QuoteForm {
   trailerTarpLength: string
   trailerSideLights: string
   trailerSideLightsCustom: string
+  trailerIndicators: string
   trailerGrainDoors: string
   trailerGrainLocks: string
   // trailer body extras
@@ -412,6 +414,11 @@ const SIDE_LIGHTS = [
   '7 side lights c/w polished backing strip',
   'Customer supplied',
   'Define quantity...',
+]
+const INDICATORS = [
+  'None',
+  '1x in centre',
+  '1x front / 1x centre / 1x rear',
 ]
 const MUDFLAPS_OPTIONS = [
   'None',
@@ -711,7 +718,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckTarpLength: '',
     truckSerial: '', truckVin: '', truckMainRunnerWidth: '',
     truckTailgateType: 'Single Drop', truckTailgateLights: 'None', truckTailLights: 'Use existing OEM tail lights',
-    truckSideLights: 'None', truckSideLightsCustom: '', truckAntiSpray: 'No', truckShovelHolder: 'No', truckMudflaps: 'None',
+    truckSideLights: 'None', truckSideLightsCustom: '', truckIndicators: 'None', truckAntiSpray: 'No', truckShovelHolder: 'No', truckMudflaps: 'None',
     truckGrainDoors: 'No', truckGrainLocks: 'No', truckReverseBuzzer: 'None', truckBodySpigot: 'No', truckRockSheet: 'No', truckLiner: 'No',
     truckPto: 'None', truckPump: 'None', truckHydTankType: 'Factory supplied',
     truckHydTankLocation: 'Centre Front of Subframe', truckDValue: '', truckCouplingLoad: '',
@@ -737,7 +744,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'Yes', trailerHubodoLocation: '', trailerHubodoAxle: '', trailerHoseBurstValve: 'Yes',
     trailerTyre: '', trailerInnerWheels: '', trailerOuterWheels: '',
     trailerTarpColour: '', trailerTarpMaterial: 'PVC', trailerTarpType: 'Hoop Type', trailerTarpLocation: 'Standard Out Front', trailerTarpLength: '',
-    trailerSideLights: 'None', trailerSideLightsCustom: '', trailerGrainDoors: 'No', trailerGrainLocks: 'No',
+    trailerSideLights: 'None', trailerSideLightsCustom: '', trailerIndicators: 'None', trailerGrainDoors: 'No', trailerGrainLocks: 'No',
     trailerRockSheet: 'No', trailerLiner: 'No',
     trailerRearLadder: 'No', trailerCentreChain: 'No', trailerCatMarkers: 'No', trailerReflectors: 'Yes (Amber)', trailerCamera: 'No', trailerVibrator: 'No',
     lineItems: [],
@@ -864,6 +871,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckTailLights = tc.tailLights || 'Use existing OEM tail lights'
     form.truckSideLights = tc.sideLights || 'None'
     form.truckSideLightsCustom = tc.sideLightsCustom || ''
+    form.truckIndicators = tc.indicators || 'None'
     form.truckAntiSpray = tc.antiSpray || 'No'
     form.truckShovelHolder = tc.shovelHolder || 'No'
     form.truckMudflaps = tc.mudflaps || 'None'
@@ -927,6 +935,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerTarpLength = trc.tarpLength || ''
     form.trailerSideLights = trc.sideLights || 'None'
     form.trailerSideLightsCustom = trc.sideLightsCustom || ''
+    form.trailerIndicators = trc.indicators || 'None'
     form.trailerGrainDoors = trc.grainDoors || 'No'
     form.trailerGrainLocks = trc.grainLocks || 'No'
     form.trailerRockSheet = trc.rockSheet || 'No'
@@ -978,6 +987,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckTailLights = cfg.tailLights || 'Use existing OEM tail lights'
     form.truckSideLights = cfg.sideLights || 'None'
     form.truckSideLightsCustom = (cfg.sideLightsCustom as string) || ''
+    form.truckIndicators = (cfg.indicators as string) || 'None'
     form.truckAntiSpray = cfg.antiSpray || 'No'
     form.truckShovelHolder = cfg.shovelHolder || 'No'
     form.truckMudflaps = cfg.mudflaps || 'None'
@@ -1060,6 +1070,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerTarpLength = cfg.tarpLength || ''
     form.trailerSideLights = cfg.sideLights || 'None'
     form.trailerSideLightsCustom = cfg.sideLightsCustom || ''
+    form.trailerIndicators = cfg.indicators || 'None'
     form.trailerGrainDoors = cfg.grainDoors || 'No'
     form.trailerGrainLocks = cfg.grainLocks || 'No'
     form.trailerRockSheet = cfg.rockSheet || 'No'
@@ -1170,7 +1181,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     serial: form.truckSerial, vin: form.truckVin,
     mainRunnerWidth: form.truckMainRunnerWidth,
     tailgateType: form.truckTailgateType, tailgateLights: form.truckTailgateLights, tailLights: form.truckTailLights,
-    sideLights: form.truckSideLights, sideLightsCustom: form.truckSideLightsCustom, antiSpray: form.truckAntiSpray, shovelHolder: form.truckShovelHolder, mudflaps: form.truckMudflaps,
+    sideLights: form.truckSideLights, sideLightsCustom: form.truckSideLightsCustom, indicators: form.truckIndicators, antiSpray: form.truckAntiSpray, shovelHolder: form.truckShovelHolder, mudflaps: form.truckMudflaps,
     grainDoors: form.truckGrainDoors, grainLocks: form.truckGrainLocks, reverseBuzzer: form.truckReverseBuzzer,
     bodySpigot: form.truckBodySpigot, rockSheet: form.truckRockSheet, liner: form.truckLiner,
     brakeCoupling: form.truckBrakeCoupling, ladderType: form.truckLadderType, ladderPosition: form.truckLadderPosition,
@@ -1209,7 +1220,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     tyre: form.trailerTyre, innerWheels: form.trailerInnerWheels, outerWheels: form.trailerOuterWheels,
     tarpColour: form.trailerTarpColour, tarpMaterial: form.trailerTarpMaterial,
     tarpType: form.trailerTarpType, tarpLocation: form.trailerTarpLocation, tarpLength: form.trailerTarpLength,
-    sideLights: form.trailerSideLights, sideLightsCustom: form.trailerSideLightsCustom,
+    sideLights: form.trailerSideLights, sideLightsCustom: form.trailerSideLightsCustom, indicators: form.trailerIndicators,
     grainDoors: form.trailerGrainDoors, grainLocks: form.trailerGrainLocks,
     rockSheet: form.trailerRockSheet, liner: form.trailerLiner,
     rearLadder: form.trailerRearLadder, centreChain: form.trailerCentreChain,
@@ -2708,6 +2719,11 @@ function QuoteBuilderInner() {
                   <input value={form.trailerSideLightsCustom} onChange={(e) => set('trailerSideLightsCustom', e.target.value)} placeholder="e.g. 4 side lights c/w polished backing strip" style={{ ...inputStyle, marginTop: 6 }} />
                 )}
               </Field>
+              <Field label="Indicators">
+                <select value={form.trailerIndicators} onChange={(e) => set('trailerIndicators', e.target.value)} style={selectStyle}>
+                  {INDICATORS.map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
               <Field label="Grain Doors">
                 <select value={form.trailerGrainDoors} onChange={(e) => set('trailerGrainDoors', e.target.value)} style={selectStyle}>
                   {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
@@ -3070,6 +3086,11 @@ function QuoteBuilderInner() {
                 {form.truckSideLights === 'Define quantity...' && (
                   <input value={form.truckSideLightsCustom} onChange={(e) => set('truckSideLightsCustom', e.target.value)} placeholder="e.g. 4 side lights c/w polished backing strip" style={{ ...inputStyle, marginTop: 6 }} />
                 )}
+              </Field>
+              <Field label="Indicators">
+                <select value={form.truckIndicators} onChange={(e) => set('truckIndicators', e.target.value)} style={selectStyle}>
+                  {INDICATORS.map(o => <option key={o}>{o}</option>)}
+                </select>
               </Field>
               <Field label="Mudflaps">
                 <select value={form.truckMudflaps} onChange={(e) => set('truckMudflaps', e.target.value)} style={selectStyle}>

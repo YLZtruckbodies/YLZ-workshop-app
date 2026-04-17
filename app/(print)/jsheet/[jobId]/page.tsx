@@ -138,6 +138,7 @@ const S = {
     .field-row-3 { grid-template-columns: 1fr 1fr 1fr; }
     .field-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
     .field-row-5 { grid-template-columns: 1fr 1fr 1fr 1fr 1fr; }
+    .field-row-6 { grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; }
     .field { padding: 6px 10px; border-right: 1px solid #f0f0f0; }
     .field:last-child { border-right: none; }
     .field-lbl { font-size: 7pt; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #999; margin-bottom: 3px; }
@@ -503,10 +504,11 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 </div>
 
                 <div style={sectionLbl}>Lights & Mudflaps</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Tail Lights', 'tailLights')}
                   {cfgField('Tailgate Lights', 'tailgateLights')}
                   {cfgField('Side Lights', 'sideLights')}
+                  {cfgField('Indicators', 'indicators')}
                   {cfgField('Anti-Spray', 'antiSpray')}
                   {cfgField('Mudflaps', 'mudflaps')}
                 </div>
@@ -616,6 +618,8 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
 
                 <div style={sectionLbl}>Body Extras (Trailer)</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Side Lights', 'sideLights')}
+                  {cfgField('Indicators', 'indicators')}
                   {cfgField('Rear Ladder', 'rearLadder')}
                   {cfgField('Centre Chain', 'centreChain')}
                   {cfgField('Rear CAT Markers', 'catMarkers')}
@@ -811,10 +815,11 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         <div className="section">
           <div className="section-hdr">Lights &amp; Mudflaps</div>
           <div className="section-body">
-            <div className="field-row field-row-5">
+            <div className="field-row field-row-6">
               <div className="field"><div className="field-lbl">Tail Lights</div><div className="field-val">{c('tailLights') || ''}</div>{!c('tailLights') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tailgate Lights</div><div className="field-val">{c('tailgateLights') || ''}</div>{!c('tailgateLights') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Side Lights</div><div className="field-val">{c('sideLights') || ''}</div>{!c('sideLights') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Indicators</div><div className="field-val">{c('indicators') || ''}</div>{!c('indicators') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Anti-Spray</div><div className="field-val">{c('antiSpray') || ''}</div>{!c('antiSpray') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Mudflaps</div><div className="field-val">{c('mudflaps') || ''}</div>{!c('mudflaps') && <div className="field-blank" />}</div>
             </div>
