@@ -1039,6 +1039,19 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         </div>
 
+        {/* Wheels & Tyres — trailer only */}
+        {isTrailer && (c('tyre') || c('wheels')) && (
+          <div className="section" style={{ marginTop: 10 }}>
+            <div className="section-hdr">Wheels &amp; Tyres</div>
+            <div className="section-body">
+              <div className="field-row field-row-2">
+                <div className="field"><div className="field-lbl">Tyre</div><div className="field-val">{c('tyre') || ''}</div>{!c('tyre') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Wheels</div><div className="field-val">{c('wheels') || ''}</div>{!c('wheels') && <div className="field-blank" />}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Booster Settings & Slack Lengths — trailer only */}
         {isTrailer && (() => {
           const axleSettings = (job.cfg?.axleSettings || (job.cfg?.trailerConfig as any)?.axleSettings) as { boosters: string[]; slacks: string[] } | undefined
@@ -1061,19 +1074,6 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             </div>
           )
         })()}
-
-        {/* Wheels & Tyres — trailer only */}
-        {isTrailer && (c('tyre') || c('wheels')) && (
-          <div className="section" style={{ marginTop: 10 }}>
-            <div className="section-hdr">Wheels &amp; Tyres</div>
-            <div className="section-body">
-              <div className="field-row field-row-2">
-                <div className="field"><div className="field-lbl">Tyre</div><div className="field-val">{c('tyre') || ''}</div>{!c('tyre') && <div className="field-blank" />}</div>
-                <div className="field"><div className="field-lbl">Wheels</div><div className="field-val">{c('wheels') || ''}</div>{!c('wheels') && <div className="field-blank" />}</div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Notes */}
         <div className="notes-box" style={{ marginTop: 10 }}>
