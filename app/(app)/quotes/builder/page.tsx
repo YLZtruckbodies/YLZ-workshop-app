@@ -2634,13 +2634,11 @@ function QuoteBuilderInner() {
                   </select>
                 </Field>
               )}
-              {form.trailerMaterial === 'Aluminium' && (
-                <Field label="Liner">
-                  <select value={form.trailerLiner} onChange={(e) => set('trailerLiner', e.target.value)} style={selectStyle}>
-                    {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
-                  </select>
-                </Field>
-              )}
+              <Field label="Liner">
+                <select value={form.trailerLiner} onChange={(e) => set('trailerLiner', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
             </div>
           </SectionCard>
         )}
