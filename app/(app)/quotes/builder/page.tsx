@@ -2410,7 +2410,7 @@ function QuoteBuilderInner() {
                 </select>
               </Field>
               <Field label="Axle Count">
-                <input type="number" value={form.trailerAxleCount} onChange={(e) => set('trailerAxleCount', parseInt(e.target.value) || 4)} style={inputStyle} min={2} max={6} />
+                <input type="number" value={form.trailerAxleCount} readOnly style={{ ...inputStyle, opacity: 0.7, cursor: 'default' }} />
               </Field>
               <Field label="Axle Type">
                 <select value={form.trailerAxleType} onChange={(e) => set('trailerAxleType', e.target.value)} style={selectStyle}>
