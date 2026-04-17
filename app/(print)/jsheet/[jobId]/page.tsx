@@ -1147,19 +1147,11 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 <div className="field"><div className="field-lbl">Drop Down Leg</div><div className="field-val">{c('dropDownLeg') || ''}</div>{!c('dropDownLeg') && <div className="field-blank" />}</div>
                 <div className="field"><div className="field-lbl">Pogo Stick</div><div className="field-val">{c('pogoStick') || ''}</div>{!c('pogoStick') && <div className="field-blank" />}</div>
               </div>
-              {(() => {
-                const raw = Number(c('drawbarEyeToEye'))
-                const axles = Number(c('axleCount') || 0)
-                const offset = axles >= 4 ? 1360 : 807
-                const derived = raw && !isNaN(raw) ? raw - offset : null
-                return (
-                  <div className="field-row field-row-3">
-                    <div className="field"><div className="field-lbl">Drawbar Eye-to-Eye</div><div className="field-val">{derived != null ? `${derived}mm` : ''}</div>{derived == null && <div className="field-blank" />}</div>
-                    <div className="field" />
-                    <div className="field" />
-                  </div>
-                )
-              })()}
+              <div className="field-row field-row-3">
+                <div className="field"><div className="field-lbl">Drawbar Eye-to-Eye</div><div className="field-blank" /></div>
+                <div className="field" />
+                <div className="field" />
+              </div>
             </div>
           </div>
         )}

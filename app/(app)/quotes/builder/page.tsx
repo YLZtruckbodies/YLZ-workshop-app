@@ -115,7 +115,6 @@ interface QuoteForm {
   trailerWheelCarrier: string
   trailerDropDownLeg: string
   trailerPogoStick: string
-  trailerDrawbarEyeToEye: string
   trailerChassisLength: string
   trailerWheelbase: string
   trailerTailgateType: string
@@ -759,7 +758,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckTarpLocation: 'Standard Out Front',
     trailerSerial: '', trailerVin: '', trailerFloorSheet: '', trailerSideSheet: '',
     trailerHoist: '', trailerPivotCentre: '', trailerPushLugs: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
-    trailerDrawbarTape: 'No', trailerDrawbarCoupling: 'To suit V.Orlandi', trailerAndersonPlug: 'Yes', trailerWheelCarrier: 'No', trailerDropDownLeg: 'Drop Down', trailerPogoStick: 'No', trailerDrawbarEyeToEye: '',
+    trailerDrawbarTape: 'No', trailerDrawbarCoupling: 'To suit V.Orlandi', trailerAndersonPlug: 'Yes', trailerWheelCarrier: 'No', trailerDropDownLeg: 'Drop Down', trailerPogoStick: 'No',
     trailerChassisLength: '', trailerWheelbase: '',
     trailerTailgateType: 'Single Drop', trailerTailgateLights: 'None', trailerTailLights: '4 hole round LEDs c/w chrome surround', trailerLockFlap: 'No',
     trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'Yes', trailerHubodoLocation: '', trailerHubodoAxle: '', trailerHoseBurstValve: 'Yes',
@@ -941,7 +940,6 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerWheelCarrier = trc.wheelCarrier || 'No'
     form.trailerDropDownLeg = trc.dropDownLeg || 'Drop Down'
     form.trailerPogoStick = trc.pogoStick || 'No'
-    form.trailerDrawbarEyeToEye = trc.drawbarEyeToEye || ''
     form.trailerMainRunnerWidth = trc.mainRunnerWidth || ''
     form.trailerChassisLength = trc.chassisLength || getChassisLength(trc.bodyLength || '')
     form.trailerWheelbase = trc.wheelbase || ''
@@ -1085,7 +1083,6 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerWheelCarrier = cfg.wheelCarrier || 'No'
     form.trailerDropDownLeg = cfg.dropDownLeg || 'Drop Down'
     form.trailerPogoStick = cfg.pogoStick || 'No'
-    form.trailerDrawbarEyeToEye = cfg.drawbarEyeToEye || ''
     form.trailerMainRunnerWidth = cfg.mainRunnerWidth || ''
     form.trailerChassisLength = cfg.chassisLength || getChassisLength(cfg.bodyLength || '')
     form.trailerWheelbase = cfg.wheelbase || ''
@@ -1247,7 +1244,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     hoist: form.trailerHoist, pivotCentre: form.trailerPivotCentre, drawbarLength: form.trailerDrawbarLength,
     drawbarTape: form.trailerDrawbarTape, drawbarCoupling: form.trailerDrawbarCoupling,
     andersonPlug: form.trailerAndersonPlug, wheelCarrier: form.trailerWheelCarrier,
-    dropDownLeg: form.trailerDropDownLeg, pogoStick: form.trailerPogoStick, drawbarEyeToEye: form.trailerDrawbarEyeToEye,
+    dropDownLeg: form.trailerDropDownLeg, pogoStick: form.trailerPogoStick,
     bodyLength: form.trailerBodyLength, bodyWidth: calcBodyWidth(form.trailerMaterial),
     bodyHeight: form.trailerBodyHeight, bodyCapacity: calcBodyCapacity(form.trailerBodyLength, form.trailerMaterial, form.trailerBodyHeight, 'trailer'),
     gtm: form.trailerGtm, gcm: form.trailerGcm,
@@ -2854,19 +2851,6 @@ function QuoteBuilderInner() {
                 <select value={form.trailerPogoStick} onChange={(e) => set('trailerPogoStick', e.target.value)} style={selectStyle}>
                   {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
                 </select>
-              </Field>
-              <Field label="Drawbar Eye-to-Eye (mm)">
-                <input
-                  value={form.trailerDrawbarEyeToEye}
-                  onChange={(e) => set('trailerDrawbarEyeToEye', e.target.value)}
-                  placeholder="e.g. 7200"
-                  style={inputStyle}
-                />
-                {form.trailerDrawbarEyeToEye && !isNaN(Number(form.trailerDrawbarEyeToEye)) && (
-                  <div style={{ fontSize: 10, color: '#E8681A', marginTop: 3 }}>
-                    Job sheet: {Number(form.trailerDrawbarEyeToEye) - (form.trailerAxleCount >= 4 ? 1360 : 807)}mm
-                  </div>
-                )}
               </Field>
             </div>
           </SectionCard>
