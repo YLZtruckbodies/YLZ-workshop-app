@@ -58,14 +58,16 @@ interface QuoteForm {
   truckBodyHeight: string
   truckGvm: string
   truckTare: string
-  truckPaintColour: string
+  truckSubframeColour: string
+  truckBodyColour: string
   // engineering details — trailer
   trailerBodyLength: string
   trailerBodyHeight: string
   trailerGtm: string
   trailerGcm: string
   trailerTare: string
-  trailerPaintColour: string
+  trailerChassisColour: string
+  trailerBodyColour: string
   // shared engineering
   specialRequirements: string
   // engineering extras — truck
@@ -605,7 +607,12 @@ function generateTruckBodySpec(form: QuoteForm): string {
   if (form.truckHoseBurstValve === 'Yes') lines.push('Hose burst valve fitted')
   if (form.truckChassisExtension === 'Yes') lines.push('Chassis extension fitted')
   lines.push('LED lighting throughout')
-  if (form.truckPaintColour) lines.push(`Paint: ${form.truckPaintColour}`)
+  if (form.truckSubframeColour || form.truckBodyColour) {
+    const parts = []
+    if (form.truckSubframeColour) parts.push(`Subframe: ${form.truckSubframeColour}`)
+    if (form.truckBodyColour) parts.push(`Body: ${form.truckBodyColour}`)
+    lines.push(`Paint: ${parts.join(' / ')}`)
+  }
 
   // Trim trailing blank lines
   while (lines[lines.length - 1] === '') lines.pop()
@@ -672,7 +679,12 @@ function generateTrailerSpec(form: QuoteForm): string {
     lines.push(`${form.trailerTarp} tarp system${bowH ? ` — ${bowH} bow` : ''}`)
   }
   lines.push('LED lighting throughout')
-  if (form.trailerPaintColour) lines.push(`Paint: ${form.trailerPaintColour}`)
+  if (form.trailerChassisColour || form.trailerBodyColour) {
+    const parts = []
+    if (form.trailerChassisColour) parts.push(`Chassis: ${form.trailerChassisColour}`)
+    if (form.trailerBodyColour) parts.push(`Body: ${form.trailerBodyColour}`)
+    lines.push(`Paint: ${parts.join(' / ')}`)
+  }
   if (form.trailerPbs) lines.push(`\n*PBS certification ${form.trailerPbs}`)
 
   while (lines[lines.length - 1] === '') lines.pop()
@@ -709,10 +721,10 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerPbs: '',
     chassisMake: '', chassisModel: '', chassisVariant: '',
     truckBodyLength: '', truckBodyHeight: '',
-    truckGvm: '', truckTare: '', truckPaintColour: '',
+    truckGvm: '', truckTare: '', truckSubframeColour: '', truckBodyColour: '',
     trailerBodyLength: '', trailerBodyHeight: '',
     trailerGtm: '', trailerGcm: '',
-    trailerTare: '', trailerPaintColour: '',
+    trailerTare: '', trailerChassisColour: '', trailerBodyColour: '',
     specialRequirements: '',
     truckPivotCentre: '235',
     truckTarpLength: '',
@@ -859,7 +871,8 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckBodyHeight = tc.bodyHeight || ''
     form.truckGvm = tc.gvm || ''
     form.truckTare = tc.tare || ''
-    form.truckPaintColour = tc.paintColour || ''
+    form.truckSubframeColour = tc.subframeColour || tc.paintColour || ''
+    form.truckBodyColour = tc.bodyColour || ''
     form.truckPivotCentre = tc.pivotCentre || '235'
     form.truckTarpLength = tc.tarpLength || ''
     form.truckTarpColour = tc.tarpColour || ''
@@ -904,7 +917,8 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerGtm = trc.gtm || ''
     form.trailerGcm = trc.gcm || ''
     form.trailerTare = trc.tare || ''
-    form.trailerPaintColour = trc.paintColour || ''
+    form.trailerChassisColour = trc.chassisColour || trc.paintColour || ''
+    form.trailerBodyColour = trc.bodyColour || ''
     form.trailerSerial = trc.serial || ''
     form.trailerVin = trc.vin || ''
     form.trailerFloorSheet = trc.floorSheet || ''
@@ -977,7 +991,8 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.truckBodyHeight = cfg.bodyHeight || ''
     form.truckGvm = cfg.gvm || ''
     form.truckTare = cfg.tare || ''
-    form.truckPaintColour = cfg.paintColour || ''
+    form.truckSubframeColour = (cfg.subframeColour as string) || (cfg.paintColour as string) || ''
+    form.truckBodyColour = (cfg.bodyColour as string) || ''
     form.truckPivotCentre = cfg.pivotCentre || '235'
     form.truckSerial = cfg.serial || ''
     form.truckVin = cfg.vin || ''
@@ -1039,7 +1054,8 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerGtm = cfg.gtm || ''
     form.trailerGcm = cfg.gcm || ''
     form.trailerTare = cfg.tare || ''
-    form.trailerPaintColour = cfg.paintColour || ''
+    form.trailerChassisColour = cfg.chassisColour || (cfg.paintColour as string) || ''
+    form.trailerBodyColour = cfg.bodyColour || ''
     form.trailerSerial = cfg.serial || ''
     form.trailerVin = cfg.vin || ''
     form.trailerFloorSheet = cfg.floorSheet || ''
@@ -1177,7 +1193,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     chassisMake: form.chassisMake, chassisModel: form.chassisModel, chassisVariant: form.chassisVariant,
     bodyLength: form.truckBodyLength, bodyWidth: calcBodyWidth(form.truckMaterial),
     bodyHeight: form.truckBodyHeight, bodyCapacity: calcBodyCapacity(form.truckBodyLength, form.truckMaterial, form.truckBodyHeight, 'truck', form.truckMountType),
-    gvm: form.truckGvm, tare: form.truckTare, paintColour: form.truckPaintColour,
+    gvm: form.truckGvm, tare: form.truckTare, subframeColour: form.truckSubframeColour, bodyColour: form.truckBodyColour,
     serial: form.truckSerial, vin: form.truckVin,
     mainRunnerWidth: form.truckMainRunnerWidth,
     tailgateType: form.truckTailgateType, tailgateLights: form.truckTailgateLights, tailLights: form.truckTailLights,
@@ -1209,7 +1225,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     bodyLength: form.trailerBodyLength, bodyWidth: calcBodyWidth(form.trailerMaterial),
     bodyHeight: form.trailerBodyHeight, bodyCapacity: calcBodyCapacity(form.trailerBodyLength, form.trailerMaterial, form.trailerBodyHeight, 'trailer'),
     gtm: form.trailerGtm, gcm: form.trailerGcm,
-    tare: form.trailerTare, paintColour: form.trailerPaintColour,
+    tare: form.trailerTare, chassisColour: form.trailerChassisColour, bodyColour: form.trailerBodyColour,
     serial: form.trailerSerial, vin: form.trailerVin,
     mainRunnerWidth: form.trailerMainRunnerWidth,
     chassisLength: form.trailerChassisLength, wheelbase: form.trailerWheelbase,
@@ -2875,8 +2891,11 @@ function QuoteBuilderInner() {
                 <Field label="GVM (kg)">
                   <input value={form.truckGvm} onChange={(e) => set('truckGvm', e.target.value)} placeholder="e.g. 25000" style={inputStyle} />
                 </Field>
-                <Field label="Paint Colour">
-                  <input value={form.truckPaintColour} onChange={(e) => set('truckPaintColour', e.target.value)} placeholder="e.g. Gloss Black" style={inputStyle} />
+                <Field label="Subframe Colour">
+                  <input value={form.truckSubframeColour} onChange={(e) => set('truckSubframeColour', e.target.value)} placeholder="e.g. Gloss Black" style={inputStyle} />
+                </Field>
+                <Field label="Body Colour">
+                  <input value={form.truckBodyColour} onChange={(e) => set('truckBodyColour', e.target.value)} placeholder="e.g. Gloss Black" style={inputStyle} />
                 </Field>
                 <Field label="D-Value (kN)">
                   <input value={form.truckDValue} onChange={(e) => set('truckDValue', e.target.value)} placeholder="e.g. 180" style={inputStyle} />
@@ -2957,8 +2976,11 @@ function QuoteBuilderInner() {
                 <Field label="VIN">
                   <input value={form.trailerVin} onChange={(e) => set('trailerVin', e.target.value)} placeholder="17-char VIN" style={inputStyle} />
                 </Field>
-                <Field label="Paint Colour">
-                  <input value={form.trailerPaintColour} onChange={(e) => set('trailerPaintColour', e.target.value)} placeholder="e.g. Gloss Black" style={inputStyle} />
+                <Field label="Chassis Colour">
+                  <input value={form.trailerChassisColour} onChange={(e) => set('trailerChassisColour', e.target.value)} placeholder="e.g. Gloss Black" style={inputStyle} />
+                </Field>
+                <Field label="Body Colour">
+                  <input value={form.trailerBodyColour} onChange={(e) => set('trailerBodyColour', e.target.value)} placeholder="e.g. Gloss Black" style={inputStyle} />
                 </Field>
                 <Field label="GTM (kg)">
                   <input value={form.trailerGtm} onChange={(e) => set('trailerGtm', e.target.value)} placeholder="e.g. 30000" style={inputStyle} />
