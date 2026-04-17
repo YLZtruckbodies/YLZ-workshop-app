@@ -392,7 +392,7 @@ const PTO_OPTIONS = [
   // Job specific
   '500-75 — Job Specific PTO Kit',
 ]
-const TAILGATE_TYPES = ['Fixed', '2 Way', 'Single Drop', 'Bi-fold', 'No Tailgate']
+const TAILGATE_TYPES = ['Fixed', '2 Way', 'Single Drop', 'Bi-fold', 'Forward Hinged Only', 'No Tailgate']
 const TAILGATE_LIGHTS = ['None', '4 Per Side Round LED', 'LED Strip', 'LED Cluster', 'Reverse Light Only', 'Other']
 const TAIL_LIGHTS = [
   '4 hole round LEDs c/w chrome surround',
