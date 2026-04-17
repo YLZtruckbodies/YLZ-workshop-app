@@ -142,7 +142,7 @@ async function main() {
         section: null,
         color: '#22d07a',
         pin: pin9999,
-        access: ['dashboard', 'production', 'notifications', 'jobs'],
+        access: ['dashboard', 'production', 'notifications', 'jobs', 'sales', 'quotes', 'customers'],
         canAdvance: false,
         canEdit: false,
         fullAdmin: false,

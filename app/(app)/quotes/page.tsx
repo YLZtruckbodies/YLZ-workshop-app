@@ -124,30 +124,56 @@ export default function QuotesPage() {
             Create, manage, and track customer quotes.
           </div>
         </div>
-        <button
-          onClick={() => router.push('/quotes/new')}
-          style={{
-            fontFamily: "'League Spartan', sans-serif",
-            fontSize: 13,
-            fontWeight: 700,
-            letterSpacing: 1,
-            textTransform: 'uppercase',
-            padding: '12px 24px',
-            borderRadius: 8,
-            cursor: 'pointer',
-            border: 'none',
-            background: '#E8681A',
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#ff7a2e' }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#E8681A' }}
-        >
-          + New Quote
-        </button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button
+            onClick={() => window.open('/dealer-flyer-generator.html', '_blank')}
+            style={{
+              fontFamily: "'League Spartan', sans-serif",
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: 1,
+              textTransform: 'uppercase',
+              padding: '12px 24px',
+              borderRadius: 8,
+              cursor: 'pointer',
+              border: '1px solid rgba(255,255,255,0.15)',
+              background: 'transparent',
+              color: 'var(--text2)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.color = '#3b82f6' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = 'var(--text2)' }}
+          >
+            Dealer Flyer
+          </button>
+          <button
+            onClick={() => router.push('/quotes/new')}
+            style={{
+              fontFamily: "'League Spartan', sans-serif",
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: 1,
+              textTransform: 'uppercase',
+              padding: '12px 24px',
+              borderRadius: 8,
+              cursor: 'pointer',
+              border: 'none',
+              background: '#E8681A',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#ff7a2e' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#E8681A' }}
+          >
+            + New Quote
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
