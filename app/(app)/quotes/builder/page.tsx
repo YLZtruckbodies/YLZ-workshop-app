@@ -428,7 +428,7 @@ const TRAILER_TYPES = ['P Beam', 'I Beam', 'Converter Dolly']
 const AXLE_MAKES = ['SAF', 'BPW', 'Fuwa', 'TMC']
 const AXLE_TYPES = ['Drum', 'Disc', 'Drum or Disc (customer choice)']
 const STUD_PATTERNS = ['285PCD', '335PCD']
-const SUSPENSIONS = ['SAF Air Ride', 'Mechanical', 'Rubber']
+const SUSPENSIONS = ['Air', 'Mechanical']
 const BUILD_TYPES = [
   { value: 'truck-body', label: '🚛 Truck Body' },
   { value: 'trailer', label: '🚜 Trailer' },
@@ -637,7 +637,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerAxleMake: 'SAF',
     trailerAxleCount: 4,
     trailerAxleType: 'Drum or Disc (customer choice)',
-    trailerSuspension: 'SAF Air Ride',
+    trailerSuspension: 'Air',
     trailerStudPattern: '285PCD',
     trailerTarp: 'Razor PVC/MESH Electric',
     trailerPbs: '',
@@ -771,7 +771,11 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     if (trc.axleMake) form.trailerAxleMake = trc.axleMake
     if (trc.axleCount) form.trailerAxleCount = Number(trc.axleCount)
     if (trc.axleType) form.trailerAxleType = trc.axleType
-    if (trc.suspension) form.trailerSuspension = trc.suspension
+    if (trc.suspension) {
+      const rawSusp = trc.suspension as string
+      // Normalise legacy values (SAF Air Ride, Air bag suspension, Rubber → Air or Mechanical)
+      form.trailerSuspension = rawSusp.toLowerCase().includes('mechanical') || rawSusp.toLowerCase().includes('rubber') ? 'Mechanical' : 'Air'
+    }
     if (trc.studPattern) form.trailerStudPattern = trc.studPattern
     if (trc.tarpSystem) form.trailerTarp = trc.tarpSystem
     form.trailerPbs = cfg.pbsRating || trc.pbsRating || ''
@@ -926,7 +930,10 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     if (cfg.axleMake) form.trailerAxleMake = cfg.axleMake
     if (cfg.axleCount) form.trailerAxleCount = Number(cfg.axleCount)
     if (cfg.axleType) form.trailerAxleType = cfg.axleType
-    if (cfg.suspension) form.trailerSuspension = cfg.suspension
+    if (cfg.suspension) {
+      const rawSusp = cfg.suspension as string
+      form.trailerSuspension = rawSusp.toLowerCase().includes('mechanical') || rawSusp.toLowerCase().includes('rubber') ? 'Mechanical' : 'Air'
+    }
     if (cfg.studPattern) form.trailerStudPattern = cfg.studPattern
     if (cfg.tarpSystem) form.trailerTarp = cfg.tarpSystem
     form.trailerPbs = cfg.pbsRating || ''
@@ -1016,7 +1023,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerAxleMake = cfg.axleMake || cfg.trailerAxleMake || 'SAF'
     form.trailerAxleCount = cfg.axleCount || cfg.trailerAxleCount || 3
     form.trailerAxleType = cfg.axleType || cfg.trailerAxleType || 'Disc brakes'
-    form.trailerSuspension = cfg.suspension || cfg.trailerSuspension || 'Air bag suspension'
+    form.trailerSuspension = cfg.suspension || cfg.trailerSuspension || 'Air'
     form.trailerPbs = cfg.pbsRating || form.trailerPbs || ''
     form.chassisMake = cfg.chassisMake || ''
     form.chassisModel = cfg.chassisModel || ''
@@ -1356,6 +1363,11 @@ function QuoteBuilderInner() {
   const set = useCallback((key: keyof QuoteForm, val: any) => {
     setForm((f) => {
       const updated = { ...f, [key]: val }
+      // Auto-cascade: trailer model → axle count
+      if (key === 'trailerModel') {
+        const axleMatch = String(val).match(/\((\d+)-Axle/)
+        if (axleMatch) updated.trailerAxleCount = parseInt(axleMatch[1], 10)
+      }
       // Auto-cascade: truck body length → hoist + pivot centre + tarp length
       if (key === 'truckBodyLength') {
         const bodyLen = parseInt(val?.toString().trim(), 10)
