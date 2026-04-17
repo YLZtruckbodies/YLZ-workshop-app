@@ -1079,7 +1079,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         </div>
 
         {/* Wheels & Tyres — trailer only */}
-        {isTrailer && (c('tyre') || c('wheels')) && (
+        {isTrailer && (
           <div className="section" style={{ marginTop: 10 }}>
             <div className="section-hdr">Wheels &amp; Tyres</div>
             <div className="section-body">
