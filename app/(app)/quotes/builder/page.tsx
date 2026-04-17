@@ -262,6 +262,8 @@ function calcTarpBowHeight(material: string, isDogTrailer: boolean, bodyLength: 
 }
 
 // Trailer body length → C/L Pivot to Rear (mm)
+const TRAILER_BODY_LENGTHS = ['5400', '6000', '6100', '7700', '8300', '9200']
+
 const TRAILER_PIVOT_MAP: Record<string, string> = {
   '5400': '450',
   '6000': '510',
@@ -272,6 +274,15 @@ const TRAILER_PIVOT_MAP: Record<string, string> = {
 }
 function getTrailerPivotCentre(bodyLength: string): string {
   return TRAILER_PIVOT_MAP[bodyLength?.toString().trim()] || ''
+}
+
+const TRAILER_HOIST_MAP: Record<string, string> = {
+  '5400': 'HPF3740-135-4-S3',
+  '6000': 'MFB3145.4.4110',
+  '6100': 'MFB3145.4.4110',
+  '7700': 'MFB3165.5.5635',
+  '8300': 'HPF5730-174-5-S3H',
+  '9200': 'MFB3187.5.6635',
 }
 
 // Auto-lookup: truck body length → hoist model & pivot centre (mm)
@@ -1363,6 +1374,11 @@ function QuoteBuilderInner() {
   const set = useCallback((key: keyof QuoteForm, val: any) => {
     setForm((f) => {
       const updated = { ...f, [key]: val }
+      // Auto-cascade: trailer body length → hoist model
+      if (key === 'trailerBodyLength') {
+        const hoist = TRAILER_HOIST_MAP[String(val).trim()]
+        if (hoist) updated.trailerHoist = hoist
+      }
       // Auto-cascade: trailer material → floor/side sheet
       if (key === 'trailerMaterial') {
         const mat = String(val)
@@ -2467,7 +2483,7 @@ function QuoteBuilderInner() {
                 <input value={form.trailerSideSheet} onChange={(e) => set('trailerSideSheet', e.target.value)} placeholder="e.g. 5mm Aluminium" style={inputStyle} />
               </Field>
               <Field label="Hoist Model">
-                <input value={form.trailerHoist} onChange={(e) => set('trailerHoist', e.target.value)} placeholder="e.g. Binotto 4-stage" style={inputStyle} />
+                <input value={form.trailerHoist} readOnly style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: '#E8681A' }} />
               </Field>
               <Field label="Push Lugs">
                 <select value={form.trailerPushLugs} onChange={(e) => set('trailerPushLugs', e.target.value)} style={selectStyle}>
@@ -2726,7 +2742,10 @@ function QuoteBuilderInner() {
               {/* Row 3: body dimensions */}
               <div style={{ ...grid(5), marginTop: 16 }}>
                 <Field label="Body Length (mm)">
-                  <input value={form.trailerBodyLength} onChange={(e) => set('trailerBodyLength', e.target.value)} placeholder="e.g. 8300" style={inputStyle} />
+                  <select value={form.trailerBodyLength} onChange={(e) => set('trailerBodyLength', e.target.value)} style={selectStyle}>
+                    <option value="">Select...</option>
+                    {TRAILER_BODY_LENGTHS.map((l) => <option key={l}>{l}</option>)}
+                  </select>
                 </Field>
                 <Field label="Body Width (mm)">
                   <input value={trailerBodyWidth} readOnly placeholder="Auto from material" style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: '#E8681A' }} />
