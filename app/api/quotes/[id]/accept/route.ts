@@ -35,6 +35,43 @@ async function nextJobNumber(): Promise<string> {
   return n
 }
 
+// ─── Trailer VIN generator ─────────────────────────────────────────────────
+const VIN_YEAR_CODES: Record<number, string> = {
+  2026: 'T', 2027: 'V', 2028: 'W', 2029: 'X', 2030: 'Y',
+  2031: '1', 2032: '2', 2033: '3', 2034: '4', 2035: '5',
+  2036: '6', 2037: '7', 2038: '8', 2039: '9',
+  2040: 'A', 2041: 'B', 2042: 'C', 2043: 'D', 2044: 'E',
+  2045: 'F', 2046: 'G', 2047: 'H', 2048: 'J', 2049: 'K',
+  2050: 'L', 2051: 'M', 2052: 'N',
+}
+
+function trailerVinPrefix(model: string): string {
+  if (model.startsWith('DT-')) return '6K9D0GTRL'
+  if (model.startsWith('ST-')) return '6K9SEMTRL'
+  return '6K9P1GTRL' // CD- Convertor Dolly and others
+}
+
+async function nextTrailerVin(model: string): Promise<string> {
+  const quotes = await prisma.quote.findMany({
+    where: { buildType: { in: ['trailer', 'truck-and-trailer'] } },
+    select: { configuration: true },
+  })
+
+  let maxSeq = 841182 // so first generated is 841183
+  for (const q of quotes) {
+    const cfg = q.configuration as Record<string, any>
+    const vin: string = cfg?.vin || cfg?.trailerConfig?.vin || ''
+    if (!vin) continue
+    const seq = parseInt(vin.slice(-6), 10)
+    if (!isNaN(seq) && seq > maxSeq) maxSeq = seq
+  }
+
+  const year = new Date().getFullYear()
+  const yearCode = VIN_YEAR_CODES[year] ?? 'T'
+  const prefix = trailerVinPrefix(model)
+  return `${prefix}${yearCode}P${maxSeq + 1}`
+}
+
 function btypeToJobMasterType(btype: string): string {
   if (btype === 'ally-trailer' || btype === 'hardox-trailer') return 'TRAILER'
   if (btype === 'wheelbase') return 'WHEELBASE'
@@ -296,6 +333,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // ── Create paired truck + trailer jobs (truck gets lower number) ──
     const cfg = quote.configuration as Record<string, any>
     const [truckNum, trailerNum] = await nextJobNumbers(2)
+
+    // Auto-generate trailer VIN
+    const trailerModel = cfg.trailerConfig?.trailerModel || cfg.trailerModel || 'DT-4 (4-Axle Dog)'
+    const generatedTrailerVin = await nextTrailerVin(trailerModel)
+    const updatedTrailerCfg = { ...cfg.trailerConfig, vin: generatedTrailerVin }
+    await prisma.quote.update({
+      where: { id: params.id },
+      data: { configuration: { ...cfg, trailerConfig: updatedTrailerCfg } },
+    })
     const chassisMake  = cfg.chassisMake  || cfg.truckConfig?.chassisMake  || ''
     const chassisModel = cfg.chassisModel || cfg.truckConfig?.chassisModel || ''
     const makeStr = [chassisMake, chassisModel].filter(Boolean).join(' ')
@@ -330,6 +376,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         prodGroup: 'pending',
         btype: trailerBtype,
         make: '',
+        vin: generatedTrailerVin,
         notes: quote.notes || '',
         sortOrder: 0,
         pairedId: truckJob.id,
@@ -434,6 +481,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const chassisModel = cfg.chassisModel || cfg.truckConfig?.chassisModel || ''
     const makeStr = [chassisMake, chassisModel].filter(Boolean).join(' ')
 
+    // Auto-generate trailer VIN for trailer builds
+    const isTrailerBuild = ['ally-trailer', 'hardox-trailer', 'dolly', 'tag-trailer'].includes(btype)
+    let singleTrailerVin = ''
+    if (isTrailerBuild) {
+      const trailerModel = cfg.trailerModel || 'DT-4 (4-Axle Dog)'
+      singleTrailerVin = await nextTrailerVin(trailerModel)
+      await prisma.quote.update({
+        where: { id: params.id },
+        data: { configuration: { ...cfg, vin: singleTrailerVin } },
+      })
+    }
+
     job = await prisma.job.create({
       data: {
         num: jobNumber,
@@ -444,6 +503,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         prodGroup: 'pending',
         btype,
         make: makeStr,
+        vin: singleTrailerVin || '',
         notes: quote.notes || '',
         sortOrder: 0,
       },

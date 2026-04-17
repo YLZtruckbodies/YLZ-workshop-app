@@ -494,19 +494,6 @@ function getCouplingLoad(coupling: string): string {
   if (coupling === 'V.Orlandi' || coupling.toLowerCase().includes('bartlett') || coupling === 'Ringfeder') return '2.5T'
   return ''
 }
-const VIN_YEAR_CODES: Record<number, string> = {
-  2026: 'T', 2027: 'V', 2028: 'W', 2029: 'X', 2030: 'Y',
-  2031: '1', 2032: '2', 2033: '3', 2034: '4', 2035: '5',
-  2036: '6', 2037: '7', 2038: '8', 2039: '9',
-  2040: 'A', 2041: 'B', 2042: 'C', 2043: 'D', 2044: 'E',
-  2045: 'F', 2046: 'G', 2047: 'H', 2048: 'J', 2049: 'K',
-  2050: 'L', 2051: 'M', 2052: 'N',
-}
-function vinPrefix(model: string): string {
-  if (model.startsWith('DT-')) return '6K9D0GTRL'
-  if (model.startsWith('ST-')) return '6K9SEMTRL'
-  return '6K9P1GTRL' // CD- Convertor Dolly and any other
-}
 const TRAILER_MODELS = [
   'DT-3 (3-Axle Dog)', 'DT-4 (4-Axle Dog)', 'DT-5 (5-Axle Dog)',
   'ST-2 (2-Axle Semi)', 'ST-3 (3-Axle Semi)',
@@ -3045,23 +3032,7 @@ function QuoteBuilderInner() {
                   <input value={form.trailerSerial} onChange={(e) => set('trailerSerial', e.target.value)} placeholder="e.g. YLZ-00124" style={inputStyle} />
                 </Field>
                 <Field label="VIN">
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <input value={form.trailerVin} onChange={(e) => set('trailerVin', e.target.value)} placeholder="17-char VIN" style={{ ...inputStyle, flex: 1 }} />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const year = new Date().getFullYear()
-                        const yearCode = VIN_YEAR_CODES[year] ?? 'T'
-                        const prefix = vinPrefix(form.trailerModel)
-                        const res = await fetch('/api/trailer-vin')
-                        const { nextSeq } = await res.json()
-                        set('trailerVin', `${prefix}${yearCode}P${nextSeq}`)
-                      }}
-                      style={{ padding: '0 10px', background: '#E8681A', border: 'none', borderRadius: 6, color: '#fff', fontWeight: 700, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                    >
-                      Generate
-                    </button>
-                  </div>
+                  <input value={form.trailerVin} onChange={(e) => set('trailerVin', e.target.value)} placeholder="Auto-generated on acceptance" style={inputStyle} />
                 </Field>
                 <Field label="Chassis Colour">
                   <input value={form.trailerChassisColour} onChange={(e) => set('trailerChassisColour', e.target.value)} placeholder="e.g. Gloss Black" style={inputStyle} />
