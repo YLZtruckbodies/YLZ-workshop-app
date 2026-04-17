@@ -1462,16 +1462,19 @@ function QuoteBuilderInner() {
         const hoist = TRAILER_HOIST_MAP[String(val).trim()]
         if (hoist) updated.trailerHoist = hoist
       }
-      // Auto-cascade: trailer material → floor/side sheet
+      // Auto-cascade: trailer material → floor/side sheet + main runner width + clear body height
       if (key === 'trailerMaterial') {
         const mat = String(val)
         if (mat === 'Aluminium') {
           updated.trailerFloorSheet = '8mm Aluminium'
           updated.trailerSideSheet = '5mm Aluminium'
+          updated.trailerMainRunnerWidth = '965'
         } else if (mat.startsWith('Hardox')) {
           updated.trailerFloorSheet = `6mm ${mat}`
           updated.trailerSideSheet = `5mm ${mat}`
+          updated.trailerMainRunnerWidth = '945'
         }
+        updated.trailerBodyHeight = ''
       }
       // Auto-cascade: trailer model → axle count
       if (key === 'trailerModel') {
@@ -2899,11 +2902,14 @@ function QuoteBuilderInner() {
                 <Field label="Body Width (mm)">
                   <input value={trailerBodyWidth} readOnly placeholder="Auto from material" style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: '#E8681A' }} />
                 </Field>
-                <Field label="Main Runner Width (mm)">
-                  <input value={form.trailerMainRunnerWidth} onChange={(e) => set('trailerMainRunnerWidth', e.target.value)} placeholder="e.g. 820" style={inputStyle} />
+                <Field label="Main Runner Width Inside (mm)">
+                  <input value={form.trailerMainRunnerWidth} readOnly style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: form.trailerMainRunnerWidth ? '#E8681A' : 'rgba(255,255,255,0.3)' }} placeholder="Auto from material" />
                 </Field>
                 <Field label="Body Height (mm)">
-                  <input value={form.trailerBodyHeight} onChange={(e) => set('trailerBodyHeight', e.target.value)} placeholder="e.g. 1100" style={inputStyle} />
+                  <select value={form.trailerBodyHeight} onChange={(e) => set('trailerBodyHeight', e.target.value)} style={selectStyle}>
+                    <option value="">Select...</option>
+                    {(form.trailerMaterial === 'Aluminium' ? ['1400', '1500'] : ['1000', '1100', '1200']).map((h) => <option key={h}>{h}</option>)}
+                  </select>
                 </Field>
                 <Field label="Capacity (m³)">
                   <input value={trailerBodyCapacity} readOnly placeholder="Auto from dimensions" style={{ ...inputStyle, opacity: 0.7, cursor: 'default', color: trailerBodyCapacity ? '#E8681A' : 'rgba(255,255,255,0.3)' }} />
