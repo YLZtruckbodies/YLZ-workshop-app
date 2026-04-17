@@ -114,6 +114,7 @@ const S = {
 
     /* Info cells */
     .info-row { display: grid; gap: 8px; margin-bottom: 8px; }
+    .info-row-5 { grid-template-columns: 1fr 1fr 1fr 1fr 1fr; }
     .info-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
     .info-row-3 { grid-template-columns: 1fr 1fr 1fr; }
     .info-row-2 { grid-template-columns: 1fr 1fr; }
@@ -633,7 +634,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="cell-val-sm">{today()}</div>
           </div>
         </div>
-        <div className="info-row info-row-4" style={{ marginBottom: 12 }}>
+        <div className={`info-row ${isTrailer ? 'info-row-5' : 'info-row-4'}`} style={{ marginBottom: 12 }}>
           <div className="cell">
             <div className="cell-lbl">Build Type</div>
             <div className="cell-val-sm">{job.type || '—'}</div>
@@ -653,6 +654,12 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="cell-val-sm">{job.due || ''}</div>
             {!job.due && <div className="cell-blank" />}
           </div>
+          {isTrailer && (
+            <div className="cell">
+              <div className="cell-lbl">Body Length</div>
+              <div className="cell-val-sm">{c('bodyLength') ? `${c('bodyLength')}mm` : '—'}</div>
+            </div>
+          )}
         </div>
 
         {/* Identity */}
@@ -933,7 +940,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="cell-val-sm">{today()}</div>
           </div>
         </div>
-        <div className="info-row info-row-2" style={{ marginBottom: 14 }}>
+        <div className={`info-row ${isTrailer ? 'info-row-3' : 'info-row-2'}`} style={{ marginBottom: 14 }}>
           <div className="cell">
             <div className="cell-lbl">Chassis Make</div>
             <div className="cell-val-sm">{c('chassisMake') || ''}</div>
@@ -944,6 +951,12 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="cell-val-sm">{c('chassisModel') || ''}</div>
             {!c('chassisModel') && <div className="cell-blank" />}
           </div>
+          {isTrailer && (
+            <div className="cell">
+              <div className="cell-lbl">Body Length</div>
+              <div className="cell-val-sm">{c('bodyLength') ? `${c('bodyLength')}mm` : '—'}</div>
+            </div>
+          )}
         </div>
 
         {/* Truck accessories */}
@@ -1076,7 +1089,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="cell-val-sm">{today()}</div>
           </div>
         </div>
-        <div className="info-row info-row-2" style={{ marginBottom: 14 }}>
+        <div className={`info-row ${isTrailer ? 'info-row-3' : 'info-row-2'}`} style={{ marginBottom: 14 }}>
           <div className="cell">
             <div className="cell-lbl">Chassis Make</div>
             <div className="cell-val-sm">{c('chassisMake') || ''}</div>
@@ -1087,6 +1100,12 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="cell-val-sm">{c('chassisModel') || ''}</div>
             {!c('chassisModel') && <div className="cell-blank" />}
           </div>
+          {isTrailer && (
+            <div className="cell">
+              <div className="cell-lbl">Body Length</div>
+              <div className="cell-val-sm">{c('bodyLength') ? `${c('bodyLength')}mm` : '—'}</div>
+            </div>
+          )}
         </div>
 
         {/* Paint spec */}
@@ -1164,7 +1183,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
           <div className="divider" />
 
-          <div className="info-row info-row-4" style={{ marginBottom: 14 }}>
+          <div className="info-row info-row-4" style={{ marginBottom: isTrailer ? 8 : 14 }}>
             <div className="cell">
               <div className="cell-lbl">Job Number</div>
               <div className="cell-val-num">{job.num}</div>
@@ -1182,6 +1201,14 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <div className="cell-val-sm">{today()}</div>
             </div>
           </div>
+          {isTrailer && (
+            <div className="info-row info-row-1" style={{ marginBottom: 14 }}>
+              <div className="cell">
+                <div className="cell-lbl">Body Length</div>
+                <div className="cell-val-sm">{c('bodyLength') ? `${c('bodyLength')}mm` : '—'}</div>
+              </div>
+            </div>
+          )}
 
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5pt', marginBottom: 16 }}>
             <thead>
