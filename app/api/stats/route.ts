@@ -64,6 +64,19 @@ export async function GET() {
 
   const allJobHours = [...jobHours, ...unmatchedJobs].sort((a: any, b: any) => b.hours - a.hours)
 
+  // Hours per job per section (workSection breakdown)
+  const jobSectionMap: Record<string, Record<string, { hours: number; workers: Record<string, number> }>> = {}
+  for (const t of timesheets) {
+    if (t.startTime === 'LEAVE' || t.startTime === 'SICK') continue
+    const normed = normalize(t.jobNum)
+    const jobNum = jobNumLookup[normed] || t.jobNum
+    const ws = t.workSection || 'other'
+    if (!jobSectionMap[jobNum]) jobSectionMap[jobNum] = {}
+    if (!jobSectionMap[jobNum][ws]) jobSectionMap[jobNum][ws] = { hours: 0, workers: {} }
+    jobSectionMap[jobNum][ws].hours += t.hours
+    jobSectionMap[jobNum][ws].workers[t.workerName] = (jobSectionMap[jobNum][ws].workers[t.workerName] || 0) + t.hours
+  }
+
   // Hours per worker
   const workerHoursMap: Record<string, number> = {}
   for (const t of timesheets) {
@@ -133,6 +146,7 @@ export async function GET() {
     onLeave,
     onSick,
     jobHours: allJobHours,
+    jobSectionBreakdown: jobSectionMap,
     workerHours,
     sectionHours,
     dailyHours,

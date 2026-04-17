@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import useSWR from 'swr'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -253,6 +253,14 @@ export default function AnalyticsPage() {
           </ChartCard>
         )}
 
+        {/* Hours Per Job — Section Breakdown */}
+        {stats.jobSectionBreakdown && (
+          <JobSectionBreakdown
+            jobHours={stats.jobHours}
+            breakdown={stats.jobSectionBreakdown}
+          />
+        )}
+
         {/* Active Jobs Progress */}
         <div
           style={{
@@ -417,6 +425,177 @@ function NoData() {
   return (
     <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontSize: 12 }}>
       No data yet — log some timesheet entries first
+    </div>
+  )
+}
+
+const WS_LABELS: Record<string, string> = {
+  hardox: 'Hardox/Steel',
+  alloy: 'Alloy Fab',
+  chassis: 'Chassis',
+  fitout: 'Fitout',
+  trailerfit: 'Trailer Fit',
+  subfit: 'Subframe Fit',
+  paint: 'Paint',
+  electrical: 'Electrical',
+  other: 'Other',
+  '': 'Unassigned',
+}
+
+const WS_COLORS: Record<string, string> = {
+  hardox: '#c8c8c8',
+  alloy: '#3b9de8',
+  chassis: '#22d07a',
+  fitout: '#8aaec6',
+  trailerfit: '#a78bfa',
+  subfit: '#d4d4d4',
+  paint: '#f5a623',
+  electrical: '#f97316',
+  other: '#787878',
+  '': '#555',
+}
+
+function JobSectionBreakdown({ jobHours, breakdown }: { jobHours: any[]; breakdown: Record<string, Record<string, { hours: number; workers: Record<string, number> }>> }) {
+  const [expanded, setExpanded] = useState<string | null>(null)
+
+  const jobsWithBreakdown = jobHours.filter((j: any) => breakdown[j.jobNum] && j.hours > 0).slice(0, 25)
+
+  if (jobsWithBreakdown.length === 0) return null
+
+  return (
+    <div
+      style={{
+        background: 'var(--dark2)',
+        border: '1px solid var(--border)',
+        borderRadius: 4,
+        overflow: 'hidden',
+        marginBottom: 14,
+      }}
+    >
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', background: 'var(--dark3)' }}>
+        <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 14, fontWeight: 800, letterSpacing: 1.5, color: '#fff' }}>
+          HOURS PER JOB — SECTION BREAKDOWN
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+          Click a job to see hours by section and worker
+        </div>
+      </div>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr>
+            {['Job #', 'Type', 'Customer', 'Total Hours', 'Sections'].map((h) => (
+              <th
+                key={h}
+                style={{
+                  padding: '10px 16px',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 0.5,
+                  textTransform: 'uppercase',
+                  color: 'var(--text3)',
+                  textAlign: 'left',
+                  borderBottom: '1px solid var(--border2)',
+                }}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {jobsWithBreakdown.map((job: any) => {
+            const sections = breakdown[job.jobNum] || {}
+            const sectionKeys = Object.keys(sections).sort((a, b) => sections[b].hours - sections[a].hours)
+            const isExpanded = expanded === job.jobNum
+            const maxHours = Math.max(...Object.values(sections).map((s: any) => s.hours), 1)
+
+            return (
+              <React.Fragment key={job.jobNum}>
+                <tr
+                  onClick={() => setExpanded(isExpanded ? null : job.jobNum)}
+                  style={{
+                    borderBottom: '1px solid var(--border)',
+                    cursor: 'pointer',
+                    background: isExpanded ? 'rgba(255,255,255,0.03)' : 'transparent',
+                  }}
+                  onMouseEnter={(e) => { if (!isExpanded) e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
+                  onMouseLeave={(e) => { if (!isExpanded) e.currentTarget.style.background = 'transparent' }}
+                >
+                  <td style={{ padding: '10px 16px' }}>
+                    <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 1, color: '#E8681A' }}>
+                      {isExpanded ? '▾' : '▸'} {job.jobNum}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text2)' }}>{job.type || '—'}</td>
+                  <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text3)' }}>{job.customer || '—'}</td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 14, fontWeight: 700, color: '#fff' }}>
+                      {Math.round(job.hours * 10) / 10}h
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <div style={{ display: 'flex', height: 14, borderRadius: 3, overflow: 'hidden', maxWidth: 200 }}>
+                      {sectionKeys.map((ws) => {
+                        const pct = (sections[ws].hours / job.hours) * 100
+                        return (
+                          <div
+                            key={ws}
+                            style={{
+                              width: `${pct}%`,
+                              background: WS_COLORS[ws] || '#787878',
+                              minWidth: pct > 0 ? 2 : 0,
+                            }}
+                            title={`${WS_LABELS[ws] || ws}: ${Math.round(sections[ws].hours * 10) / 10}h`}
+                          />
+                        )
+                      })}
+                    </div>
+                  </td>
+                </tr>
+
+                {isExpanded && sectionKeys.map((ws) => {
+                  const sec = sections[ws]
+                  const workerEntries = Object.entries(sec.workers).sort((a: any, b: any) => b[1] - a[1])
+                  const barWidth = (sec.hours / maxHours) * 100
+
+                  return (
+                    <tr key={`${job.jobNum}-${ws}`} style={{ background: 'rgba(255,255,255,0.015)' }}>
+                      <td style={{ padding: '6px 16px 6px 40px' }}>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+                          padding: '2px 8px', borderRadius: 3,
+                          color: WS_COLORS[ws] || '#787878',
+                          background: `${WS_COLORS[ws] || '#787878'}18`,
+                        }}>
+                          {WS_LABELS[ws] || ws}
+                        </span>
+                      </td>
+                      <td colSpan={2} style={{ padding: '6px 16px', fontSize: 11, color: 'var(--text3)' }}>
+                        {workerEntries.map(([name, hrs]) => (
+                          <span key={name} style={{ marginRight: 12 }}>
+                            {name} <span style={{ color: 'var(--text2)', fontWeight: 600 }}>{Math.round((hrs as number) * 10) / 10}h</span>
+                          </span>
+                        ))}
+                      </td>
+                      <td style={{ padding: '6px 16px' }}>
+                        <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 700, color: WS_COLORS[ws] || '#787878' }}>
+                          {Math.round(sec.hours * 10) / 10}h
+                        </span>
+                      </td>
+                      <td style={{ padding: '6px 16px' }}>
+                        <div style={{ height: 10, borderRadius: 2, overflow: 'hidden', maxWidth: 200, background: 'rgba(255,255,255,0.04)' }}>
+                          <div style={{ width: `${barWidth}%`, height: '100%', background: WS_COLORS[ws] || '#787878', borderRadius: 2 }} />
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </React.Fragment>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }
