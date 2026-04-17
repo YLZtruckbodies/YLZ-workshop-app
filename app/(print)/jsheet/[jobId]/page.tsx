@@ -639,6 +639,16 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Wheel Carrier on Drawbar', 'wheelCarrier')}
                   {cfgField('Drop Down Leg', 'dropDownLeg')}
                   {cfgField('Pogo Stick', 'pogoStick')}
+                  <div key="drawbarEyeToEye">
+                    <div style={lblStyle}>Drawbar Eye-to-Eye (mm)</div>
+                    <input style={inpStyle} value={editCfg['drawbarEyeToEye'] || ''} onChange={e => setCfgField('drawbarEyeToEye', e.target.value)} placeholder="e.g. 7200" />
+                    {(() => {
+                      const raw = Number(editCfg['drawbarEyeToEye'])
+                      const axles = Number(editCfg['axleCount'] || 0)
+                      const offset = axles >= 4 ? 1360 : 807
+                      return raw && !isNaN(raw) ? <div style={{ fontSize: 10, color: '#E8681A', marginTop: 3 }}>Job sheet: {raw - offset}mm</div> : null
+                    })()}
+                  </div>
                 </div>
 
                 {/* Notes */}
@@ -1147,11 +1157,19 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 <div className="field"><div className="field-lbl">Drop Down Leg</div><div className="field-val">{c('dropDownLeg') || ''}</div>{!c('dropDownLeg') && <div className="field-blank" />}</div>
                 <div className="field"><div className="field-lbl">Pogo Stick</div><div className="field-val">{c('pogoStick') || ''}</div>{!c('pogoStick') && <div className="field-blank" />}</div>
               </div>
-              <div className="field-row field-row-3">
-                <div className="field"><div className="field-lbl">Drawbar Eye-to-Eye</div><div className="field-blank" /></div>
-                <div className="field" />
-                <div className="field" />
-              </div>
+              {(() => {
+                const raw = Number(c('drawbarEyeToEye'))
+                const axles = Number(c('axleCount') || 0)
+                const offset = axles >= 4 ? 1360 : 807
+                const derived = raw && !isNaN(raw) ? raw - offset : null
+                return (
+                  <div className="field-row field-row-3">
+                    <div className="field"><div className="field-lbl">Drawbar Eye-to-Eye</div><div className="field-val">{derived != null ? `${derived}mm` : ''}</div>{derived == null && <div className="field-blank" />}</div>
+                    <div className="field" />
+                    <div className="field" />
+                  </div>
+                )
+              })()}
             </div>
           </div>
         )}
