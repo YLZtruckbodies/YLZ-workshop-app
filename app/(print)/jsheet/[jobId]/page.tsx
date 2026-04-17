@@ -711,17 +711,18 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         <div className="section">
           <div className="section-hdr">Hoist &amp; Controls</div>
           <div className="section-body">
-            <div className="field-row field-row-5">
+            <div className={`field-row ${isTrailer ? 'field-row-3' : 'field-row-5'}`}>
               <div className="field"><div className="field-lbl">Hoist Model</div><div className="field-val">{c('hoist') || ''}</div>{!c('hoist') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{c('pivotCentre') || '235'}</div></div>
-              <div className="field"><div className="field-lbl">Hoist Controls</div><div className="field-val">{c('controls') || ''}</div>{!c('controls') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Pump Type</div><div className="field-val">{c('pump') || c('pumpType') || ''}</div>{!(c('pump') || c('pumpType')) && <div className="field-blank" />}</div>
+              {!isTrailer && <div className="field"><div className="field-lbl">Hoist Controls</div><div className="field-val">{c('controls') || ''}</div>{!c('controls') && <div className="field-blank" />}</div>}
+              {!isTrailer && <div className="field"><div className="field-lbl">Pump Type</div><div className="field-val">{c('pump') || c('pumpType') || ''}</div>{!(c('pump') || c('pumpType')) && <div className="field-blank" />}</div>}
               <div className="field"><div className="field-lbl">Hose Burst Valve</div><div className="field-val">{c('hoseBurstValve') || ''}</div>{!c('hoseBurstValve') && <div className="field-blank" />}</div>
             </div>
           </div>
         </div>
 
         {/* Valve Bank */}
+        {!isTrailer && (
         <div className="section">
           <div className="section-hdr">Valve Bank</div>
           <div className="section-body">
@@ -731,8 +732,10 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             </div>
           </div>
         </div>
+        )}
 
         {/* PTO Switch Type */}
+        {!isTrailer && (
         <div className="section">
           <div className="section-hdr">PTO Switch Type</div>
           <div className="section-body">
@@ -744,6 +747,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             </div>
           </div>
         </div>
+        )}
 
         {/* Tailgate & Lock Flap */}
         <div className="section">
@@ -772,6 +776,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         </div>
 
         {/* Hydraulics */}
+        {!isTrailer && (
         <div className="section">
           <div className="section-hdr">Hydraulics</div>
           <div className="section-body">
@@ -782,6 +787,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             </div>
           </div>
         </div>
+        )}
 
         {/* Tarp */}
         <div className="section">
