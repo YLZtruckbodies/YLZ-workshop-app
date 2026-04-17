@@ -2582,17 +2582,7 @@ function QuoteBuilderInner() {
               <Field label="Hubodometer">
                 <input value="Yes" readOnly style={{ ...inputStyle, opacity: 0.7, cursor: 'default' }} />
               </Field>
-              <Field label="Hubodometer Location">
-                <select value={form.trailerHubodoLocation} onChange={(e) => set('trailerHubodoLocation', e.target.value)} style={selectStyle}>
-                  <option value="">Select...</option>
-                  <option>LHS</option>
-                  <option>RHS</option>
-                </select>
-              </Field>
-              <Field label="Hubodometer Axle">
-                <input value={form.trailerHubodoAxle} onChange={(e) => set('trailerHubodoAxle', e.target.value)} placeholder="e.g. Axle 2" style={inputStyle} />
-              </Field>
-              <Field label="Hose Burst Valve">
+<Field label="Hose Burst Valve">
                 <input value="Yes" readOnly style={{ ...inputStyle, opacity: 0.7, cursor: 'default' }} />
               </Field>
             </div>
