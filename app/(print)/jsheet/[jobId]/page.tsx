@@ -325,6 +325,11 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
   const c = (key: string) => {
     const val = job.cfg?.[key]
     if (val != null && val !== '') return String(val)
+    // For trailer job sheets, check trailerConfig first (truck-and-trailer builds)
+    if (isTrailer) {
+      const trailerVal = (job.cfg?.trailerConfig as any)?.[key]
+      if (trailerVal != null && trailerVal !== '') return String(trailerVal)
+    }
     // Fall back to truckConfig for truck-and-trailer builds
     const truckVal = (job.cfg?.truckConfig as any)?.[key]
     if (truckVal != null && truckVal !== '') return String(truckVal)
@@ -707,6 +712,29 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         </div>
 
+        {/* Booster Settings & Slack Lengths — trailer only */}
+        {isTrailer && (() => {
+          const axleSettings = (job.cfg?.axleSettings || (job.cfg?.trailerConfig as any)?.axleSettings) as { boosters: string[]; slacks: string[] } | undefined
+          if (!axleSettings) return null
+          return (
+            <div className="section">
+              <div className="section-hdr">Booster Settings &amp; Slack Lengths</div>
+              <div className="section-body">
+                <div className="field-row field-row-2">
+                  <div className="field">
+                    <div className="field-lbl">Booster Settings</div>
+                    <div className="field-val">{axleSettings.boosters.map((v, i) => `${i + 1}: ${v}`).join('  |  ')}</div>
+                  </div>
+                  <div className="field">
+                    <div className="field-lbl">Slack Lengths</div>
+                    <div className="field-val">{axleSettings.slacks.map((v, i) => `${i + 1}: ${v}mm`).join('  |  ')}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Hoist & Controls */}
         <div className="section">
           <div className="section-hdr">Hoist &amp; Controls</div>
@@ -1032,6 +1060,19 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             )}
           </div>
         </div>
+
+        {/* Wheels & Tyres — trailer only */}
+        {isTrailer && (c('tyre') || c('wheels')) && (
+          <div className="section" style={{ marginTop: 10 }}>
+            <div className="section-hdr">Wheels &amp; Tyres</div>
+            <div className="section-body">
+              <div className="field-row field-row-2">
+                <div className="field"><div className="field-lbl">Tyre</div><div className="field-val">{c('tyre') || ''}</div>{!c('tyre') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Wheels</div><div className="field-val">{c('wheels') || ''}</div>{!c('wheels') && <div className="field-blank" />}</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Notes */}
         <div className="notes-box" style={{ marginTop: 10 }}>
