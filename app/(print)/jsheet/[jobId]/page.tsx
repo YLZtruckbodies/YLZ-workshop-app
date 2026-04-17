@@ -257,7 +257,14 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         if (jobData.cfg) {
           const cfgInit: Record<string, string> = {}
           for (const [k, v] of Object.entries(jobData.cfg)) {
-            cfgInit[k] = v != null ? String(v) : ''
+            if (v != null && typeof v === 'object' && !Array.isArray(v)) {
+              // Flatten nested config objects (trailerConfig, truckConfig, axleSettings)
+              for (const [nk, nv] of Object.entries(v as Record<string, unknown>)) {
+                if (nv != null && typeof nv !== 'object') cfgInit[nk] = String(nv)
+              }
+            } else {
+              cfgInit[k] = v != null ? String(v) : ''
+            }
           }
           setEditCfg(cfgInit)
         }
@@ -572,6 +579,12 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 </>)}
 
                 <div style={sectionLbl}>Trailer / Chassis (if applicable)</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Trailer Model', 'trailerModel')}
+                  {cfgField('Trailer Type', 'trailerType')}
+                  {cfgField('PBS Rating', 'pbsRating')}
+                  {cfgField('Stud Pattern', 'studPattern')}
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Chassis Length (mm)', 'chassisLength')}
                   {cfgField('Wheelbase (mm)', 'wheelbase')}
@@ -583,7 +596,33 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Axle Make', 'axleMake')}
                   {cfgField('Axle Type', 'axleType')}
                   {cfgField('Axle Count', 'axleCount')}
-                  {cfgField('PBS Rating', 'pbsRating')}
+                  {cfgField('Main Runner Width Inside (mm)', 'mainRunnerWidth')}
+                </div>
+
+                <div style={sectionLbl}>Wheels &amp; Tyres (Trailer)</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Tyre', 'tyre')}
+                  {cfgField('Wheels', 'wheels')}
+                </div>
+
+                <div style={sectionLbl}>Tarp (Trailer)</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Tarp Material', 'tarpMaterial')}
+                  {cfgField('Tarp Type', 'tarpType')}
+                  {cfgField('Tarp Location', 'tarpLocation')}
+                  {cfgField('Tarp Bow Height', 'tarpBowSize')}
+                </div>
+
+                <div style={sectionLbl}>Body Extras (Trailer)</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Rear Ladder', 'rearLadder')}
+                  {cfgField('Centre Chain', 'centreChain')}
+                  {cfgField('Rear CAT Markers', 'catMarkers')}
+                  {cfgField('Reflectors', 'reflectors')}
+                  {cfgField('Camera', 'camera')}
+                  {cfgField('Vibrator', 'vibrator')}
+                  {cfgField('Rock Sheet', 'rockSheet')}
+                  {cfgField('Liner', 'liner')}
                 </div>
 
                 {/* Notes */}
@@ -712,28 +751,6 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         </div>
 
-        {/* Booster Settings & Slack Lengths — trailer only */}
-        {isTrailer && (() => {
-          const axleSettings = (job.cfg?.axleSettings || (job.cfg?.trailerConfig as any)?.axleSettings) as { boosters: string[]; slacks: string[] } | undefined
-          if (!axleSettings) return null
-          return (
-            <div className="section">
-              <div className="section-hdr">Booster Settings &amp; Slack Lengths</div>
-              <div className="section-body">
-                <div className="field-row field-row-2">
-                  <div className="field">
-                    <div className="field-lbl">Booster Settings</div>
-                    <div className="field-val">{axleSettings.boosters.map((v, i) => `${i + 1}: ${v}`).join('  |  ')}</div>
-                  </div>
-                  <div className="field">
-                    <div className="field-lbl">Slack Lengths</div>
-                    <div className="field-val">{axleSettings.slacks.map((v, i) => `${i + 1}: ${v}mm`).join('  |  ')}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })()}
 
         {/* Hoist & Controls */}
         <div className="section">
@@ -1073,6 +1090,29 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             </div>
           </div>
         )}
+
+        {/* Booster Settings & Slack Lengths — trailer only */}
+        {isTrailer && (() => {
+          const axleSettings = (job.cfg?.axleSettings || (job.cfg?.trailerConfig as any)?.axleSettings) as { boosters: string[]; slacks: string[] } | undefined
+          if (!axleSettings) return null
+          return (
+            <div className="section" style={{ marginTop: 10 }}>
+              <div className="section-hdr">Booster Settings &amp; Slack Lengths</div>
+              <div className="section-body">
+                <div className="field-row field-row-2">
+                  <div className="field">
+                    <div className="field-lbl">Booster Settings</div>
+                    <div className="field-val">{axleSettings.boosters.map((v, i) => `${i + 1}: ${v}`).join('  |  ')}</div>
+                  </div>
+                  <div className="field">
+                    <div className="field-lbl">Slack Lengths</div>
+                    <div className="field-val">{axleSettings.slacks.map((v, i) => `${i + 1}: ${v}mm`).join('  |  ')}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Notes */}
         <div className="notes-box" style={{ marginTop: 10 }}>
