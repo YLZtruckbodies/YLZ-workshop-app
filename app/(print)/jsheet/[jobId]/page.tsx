@@ -631,6 +631,16 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Liner', 'liner')}
                 </div>
 
+                <div style={sectionLbl}>Drawbar</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {cfgField('Drawbar Tape', 'drawbarTape')}
+                  {cfgField('Drawbar Coupling', 'drawbarCoupling')}
+                  {cfgField('Anderson Plug', 'andersonPlug')}
+                  {cfgField('Wheel Carrier on Drawbar', 'wheelCarrier')}
+                  {cfgField('Drop Down Leg', 'dropDownLeg')}
+                  {cfgField('Pogo Stick', 'pogoStick')}
+                </div>
+
                 {/* Notes */}
                 <div style={sectionLbl}>Notes / Special Requirements</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -898,6 +908,25 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             </div>
           </div>
         </div>
+
+        {/* Drawbar — trailer only */}
+        {isTrailer && (
+          <div className="section">
+            <div className="section-hdr">Drawbar</div>
+            <div className="section-body">
+              <div className="field-row field-row-3">
+                <div className="field"><div className="field-lbl">Drawbar Tape</div><div className="field-val">{c('drawbarTape') || ''}</div>{!c('drawbarTape') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Drawbar Coupling</div><div className="field-val">{c('drawbarCoupling') || ''}</div>{!c('drawbarCoupling') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Anderson Plug</div><div className="field-val">{c('andersonPlug') || ''}</div>{!c('andersonPlug') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-3">
+                <div className="field"><div className="field-lbl">Wheel Carrier on Drawbar</div><div className="field-val">{c('wheelCarrier') || ''}</div>{!c('wheelCarrier') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Drop Down Leg</div><div className="field-val">{c('dropDownLeg') || ''}</div>{!c('dropDownLeg') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Pogo Stick</div><div className="field-val">{c('pogoStick') || ''}</div>{!c('pogoStick') && <div className="field-blank" />}</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Body Spigot / Rock Sheet / Liner — Aluminium only */}
         {String(c('material') || '').toLowerCase().includes('aluminium') && (

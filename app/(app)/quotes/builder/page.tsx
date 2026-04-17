@@ -108,6 +108,13 @@ interface QuoteForm {
   trailerPushLugs: string
   trailerDrawbarLength: string
   trailerMainRunnerWidth: string
+  // trailer drawbar
+  trailerDrawbarTape: string
+  trailerDrawbarCoupling: string
+  trailerAndersonPlug: string
+  trailerWheelCarrier: string
+  trailerDropDownLeg: string
+  trailerPogoStick: string
   trailerChassisLength: string
   trailerWheelbase: string
   trailerTailgateType: string
@@ -751,6 +758,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     truckTarpLocation: 'Standard Out Front',
     trailerSerial: '', trailerVin: '', trailerFloorSheet: '', trailerSideSheet: '',
     trailerHoist: '', trailerPivotCentre: '', trailerPushLugs: '', trailerDrawbarLength: '', trailerMainRunnerWidth: '',
+    trailerDrawbarTape: 'No', trailerDrawbarCoupling: 'To suit V.Orlandi', trailerAndersonPlug: 'Yes', trailerWheelCarrier: 'No', trailerDropDownLeg: 'Drop Down', trailerPogoStick: 'No',
     trailerChassisLength: '', trailerWheelbase: '',
     trailerTailgateType: 'Single Drop', trailerTailgateLights: 'None', trailerTailLights: '4 hole round LEDs c/w chrome surround', trailerLockFlap: 'No',
     trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'Yes', trailerHubodoLocation: '', trailerHubodoAxle: '', trailerHoseBurstValve: 'Yes',
@@ -926,6 +934,12 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerHoist = trc.hoist || ''
     form.trailerPivotCentre = trc.pivotCentre || getTrailerPivotCentre(trc.bodyLength || '')
     form.trailerDrawbarLength = trc.drawbarLength || ''
+    form.trailerDrawbarTape = trc.drawbarTape || 'No'
+    form.trailerDrawbarCoupling = trc.drawbarCoupling || 'To suit V.Orlandi'
+    form.trailerAndersonPlug = trc.andersonPlug || 'Yes'
+    form.trailerWheelCarrier = trc.wheelCarrier || 'No'
+    form.trailerDropDownLeg = trc.dropDownLeg || 'Drop Down'
+    form.trailerPogoStick = trc.pogoStick || 'No'
     form.trailerMainRunnerWidth = trc.mainRunnerWidth || ''
     form.trailerChassisLength = trc.chassisLength || getChassisLength(trc.bodyLength || '')
     form.trailerWheelbase = trc.wheelbase || ''
@@ -1063,6 +1077,12 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerHoist = cfg.hoist || ''
     form.trailerPivotCentre = (cfg.pivotCentre as string) || getTrailerPivotCentre(cfg.bodyLength as string || '')
     form.trailerDrawbarLength = cfg.drawbarLength || ''
+    form.trailerDrawbarTape = cfg.drawbarTape || 'No'
+    form.trailerDrawbarCoupling = cfg.drawbarCoupling || 'To suit V.Orlandi'
+    form.trailerAndersonPlug = cfg.andersonPlug || 'Yes'
+    form.trailerWheelCarrier = cfg.wheelCarrier || 'No'
+    form.trailerDropDownLeg = cfg.dropDownLeg || 'Drop Down'
+    form.trailerPogoStick = cfg.pogoStick || 'No'
     form.trailerMainRunnerWidth = cfg.mainRunnerWidth || ''
     form.trailerChassisLength = cfg.chassisLength || getChassisLength(cfg.bodyLength || '')
     form.trailerWheelbase = cfg.wheelbase || ''
@@ -1222,6 +1242,9 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     pbsRating: form.trailerPbs,
     floorSheet: form.trailerFloorSheet, sideSheet: form.trailerSideSheet,
     hoist: form.trailerHoist, pivotCentre: form.trailerPivotCentre, drawbarLength: form.trailerDrawbarLength,
+    drawbarTape: form.trailerDrawbarTape, drawbarCoupling: form.trailerDrawbarCoupling,
+    andersonPlug: form.trailerAndersonPlug, wheelCarrier: form.trailerWheelCarrier,
+    dropDownLeg: form.trailerDropDownLeg, pogoStick: form.trailerPogoStick,
     bodyLength: form.trailerBodyLength, bodyWidth: calcBodyWidth(form.trailerMaterial),
     bodyHeight: form.trailerBodyHeight, bodyCapacity: calcBodyCapacity(form.trailerBodyLength, form.trailerMaterial, form.trailerBodyHeight, 'trailer'),
     gtm: form.trailerGtm, gcm: form.trailerGcm,
@@ -2791,6 +2814,41 @@ function QuoteBuilderInner() {
               )}
               <Field label="Liner">
                 <select value={form.trailerLiner} onChange={(e) => set('trailerLiner', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+            </div>
+            {/* Drawbar */}
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>Drawbar</div>
+            <div style={grid(3)}>
+              <Field label="Drawbar Tape">
+                <select value={form.trailerDrawbarTape} onChange={(e) => set('trailerDrawbarTape', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes (Amber)', 'Yes (White)'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Drawbar Coupling">
+                <select value={form.trailerDrawbarCoupling} onChange={(e) => set('trailerDrawbarCoupling', e.target.value)} style={selectStyle}>
+                  {['To suit V.Orlandi', 'To Suit Ringfeder'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Anderson Plug">
+                <select value={form.trailerAndersonPlug} onChange={(e) => set('trailerAndersonPlug', e.target.value)} style={selectStyle}>
+                  {['Yes', 'No'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Wheel Carrier on Drawbar">
+                <select value={form.trailerWheelCarrier} onChange={(e) => set('trailerWheelCarrier', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Drop Down Leg">
+                <select value={form.trailerDropDownLeg} onChange={(e) => set('trailerDropDownLeg', e.target.value)} style={selectStyle}>
+                  {['Drop Down', 'Wind Down'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Pogo Stick">
+                <select value={form.trailerPogoStick} onChange={(e) => set('trailerPogoStick', e.target.value)} style={selectStyle}>
                   {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
                 </select>
               </Field>
