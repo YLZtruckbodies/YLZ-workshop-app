@@ -122,6 +122,8 @@ interface QuoteForm {
   trailerTarpType: string
   trailerTarpLocation: string
   // trailer body extras
+  trailerRockSheet: string
+  trailerLiner: string
   trailerRearLadder: string
   trailerCentreChain: string
   trailerCatMarkers: string
@@ -699,6 +701,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerTailgateLights: 'None', trailerTailLights: '4 hole round LEDs c/w chrome surround', trailerLockFlap: 'No',
     trailerAxleLift: 'No', trailerAxleLiftAxle: '', trailerHubodometer: 'Yes', trailerHubodoLocation: '', trailerHubodoAxle: '', trailerHoseBurstValve: 'Yes',
     trailerTarpColour: '', trailerTarpMaterial: 'PVC', trailerTarpType: 'Hoop Type', trailerTarpLocation: 'Standard Out Front',
+    trailerRockSheet: 'No', trailerLiner: 'No',
     trailerRearLadder: 'No', trailerCentreChain: 'No', trailerCatMarkers: 'No', trailerReflectors: 'Yes (Amber)', trailerCamera: 'No', trailerVibrator: 'No',
     lineItems: [],
     margin: 0, overhead: 0, discount: 0,
@@ -879,6 +882,8 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerTarpMaterial = trc.tarpMaterial || 'PVC'
     form.trailerTarpType = trc.tarpType || 'Hoop Type'
     form.trailerTarpLocation = trc.tarpLocation || 'Standard Out Front'
+    form.trailerRockSheet = trc.rockSheet || 'No'
+    form.trailerLiner = trc.liner || 'No'
     form.trailerRearLadder = trc.rearLadder || 'No'
     form.trailerCentreChain = trc.centreChain || 'No'
     form.trailerCatMarkers = trc.catMarkers || 'No'
@@ -1000,6 +1005,8 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerTarpMaterial = cfg.tarpMaterial || 'PVC'
     form.trailerTarpType = cfg.tarpType || 'Hoop Type'
     form.trailerTarpLocation = cfg.tarpLocation || 'Standard Out Front'
+    form.trailerRockSheet = cfg.rockSheet || 'No'
+    form.trailerLiner = cfg.liner || 'No'
     form.trailerRearLadder = cfg.rearLadder || 'No'
     form.trailerCentreChain = cfg.centreChain || 'No'
     form.trailerCatMarkers = cfg.catMarkers || 'No'
@@ -1144,6 +1151,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     hoseBurstValve: form.trailerHoseBurstValve,
     tarpColour: form.trailerTarpColour, tarpMaterial: form.trailerTarpMaterial,
     tarpType: form.trailerTarpType, tarpLocation: form.trailerTarpLocation,
+    rockSheet: form.trailerRockSheet, liner: form.trailerLiner,
     rearLadder: form.trailerRearLadder, centreChain: form.trailerCentreChain,
     catMarkers: form.trailerCatMarkers, reflectors: form.trailerReflectors,
     camera: form.trailerCamera, vibrator: form.trailerVibrator,
@@ -2619,6 +2627,20 @@ function QuoteBuilderInner() {
                   {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
                 </select>
               </Field>
+              {form.trailerMaterial === 'Aluminium' && (
+                <Field label="Rock Sheet">
+                  <select value={form.trailerRockSheet} onChange={(e) => set('trailerRockSheet', e.target.value)} style={selectStyle}>
+                    {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+              )}
+              {form.trailerMaterial === 'Aluminium' && (
+                <Field label="Liner">
+                  <select value={form.trailerLiner} onChange={(e) => set('trailerLiner', e.target.value)} style={selectStyle}>
+                    {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
+                  </select>
+                </Field>
+              )}
             </div>
           </SectionCard>
         )}
