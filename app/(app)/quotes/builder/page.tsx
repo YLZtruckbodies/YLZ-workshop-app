@@ -1363,6 +1363,17 @@ function QuoteBuilderInner() {
   const set = useCallback((key: keyof QuoteForm, val: any) => {
     setForm((f) => {
       const updated = { ...f, [key]: val }
+      // Auto-cascade: trailer material → floor/side sheet
+      if (key === 'trailerMaterial') {
+        const mat = String(val)
+        if (mat === 'Aluminium') {
+          updated.trailerFloorSheet = '8mm Aluminium'
+          updated.trailerSideSheet = '5mm Aluminium'
+        } else if (mat.startsWith('Hardox')) {
+          updated.trailerFloorSheet = `6mm ${mat}`
+          updated.trailerSideSheet = `5mm ${mat}`
+        }
+      }
       // Auto-cascade: trailer model → axle count
       if (key === 'trailerModel') {
         const axleMatch = String(val).match(/\((\d+)-Axle/)
