@@ -3,6 +3,58 @@ import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
+function parseAusDate(d: string): Date {
+  const [day, month, year] = d.split('/')
+  return new Date(2000 + parseInt(year), parseInt(month) - 1, parseInt(day))
+}
+
+function getWeekMonday(d: string): string {
+  const dt = parseAusDate(d)
+  const dayOfWeek = dt.getDay() || 7
+  dt.setDate(dt.getDate() - dayOfWeek + 1)
+  return `${dt.getDate().toString().padStart(2, '0')}/${(dt.getMonth() + 1).toString().padStart(2, '0')}/${dt.getFullYear().toString().slice(-2)}`
+}
+
+// Per-worker, per-job hours: { workerName: { jobNum: hours } }
+function buildWorkerJobHours(timesheets: any[], jobNumLookup: Record<string, string>) {
+  const normalize = (s: string) => s.replace(/\s+/g, '').toUpperCase()
+  const result: Record<string, Record<string, number>> = {}
+  for (const t of timesheets) {
+    if (t.startTime === 'LEAVE' || t.startTime === 'SICK') continue
+    const w = t.workerName
+    const jobNum = jobNumLookup[normalize(t.jobNum)] || t.jobNum
+    if (!result[w]) result[w] = {}
+    result[w][jobNum] = (result[w][jobNum] || 0) + t.hours
+  }
+  return result
+}
+
+// Per-worker, per-week hours: { workerName: { weekKey: { total, ot } } }
+function buildWorkerWeeklyHours(timesheets: any[]) {
+  const result: Record<string, Record<string, { total: number; ot: number; days: Set<string> }>> = {}
+  for (const t of timesheets) {
+    if (t.startTime === 'LEAVE' || t.startTime === 'SICK') continue
+    const w = t.workerName
+    const weekKey = getWeekMonday(t.date)
+    if (!result[w]) result[w] = {}
+    if (!result[w][weekKey]) result[w][weekKey] = { total: 0, ot: 0, days: new Set() }
+    result[w][weekKey].total += t.hours
+    result[w][weekKey].days.add(t.date)
+    if (t.section === 'overtime' || t.section === 'early_ot') {
+      result[w][weekKey].ot += t.hours
+    }
+  }
+  // Convert Sets to counts for JSON
+  const out: Record<string, Record<string, { total: number; ot: number; days: number }>> = {}
+  for (const w in result) {
+    out[w] = {}
+    for (const wk in result[w]) {
+      out[w][wk] = { total: Math.round(result[w][wk].total * 10) / 10, ot: Math.round(result[w][wk].ot * 10) / 10, days: result[w][wk].days.size }
+    }
+  }
+  return out
+}
+
 export async function GET() {
   const [timesheets, jobs, workers] = await Promise.all([
     prisma.timesheet.findMany(),
@@ -147,6 +199,8 @@ export async function GET() {
     onSick,
     jobHours: allJobHours,
     jobSectionBreakdown: jobSectionMap,
+    workerJobHours: buildWorkerJobHours(timesheets, jobNumLookup),
+    workerWeeklyHours: buildWorkerWeeklyHours(timesheets),
     workerHours,
     sectionHours,
     dailyHours,
