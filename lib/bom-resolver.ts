@@ -179,7 +179,7 @@ export function resolveBoms(
       // Tarp is 400mm shorter than the body (clears headboard and tailgate)
       const tarpLen = cfgNum('tarpLength') || (bodyLen - 400)
       const tarpBow = cfg('tarpBowSize') || cfg('bowSize')
-      const tarpColour = cfg('tarpColour')
+      const tarpColour = (config.truckConfig as any)?.tarpColour || cfg('tarpColour')
       const tarpBom = resolveTarpBom(isPVC, tarpLen)
       const tarpWidth = cfg('material')?.toLowerCase().includes('aluminium') ? 2340 : 2400
       const bowVal = tarpBow ? tarpBow.toString().replace(/mm$/i, '') : ''
@@ -382,7 +382,7 @@ export function resolveBoms(
         const tIsPVC = tTarp.toLowerCase().includes('pvc') || !tTarp.toLowerCase().includes('mesh')
         const tTarpLen = cfgNum('tarpLength') || tBodyLen
         const tTarpBow = cfg('tarpBowSize') || cfg('bowSize')
-        const tTarpColour = cfg('tarpColour')
+        const tTarpColour = (config.trailerConfig as any)?.tarpColour || cfg('tarpColour')
         const tarpBom = resolveTarpBom(tIsPVC, tTarpLen)
         const tTarpWidth = cfg('material')?.toLowerCase().includes('aluminium') ? 2340 : 2400
         const tBowVal = tTarpBow ? tTarpBow.toString().replace(/mm$/i, '') : ''
