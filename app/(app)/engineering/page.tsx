@@ -316,7 +316,7 @@ export default function EngineeringPage() {
         {[
           { label: 'Job Sheet Generator', icon: '📋', desc: 'Generate job sheets from accepted quotes', href: '/engineering/job-sheets' },
           { label: 'Manual Job Sheet Generator', icon: '🛠️', desc: 'Drag & drop builder — fill in fields manually and export', href: '/job-sheet-creator.html', external: true },
-          { label: 'VIN Plate / EBS File / Axle Suspension Ordering', icon: '🏷️', desc: 'VIN plates, EBS files & suspension orders', href: '/engineering/vin-plates' },
+          { label: 'VIN Plate Records', icon: '🏷️', desc: 'VIN plate register — axle type, hub config, job tracking', href: '/engineering/vin-plates' },
           { label: 'MRP Ordering', icon: '📦', desc: 'Auto BOM resolver — select a job, get the full MRPeasy BOM list', href: '/engineering/mrp-ordering' },
           { label: 'Xero Quote Import', icon: '📥', desc: 'Drop Xero quotes CSV → parse specs → get BOMs → import to app', href: '/engineering/xero-import' },
           { label: 'Cold Form Work Orders', icon: '🔩', desc: 'Auto-generated work orders from kit DXF/PDF files — approve for Cold Form', href: '/engineering/work-orders' },

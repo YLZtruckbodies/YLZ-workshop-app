@@ -680,6 +680,24 @@ model VassChassis {
   @@index([make])
 }
 
+// ── VIN Plate Records ─────────────────────────────────────────────────────
+
+model VinPlateRecord {
+  id               String   @id @default(cuid())
+  vin              String   @default("")
+  axleType         String   @default("")
+  hubConfiguration String   @default("")
+  type             String   @default("")
+  jobNumber        String   @default("")
+  customer         String   @default("")
+  notes            String   @default("")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([jobNumber])
+  @@index([vin])
+}
+
 // ── Cold Form Work Orders ──────────────────────────────────────────────────
 
 model WorkOrder {

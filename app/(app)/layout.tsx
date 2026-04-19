@@ -40,6 +40,7 @@ const NAV_ITEMS = [
   { key: 'quotes', label: 'Sales / Quoting', icon: '💲', section: 'TOOLS' },
   { key: 'engineering', label: 'Engineering', icon: '📐', section: 'TOOLS' },
   { key: 'repairs', label: 'Repairs / Warranty', icon: '🛠', section: 'TOOLS' },
+  { key: 'vin-plates', label: 'VIN Plate Records', icon: '🏷️', section: 'TOOLS' },
   { key: 'jobmaster', label: 'Job Sheet Master', icon: '📒', section: 'TOOLS' },
   { key: 'whs', label: 'WHS Forms', icon: '🦺', section: 'TOOLS' },
   { key: 'completed', label: 'Completed Jobs', icon: '✅', section: 'TOOLS' },
