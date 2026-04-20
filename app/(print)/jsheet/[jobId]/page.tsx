@@ -235,10 +235,8 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           }
         } catch { /* quote fetch failed — continue with job data only */ }
 
-        // Auto-refresh BOM if any tarp entry is missing a length note (legacy jobs)
-        const boms: BomEntry[] = Array.isArray(jobData.bomList) ? jobData.bomList : []
-        const needsRefresh = boms.some(b => b.section?.toLowerCase().includes('tarp') && !b.note)
-        if (needsRefresh && jobData.id) {
+        // Always re-resolve BOM from latest resolver so new entries/notes are always current
+        if (jobData.id) {
           try {
             const refreshRes = await fetch(`/api/jobs/${jobData.id}/boms`, { method: 'POST' })
             if (refreshRes.ok) {
