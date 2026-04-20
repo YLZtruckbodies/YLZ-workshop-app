@@ -730,8 +730,8 @@ function updateTarpFields() {
     var tl = document.getElementById("f_tarp_length");
     if (el && tl) tl.value = calcTarpLen(el.value);
   } else if (currentJobType === "trailer") {
-    var el = document.getElementById("f_body_length");
-    var tl = document.getElementById("f_tarp_length");
+    var el = document.getElementById("f_t_body_length");
+    var tl = document.getElementById("f_t_tarp_length");
     if (el && tl) tl.value = calcTarpLen(el.value);
   } else if (currentJobType === "both") {
     var tbl = document.getElementById("f_t_body_length");
