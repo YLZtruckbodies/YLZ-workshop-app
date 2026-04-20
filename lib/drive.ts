@@ -385,6 +385,30 @@ export async function browseDriveFolder(folderId: string): Promise<BrowseItem[]>
   }))
 }
 
+/**
+ * List folder contents across ALL drives (not restricted to YLZparts shared drive).
+ * Used for folders in other shared drives (e.g. YLZ Engineering drive).
+ */
+export async function browseDriveFolderAny(folderId: string): Promise<BrowseItem[]> {
+  const drive = await getDriveClient()
+  const res = await drive.files.list({
+    q: `'${folderId}' in parents and trashed = false`,
+    fields: 'files(id, name, mimeType, webViewLink)',
+    orderBy: 'folder,name',
+    pageSize: 200,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
+    corpora: 'allDrives',
+  })
+  return (res.data.files || []).map(f => ({
+    id: f.id!,
+    name: f.name!,
+    mimeType: f.mimeType || 'application/octet-stream',
+    isFolder: f.mimeType === 'application/vnd.google-apps.folder',
+    webViewLink: f.webViewLink || undefined,
+  }))
+}
+
 // ── Kit Lookup Helpers ────────────────────────────────────────────────────────
 
 /**

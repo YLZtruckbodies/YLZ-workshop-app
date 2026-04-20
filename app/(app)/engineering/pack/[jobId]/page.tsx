@@ -137,6 +137,8 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
   const [dispatching, setDispatching] = useState(false)
   const [dispatchResults, setDispatchResults] = useState<Array<{ target: string; status: string; detail: string }>>([])
   const [dispatchMsg, setDispatchMsg] = useState('')
+  const [suspensionFiles, setSuspensionFiles] = useState<Array<{ id: string; name: string; webViewLink?: string; score: number }> | null>(null)
+  const [suspensionLoading, setSuspensionLoading] = useState(false)
   const [vinData, setVinData] = useState<VinPlateData | null>(null)
   const [vinLoading, setVinLoading] = useState(false)
   const [vinDriveFiles, setVinDriveFiles] = useState<DriveVinFile[]>([])
@@ -1119,36 +1121,140 @@ case 'tebs': return renderTEBS()
 
   function renderAxleOrder() {
     if (!isTrailer) return <div style={{ fontSize: 12, color: 'var(--text3)' }}>Axle orders apply to trailers only.</div>
-
     if (!cfg.axleMake) return <div style={{ fontSize: 12, color: 'var(--text3)' }}>Missing axle configuration in quote.</div>
 
+    const fetchSuspensionFiles = async () => {
+      setSuspensionLoading(true)
+      try {
+        const params = new URLSearchParams({
+          axleCount: String(cfg.axleCount || ''),
+          axleMake: cfg.axleMake || '',
+          axleType: cfg.axleType || '',
+        })
+        const res = await fetch(`/api/suspension-orders?${params}`)
+        if (res.ok) {
+          const data = await res.json()
+          setSuspensionFiles(data.files || [])
+        } else {
+          setSuspensionFiles([])
+        }
+      } catch {
+        setSuspensionFiles([])
+      }
+      setSuspensionLoading(false)
+    }
+
+    const bestMatch = suspensionFiles && suspensionFiles.length > 0 && suspensionFiles[0].score > 0
+      ? suspensionFiles[0]
+      : null
+    const otherFiles = suspensionFiles?.slice(bestMatch ? 1 : 0) ?? []
+
     return (
-      <div>
-        <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
-          Draft axle order — email dispatch coming in Phase 5.
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Config summary */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {[
+            { label: 'Axles', value: String(cfg.axleCount || '—') },
+            { label: 'Make', value: cfg.axleMake || '—' },
+            { label: 'Type', value: cfg.axleType || '—' },
+            { label: 'Suspension', value: (cfg.suspension as string) || '—' },
+            { label: 'Stud Pattern', value: (cfg.studPattern as string) || '—' },
+          ].map(f => (
+            <div key={f.label} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>{f.label}</div>
+              <div style={{ fontSize: 12, color: '#fff' }}>{f.value}</div>
+            </div>
+          ))}
         </div>
-        <div style={{
-          padding: 12, background: 'rgba(0,0,0,0.3)', borderRadius: 4, border: '1px solid var(--border)',
-          fontFamily: 'monospace', fontSize: 11, color: '#fff', lineHeight: 1.6, whiteSpace: 'pre-wrap',
-        }}>
-{`Subject: Axle Order — ${job!.num} — ${job!.customer}
 
-Axle Configuration:
-- ${cfg.axleCount} x ${cfg.axleMake} ${cfg.axleType}
-${cfg.suspension ? `- Suspension: ${cfg.suspension}` : ''}
-${cfg.studPattern ? `- Stud Pattern: ${cfg.studPattern}` : ''}
+        {/* Find PDF button */}
+        {suspensionFiles === null && (
+          <button
+            onClick={fetchSuspensionFiles}
+            disabled={suspensionLoading}
+            style={{
+              alignSelf: 'flex-start', fontFamily: "'League Spartan', sans-serif",
+              fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+              padding: '8px 16px', borderRadius: 6, border: 'none',
+              background: suspensionLoading ? 'rgba(232,104,26,0.3)' : '#E8681A',
+              color: '#fff', cursor: suspensionLoading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {suspensionLoading ? 'Searching Drive...' : '🔍 Find Order Form PDF'}
+          </button>
+        )}
 
-Delivery to:
-YLZ Truck Bodies
-29 Southeast Boulevard
-Pakenham, VIC 3810
+        {suspensionLoading && (
+          <div style={{ fontSize: 12, color: 'var(--text3)' }}>Searching Drive for matching order form...</div>
+        )}
 
-Required by: ASAP
+        {/* Best match */}
+        {bestMatch && (
+          <div style={{ border: '1px solid rgba(34,197,94,0.4)', borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', background: 'rgba(34,197,94,0.1)', borderBottom: '1px solid rgba(34,197,94,0.2)', fontSize: 11, fontWeight: 700, color: '#22c55e', letterSpacing: 1, textTransform: 'uppercase' }}>
+              Best Match
+            </div>
+            <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ fontSize: 13, color: '#fff' }}>📄 {bestMatch.name}</div>
+              {bestMatch.webViewLink && (
+                <a
+                  href={bestMatch.webViewLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700,
+                    letterSpacing: 0.5, textTransform: 'uppercase', padding: '6px 14px',
+                    borderRadius: 5, border: 'none', background: '#E8681A', color: '#fff',
+                    textDecoration: 'none', whiteSpace: 'nowrap',
+                  }}
+                >
+                  Open PDF
+                </a>
+              )}
+            </div>
+          </div>
+        )}
 
-Regards,
-YLZ Truck Bodies
-03 5940 7620`}
-        </div>
+        {/* No match */}
+        {suspensionFiles !== null && !bestMatch && (
+          <div style={{ fontSize: 12, color: '#ef4444', padding: '8px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 4 }}>
+            No matching PDF found for {cfg.axleCount}x {cfg.axleMake} {cfg.axleType}. Check the Generic Orders folder manually.
+          </div>
+        )}
+
+        {/* Other available files */}
+        {otherFiles.length > 0 && (
+          <details>
+            <summary style={{ fontSize: 11, color: 'var(--text3)', cursor: 'pointer', marginBottom: 6 }}>
+              All files in Generic Orders ({otherFiles.length + (bestMatch ? 1 : 0)})
+            </summary>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+              {(suspensionFiles || []).map(f => (
+                <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: 'rgba(0,0,0,0.2)', borderRadius: 4, gap: 8 }}>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>📄 {f.name}</div>
+                  {f.webViewLink && (
+                    <a href={f.webViewLink} target="_blank" rel="noreferrer"
+                      style={{ fontSize: 11, color: '#E8681A', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                      Open
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+
+        {suspensionFiles !== null && (
+          <button
+            onClick={() => { setSuspensionFiles(null); fetchSuspensionFiles() }}
+            style={{
+              alignSelf: 'flex-start', fontSize: 11, color: 'var(--text3)',
+              background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline',
+            }}
+          >
+            Refresh
+          </button>
+        )}
       </div>
     )
   }
