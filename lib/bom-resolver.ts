@@ -355,31 +355,38 @@ export function resolveBoms(
       // Same size logic: size-specific BOMs (7.7M/5.4M/9.2M) vs generic BOMs for 8.3M
       const isDrum = axleType.includes('drum')
       const isDisc = axleType.includes('disc')
+      const suspNote = trcfg('suspension') ? `${trcfg('suspension')} Suspension` : undefined
+      function addRg(code: string, comment?: string) {
+        add(code, 'Running Gear', [suspNote, comment].filter(Boolean).join(' – ') || undefined)
+      }
 
       if (axleMake === 'SAF' && isDrum) {
-        if (axles === 3) add('BOM161', 'Running Gear')
-        if (axles === 4 && !is4a83) add('BOM162', 'Running Gear')  // SAF Drum 7.7M
-        if (axles === 4 && is4a83)  add('BOM105', 'Running Gear')  // SAF Drum 8.3M
-        if (axles === 5) add('BOM163', 'Running Gear')
+        if (axles === 3) addRg('BOM161')
+        if (axles === 4 && !is4a83) addRg('BOM162')  // SAF Drum 7.7M
+        if (axles === 4 && is4a83)  addRg('BOM105')  // SAF Drum 8.3M
+        if (axles === 5) addRg('BOM163')
       } else if (axleMake === 'SAF' && isDisc) {
-        if (axles === 3) add('BOM164', 'Running Gear')
-        if (axles === 4 && !is4a83) add('BOM165', 'Running Gear')  // SAF Disc 7.7M
-        if (axles === 4 && is4a83)  add('BOM150', 'Running Gear')  // Disc 8.3M
-        if (axles === 5) add('BOM166', 'Running Gear')
+        if (axles === 3) addRg('BOM164')
+        if (axles === 4 && !is4a83) addRg('BOM165')  // SAF Disc 7.7M
+        if (axles === 4 && is4a83)  addRg('BOM150')  // Disc 8.3M
+        if (axles === 5) addRg('BOM166')
       } else if (axleMake === 'TMC' && isDisc) {
-        if (axles === 3) add('BOM167', 'Running Gear')
-        if (axles === 4 && !is4a83) add('BOM168', 'Running Gear')  // TMC Disc 7.7M
-        if (axles === 4 && is4a83)  add('BOM153', 'Running Gear')  // TMC Disc 8.3M
-        if (axles === 5) add('BOM169', 'Running Gear')
+        if (axles === 3) addRg('BOM167')
+        if (axles === 4 && !is4a83) addRg('BOM168')  // TMC Disc 7.7M
+        if (axles === 4 && is4a83)  addRg('BOM153')  // TMC Disc 8.3M
+        if (axles === 5) addRg('BOM169')
       } else if (isDrum) {
-        if (axles === 3) add('BOM104', 'Running Gear')
-        if (axles === 4) add('BOM105', 'Running Gear')
-        if (axles === 5) add('BOM106', 'Running Gear')
+        if (axles === 3) addRg('BOM104')
+        if (axles === 4) addRg('BOM105')
+        if (axles === 5) addRg('BOM106')
       } else if (isDisc) {
-        if (axles === 3) add('BOM149', 'Running Gear')
-        if (axles === 4) add('BOM150', 'Running Gear')
-        if (axles === 5) add('BOM151', 'Running Gear')
+        if (axles === 3) addRg('BOM149')
+        if (axles === 4) addRg('BOM150')
+        if (axles === 5) addRg('BOM151')
       }
+
+      // ── Axle Lift ──
+      if (trcfg('axleLift').toLowerCase() === 'yes') add('BOM121', 'Axle Lift')
 
       // ── Drawbar ──
       if (axles === 3) add('BOM171', 'Drawbar')
@@ -418,6 +425,27 @@ export function resolveBoms(
       const tHoseBurst = trcfg('hoseBurstValve') || trcfg('trailerHoseBurstValve')
       if (tHoseBurst.toLowerCase() === 'yes') {
         add('500-227', 'Hydraulics')
+      }
+
+      // ── Hoist – Trailer ──
+      const tHoist = trcfg('hoist')
+      if (tHoist && tHoist.toLowerCase() !== 'none') {
+        const tHoistPart = resolveHoist(tHoist)
+        if (tHoistPart) {
+          add(tHoistPart, 'Hoist')
+        } else {
+          addTbd('Hoist', `Hoist: ${tHoist} — part not in lookup, check MRPeasy`)
+        }
+      }
+
+      // ── Body Extras – Trailer ──
+      const tSideLights = trcfg('sideLights')
+      if (tSideLights && tSideLights !== 'None') {
+        addTbd('Body Extras', `${tSideLights} — confirm part number in MRPeasy`)
+      }
+      const tAntiSpray = trcfg('antiSpray')
+      if (tAntiSpray === 'Yes') {
+        addTbd('Body Extras', 'Anti spray suppressant — confirm part number in MRPeasy')
       }
 
       // ── Wheels & Tyres ── default to 335 PCD (most common in real quotes)

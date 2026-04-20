@@ -143,6 +143,7 @@ interface QuoteForm {
   trailerGrainDoors: string
   trailerGrainLocks: string
   // trailer body extras
+  trailerAntiSpray: string
   trailerRockSheet: string
   trailerLiner: string
   trailerRearLadder: string
@@ -765,7 +766,7 @@ function emptyForm(quoteNumber = ''): QuoteForm {
     trailerTyre: '', trailerInnerWheels: '', trailerOuterWheels: '',
     trailerTarpColour: '', trailerTarpMaterial: 'PVC', trailerTarpType: 'Hoop Type', trailerTarpLocation: 'Standard Out Front', trailerTarpLength: '',
     trailerSideLights: 'None', trailerSideLightsCustom: '', trailerIndicators: 'None', trailerGrainDoors: 'No', trailerGrainLocks: 'No',
-    trailerRockSheet: 'No', trailerLiner: 'No',
+    trailerAntiSpray: 'No', trailerRockSheet: 'No', trailerLiner: 'No',
     trailerRearLadder: 'No', trailerCentreChain: 'No', trailerCatMarkers: 'No', trailerReflectors: 'Yes (Amber)', trailerCamera: 'No', trailerVibrator: 'No',
     lineItems: [],
     margin: 0, overhead: 0, discount: 0,
@@ -966,6 +967,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerIndicators = trc.indicators || 'None'
     form.trailerGrainDoors = trc.grainDoors || 'No'
     form.trailerGrainLocks = trc.grainLocks || 'No'
+    form.trailerAntiSpray = trc.antiSpray || 'No'
     form.trailerRockSheet = trc.rockSheet || 'No'
     form.trailerLiner = trc.liner || 'No'
     form.trailerRearLadder = trc.rearLadder || 'No'
@@ -1109,6 +1111,7 @@ function applyTemplateConfig(form: QuoteForm, cfg: Record<string, any>, template
     form.trailerIndicators = cfg.indicators || 'None'
     form.trailerGrainDoors = cfg.grainDoors || 'No'
     form.trailerGrainLocks = cfg.grainLocks || 'No'
+    form.trailerAntiSpray = cfg.antiSpray || 'No'
     form.trailerRockSheet = cfg.rockSheet || 'No'
     form.trailerLiner = cfg.liner || 'No'
     form.trailerRearLadder = cfg.rearLadder || 'No'
@@ -1261,7 +1264,7 @@ function buildConfiguration(form: QuoteForm): Record<string, unknown> {
     tarpType: form.trailerTarpType, tarpLocation: form.trailerTarpLocation, tarpLength: form.trailerTarpLength,
     sideLights: form.trailerSideLights, sideLightsCustom: form.trailerSideLightsCustom, indicators: form.trailerIndicators,
     grainDoors: form.trailerGrainDoors, grainLocks: form.trailerGrainLocks,
-    rockSheet: form.trailerRockSheet, liner: form.trailerLiner,
+    antiSpray: form.trailerAntiSpray, rockSheet: form.trailerRockSheet, liner: form.trailerLiner,
     rearLadder: form.trailerRearLadder, centreChain: form.trailerCentreChain,
     catMarkers: form.trailerCatMarkers, reflectors: form.trailerReflectors,
     camera: form.trailerCamera, vibrator: form.trailerVibrator,
@@ -2814,6 +2817,11 @@ function QuoteBuilderInner() {
               )}
               <Field label="Liner">
                 <select value={form.trailerLiner} onChange={(e) => set('trailerLiner', e.target.value)} style={selectStyle}>
+                  {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </Field>
+              <Field label="Anti Spray Suppressant">
+                <select value={form.trailerAntiSpray} onChange={(e) => set('trailerAntiSpray', e.target.value)} style={selectStyle}>
                   {['No', 'Yes'].map((o) => <option key={o}>{o}</option>)}
                 </select>
               </Field>
