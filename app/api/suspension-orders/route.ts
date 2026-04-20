@@ -10,17 +10,48 @@ const FOLDER_PATH = ['YLZ', 'Engineering', 'Order Forms', 'Suspension', 'Generic
 
 let cachedFolderId: string | null = null
 
-async function findChildInAnyDrive(drive: drive_v3.Drive, parentId: string, name: string): Promise<string | null> {
+async function findChildFolder(drive: drive_v3.Drive, parentId: string, name: string, sharedDriveId: string): Promise<{ id: string | null; tried: string[] }> {
   const safe = name.replace(/'/g, "\\'")
-  const res = await drive.files.list({
-    q: `'${parentId}' in parents and name = '${safe}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
-    fields: 'files(id, name)',
-    pageSize: 5,
-    supportsAllDrives: true,
-    includeItemsFromAllDrives: true,
-    corpora: 'allDrives',
-  })
-  return res.data.files?.[0]?.id ?? null
+  const tried: string[] = []
+
+  // Strategy 1: corpora=drive with explicit driveId (required for shared drive root navigation)
+  try {
+    tried.push(`corpora=drive driveId=${sharedDriveId}`)
+    const res = await drive.files.list({
+      q: `'${parentId}' in parents and name = '${safe}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+      fields: 'files(id, name)',
+      pageSize: 5,
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
+      corpora: 'drive',
+      driveId: sharedDriveId,
+    })
+    const id = res.data.files?.[0]?.id ?? null
+    if (id) return { id, tried }
+    tried.push(`→ 0 results`)
+  } catch (e: unknown) {
+    tried.push(`→ error: ${e instanceof Error ? e.message : String(e)}`)
+  }
+
+  // Strategy 2: corpora=allDrives fallback
+  try {
+    tried.push(`corpora=allDrives`)
+    const res = await drive.files.list({
+      q: `'${parentId}' in parents and name = '${safe}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+      fields: 'files(id, name)',
+      pageSize: 5,
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
+      corpora: 'allDrives',
+    })
+    const id = res.data.files?.[0]?.id ?? null
+    if (id) return { id, tried }
+    tried.push(`→ 0 results`)
+  } catch (e: unknown) {
+    tried.push(`→ error: ${e instanceof Error ? e.message : String(e)}`)
+  }
+
+  return { id: null, tried }
 }
 
 async function getGenericOrdersFolderId(drive: drive_v3.Drive): Promise<{ id: string; debug: string[] } | { error: string; debug: string[] }> {
@@ -36,18 +67,14 @@ async function getGenericOrdersFolderId(drive: drive_v3.Drive): Promise<{ id: st
 
   for (const segment of FOLDER_PATH) {
     debug.push(`Looking for "${segment}" inside ${currentId}`)
-    try {
-      const childId = await findChildInAnyDrive(drive, currentId, segment)
-      if (!childId) {
-        debug.push(`❌ "${segment}" not found`)
-        return { error: `Could not find folder: "${segment}"`, debug }
-      }
-      debug.push(`✓ Found "${segment}" → ${childId}`)
-      currentId = childId
-    } catch (e: unknown) {
-      debug.push(`❌ Error looking for "${segment}": ${e instanceof Error ? e.message : String(e)}`)
-      return { error: `Error navigating to "${segment}"`, debug }
+    const { id: childId, tried } = await findChildFolder(drive, currentId, segment, YLZ_ROOT_ID)
+    debug.push(`  Tried: ${tried.join(' | ')}`)
+    if (!childId) {
+      debug.push(`❌ "${segment}" not found`)
+      return { error: `Could not find folder: "${segment}"`, debug }
     }
+    debug.push(`✓ "${segment}" → ${childId}`)
+    currentId = childId
   }
 
   cachedFolderId = currentId
