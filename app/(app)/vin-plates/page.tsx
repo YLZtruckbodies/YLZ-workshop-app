@@ -75,7 +75,6 @@ export default function VinPlatesPage() {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
-  const [markingAll, setMarkingAll] = useState(false)
 
   const fetchRecords = useCallback(async () => {
     try {
@@ -159,16 +158,6 @@ export default function VinPlatesPage() {
     setTogglingId(null)
   }
 
-  const handleMarkAllYes = async () => {
-    if (!confirm('Set all dropdowns to Yes for every record?')) return
-    setMarkingAll(true)
-    try {
-      await fetch('/api/vin-plates', { method: 'PATCH' })
-      await fetchRecords()
-    } catch { /* ignore */ }
-    setMarkingAll(false)
-  }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Header */}
@@ -192,13 +181,6 @@ export default function VinPlatesPage() {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
               style={{ ...inputStyle, width: 220 }}
             />
-            <button
-              onClick={handleMarkAllYes}
-              disabled={markingAll}
-              style={{ ...btnStyle, background: '#1a3a1a', color: '#4ade80', border: '1px solid #2d6a2d', opacity: markingAll ? 0.6 : 1 }}
-            >
-              {markingAll ? 'Updating...' : 'Mark All Yes'}
-            </button>
             <button
               onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm) }}
               style={{ ...btnStyle, background: '#E8681A', color: '#fff' }}
