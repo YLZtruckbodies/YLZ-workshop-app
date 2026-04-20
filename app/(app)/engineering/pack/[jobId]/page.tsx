@@ -139,6 +139,7 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
   const [dispatchMsg, setDispatchMsg] = useState('')
   const [suspensionFiles, setSuspensionFiles] = useState<Array<{ id: string; name: string; webViewLink?: string; score: number }> | null>(null)
   const [suspensionLoading, setSuspensionLoading] = useState(false)
+  const [suspensionDebug, setSuspensionDebug] = useState<string[]>([])
   const [vinData, setVinData] = useState<VinPlateData | null>(null)
   const [vinLoading, setVinLoading] = useState(false)
   const [vinDriveFiles, setVinDriveFiles] = useState<DriveVinFile[]>([])
@@ -1125,6 +1126,7 @@ case 'tebs': return renderTEBS()
 
     const fetchSuspensionFiles = async () => {
       setSuspensionLoading(true)
+      setSuspensionDebug([])
       try {
         const params = new URLSearchParams({
           axleCount: String(cfg.axleCount || ''),
@@ -1132,14 +1134,16 @@ case 'tebs': return renderTEBS()
           axleType: cfg.axleType || '',
         })
         const res = await fetch(`/api/suspension-orders?${params}`)
+        const data = await res.json()
+        setSuspensionDebug(data.debug || [])
         if (res.ok) {
-          const data = await res.json()
           setSuspensionFiles(data.files || [])
         } else {
           setSuspensionFiles([])
         }
-      } catch {
+      } catch (e) {
         setSuspensionFiles([])
+        setSuspensionDebug([`Fetch error: ${e instanceof Error ? e.message : String(e)}`])
       }
       setSuspensionLoading(false)
     }
@@ -1220,6 +1224,18 @@ case 'tebs': return renderTEBS()
           <div style={{ fontSize: 12, color: '#ef4444', padding: '8px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 4 }}>
             No matching PDF found for {cfg.axleCount}x {cfg.axleMake} {cfg.axleType}. Check the Generic Orders folder manually.
           </div>
+        )}
+
+        {/* Debug info */}
+        {suspensionDebug.length > 0 && (
+          <details>
+            <summary style={{ fontSize: 11, color: 'var(--text3)', cursor: 'pointer' }}>Debug info ({suspensionDebug.length} steps)</summary>
+            <div style={{ marginTop: 6, padding: '8px 10px', background: 'rgba(0,0,0,0.4)', borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {suspensionDebug.map((line, i) => (
+                <div key={i} style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>{line}</div>
+              ))}
+            </div>
+          </details>
         )}
 
         {/* Other available files */}
