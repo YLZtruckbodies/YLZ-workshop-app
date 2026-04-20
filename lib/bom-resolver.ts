@@ -227,14 +227,17 @@ export function resolveBoms(
       const tarpColour = tcfg('tarpColour')
       const tarpBom = resolveTarpBom(isPVC, tarpLen)
       const tarpWidth = tcfg('material').toLowerCase().includes('aluminium') ? 2340 : 2400
-      // Recalculate bow for hardox truck bodies from body height (corrects stale stored values)
-      // Rule: 1000mm body height = 450mm bow, 1100mm = 380mm bow
+      // Recalculate bow from material + body height (corrects stale stored values)
+      // Aluminium (truck or trailer): always 250mm
+      // Hardox truck bodies: 1000mm = 450mm bow, 1100mm = 380mm bow
       const bodyHeightMm = tcfgNum('bodyHeight')
-      const isHardox = tcfg('material').toLowerCase().includes('hardox')
+      const truckMat = tcfg('material').toLowerCase()
       let bowVal: string
-      if (isHardox && bodyHeightMm === 1000) {
+      if (truckMat.includes('aluminium')) {
+        bowVal = '250'
+      } else if (truckMat.includes('hardox') && bodyHeightMm === 1000) {
         bowVal = '450'
-      } else if (isHardox && bodyHeightMm === 1100) {
+      } else if (truckMat.includes('hardox') && bodyHeightMm === 1100) {
         bowVal = '380'
       } else {
         bowVal = tarpBow ? tarpBow.toString().replace(/mm$/i, '') : ''
@@ -456,7 +459,15 @@ export function resolveBoms(
         const tTarpColour = trcfg('tarpColour')
         const tarpBom = resolveTarpBom(tIsPVC, tTarpLen)
         const tTarpWidth = trcfg('material').toLowerCase().includes('aluminium') ? 2340 : 2400
-        const tBowVal = tTarpBow ? tTarpBow.toString().replace(/mm$/i, '') : ''
+        // Aluminium trailers always 250mm bow; fall back to stored value for others
+        const trailerMat = trcfg('material').toLowerCase()
+        const tBodyHeightMm = trcfgNum('bodyHeight')
+        let tBowVal: string
+        if (trailerMat.includes('aluminium')) {
+          tBowVal = '250'
+        } else {
+          tBowVal = tTarpBow ? tTarpBow.toString().replace(/mm$/i, '') : ''
+        }
         const tTarpDims = [String(tTarpLen), String(tTarpWidth), tBowVal].filter(Boolean).join(' x ')
         const tTarpNote = tTarpColour ? `${tTarpDims} – ${tTarpColour}` : tTarpDims
         if (tarpBom) add(tarpBom, 'Trailer Tarp', tTarpNote)
