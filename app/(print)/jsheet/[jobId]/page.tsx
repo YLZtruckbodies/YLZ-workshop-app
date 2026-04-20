@@ -639,12 +639,14 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Pogo Stick', 'pogoStick')}
                   <div key="drawbarEyeToEye">
                     <div style={lblStyle}>Drawbar Eye-to-Eye (mm)</div>
-                    <input style={inpStyle} value={editCfg['drawbarEyeToEye'] || ''} onChange={e => setCfgField('drawbarEyeToEye', e.target.value)} placeholder="e.g. 7200" />
                     {(() => {
-                      const raw = Number(editCfg['drawbarEyeToEye'])
+                      const raw = Number(editCfg['drawbarLength'])
                       const axles = Number(editCfg['axleCount'] || 0)
                       const offset = axles >= 4 ? 1360 : 807
-                      return raw && !isNaN(raw) ? <div style={{ fontSize: 10, color: '#E8681A', marginTop: 3 }}>Job sheet: {raw - offset}mm</div> : null
+                      const derived = raw && !isNaN(raw) ? raw - offset : null
+                      return derived != null
+                        ? <div style={{ fontSize: 13, color: '#fff', padding: '6px 0' }}>{derived}mm</div>
+                        : <div style={{ fontSize: 11, color: 'var(--text3)', padding: '6px 0' }}>Enter drawbar length above</div>
                     })()}
                   </div>
                 </div>
@@ -1156,7 +1158,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 <div className="field"><div className="field-lbl">Pogo Stick</div><div className="field-val">{c('pogoStick') || ''}</div>{!c('pogoStick') && <div className="field-blank" />}</div>
               </div>
               {(() => {
-                const raw = Number(c('drawbarEyeToEye'))
+                const raw = Number(c('drawbarLength'))
                 const axles = Number(c('axleCount') || 0)
                 const offset = axles >= 4 ? 1360 : 807
                 const derived = raw && !isNaN(raw) ? raw - offset : null
