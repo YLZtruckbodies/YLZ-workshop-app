@@ -505,12 +505,15 @@ export function resolveBoms(
       }
 
       // ── Wheels & Tyres ──
-      const innerQty = axles * 2
-      const outerQty = axles * 2
-      const tyreQty  = axles * 4
-      addTbd('Trailer Wheels & Tyres', `Inner Wheels — Qty: ${innerQty} (confirm type)`)
-      addTbd('Trailer Wheels & Tyres', `Outer Wheels — Qty: ${outerQty} (confirm type)`)
-      addTbd('Trailer Wheels & Tyres', `Tyres — Qty: ${tyreQty} (confirm type)`)
+      const innerQty   = axles * 2
+      const outerQty   = axles * 2
+      const tyreQty    = axles * 4
+      const innerWheel = trcfg('innerWheels') || 'TBC'
+      const outerWheel = trcfg('outerWheels') || 'TBC'
+      const tyreModel  = trcfg('tyre') || 'TBC'
+      addTbd('Trailer Wheels & Tyres', `Inner Wheels — Qty: ${innerQty} — ${innerWheel}`)
+      addTbd('Trailer Wheels & Tyres', `Outer Wheels — Qty: ${outerQty} — ${outerWheel}`)
+      addTbd('Trailer Wheels & Tyres', `Tyres — Qty: ${tyreQty} — ${tyreModel}`)
 
     } else {
       // ── Convertor Dolly ──
