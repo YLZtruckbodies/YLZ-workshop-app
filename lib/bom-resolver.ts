@@ -83,6 +83,32 @@ function resolveTarpBom(isPVC: boolean, bodyLengthMm: number): string | null {
   return null
 }
 
+// ─── Trailer Chassis Length Lookup ───────────────────────────────────────────
+// Maps trailer body length (mm) to the correct chassis length (mm) to order.
+const CHASSIS_LOOKUP: [number, number][] = [
+  [5300, 4930], [5350, 4930], [5400, 4930],
+  [6000, 5450], [6100, 5450],
+  [7700, 7470],
+  [8300, 7870],
+  [9200, 8950], [9600, 8950],
+  [10200, 9450],
+]
+
+function resolveChassisLength(bodyLengthMm: number): number | null {
+  // Exact match first
+  for (const [body, chassis] of CHASSIS_LOOKUP) {
+    if (body === bodyLengthMm) return chassis
+  }
+  // Nearest match within ±150mm (handles minor rounding differences)
+  let best: number | null = null
+  let bestDiff = Infinity
+  for (const [body, chassis] of CHASSIS_LOOKUP) {
+    const diff = Math.abs(body - bodyLengthMm)
+    if (diff < bestDiff) { bestDiff = diff; best = chassis }
+  }
+  return bestDiff <= 150 ? best : null
+}
+
 // ─── Main Resolver ───────────────────────────────────────────────────────────
 
 export function resolveBoms(
@@ -351,6 +377,14 @@ export function resolveBoms(
       if (tIsAlly && axles === 4 && is4a83)  add('BOM145', 'Trailer Body')  // 8.3M aluminium
       if (tIsAlly && axles === 5) add('BOM160', 'Trailer Body')
 
+      // ── Trailer Chassis ──
+      const chassisLen = resolveChassisLength(tBodyLen)
+      if (chassisLen) {
+        addTbd('Trailer Chassis', `Trailer Chassis — ${chassisLen}mm (body ${tBodyLen}mm)`)
+      } else if (tBodyLen > 0) {
+        addTbd('Trailer Chassis', `Trailer Chassis — confirm length for ${tBodyLen}mm body`)
+      }
+
       // ── Running Gear ──
       // Same size logic: size-specific BOMs (7.7M/5.4M/9.2M) vs generic BOMs for 8.3M
       const isDrum = axleType.includes('drum')
@@ -406,7 +440,7 @@ export function resolveBoms(
       const tTarp = trcfg('tarpSystem') || trcfg('trailerTarp')
       if (tTarp && !tTarp.toLowerCase().includes('none') && tBodyLen > 0) {
         const tIsPVC = tTarp.toLowerCase().includes('pvc') || !tTarp.toLowerCase().includes('mesh')
-        const tTarpLen = trcfgNum('tarpLength') || tBodyLen
+        const tTarpLen = trcfgNum('tarpLength') || (tBodyLen - 400)
         const tTarpBow = trcfg('tarpBowSize') || trcfg('bowSize')
         const tTarpColour = trcfg('tarpColour')
         const tarpBom = resolveTarpBom(tIsPVC, tTarpLen)
