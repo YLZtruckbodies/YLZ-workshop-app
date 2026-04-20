@@ -261,9 +261,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 /* ─── PRINT ─── */
 @media print {
   @page{margin:0;size:A4 portrait}
-  body{overflow:visible;height:auto;background:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  html,body{overflow:visible !important;height:auto !important;background:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .app{display:block !important;height:auto !important;overflow:visible !important}
   .sidebar,.preview-label{display:none !important}
-  .preview-panel{padding:0;background:#000;display:block}
+  .preview-panel{padding:0;background:#000;display:block;overflow:visible !important;height:auto !important}
   .preview-wrap{max-width:100%;transform:none !important}
   .flyer{border:none;box-shadow:none;padding:28px 32px 36px}
   .dealer-banner{margin:-28px -32px 24px}
