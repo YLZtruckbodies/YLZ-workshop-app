@@ -261,7 +261,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 /* ─── PRINT (single continuous page, no breaks) ─── */
 @media print {
   @page{margin:0;size:210mm 1500mm}
-  *{overflow:visible !important;page-break-before:avoid !important;page-break-after:avoid !important;page-break-inside:avoid !important;break-before:avoid !important;break-after:avoid !important;break-inside:avoid !important}
   html,body{overflow:visible !important;height:auto !important;width:auto !important;margin:0 !important;padding:0 !important;background:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .app{display:block !important;height:auto !important;overflow:visible !important}
   .sidebar,.preview-label{display:none !important}
@@ -269,6 +268,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   .preview-wrap{max-width:100%;transform:none !important;overflow:visible !important;margin:0 !important;padding:0 !important}
   .flyer{border:none;box-shadow:none;overflow:visible !important;padding:28px 32px 36px}
   .dealer-banner{margin:-28px -32px 24px}
+  .product-row{display:grid !important}
+  .product-row.three{grid-template-columns:repeat(3,1fr) !important}
+  .product-row.two{grid-template-columns:repeat(2,1fr) !important}
+  .product-row.one{grid-template-columns:1fr !important}
+  .p-card{break-inside:avoid}
+  .value-strip{display:grid !important;grid-template-columns:repeat(3,1fr) !important}
 }
 </style>
 </head>
