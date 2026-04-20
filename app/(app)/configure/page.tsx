@@ -36,6 +36,7 @@ const SCREEN_OPTIONS = [
   { key: 'quotes', label: 'Sales / Quoting' },
   { key: 'engineering', label: 'Engineering' },
   { key: 'repairs', label: 'Repairs / Warranty' },
+  { key: 'vin-plates', label: 'VIN Plate Records' },
 ]
 
 const COLOR_SWATCHES = [
