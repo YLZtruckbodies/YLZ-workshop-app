@@ -258,22 +258,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .footer-l,.footer-r{font-size:9px;color:rgba(255,255,255,0.25);line-height:1.6}
 .footer-r{text-align:right}
 
-/* ─── PRINT (single continuous page, no breaks) ─── */
+/* ─── PRINT ─── */
 @media print {
-  @page{margin:0;size:210mm 1500mm}
-  html,body{overflow:visible !important;height:auto !important;width:auto !important;margin:0 !important;padding:0 !important;background:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .app{display:block !important;height:auto !important;overflow:visible !important}
+  @page{margin:0;size:A4 portrait}
+  body{overflow:visible;height:auto;background:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .sidebar,.preview-label{display:none !important}
-  .preview-panel{padding:0 !important;margin:0 !important;background:#000;display:block;overflow:visible !important;height:auto !important}
-  .preview-wrap{max-width:100%;transform:none !important;overflow:visible !important;margin:0 !important;padding:0 !important}
-  .flyer{border:none;box-shadow:none;overflow:visible !important;padding:28px 32px 36px}
+  .preview-panel{padding:0;background:#000;display:block}
+  .preview-wrap{max-width:100%;transform:none !important}
+  .flyer{border:none;box-shadow:none;padding:28px 32px 36px}
   .dealer-banner{margin:-28px -32px 24px}
-  .product-row{display:grid !important}
-  .product-row.three{grid-template-columns:repeat(3,1fr) !important}
-  .product-row.two{grid-template-columns:repeat(2,1fr) !important}
-  .product-row.one{grid-template-columns:1fr !important}
-  .p-card{break-inside:avoid}
-  .value-strip{display:grid !important;grid-template-columns:repeat(3,1fr) !important}
 }
 </style>
 </head>
@@ -393,7 +386,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
     <div class="sidebar-footer">
       <button class="btn-print" onclick="window.print()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Export PDF
+        Save as PDF
       </button>
       <button class="btn-reset" onclick="resetForm()">Reset to defaults</button>
     </div>
@@ -402,7 +395,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   <!-- ═══ PREVIEW PANEL ═══ -->
   <div class="preview-panel">
     <div class="preview-wrap">
-      <div class="preview-label">LIVE PREVIEW — Click "Export PDF" then choose "Save as PDF" in your print dialog</div>
+      <div class="preview-label">LIVE PREVIEW — Click "Save as PDF" then choose "Save as PDF" in your print dialog</div>
 
       <!-- ─── FLYER ─── -->
       <div class="flyer" id="flyerEl">
