@@ -6,7 +6,7 @@
 <title>YLZ Dealer Flyer Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <style>
 /* ─── RESET & BASE ─── */
 *{margin:0;padding:0;box-sizing:border-box}
@@ -924,7 +924,9 @@ async function downloadPDF() {
     var pdfWidthMM = 210;
     var pdfHeightMM = (canvas.height / canvas.width) * pdfWidthMM;
 
-    var pdf = new window.jspdf.jsPDF({
+    var jsPDFClass = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (!jsPDFClass) throw new Error('jsPDF library failed to load');
+    var pdf = new jsPDFClass({
       orientation: 'portrait',
       unit: 'mm',
       format: [pdfWidthMM, pdfHeightMM],
