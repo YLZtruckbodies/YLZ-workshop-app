@@ -288,8 +288,12 @@ function calcTarpBowHeight(material: string, isDogTrailer: boolean, bodyLength: 
   const height = parseInt(bodyHeight, 10)
   if (material === 'Aluminium') return '250mm'
   if (isDogTrailer) return '320mm'
-  // Steel / Hardox bodies always use 450mm bows
-  if (!isNaN(height)) return '450mm'
+  // Steel / Hardox bodies — bow size based on body height
+  if (!isNaN(height)) {
+    if (height <= 1000) return '450mm'
+    if (height === 1100) return '380mm'
+    if (height >= 1150) return '450mm'
+  }
   return ''
 }
 
