@@ -912,13 +912,20 @@ async function downloadPDF() {
     }
     await Promise.all(promises);
 
+    // Force a fixed width matching the preview so PDF matches screen exactly
+    var origWidth = el.style.width;
+    el.style.width = '820px';
+
     var canvas = await html2canvas(el, {
       scale: 2,
       backgroundColor: '#000000',
       useCORS: false,
       allowTaint: false,
       logging: false,
+      width: 820,
     });
+
+    el.style.width = origWidth;
 
     var imgData = canvas.toDataURL('image/jpeg', 0.95);
     var pdfWidthMM = 210;
