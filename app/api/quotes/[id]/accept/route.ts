@@ -405,6 +405,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       console.error('[BOM Resolver] Failed to resolve BOMs:', bomErr)
     }
 
+    // Auto-create VIN plate record for the trailer
+    try {
+      const tCfg = cfg.trailerConfig || cfg
+      const matRaw: string = (tCfg.material || '').toLowerCase()
+      const matType = matRaw.includes('alloy') ? 'ALLY' : matRaw.includes('hardox') ? 'HARDOX' : (tCfg.material || '').toUpperCase()
+      const axleCount = tCfg.axles ? `${tCfg.axles} AXLE` : ''
+      await prisma.vinPlateRecord.create({
+        data: {
+          vin: generatedTrailerVin,
+          jobNumber: trailerJob.num,
+          customer: quote.customerName,
+          type: matType,
+          axleType: axleCount,
+          hubConfiguration: '',
+          notes: 'PLATE NEEDED',
+        },
+      })
+    } catch { /* non-fatal */ }
+
     await prisma.jobMaster.upsert({
       where: { jobNumber: truckJob.num },
       update: { jobType: btypeToJobMasterType(truckBtype), customer: quote.customerName },
@@ -525,6 +544,26 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     } catch (bomErr) {
       console.error('[BOM Resolver] Failed to resolve BOMs:', bomErr)
       // Non-fatal — job still created, BOMs just won't be auto-populated
+    }
+
+    // Auto-create VIN plate record for trailer builds
+    if (isTrailerBuild && singleTrailerVin) {
+      try {
+        const matRaw: string = (cfg.material || '').toLowerCase()
+        const matType = matRaw.includes('alloy') ? 'ALLY' : matRaw.includes('hardox') ? 'HARDOX' : (cfg.material || '').toUpperCase()
+        const axleCount = cfg.axles ? `${cfg.axles} AXLE` : ''
+        await prisma.vinPlateRecord.create({
+          data: {
+            vin: singleTrailerVin,
+            jobNumber: job.num,
+            customer: quote.customerName,
+            type: matType,
+            axleType: axleCount,
+            hubConfiguration: '',
+            notes: 'PLATE NEEDED',
+          },
+        })
+      } catch { /* non-fatal */ }
     }
 
     await prisma.jobMaster.upsert({

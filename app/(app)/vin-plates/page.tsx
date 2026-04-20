@@ -11,6 +11,9 @@ type VinRecord = {
   jobNumber: string
   customer: string
   notes: string
+  vinPlateOrdered: boolean
+  vinPlateReceived: boolean
+  roverInput: boolean
   createdAt: string
 }
 
@@ -36,7 +39,31 @@ const btnStyle: React.CSSProperties = {
   borderRadius: 6, cursor: 'pointer', border: 'none',
 }
 
-const emptyForm = { vin: '', axleType: '', hubConfiguration: '', type: '', jobNumber: '', customer: '', notes: '' }
+const emptyForm = {
+  vin: '', axleType: '', hubConfiguration: '', type: '', jobNumber: '', customer: '', notes: '',
+  vinPlateOrdered: false, vinPlateReceived: false, roverInput: false,
+}
+
+function BoolSelect({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <select
+      value={value ? 'yes' : 'no'}
+      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value === 'yes')}
+      style={{
+        background: value ? '#1a3a1a' : '#2a1a1a',
+        border: `1px solid ${value ? '#2d6a2d' : '#4a2020'}`,
+        borderRadius: 5, padding: '4px 8px',
+        color: value ? '#4ade80' : '#f87171',
+        fontSize: 12, fontWeight: 700, cursor: 'pointer', outline: 'none',
+        fontFamily: "'League Spartan', sans-serif", letterSpacing: 0.5,
+        minWidth: 64,
+      }}
+    >
+      <option value="yes">Yes</option>
+      <option value="no">No</option>
+    </select>
+  )
+}
 
 export default function VinPlatesPage() {
   const [records, setRecords] = useState<VinRecord[]>([])
@@ -47,6 +74,7 @@ export default function VinPlatesPage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
 
   const fetchRecords = useCallback(async () => {
     try {
@@ -59,7 +87,7 @@ export default function VinPlatesPage() {
 
   useEffect(() => { fetchRecords() }, [fetchRecords])
 
-  const set = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }))
+  const set = (key: string, val: string | boolean) => setForm(f => ({ ...f, [key]: val }))
 
   const handleSave = async () => {
     if (!form.vin && !form.jobNumber) return
@@ -88,6 +116,7 @@ export default function VinPlatesPage() {
     setForm({
       vin: r.vin, axleType: r.axleType, hubConfiguration: r.hubConfiguration,
       type: r.type, jobNumber: r.jobNumber, customer: r.customer, notes: r.notes,
+      vinPlateOrdered: r.vinPlateOrdered, vinPlateReceived: r.vinPlateReceived, roverInput: r.roverInput,
     })
     setEditId(r.id)
     setShowForm(true)
@@ -107,6 +136,22 @@ export default function VinPlatesPage() {
     setForm(emptyForm)
     setEditId(null)
     setShowForm(false)
+  }
+
+  // Inline toggle for the 3 boolean fields
+  const handleToggle = async (id: string, field: 'vinPlateOrdered' | 'vinPlateReceived' | 'roverInput', current: boolean) => {
+    setTogglingId(id + field)
+    setRecords(prev => prev.map(r => r.id === id ? { ...r, [field]: !current } : r))
+    try {
+      await fetch(`/api/vin-plates/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: !current }),
+      })
+    } catch {
+      // revert on error
+      setRecords(prev => prev.map(r => r.id === id ? { ...r, [field]: current } : r))
+    }
+    setTogglingId(null)
   }
 
   return (
@@ -165,7 +210,7 @@ export default function VinPlatesPage() {
               </div>
               <div>
                 <label style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Type</label>
-                <input value={form.type} onChange={(e: React.ChangeEvent<HTMLInputElement>) => set('type', e.target.value)} style={inputStyle} placeholder="e.g. Tipper, Tray" />
+                <input value={form.type} onChange={(e: React.ChangeEvent<HTMLInputElement>) => set('type', e.target.value)} style={inputStyle} placeholder="e.g. ALLY, HARDOX" />
               </div>
               <div>
                 <label style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Customer</label>
@@ -173,16 +218,39 @@ export default function VinPlatesPage() {
               </div>
               <div>
                 <label style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Axle Type</label>
-                <input value={form.axleType} onChange={(e: React.ChangeEvent<HTMLInputElement>) => set('axleType', e.target.value)} style={inputStyle} placeholder="e.g. Single, Tandem" />
+                <input value={form.axleType} onChange={(e: React.ChangeEvent<HTMLInputElement>) => set('axleType', e.target.value)} style={inputStyle} placeholder="e.g. 4 AXLE" />
               </div>
               <div>
                 <label style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Hub Configuration</label>
-                <input value={form.hubConfiguration} onChange={(e: React.ChangeEvent<HTMLInputElement>) => set('hubConfiguration', e.target.value)} style={inputStyle} placeholder="e.g. 6 stud, 8 stud" />
+                <input value={form.hubConfiguration} onChange={(e: React.ChangeEvent<HTMLInputElement>) => set('hubConfiguration', e.target.value)} style={inputStyle} placeholder="e.g. SAF DISC 335" />
               </div>
             </div>
             <div style={{ marginTop: 12 }}>
               <label style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Notes</label>
               <input value={form.notes} onChange={(e: React.ChangeEvent<HTMLInputElement>) => set('notes', e.target.value)} style={inputStyle} placeholder="Optional notes" />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 12, maxWidth: 480 }}>
+              <div>
+                <label style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Plate Ordered</label>
+                <select value={form.vinPlateOrdered ? 'yes' : 'no'} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => set('vinPlateOrdered', e.target.value === 'yes')} style={{ ...inputStyle, width: 'auto' }}>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Plate Received</label>
+                <select value={form.vinPlateReceived ? 'yes' : 'no'} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => set('vinPlateReceived', e.target.value === 'yes')} style={{ ...inputStyle, width: 'auto' }}>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Rover Input</label>
+                <select value={form.roverInput ? 'yes' : 'no'} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => set('roverInput', e.target.value === 'yes')} style={{ ...inputStyle, width: 'auto' }}>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
               <button onClick={handleSave} disabled={saving} style={{ ...btnStyle, background: '#E8681A', color: '#fff', opacity: saving ? 0.6 : 1 }}>
@@ -214,6 +282,9 @@ export default function VinPlatesPage() {
                 <th style={thStyle}>Customer</th>
                 <th style={thStyle}>Axle Type</th>
                 <th style={thStyle}>Hub Config</th>
+                <th style={thStyle}>Plate Ordered</th>
+                <th style={thStyle}>Plate Received</th>
+                <th style={thStyle}>Rover Input</th>
                 <th style={thStyle}>Date Added</th>
                 <th style={{ ...thStyle, textAlign: 'right' }}>Actions</th>
               </tr>
@@ -230,6 +301,24 @@ export default function VinPlatesPage() {
                   <td style={tdStyle}>{r.customer || '-'}</td>
                   <td style={tdStyle}>{r.axleType || '-'}</td>
                   <td style={tdStyle}>{r.hubConfiguration || '-'}</td>
+                  <td style={tdStyle}>
+                    <BoolSelect
+                      value={r.vinPlateOrdered}
+                      onChange={(v) => { if (togglingId !== r.id + 'vinPlateOrdered') handleToggle(r.id, 'vinPlateOrdered', r.vinPlateOrdered) }}
+                    />
+                  </td>
+                  <td style={tdStyle}>
+                    <BoolSelect
+                      value={r.vinPlateReceived}
+                      onChange={(v) => { if (togglingId !== r.id + 'vinPlateReceived') handleToggle(r.id, 'vinPlateReceived', r.vinPlateReceived) }}
+                    />
+                  </td>
+                  <td style={tdStyle}>
+                    <BoolSelect
+                      value={r.roverInput}
+                      onChange={(v) => { if (togglingId !== r.id + 'roverInput') handleToggle(r.id, 'roverInput', r.roverInput) }}
+                    />
+                  </td>
                   <td style={{ ...tdStyle, color: '#888', fontSize: 12 }}>
                     {new Date(r.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </td>
