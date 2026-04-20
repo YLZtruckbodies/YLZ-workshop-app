@@ -650,9 +650,7 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <div style={{ fontSize: 12, color: 'var(--text3)' }}>
-            {hasCriticalMissing
-              ? 'Critical items missing — generate work order before dispatching.'
-              : `${readyCount}/${applicableCount} pack items ready.`}
+            {readyCount}/{applicableCount} pack items ready.
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {dispatchMsg && (
@@ -662,15 +660,15 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
             )}
             <button
               onClick={handleDispatch}
-              disabled={hasCriticalMissing || dispatching}
+              disabled={dispatching}
               style={{
                 fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 800,
                 letterSpacing: 1, textTransform: 'uppercase',
                 padding: '10px 24px', borderRadius: 6,
-                cursor: hasCriticalMissing || dispatching ? 'not-allowed' : 'pointer',
+                cursor: dispatching ? 'not-allowed' : 'pointer',
                 border: 'none',
-                background: hasCriticalMissing || dispatching ? 'rgba(34,197,94,0.2)' : '#22c55e',
-                color: '#fff', opacity: hasCriticalMissing || dispatching ? 0.4 : 1,
+                background: dispatching ? 'rgba(34,197,94,0.2)' : '#22c55e',
+                color: '#fff', opacity: dispatching ? 0.4 : 1,
                 transition: 'all 0.15s',
               }}
             >
