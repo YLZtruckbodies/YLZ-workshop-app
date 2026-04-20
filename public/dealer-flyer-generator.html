@@ -879,38 +879,52 @@ function resetForm() {
 }
 
 // ─── DOWNLOAD PDF ───
+function imgToBase64(img) {
+  return new Promise(function(resolve) {
+    if (img.src.startsWith('data:')) { resolve(); return; }
+    var c = document.createElement('canvas');
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    var ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    try {
+      img.src = c.toDataURL('image/jpeg', 0.92);
+    } catch(e) { /* ignore cross-origin */ }
+    resolve();
+  });
+}
+
 async function downloadPDF() {
-  const btn = document.getElementById('downloadBtn');
-  const origText = btn.textContent;
+  var btn = document.getElementById('downloadBtn');
   btn.textContent = '  Generating...';
   btn.disabled = true;
 
   try {
-    const el = document.getElementById('flyerEl');
-    const canvas = await html2canvas(el, {
+    var el = document.getElementById('flyerEl');
+
+    // Convert all images to base64 first to avoid tainted canvas
+    var imgs = el.querySelectorAll('img');
+    var promises = [];
+    for (var i = 0; i < imgs.length; i++) {
+      if (imgs[i].complete) {
+        promises.push(imgToBase64(imgs[i]));
+      }
+    }
+    await Promise.all(promises);
+
+    var canvas = await html2canvas(el, {
       scale: 2,
       backgroundColor: '#000000',
-      useCORS: true,
-      allowTaint: true,
-      logging: true,
-      imageTimeout: 15000,
-      onclone: function(clonedDoc) {
-        var clonedEl = clonedDoc.getElementById('flyerEl');
-        if (clonedEl) {
-          clonedEl.style.width = el.offsetWidth + 'px';
-        }
-      }
+      useCORS: false,
+      allowTaint: false,
+      logging: false,
     });
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    const imgWidthPx = canvas.width;
-    const imgHeightPx = canvas.height;
+    var imgData = canvas.toDataURL('image/jpeg', 0.95);
+    var pdfWidthMM = 210;
+    var pdfHeightMM = (canvas.height / canvas.width) * pdfWidthMM;
 
-    const pdfWidthMM = 210;
-    const pdfHeightMM = (imgHeightPx / imgWidthPx) * pdfWidthMM;
-
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({
+    var pdf = new window.jspdf.jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: [pdfWidthMM, pdfHeightMM],
@@ -918,17 +932,15 @@ async function downloadPDF() {
 
     pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidthMM, pdfHeightMM);
 
-    const dealer = state.dealerName || 'Dealer';
-    const filename = `YLZ-Flyer-${dealer.replace(/[^a-zA-Z0-9]/g, '-')}.pdf`;
+    var dealer = state.dealerName || 'Dealer';
+    var filename = 'YLZ-Flyer-' + dealer.replace(/[^a-zA-Z0-9]/g, '-') + '.pdf';
     pdf.save(filename);
   } catch (err) {
     console.error('PDF generation failed:', err);
-    alert('PDF generation failed: ' + (err.message || err) + '\n\nCheck browser console for details.');
+    alert('PDF generation failed: ' + (err.message || err));
   }
 
-  btn.innerHTML = `
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    Download PDF`;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download PDF';
   btn.disabled = false;
 }
 
