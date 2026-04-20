@@ -262,13 +262,29 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 @media print {
   @page{margin:0;size:A4 portrait}
   *{overflow:visible !important}
-  html,body{overflow:visible !important;height:auto !important;width:auto !important;background:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  html,body{overflow:visible !important;height:auto !important;width:auto !important;margin:0 !important;padding:0 !important;background:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .app{display:block !important;height:auto !important;overflow:visible !important}
   .sidebar,.preview-label{display:none !important}
-  .preview-panel{padding:0;background:#000;display:block;overflow:visible !important;height:auto !important}
-  .preview-wrap{max-width:100%;transform:none !important;overflow:visible !important}
-  .flyer{border:none;box-shadow:none;padding:28px 32px 36px;overflow:visible !important}
-  .dealer-banner{margin:-28px -32px 24px}
+  .preview-panel{padding:0 !important;margin:0 !important;background:#000;display:block;overflow:visible !important;height:auto !important}
+  .preview-wrap{max-width:100%;transform:none !important;overflow:visible !important;margin:0 !important;padding:0 !important}
+  .flyer{
+    border:none;box-shadow:none;overflow:visible !important;
+    padding:20px 28px 28px;
+    transform:scale(0.82);transform-origin:top left;
+    width:122%;
+  }
+  .dealer-banner{margin:-20px -28px 18px}
+  .flyer-header{padding-bottom:14px;margin-bottom:16px}
+  .flyer-hero{margin-bottom:14px}
+  .flyer-title{font-size:26px}
+  .flyer-sub{font-size:12px}
+  .value-strip{margin-bottom:16px}
+  .value-item{padding:9px 12px}
+  .range-section{margin-bottom:14px}
+  .p-card-photo{height:130px}
+  .p-card-body{padding:10px 12px;gap:5px}
+  .flyer-cta{padding:14px 20px;margin-bottom:14px}
+  .flyer-footer{padding-top:10px}
 }
 </style>
 </head>
