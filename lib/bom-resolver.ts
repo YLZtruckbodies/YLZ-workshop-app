@@ -127,6 +127,25 @@ export function resolveBoms(
     return parseInt(cfg(key).replace(/[^\d]/g, ''), 10) || 0
   }
 
+  // For truck-and-trailer builds, truck/trailer fields are nested under truckConfig/trailerConfig.
+  // These scoped helpers read from the nested sub-config first, then fall back to the flat config.
+  const truckSub = (config.truckConfig ?? {}) as Record<string, unknown>
+  const trailerSub = (config.trailerConfig ?? {}) as Record<string, unknown>
+  function tcfg(key: string): string {
+    const val = truckSub[key] ?? config[key]
+    return String(val ?? '').trim()
+  }
+  function tcfgNum(key: string): number {
+    return parseInt(tcfg(key).replace(/[^\d]/g, ''), 10) || 0
+  }
+  function trcfg(key: string): string {
+    const val = trailerSub[key] ?? config[key]
+    return String(val ?? '').trim()
+  }
+  function trcfgNum(key: string): number {
+    return parseInt(trcfg(key).replace(/[^\d]/g, ''), 10) || 0
+  }
+
   // Normalise buildType
   const bt = (buildType || '').toLowerCase().replace(/\s+/g, '-')
 
@@ -140,12 +159,12 @@ export function resolveBoms(
   // TRUCK
   // ═══════════════════════════════════════════════════════════════════════════
   if (isTruck) {
-    const mat = cfg('material') || cfg('truckMaterial')
+    const mat = tcfg('material') || tcfg('truckMaterial')
     const isHardox = mat.toLowerCase().includes('hardox')
     const isAlly = mat.toLowerCase().includes('aluminium') || mat.toLowerCase().includes('alloy')
-    const chassis = cfg('chassisMake').toLowerCase()
-    const chassisModel = cfg('chassisModel')
-    const bodyLen = cfgNum('bodyLength') || cfgNum('truckBodyLength')
+    const chassis = tcfg('chassisMake').toLowerCase()
+    const chassisModel = tcfg('chassisModel')
+    const bodyLen = tcfgNum('bodyLength') || tcfgNum('truckBodyLength')
 
     // ── Body ──
     if (isHardox) add('BOM100', 'Truck Body')
@@ -160,7 +179,7 @@ export function resolveBoms(
     if (isAlly)   { add('BOM175', 'Truck Paint'); add('BOM178', 'Truck Paint') }
 
     // ── Towbar / Coupling ──
-    const coupling = cfg('coupling') || cfg('truckCoupling')
+    const coupling = tcfg('coupling') || tcfg('truckCoupling')
     const isMack = chassis.includes('mack') || chassis.includes('ud')
 
     if (coupling.toLowerCase().includes('orlandi')) {
@@ -172,16 +191,16 @@ export function resolveBoms(
     }
 
     // ── Tarp ──
-    const tarpInfo = cfg('tarpSystem') || cfg('truckTarpMaterial') || cfg('truckTarp')
+    const tarpInfo = tcfg('tarpSystem') || tcfg('truckTarpMaterial') || tcfg('truckTarp')
     if (tarpInfo && !tarpInfo.toLowerCase().includes('none') && bodyLen > 0) {
       // tarpSystem stores "PVC Razor Electric" / "Mesh Manual" etc — or legacy "Razor PVC/MESH Electric"
       const isPVC = tarpInfo.toLowerCase().includes('pvc') || !tarpInfo.toLowerCase().includes('mesh')
       // Tarp is 400mm shorter than the body (clears headboard and tailgate)
-      const tarpLen = cfgNum('tarpLength') || (bodyLen - 400)
-      const tarpBow = cfg('tarpBowSize') || cfg('bowSize')
-      const tarpColour = (config.truckConfig as any)?.tarpColour || cfg('tarpColour')
+      const tarpLen = tcfgNum('tarpLength') || (bodyLen - 400)
+      const tarpBow = tcfg('tarpBowSize') || tcfg('bowSize')
+      const tarpColour = tcfg('tarpColour')
       const tarpBom = resolveTarpBom(isPVC, tarpLen)
-      const tarpWidth = cfg('material')?.toLowerCase().includes('aluminium') ? 2340 : 2400
+      const tarpWidth = tcfg('material').toLowerCase().includes('aluminium') ? 2340 : 2400
       const bowVal = tarpBow ? tarpBow.toString().replace(/mm$/i, '') : ''
       const tarpDims = [String(tarpLen), String(tarpWidth), bowVal].filter(Boolean).join(' x ')
       const tarpNote = tarpColour ? `${tarpDims} – ${tarpColour}` : tarpDims
@@ -195,7 +214,7 @@ export function resolveBoms(
     }
 
     // ── Hoist ──
-    const hoist = cfg('hoist') || cfg('truckHoist')
+    const hoist = tcfg('hoist') || tcfg('truckHoist')
     if (hoist && hoist.toLowerCase() !== 'none') {
       const hoistPart = resolveHoist(hoist)
       if (hoistPart) {
@@ -206,9 +225,9 @@ export function resolveBoms(
     }
 
     // ── PTO ──
-    const pto = cfg('pto') || cfg('truckPto')
+    const pto = tcfg('pto') || tcfg('truckPto')
     if (pto && pto.toLowerCase().includes('gearbox')) {
-      const ptoResult = resolvePto(cfg('chassisMake'), chassisModel)
+      const ptoResult = resolvePto(tcfg('chassisMake'), chassisModel)
       if (ptoResult) {
         add(ptoResult.part, 'PTO')
         // Iveco also needs loom kit
@@ -216,14 +235,14 @@ export function resolveBoms(
           add('500-23', 'PTO Loom')
         }
       } else {
-        addTbd('PTO', `PTO required — send gearbox code to TES (${cfg('chassisMake')} ${chassisModel})`)
+        addTbd('PTO', `PTO required — send gearbox code to TES (${tcfg('chassisMake')} ${chassisModel})`)
       }
     } else if (pto && pto.toLowerCase().includes('engine')) {
-      addTbd('PTO', `Engine PTO — confirm part with TES (${cfg('chassisMake')} ${chassisModel})`)
+      addTbd('PTO', `Engine PTO — confirm part with TES (${tcfg('chassisMake')} ${chassisModel})`)
     }
 
     // ── Hydraulic Pump ──
-    const pump = cfg('pump') || cfg('pumpType')
+    const pump = tcfg('pump') || tcfg('pumpType')
     if (pump && pump !== 'None' && !pump.toLowerCase().includes('customer')) {
       const pumpPartMatch = pump.match(/500-(\d+)/)
       if (pumpPartMatch) {
@@ -234,7 +253,7 @@ export function resolveBoms(
     }
 
     // ── Spool Valve ──
-    const hydOption = cfg('hydraulics') || cfg('truckHydraulics')
+    const hydOption = tcfg('hydraulics') || tcfg('truckHydraulics')
     if (hydOption.toLowerCase().includes('truck and trailer')) {
       add('500-224', 'Hydraulics')
     } else if (hydOption.toLowerCase().includes('single')) {
@@ -242,7 +261,7 @@ export function resolveBoms(
     }
 
     // ── Hydraulic Tank ──
-    const tankType = (cfg('hydTankType') || cfg('truckHydTankType')).toLowerCase()
+    const tankType = (tcfg('hydTankType') || tcfg('truckHydTankType')).toLowerCase()
     // Match by TES part number embedded in option (e.g. "TKBRS135S (135L) — 500-232")
     const tankPartMatch = tankType.match(/500-(\d+)/)
     if (tankPartMatch) {
@@ -253,7 +272,7 @@ export function resolveBoms(
     else if (tankType.includes('200') && tankType.includes('chassis')) add('500-245', 'Hydraulic Tank')
 
     // ── Controls ──
-    const controls = cfg('controls') || cfg('truckControls')
+    const controls = tcfg('controls') || tcfg('truckControls')
     if (controls.toLowerCase().includes('electric hand')) {
       add('500-170', 'Controls')
       addTbd('Controls', 'Confirm Stock before placing order of 500-170')
@@ -262,7 +281,7 @@ export function resolveBoms(
     }
 
     // ── Brake Coupling ──
-    const brakeCoupling = cfg('brakeCoupling') || cfg('truckBrakeCoupling')
+    const brakeCoupling = tcfg('brakeCoupling') || tcfg('truckBrakeCoupling')
     if (brakeCoupling.toLowerCase().includes('duomatic')) {
       add('40-205', 'Brake Coupling')
       add('40-207', 'Brake Coupling')
@@ -272,31 +291,31 @@ export function resolveBoms(
     }
 
     // ── Chassis Extension ──
-    const chassisExt = cfg('chassisExtension') || cfg('truckChassisExtension')
+    const chassisExt = tcfg('chassisExtension') || tcfg('truckChassisExtension')
     if (chassisExt.toLowerCase() === 'yes') {
       add('BOMXXX', 'Chassis Extension')
     }
 
     // ── Hose Burst Valve ──
-    const hoseBurst = cfg('hoseBurstValve') || cfg('truckHoseBurstValve')
+    const hoseBurst = tcfg('hoseBurstValve') || tcfg('truckHoseBurstValve')
     if (hoseBurst.toLowerCase() === 'yes') {
       add('500-227', 'Hydraulics')
     }
 
     // ── Body Extras ──
-    const sideLights = cfg('sideLights')
+    const sideLights = tcfg('sideLights')
     if (sideLights && sideLights !== 'None') {
       addTbd('Body Extras', `${sideLights} — confirm part number in MRPeasy`)
     }
-    const antiSpray = cfg('antiSpray')
+    const antiSpray = tcfg('antiSpray')
     if (antiSpray === 'Yes') {
       addTbd('Body Extras', 'Anti spray suppressant — confirm part number in MRPeasy')
     }
-    const shovelHolder = cfg('shovelHolder')
+    const shovelHolder = tcfg('shovelHolder')
     if (shovelHolder === 'Yes') {
       addTbd('Body Extras', 'Underbody shovel holder — confirm part number in MRPeasy')
     }
-    const mudflaps = cfg('mudflaps')
+    const mudflaps = tcfg('mudflaps')
     if (mudflaps && mudflaps !== 'None') {
       addTbd('Body Extras', `${mudflaps} — confirm part number in MRPeasy`)
     }
@@ -306,14 +325,14 @@ export function resolveBoms(
   // TRAILER
   // ═══════════════════════════════════════════════════════════════════════════
   if (isTrailer) {
-    const tMat = cfg('material') || cfg('trailerMaterial')
+    const tMat = trcfg('material') || trcfg('trailerMaterial')
     const tIsHardox = tMat.toLowerCase().includes('hardox')
     const tIsAlly = tMat.toLowerCase().includes('aluminium') || tMat.toLowerCase().includes('alloy')
-    const axles = cfgNum('axleCount') || cfgNum('trailerAxleCount')
-    const axleMake = (cfg('axleMake') || cfg('trailerAxleMake')).toUpperCase()
-    const axleType = (cfg('axleType') || cfg('trailerAxleType')).toLowerCase()
-    const tBodyLen = cfgNum('bodyLength') || cfgNum('trailerBodyLength')
-    const model = cfg('trailerModel').toLowerCase()
+    const axles = trcfgNum('axleCount') || trcfgNum('trailerAxleCount')
+    const axleMake = (trcfg('axleMake') || trcfg('trailerAxleMake')).toUpperCase()
+    const axleType = (trcfg('axleType') || trcfg('trailerAxleType')).toLowerCase()
+    const tBodyLen = trcfgNum('bodyLength') || trcfgNum('trailerBodyLength')
+    const model = trcfg('trailerModel').toLowerCase()
     const isDolly = model.includes('cd-') || model.includes('convertor') || model.includes('dolly')
 
     if (!isDolly) {
@@ -377,14 +396,14 @@ export function resolveBoms(
       add('BOM186', 'Trailer Paint')  // Drawbar paint always
 
       // ── Tarp – Trailer ──
-      const tTarp = cfg('tarpSystem') || cfg('trailerTarp')
+      const tTarp = trcfg('tarpSystem') || trcfg('trailerTarp')
       if (tTarp && !tTarp.toLowerCase().includes('none') && tBodyLen > 0) {
         const tIsPVC = tTarp.toLowerCase().includes('pvc') || !tTarp.toLowerCase().includes('mesh')
-        const tTarpLen = cfgNum('tarpLength') || tBodyLen
-        const tTarpBow = cfg('tarpBowSize') || cfg('bowSize')
-        const tTarpColour = (config.trailerConfig as any)?.tarpColour || cfg('tarpColour')
+        const tTarpLen = trcfgNum('tarpLength') || tBodyLen
+        const tTarpBow = trcfg('tarpBowSize') || trcfg('bowSize')
+        const tTarpColour = trcfg('tarpColour')
         const tarpBom = resolveTarpBom(tIsPVC, tTarpLen)
-        const tTarpWidth = cfg('material')?.toLowerCase().includes('aluminium') ? 2340 : 2400
+        const tTarpWidth = trcfg('material').toLowerCase().includes('aluminium') ? 2340 : 2400
         const tBowVal = tTarpBow ? tTarpBow.toString().replace(/mm$/i, '') : ''
         const tTarpDims = [String(tTarpLen), String(tTarpWidth), tBowVal].filter(Boolean).join(' x ')
         const tTarpNote = tTarpColour ? `${tTarpDims} – ${tTarpColour}` : tTarpDims
@@ -396,7 +415,7 @@ export function resolveBoms(
       }
 
       // ── Hose Burst Valve – Trailer ──
-      const tHoseBurst = cfg('hoseBurstValve') || cfg('trailerHoseBurstValve')
+      const tHoseBurst = trcfg('hoseBurstValve') || trcfg('trailerHoseBurstValve')
       if (tHoseBurst.toLowerCase() === 'yes') {
         add('500-227', 'Hydraulics')
       }
@@ -418,10 +437,8 @@ export function resolveBoms(
   // TRUCK + TRAILER (combo builds)
   // ═══════════════════════════════════════════════════════════════════════════
   // For combo builds, the above isTruck and isTrailer blocks both fire.
-  // The config may store truck-specific fields under truckConfig and trailer
-  // fields under trailerConfig (check buildConfiguration() in the builder).
-  // The cfg() helper already handles flat config — if nested, the accept route
-  // should flatten before calling this resolver.
+  // tcfg/trcfg helpers read from the nested truckConfig/trailerConfig sub-objects
+  // first, then fall back to flat config keys — so both flat and nested layouts work.
 
   return boms
 }
