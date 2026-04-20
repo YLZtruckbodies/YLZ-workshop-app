@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YLZ Dealer Flyer Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 <style>
 /* ─── RESET & BASE ─── */
 *{margin:0;padding:0;box-sizing:border-box}
@@ -388,9 +390,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
     </div>
 
     <div class="sidebar-footer">
-      <button class="btn-print" onclick="window.print()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Save as PDF
+      <button class="btn-print" id="downloadBtn" onclick="downloadPDF()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download PDF
       </button>
       <button class="btn-reset" onclick="resetForm()">Reset to defaults</button>
     </div>
@@ -399,7 +401,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   <!-- ═══ PREVIEW PANEL ═══ -->
   <div class="preview-panel">
     <div class="preview-wrap">
-      <div class="preview-label">LIVE PREVIEW — Click "Save as PDF" then choose "Save as PDF" in your print dialog</div>
+      <div class="preview-label">LIVE PREVIEW — Click "Download PDF" to export as a single-page digital flyer</div>
 
       <!-- ─── FLYER ─── -->
       <div class="flyer" id="flyerEl">
@@ -874,6 +876,52 @@ function resetForm() {
   renderPriceInputs();
   renderPhotoGrid();
   update();
+}
+
+// ─── DOWNLOAD PDF ───
+async function downloadPDF() {
+  const btn = document.getElementById('downloadBtn');
+  const origText = btn.textContent;
+  btn.textContent = '  Generating...';
+  btn.disabled = true;
+
+  try {
+    const el = document.getElementById('flyerEl');
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      backgroundColor: '#000000',
+      useCORS: true,
+      logging: false,
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const imgWidthPx = canvas.width;
+    const imgHeightPx = canvas.height;
+
+    const pdfWidthMM = 210;
+    const pdfHeightMM = (imgHeightPx / imgWidthPx) * pdfWidthMM;
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: [pdfWidthMM, pdfHeightMM],
+    });
+
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidthMM, pdfHeightMM);
+
+    const dealer = state.dealerName || 'Dealer';
+    const filename = `YLZ-Flyer-${dealer.replace(/[^a-zA-Z0-9]/g, '-')}.pdf`;
+    pdf.save(filename);
+  } catch (err) {
+    console.error('PDF generation failed:', err);
+    alert('PDF generation failed. Please try again.');
+  }
+
+  btn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Download PDF`;
+  btn.disabled = false;
 }
 
 // ─── BOOT ───
