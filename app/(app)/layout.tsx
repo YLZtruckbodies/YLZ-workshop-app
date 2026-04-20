@@ -345,6 +345,12 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   if ((effectiveAccess.includes('production') || effectiveAccess.includes('jobs')) && !effectiveAccess.includes('jobboard')) {
     effectiveAccess.push('jobboard')
   }
+  // Full admins automatically get any new tabs added to NAV_ITEMS
+  if (user.fullAdmin) {
+    for (const item of NAV_ITEMS) {
+      if (!effectiveAccess.includes(item.key)) effectiveAccess.push(item.key)
+    }
+  }
   // Build sidebar items in the order stored in user's access array
   const navLookup: Record<string, (typeof NAV_ITEMS)[0]> = {}
   NAV_ITEMS.forEach((n) => { navLookup[n.key] = n })
