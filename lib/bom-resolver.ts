@@ -227,7 +227,9 @@ export function resolveBoms(
       const tarpColour = tcfg('tarpColour')
       const tarpBom = resolveTarpBom(isPVC, tarpLen)
       const tarpWidth = tcfg('material').toLowerCase().includes('aluminium') ? 2340 : 2400
-      const bowVal = tarpBow ? tarpBow.toString().replace(/mm$/i, '') : ''
+      const rawBowVal = tarpBow ? tarpBow.toString().replace(/mm$/i, '') : ''
+      // 380mm bows were incorrectly calculated — steel/hardox bodies always use 450mm bows
+      const bowVal = rawBowVal === '380' ? '450' : rawBowVal
       const tarpDims = [String(tarpLen), String(tarpWidth), bowVal].filter(Boolean).join(' x ')
       const tarpNote = tarpColour ? `${tarpDims} – ${tarpColour}` : tarpDims
       if (tarpBom) add(tarpBom, 'Truck Tarp', tarpNote)
