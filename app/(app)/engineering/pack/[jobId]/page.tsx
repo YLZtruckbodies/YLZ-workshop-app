@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { generateTEBSDocx, downloadTEBSBlob, hasTEBSData, type TEBSInput } from '@/lib/tebs'
+import { VIN_PLATE_LOOKUP, normaliseBrand, normaliseBrake } from '@/lib/vin-plate-lookup'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -142,6 +143,9 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
   const [vinDragOver, setVinDragOver] = useState(false)
   const [vinError, setVinError] = useState('')
   const [vinSaving, setVinSaving] = useState(false)
+  const [vinPlateDate, setVinPlateDate] = useState('')
+  const [vinPlateGenerating, setVinPlateGenerating] = useState(false)
+  const [vinPlateError, setVinPlateError] = useState('')
 
   const fetchAll = useCallback(async () => {
     try {
@@ -271,7 +275,6 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
 
   const readyCount = packItems.filter(i => i.status === 'ready').length
   const applicableCount = packItems.filter(i => i.status !== 'not-applicable').length
-  const hasCriticalMissing = packItems.some(i => i.status === 'missing' && i.key === 'work-order')
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -380,6 +383,42 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       case 'generating': return '#3b82f6'
       case 'not-applicable': return 'rgba(255,255,255,0.2)'
     }
+  }
+
+  // ── VIN Plate PDF Generator (trailers) ───────────────────────────────────
+
+  const handleGenerateVinPlatePDF = async () => {
+    setVinPlateError('')
+    const vin = job?.vin || (cfg.vin as string) || ''
+    if (!vin || vin.length !== 17) { setVinPlateError('VIN must be exactly 17 characters — check job record.'); return }
+    if (!vinPlateDate.match(/^\d{2}\/\d{2}$/)) { setVinPlateError('Enter date as MM/YY'); return }
+    setVinPlateGenerating(true)
+    try {
+      const res = await fetch('/api/vin-plate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          axles: cfg.axleCount,
+          axleMake: cfg.axleMake,
+          axleType: cfg.axleType,
+          vin,
+          date: vinPlateDate,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        setVinPlateError(err.error || 'Failed to generate PDF')
+      } else {
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `VIN-Plate-${vin}.pdf`
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch { setVinPlateError('Failed to generate PDF') }
+    setVinPlateGenerating(false)
   }
 
   // ── VIN Plate Handlers ────────────────────────────────────────────────────
@@ -659,6 +698,107 @@ case 'tebs': return renderTEBS()
   }
 
   function renderVinPlate() {
+    if (isTrailer) return renderVinPlateGenerator()
+    return renderVinPlateOCR()
+  }
+
+  function renderVinPlateGenerator() {
+    const vin = job?.vin || (cfg.vin as string) || ''
+    const brand = normaliseBrand(cfg.axleMake || '')
+    const brake = normaliseBrake(cfg.axleType || '')
+    const axles = cfg.axleCount
+    const lookupKey = axles && brand && brake ? `${axles}-${brand}-${brake}` : null
+    const plateConfig = lookupKey ? VIN_PLATE_LOOKUP[lookupKey] : null
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Config summary */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8 }}>
+          {[
+            { label: 'Axles', value: axles ? String(axles) : '—' },
+            { label: 'Brand', value: brand || '—' },
+            { label: 'Brake', value: brake || '—' },
+            { label: 'Config Key', value: lookupKey || '—' },
+            { label: 'VIN', value: vin || '—' },
+          ].map(f => (
+            <div key={f.label} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>{f.label}</div>
+              <div style={{ fontSize: 13, color: '#fff', fontFamily: 'monospace' }}>{f.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {!plateConfig && (
+          <div style={{ fontSize: 12, color: '#ef4444', padding: '8px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 4 }}>
+            {!axles || !brand || !brake
+              ? 'Missing axle config — fill in Axle Count, Axle Make, and Axle Type on the quote.'
+              : `No VIN plate configuration found for key: ${lookupKey}`}
+          </div>
+        )}
+
+        {plateConfig && (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', background: 'rgba(232,104,26,0.15)', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 700, color: '#E8681A', letterSpacing: 1, textTransform: 'uppercase' }}>
+              Plate Data — {plateConfig.makeModel}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 1, background: 'rgba(255,255,255,0.05)' }}>
+              {[
+                { label: 'VTA', value: plateConfig.vta },
+                { label: 'ATM', value: `${plateConfig.atm} kg` },
+                { label: 'GTM', value: `${plateConfig.gtm} kg` },
+                { label: 'FB Row 1', value: plateConfig.fb1 },
+                { label: 'FB Row 2', value: plateConfig.fb2 },
+                { label: 'SS Row 1', value: plateConfig.ss1 },
+                { label: 'SS Row 2', value: plateConfig.ss2 },
+                { label: 'CS Row 1', value: plateConfig.cs1 },
+                { label: 'CS Row 2', value: plateConfig.cs2 },
+              ].map(f => (
+                <div key={f.label} style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)' }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text3)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 }}>{f.label}</div>
+                  <div style={{ fontSize: 12, color: '#fff', fontFamily: 'monospace' }}>{f.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Date + Generate */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>Date (MM/YY)</div>
+            <input
+              value={vinPlateDate}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVinPlateDate(e.target.value)}
+              placeholder="e.g. 04/26"
+              maxLength={5}
+              style={{ background: '#1a1a2e', border: '1px solid #333', borderRadius: 6, padding: '8px 12px', color: '#fff', fontSize: 14, width: 100, outline: 'none', fontFamily: 'monospace' }}
+            />
+          </div>
+          <button
+            onClick={handleGenerateVinPlatePDF}
+            disabled={vinPlateGenerating || !plateConfig}
+            style={{
+              fontFamily: "'League Spartan', sans-serif", fontSize: 13, fontWeight: 800,
+              letterSpacing: 1, textTransform: 'uppercase', padding: '9px 20px',
+              borderRadius: 6, cursor: !plateConfig || vinPlateGenerating ? 'not-allowed' : 'pointer',
+              border: 'none', background: !plateConfig || vinPlateGenerating ? 'rgba(232,104,26,0.3)' : '#E8681A',
+              color: '#fff', opacity: !plateConfig || vinPlateGenerating ? 0.5 : 1,
+            }}
+          >
+            {vinPlateGenerating ? 'Generating...' : '🪪 Generate VIN Plate PDF'}
+          </button>
+        </div>
+
+        {vinPlateError && (
+          <div style={{ fontSize: 12, color: '#ef4444', padding: '8px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 4 }}>
+            {vinPlateError}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  function renderVinPlateOCR() {
     return (
       <div>
         {/* Drop Zone */}
