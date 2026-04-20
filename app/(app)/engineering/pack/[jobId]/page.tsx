@@ -382,6 +382,88 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
     }
   }
 
+  // ── VIN Plate Handlers ────────────────────────────────────────────────────
+
+  const handleVinFile = async (file: File) => {
+    setVinLoading(true)
+    setVinError('')
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/ocr/vin-plate', { method: 'POST', body: formData })
+      if (!res.ok) {
+        const err = await res.json()
+        setVinError(err.error || 'Failed to read VIN plate')
+        return
+      }
+      const { data } = await res.json()
+      setVinData(data)
+    } catch {
+      setVinError('Failed to process image')
+    }
+    setVinLoading(false)
+  }
+
+  const handleVinDriveFile = async (fileId: string) => {
+    setVinLoading(true)
+    setVinError('')
+    try {
+      // Download from drive and send to OCR
+      const driveRes = await fetch(`/api/drive-files/${fileId}`)
+      if (!driveRes.ok) { setVinError('Failed to download from Drive'); setVinLoading(false); return }
+      const blob = await driveRes.blob()
+      const file = new File([blob], 'vin-plate.jpg', { type: blob.type || 'image/jpeg' })
+      await handleVinFile(file)
+    } catch {
+      setVinError('Failed to process Drive file')
+      setVinLoading(false)
+    }
+  }
+
+  const searchDriveForVin = async () => {
+    if (!job) return
+    try {
+      const res = await fetch(`/api/jobs/${job.id}/drive-vin-files`)
+      if (res.ok) {
+        const files = await res.json()
+        setVinDriveFiles(Array.isArray(files) ? files : [])
+      }
+    } catch { /* ignore */ }
+  }
+
+  const saveVinToJob = async () => {
+    if (!vinData || !job) return
+    setVinSaving(true)
+    try {
+      // Update job with VIN
+      if (vinData.vin) {
+        await fetch(`/api/jobs/${job.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vin: vinData.vin, make: `${vinData.make || ''} ${vinData.model || ''}`.trim() || undefined }),
+        })
+      }
+      // Update quote config with extracted specs
+      if (quote) {
+        const updates: Record<string, string> = {}
+        if (vinData.vin) updates.vin = vinData.vin
+        if (vinData.gvm) updates.gvm = vinData.gvm
+        if (vinData.gcm) updates.gcm = vinData.gcm
+        if (vinData.make) updates.chassisMake = vinData.make
+        if (vinData.model) updates.chassisModel = vinData.model
+        if (Object.keys(updates).length > 0) {
+          await fetch(`/api/quotes/${quote.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ configuration: { ...cfg, ...updates } }),
+          })
+        }
+      }
+      await fetchAll()
+    } catch { /* ignore */ }
+    setVinSaving(false)
+  }
+
   if (loading) return (
     <div style={{ padding: 40, color: 'var(--text3)', fontFamily: "'League Spartan', sans-serif" }}>
       Loading engineering pack...
@@ -574,88 +656,6 @@ case 'tebs': return renderTEBS()
       case 'tube-laser': return renderTubeLaser()
       default: return null
     }
-  }
-
-  // ── VIN Plate Handlers ────────────────────────────────────────────────────
-
-  const handleVinFile = async (file: File) => {
-    setVinLoading(true)
-    setVinError('')
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const res = await fetch('/api/ocr/vin-plate', { method: 'POST', body: formData })
-      if (!res.ok) {
-        const err = await res.json()
-        setVinError(err.error || 'Failed to read VIN plate')
-        return
-      }
-      const { data } = await res.json()
-      setVinData(data)
-    } catch {
-      setVinError('Failed to process image')
-    }
-    setVinLoading(false)
-  }
-
-  const handleVinDriveFile = async (fileId: string) => {
-    setVinLoading(true)
-    setVinError('')
-    try {
-      // Download from drive and send to OCR
-      const driveRes = await fetch(`/api/drive-files/${fileId}`)
-      if (!driveRes.ok) { setVinError('Failed to download from Drive'); setVinLoading(false); return }
-      const blob = await driveRes.blob()
-      const file = new File([blob], 'vin-plate.jpg', { type: blob.type || 'image/jpeg' })
-      await handleVinFile(file)
-    } catch {
-      setVinError('Failed to process Drive file')
-      setVinLoading(false)
-    }
-  }
-
-  const searchDriveForVin = async () => {
-    if (!job) return
-    try {
-      const res = await fetch(`/api/jobs/${job.id}/drive-vin-files`)
-      if (res.ok) {
-        const files = await res.json()
-        setVinDriveFiles(Array.isArray(files) ? files : [])
-      }
-    } catch { /* ignore */ }
-  }
-
-  const saveVinToJob = async () => {
-    if (!vinData || !job) return
-    setVinSaving(true)
-    try {
-      // Update job with VIN
-      if (vinData.vin) {
-        await fetch(`/api/jobs/${job.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ vin: vinData.vin, make: `${vinData.make || ''} ${vinData.model || ''}`.trim() || undefined }),
-        })
-      }
-      // Update quote config with extracted specs
-      if (quote) {
-        const updates: Record<string, string> = {}
-        if (vinData.vin) updates.vin = vinData.vin
-        if (vinData.gvm) updates.gvm = vinData.gvm
-        if (vinData.gcm) updates.gcm = vinData.gcm
-        if (vinData.make) updates.chassisMake = vinData.make
-        if (vinData.model) updates.chassisModel = vinData.model
-        if (Object.keys(updates).length > 0) {
-          await fetch(`/api/quotes/${quote.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ configuration: { ...cfg, ...updates } }),
-          })
-        }
-      }
-      await fetchAll()
-    } catch { /* ignore */ }
-    setVinSaving(false)
   }
 
   function renderVinPlate() {
