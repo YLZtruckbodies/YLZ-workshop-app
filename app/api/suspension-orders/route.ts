@@ -1,10 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDriveClient } from '@/lib/drive'
+import { drive_v3 } from 'googleapis'
+
+// Root folder ID from G:\.shortcut-targets-by-id path
+const YLZ_ROOT_ID = '11I4WxzE7drzxHwG58yG6I8nV2l5tl3KM'
+
+// Path from root to the Generic Orders folder
+const FOLDER_PATH = ['YLZ', 'Engineering', 'Order Forms', 'Suspension', 'Generic Orders']
+
+let cachedFolderId: string | null = null
+
+async function findChildInAnyDrive(drive: drive_v3.Drive, parentId: string, name: string): Promise<string | null> {
+  const safe = name.replace(/'/g, "\\'")
+  const res = await drive.files.list({
+    q: `'${parentId}' in parents and name = '${safe}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+    fields: 'files(id, name)',
+    pageSize: 5,
+    supportsAllDrives: true,
+    includeItemsFromAllDrives: true,
+    corpora: 'allDrives',
+  })
+  return res.data.files?.[0]?.id ?? null
+}
+
+async function getGenericOrdersFolderId(drive: drive_v3.Drive): Promise<{ id: string; debug: string[] } | { error: string; debug: string[] }> {
+  const debug: string[] = []
+
+  if (cachedFolderId) {
+    debug.push(`Using cached folder ID: ${cachedFolderId}`)
+    return { id: cachedFolderId, debug }
+  }
+
+  debug.push(`Navigating path from root ${YLZ_ROOT_ID}`)
+  let currentId = YLZ_ROOT_ID
+
+  for (const segment of FOLDER_PATH) {
+    debug.push(`Looking for "${segment}" inside ${currentId}`)
+    try {
+      const childId = await findChildInAnyDrive(drive, currentId, segment)
+      if (!childId) {
+        debug.push(`❌ "${segment}" not found`)
+        return { error: `Could not find folder: "${segment}"`, debug }
+      }
+      debug.push(`✓ Found "${segment}" → ${childId}`)
+      currentId = childId
+    } catch (e: unknown) {
+      debug.push(`❌ Error looking for "${segment}": ${e instanceof Error ? e.message : String(e)}`)
+      return { error: `Error navigating to "${segment}"`, debug }
+    }
+  }
+
+  cachedFolderId = currentId
+  return { id: currentId, debug }
+}
 
 function scoreFile(name: string, axleCount: string, axleMake: string, axleType: string): number {
   const n = name.toLowerCase()
   let score = 0
-  // Match "{count} axle" or "{count}-axle" in filename (e.g. "4 Axle", "4-Axle")
   if (axleCount) {
     const countNum = axleCount.replace(/[^0-9]/g, '')
     if (countNum && (n.includes(`${countNum} axle`) || n.includes(`${countNum}-axle`))) score += 4
@@ -27,58 +79,29 @@ export async function GET(req: NextRequest) {
     const drive = await getDriveClient()
     debug.push(`Params — axleCount: "${axleCount}", axleMake: "${axleMake}", axleType: "${axleType}"`)
 
-    // Strategy 1: search in YLZ shared drive
-    let allFiles: Array<{ id?: string | null; name?: string | null; webViewLink?: string | null }> = []
-    try {
-      debug.push('Trying drive-scoped search (YLZ shared drive)...')
-      const res = await drive.files.list({
-        q: `name contains 'Axle' and mimeType = 'application/pdf' and trashed = false`,
-        fields: 'files(id, name, webViewLink)',
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true,
-        corpora: 'drive',
-        driveId: '11I4WxzE7drzxHwG58yG6I8nV2l5tl3KM',
-        orderBy: 'name',
-        pageSize: 100,
-      })
-      allFiles = res.data.files || []
-      debug.push(`Drive search returned ${allFiles.length} file(s)`)
-      if (allFiles.length > 0) {
-        debug.push(`Files found: ${allFiles.slice(0, 5).map(f => f.name).join(', ')}`)
-      }
-    } catch (e: unknown) {
-      debug.push(`Drive search failed: ${e instanceof Error ? e.message : String(e)}`)
+    const folderResult = await getGenericOrdersFolderId(drive)
+    debug.push(...folderResult.debug)
+
+    if ('error' in folderResult) {
+      return NextResponse.json({ error: folderResult.error, files: [], debug }, { status: 404 })
     }
 
-    // Strategy 2: fallback to allDrives
-    if (allFiles.length === 0) {
-      try {
-        debug.push('Falling back to allDrives search...')
-        const res = await drive.files.list({
-          q: `name contains 'Axle' and mimeType = 'application/pdf' and trashed = false`,
-          fields: 'files(id, name, webViewLink)',
-          supportsAllDrives: true,
-          includeItemsFromAllDrives: true,
-          corpora: 'allDrives',
-          orderBy: 'name',
-          pageSize: 100,
-        })
-        allFiles = res.data.files || []
-        debug.push(`allDrives search returned ${allFiles.length} file(s)`)
-        if (allFiles.length > 0) {
-          debug.push(`Files found: ${allFiles.slice(0, 5).map(f => f.name).join(', ')}`)
-        }
-      } catch (e: unknown) {
-        debug.push(`allDrives search failed: ${e instanceof Error ? e.message : String(e)}`)
-      }
-    }
+    debug.push(`Listing PDFs in Generic Orders folder ${folderResult.id}`)
+    const listRes = await drive.files.list({
+      q: `'${folderResult.id}' in parents and trashed = false`,
+      fields: 'files(id, name, webViewLink)',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
+      corpora: 'allDrives',
+      orderBy: 'name',
+      pageSize: 100,
+    })
 
-    if (allFiles.length === 0) {
-      debug.push('No PDF files with "Axle" in name found in any accessible drive')
-      return NextResponse.json({ files: [], debug }, { status: 404 })
-    }
+    const rawFiles = listRes.data.files || []
+    debug.push(`Found ${rawFiles.length} file(s) in folder`)
 
-    const files = allFiles
+    const files = rawFiles
+      .filter(f => f.name?.toLowerCase().endsWith('.pdf'))
       .map(f => ({
         id: f.id!,
         name: f.name!,
@@ -87,13 +110,14 @@ export async function GET(req: NextRequest) {
       }))
       .sort((a, b) => b.score - a.score)
 
-    debug.push(`Best match: "${files[0]?.name}" (score: ${files[0]?.score})`)
+    debug.push(`${files.length} PDF(s) after filtering`)
+    if (files.length > 0) debug.push(`Best match: "${files[0].name}" (score: ${files[0].score})`)
 
     return NextResponse.json({ files, debug })
   } catch (e: unknown) {
     debug.push(`Unhandled error: ${e instanceof Error ? e.message : String(e)}`)
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : 'Failed to search for suspension orders', debug },
+      { error: e instanceof Error ? e.message : 'Failed to search for suspension orders', files: [], debug },
       { status: 500 }
     )
   }
