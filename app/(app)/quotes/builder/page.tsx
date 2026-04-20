@@ -1364,6 +1364,7 @@ function QuoteBuilderInner() {
   const [acceptMode, setAcceptMode] = useState<'new' | 'existing'>('new')
   const [existingJobNum, setExistingJobNum] = useState('')
   const [newJobNum, setNewJobNum] = useState('')
+  const [previewVin, setPreviewVin] = useState('')
   const [acceptResult, setAcceptResult] = useState<{ jobNum: string; jobId: string; isExisting?: boolean } | null>(null)
   const [saveError, setSaveError] = useState('')
   const [isQuickQuote, setIsQuickQuote] = useState(false)
@@ -1959,11 +1960,21 @@ function QuoteBuilderInner() {
                 setAcceptMode('new')
                 setExistingJobNum('')
                 setNewJobNum('')
+                setPreviewVin('')
                 try {
                   const res = await fetch('/api/job-master/next-number')
                   const { jobNumber } = await res.json()
                   setNewJobNum(jobNumber)
                 } catch {}
+                const isTrailerBuild = ['trailer', 'truck-and-trailer'].includes(form.buildType)
+                if (isTrailerBuild) {
+                  try {
+                    const model = encodeURIComponent(form.trailerModel || 'DT-4 (4-Axle Dog)')
+                    const res = await fetch(`/api/quotes/next-trailer-vin?model=${model}`)
+                    const { vin } = await res.json()
+                    setPreviewVin(vin)
+                  } catch {}
+                }
                 setAcceptModal(true)
               }}
               disabled={saving || accepting}
@@ -3703,6 +3714,24 @@ function QuoteBuilderInner() {
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 6 }}>
                     Auto-filled with the next available number. Edit if needed.
                   </div>
+                  {previewVin && (
+                    <div style={{ marginTop: 16 }}>
+                      <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 6 }}>
+                        Trailer VIN
+                      </label>
+                      <div style={{
+                        width: '100%', boxSizing: 'border-box',
+                        background: '#0a0a0a', border: '1px solid rgba(34,197,94,0.25)',
+                        borderRadius: 4, color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 600,
+                        padding: '10px 12px', fontFamily: 'monospace', letterSpacing: 1.5,
+                      }}>
+                        {previewVin}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 6 }}>
+                        Auto-assigned on acceptance.
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               {acceptMode === 'existing' && (
