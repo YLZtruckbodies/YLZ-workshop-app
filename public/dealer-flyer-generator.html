@@ -709,10 +709,13 @@ function update() {
   if (eyebrow) document.querySelector('.flyer-eyebrow').textContent = eyebrow.value;
   if (titleLine1 && titleLine2) document.querySelector('.flyer-title').innerHTML = escHtml(titleLine1.value) + '<br><span class="blue">' + escHtml(titleLine2.value) + '</span>';
   if (introText) document.getElementById('flyerIntro').textContent = introText.value;
+  // CTA — update title, subtitle (with salesperson first name injected), and contact details
+  var firstName = (state.salesName || 'Pete').split(' ')[0];
   if (ctaTitle) document.querySelector('.cta-title').textContent = ctaTitle.value;
-  if (ctaSub) document.querySelector('.cta-sub').innerHTML = escHtml(ctaSub.value);
-
-  // CTA salesperson details
+  if (ctaSub) {
+    var subText = ctaSub.value.replace(/\bPete\b/g, firstName);
+    document.querySelector('.cta-sub').textContent = subText;
+  }
   document.getElementById('ctaName').textContent = state.salesName || 'Pete Sim';
   document.getElementById('ctaRole').textContent = (state.salesRole || 'Sales Manager') + ' · YLZ Truck Bodies';
   document.getElementById('ctaDetails').innerHTML = (state.salesPhone || '03 5940 7620') + '<br>ylztruckbodies.com.au';
