@@ -595,7 +595,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Wheelbase (mm)', 'wheelbase')}
                   {cfgField('Drawbar Length (mm)', 'drawbarLength')}
                   {cfgField('Suspension', 'suspension')}
-                  {cfgField('Chassis Extension', 'chassisExtension')}
+                  {!isTrailer && cfgField('Chassis Extension', 'chassisExtension')}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
                   {cfgField('Axle Make', 'axleMake')}
