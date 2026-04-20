@@ -26,6 +26,17 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function PATCH() {
+  try {
+    await prisma.vinPlateRecord.updateMany({
+      data: { vinPlateOrdered: true, vinPlateReceived: true, roverInput: true },
+    })
+    return NextResponse.json({ ok: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Failed to update records' }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
