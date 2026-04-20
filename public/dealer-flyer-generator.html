@@ -891,7 +891,15 @@ async function downloadPDF() {
       scale: 2,
       backgroundColor: '#000000',
       useCORS: true,
-      logging: false,
+      allowTaint: true,
+      logging: true,
+      imageTimeout: 15000,
+      onclone: function(clonedDoc) {
+        var clonedEl = clonedDoc.getElementById('flyerEl');
+        if (clonedEl) {
+          clonedEl.style.width = el.offsetWidth + 'px';
+        }
+      }
     });
 
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
@@ -915,7 +923,7 @@ async function downloadPDF() {
     pdf.save(filename);
   } catch (err) {
     console.error('PDF generation failed:', err);
-    alert('PDF generation failed. Please try again.');
+    alert('PDF generation failed: ' + (err.message || err) + '\n\nCheck browser console for details.');
   }
 
   btn.innerHTML = `
