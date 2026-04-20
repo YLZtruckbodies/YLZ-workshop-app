@@ -227,14 +227,15 @@ export function resolveBoms(
       const tarpColour = tcfg('tarpColour')
       const tarpBom = resolveTarpBom(isPVC, tarpLen)
       const tarpWidth = tcfg('material').toLowerCase().includes('aluminium') ? 2340 : 2400
-      // Recalculate bow from body height so stale stored values are always corrected
+      // Recalculate bow for hardox truck bodies from body height (corrects stale stored values)
+      // Rule: 1000mm body height = 450mm bow, 1100mm = 380mm bow
       const bodyHeightMm = tcfgNum('bodyHeight')
-      const isMaterialAluminium = tcfg('material').toLowerCase().includes('aluminium')
+      const isHardox = tcfg('material').toLowerCase().includes('hardox')
       let bowVal: string
-      if (isMaterialAluminium) {
-        bowVal = '250'
-      } else if (bodyHeightMm) {
-        bowVal = bodyHeightMm <= 1000 ? '450' : bodyHeightMm === 1100 ? '380' : '450'
+      if (isHardox && bodyHeightMm === 1000) {
+        bowVal = '450'
+      } else if (isHardox && bodyHeightMm === 1100) {
+        bowVal = '380'
       } else {
         bowVal = tarpBow ? tarpBow.toString().replace(/mm$/i, '') : ''
       }
