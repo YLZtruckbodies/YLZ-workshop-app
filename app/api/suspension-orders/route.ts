@@ -1,38 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { browseDriveFolderAny, findChildFolder } from '@/lib/drive'
-// browseDriveFolderAny searches across all drives; findChildFolder uses includeItemsFromAllDrives
+import { getDriveClient } from '@/lib/drive'
 
-// Root of the YLZ Engineering shared drive (from .shortcut-targets-by-id path)
-const YLZ_DRIVE_ROOT = '11I4WxzE7drzxHwG58yG6I8nV2l5tl3KM'
-
-// Path from root to the Generic Orders folder
-const FOLDER_PATH = ['YLZ', 'Engineering', 'Order Forms', 'Suspension', 'Generic Orders']
-
-// Cache the resolved Generic Orders folder ID so we don't navigate on every request
-let cachedFolderId: string | null = null
-
-async function getGenericOrdersFolderId(): Promise<string | null> {
-  if (cachedFolderId) return cachedFolderId
-  let current = YLZ_DRIVE_ROOT
-  for (const segment of FOLDER_PATH) {
-    const child = await findChildFolder(current, segment)
-    if (!child) return null
-    current = child
-  }
-  cachedFolderId = current
-  return current
-}
-
-/**
- * Score a filename against the axle config.
- * Higher = better match.
- */
 function scoreFile(name: string, axleCount: string, axleMake: string, axleType: string): number {
   const n = name.toLowerCase()
   let score = 0
-  if (axleCount && n.includes(axleCount)) score += 3
-  if (axleMake && n.includes(axleMake.toLowerCase())) score += 2
-  if (axleType && n.includes(axleType.toLowerCase())) score += 2
+  // Match "{count} axle" or "{count}-axle" in filename (e.g. "4 Axle", "4-Axle")
+  if (axleCount) {
+    const countNum = axleCount.replace(/[^0-9]/g, '')
+    if (countNum && (n.includes(`${countNum} axle`) || n.includes(`${countNum}-axle`))) score += 4
+    else if (countNum && n.includes(countNum)) score += 2
+  }
+  if (axleMake && n.includes(axleMake.toLowerCase())) score += 3
+  if (axleType && n.includes(axleType.toLowerCase())) score += 3
   return score
 }
 
@@ -42,24 +21,79 @@ export async function GET(req: NextRequest) {
   const axleMake  = searchParams.get('axleMake')  || ''
   const axleType  = searchParams.get('axleType')  || ''
 
+  const debug: string[] = []
+
   try {
-    const folderId = await getGenericOrdersFolderId()
-    if (!folderId) {
-      return NextResponse.json({ error: 'Could not locate Generic Orders folder in Drive' }, { status: 404 })
+    const drive = await getDriveClient()
+    debug.push(`Params — axleCount: "${axleCount}", axleMake: "${axleMake}", axleType: "${axleType}"`)
+
+    // Strategy 1: search in YLZ shared drive
+    let allFiles: Array<{ id?: string | null; name?: string | null; webViewLink?: string | null }> = []
+    try {
+      debug.push('Trying drive-scoped search (YLZ shared drive)...')
+      const res = await drive.files.list({
+        q: `name contains 'Axle' and mimeType = 'application/pdf' and trashed = false`,
+        fields: 'files(id, name, webViewLink)',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+        corpora: 'drive',
+        driveId: '11I4WxzE7drzxHwG58yG6I8nV2l5tl3KM',
+        orderBy: 'name',
+        pageSize: 100,
+      })
+      allFiles = res.data.files || []
+      debug.push(`Drive search returned ${allFiles.length} file(s)`)
+      if (allFiles.length > 0) {
+        debug.push(`Files found: ${allFiles.slice(0, 5).map(f => f.name).join(', ')}`)
+      }
+    } catch (e: unknown) {
+      debug.push(`Drive search failed: ${e instanceof Error ? e.message : String(e)}`)
     }
 
-    const files = await browseDriveFolderAny(folderId)
-    const pdfs = files.filter(f => !f.isFolder && f.name.toLowerCase().endsWith('.pdf'))
+    // Strategy 2: fallback to allDrives
+    if (allFiles.length === 0) {
+      try {
+        debug.push('Falling back to allDrives search...')
+        const res = await drive.files.list({
+          q: `name contains 'Axle' and mimeType = 'application/pdf' and trashed = false`,
+          fields: 'files(id, name, webViewLink)',
+          supportsAllDrives: true,
+          includeItemsFromAllDrives: true,
+          corpora: 'allDrives',
+          orderBy: 'name',
+          pageSize: 100,
+        })
+        allFiles = res.data.files || []
+        debug.push(`allDrives search returned ${allFiles.length} file(s)`)
+        if (allFiles.length > 0) {
+          debug.push(`Files found: ${allFiles.slice(0, 5).map(f => f.name).join(', ')}`)
+        }
+      } catch (e: unknown) {
+        debug.push(`allDrives search failed: ${e instanceof Error ? e.message : String(e)}`)
+      }
+    }
 
-    // Score and sort — best match first
-    const scored = pdfs
-      .map(f => ({ ...f, score: scoreFile(f.name, axleCount, axleMake, axleType) }))
+    if (allFiles.length === 0) {
+      debug.push('No PDF files with "Axle" in name found in any accessible drive')
+      return NextResponse.json({ files: [], debug }, { status: 404 })
+    }
+
+    const files = allFiles
+      .map(f => ({
+        id: f.id!,
+        name: f.name!,
+        webViewLink: f.webViewLink || undefined,
+        score: scoreFile(f.name!, axleCount, axleMake, axleType),
+      }))
       .sort((a, b) => b.score - a.score)
 
-    return NextResponse.json({ files: scored, folderId })
+    debug.push(`Best match: "${files[0]?.name}" (score: ${files[0]?.score})`)
+
+    return NextResponse.json({ files, debug })
   } catch (e: unknown) {
+    debug.push(`Unhandled error: ${e instanceof Error ? e.message : String(e)}`)
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : 'Failed to list suspension orders' },
+      { error: e instanceof Error ? e.message : 'Failed to search for suspension orders', debug },
       { status: 500 }
     )
   }
