@@ -1132,6 +1132,7 @@ case 'tebs': return renderTEBS()
           axleCount: String(cfg.axleCount || ''),
           axleMake: cfg.axleMake || '',
           axleType: cfg.axleType || '',
+          studPattern: (cfg.studPattern as string) || '',
         })
         const res = await fetch(`/api/suspension-orders?${params}`)
         const data = await res.json()

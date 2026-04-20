@@ -54,9 +54,15 @@ async function getGenericOrdersFolderId(drive: drive_v3.Drive): Promise<{ id: st
   return { id: currentId, debug }
 }
 
-function scoreFile(name: string, axleCount: string, axleMake: string, axleType: string): number {
+function scoreFile(name: string, axleCount: string, axleMake: string, axleType: string, studPattern: string): number {
   const n = name.toLowerCase()
   let score = 0
+  // Stud pattern PCD number — highest priority (e.g. "335PCD" → look for "335" in filename)
+  if (studPattern) {
+    const pcd = studPattern.replace(/[^0-9]/g, '')
+    if (pcd && n.includes(pcd)) score += 5
+  }
+  // Axle count
   if (axleCount) {
     const countNum = axleCount.replace(/[^0-9]/g, '')
     if (countNum && (n.includes(`${countNum} axle`) || n.includes(`${countNum}-axle`))) score += 4
@@ -69,15 +75,16 @@ function scoreFile(name: string, axleCount: string, axleMake: string, axleType: 
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const axleCount = searchParams.get('axleCount') || ''
-  const axleMake  = searchParams.get('axleMake')  || ''
-  const axleType  = searchParams.get('axleType')  || ''
+  const axleCount    = searchParams.get('axleCount')    || ''
+  const axleMake     = searchParams.get('axleMake')     || ''
+  const axleType     = searchParams.get('axleType')     || ''
+  const studPattern  = searchParams.get('studPattern')  || ''
 
   const debug: string[] = []
 
   try {
     const drive = await getDriveClient()
-    debug.push(`Params — axleCount: "${axleCount}", axleMake: "${axleMake}", axleType: "${axleType}"`)
+    debug.push(`Params — axleCount: "${axleCount}", axleMake: "${axleMake}", axleType: "${axleType}", studPattern: "${studPattern}"`)
 
     const folderResult = await getGenericOrdersFolderId(drive)
     debug.push(...folderResult.debug)
@@ -106,7 +113,7 @@ export async function GET(req: NextRequest) {
         id: f.id!,
         name: f.name!,
         webViewLink: f.webViewLink || undefined,
-        score: scoreFile(f.name!, axleCount, axleMake, axleType),
+        score: scoreFile(f.name!, axleCount, axleMake, axleType, studPattern),
       }))
       .sort((a, b) => b.score - a.score)
 
