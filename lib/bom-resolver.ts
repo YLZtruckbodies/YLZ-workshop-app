@@ -504,11 +504,13 @@ export function resolveBoms(
         addTbd('Body Extras', 'Anti spray suppressant — confirm part number in MRPeasy')
       }
 
-      // ── Wheels & Tyres ── default to 335 PCD (most common in real quotes)
-      // TODO: add trailerTyreSize field to form for precision
-      if (axles === 3) add('BOM198', 'Wheels & Tyres')
-      if (axles === 4) add('BOM194', 'Wheels & Tyres')
-      if (axles === 5) add('BOM199', 'Wheels & Tyres')
+      // ── Wheels & Tyres ──
+      const innerQty = axles * 2
+      const outerQty = axles * 2
+      const tyreQty  = axles * 4
+      addTbd('Trailer Wheels & Tyres', `Inner Wheels — Qty: ${innerQty} (confirm type)`)
+      addTbd('Trailer Wheels & Tyres', `Outer Wheels — Qty: ${outerQty} (confirm type)`)
+      addTbd('Trailer Wheels & Tyres', `Tyres — Qty: ${tyreQty} (confirm type)`)
 
     } else {
       // ── Convertor Dolly ──
