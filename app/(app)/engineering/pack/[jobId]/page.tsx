@@ -233,13 +233,6 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       detail: workOrder ? `${workOrder.parts.length} parts — ${workOrder.status}` : 'Not generated',
     },
     {
-      key: 'bom',
-      label: 'BOM / Parts List',
-      icon: '📦',
-      status: boms.length > 0 ? 'ready' : 'missing',
-      detail: boms.length > 0 ? `${boms.length} items resolved` : 'No BOM data',
-    },
-    {
       key: 'tebs',
       label: 'TEBS Document',
       icon: '📄',
@@ -574,8 +567,7 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
     switch (key) {
       case 'vin-plate': return renderVinPlate()
       case 'work-order': return renderWorkOrder()
-      case 'bom': return renderBOM()
-      case 'tebs': return renderTEBS()
+case 'tebs': return renderTEBS()
       case 'vass': return renderVASS()
       case 'axle-order': return renderAxleOrder()
       case 'drawings': return renderDrawings()
