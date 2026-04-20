@@ -471,29 +471,31 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 </div>
 
                 <div style={sectionLbl}>Hoist & Controls</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isTrailer ? 3 : 5}, 1fr)`, gap: 12, marginBottom: 8 }}>
                   {cfgField('Hoist Model', 'hoist')}
                   <div key="pivotCentre">
                     <div style={lblStyle}>C/L Pivot to Rear (mm)</div>
                     <input style={inpStyle} value={editCfg['pivotCentre'] || '235'} onChange={e => setCfgField('pivotCentre', e.target.value)} />
                   </div>
-                  {cfgField('Hoist Controls', 'controls')}
-                  {cfgField('Pump Type', 'pump')}
+                  {!isTrailer && cfgField('Hoist Controls', 'controls')}
+                  {!isTrailer && cfgField('Pump Type', 'pump')}
                   {cfgField('Hose Burst Valve', 'hoseBurstValve')}
                 </div>
 
-                <div style={sectionLbl}>Valve Bank</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
-                  {cfgField('Valve Bank Type', 'valveBankType')}
-                  {cfgField('Valve Bank Notes', 'valveBankNotes')}
-                </div>
+                {!isTrailer && <>
+                  <div style={sectionLbl}>Valve Bank</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
+                    {cfgField('Valve Bank Type', 'valveBankType')}
+                    {cfgField('Valve Bank Notes', 'valveBankNotes')}
+                  </div>
 
-                <div style={sectionLbl}>PTO Switch Type</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
-                  {cfgField('PTO Type / Model', 'pto')}
-                  {cfgField('Switch Type', 'ptoSwitchType')}
-                  {cfgField('Switch Location', 'ptoSwitchLocation')}
-                </div>
+                  <div style={sectionLbl}>PTO Switch Type</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                    {cfgField('PTO Type / Model', 'pto')}
+                    {cfgField('Switch Type', 'ptoSwitchType')}
+                    {cfgField('Switch Location', 'ptoSwitchLocation')}
+                  </div>
+                </>}
 
                 <div style={sectionLbl}>Tailgate & Lock Flap</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
@@ -511,12 +513,14 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Mudflaps', 'mudflaps')}
                 </div>
 
-                <div style={sectionLbl}>Hydraulics</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
-                  {cfgField('Hydraulic System', 'hydraulics')}
-                  {cfgField('Hydraulic Tank Type', 'hydTankType')}
-                  {cfgField('Hydraulic Tank Location', 'hydTankLocation')}
-                </div>
+                {!isTrailer && <>
+                  <div style={sectionLbl}>Hydraulics</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
+                    {cfgField('Hydraulic System', 'hydraulics')}
+                    {cfgField('Hydraulic Tank Type', 'hydTankType')}
+                    {cfgField('Hydraulic Tank Location', 'hydTankLocation')}
+                  </div>
+                </>}
 
                 <div style={sectionLbl}>Tarp & Paint</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
