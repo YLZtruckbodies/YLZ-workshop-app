@@ -698,12 +698,6 @@ function update() {
   const footerRight = document.getElementById('footerRight');
   footerRight.innerHTML = (state.dealerName ? `Prepared for ${state.dealerName}<br>` : 'Dealer Enquiries Welcome<br>') + 'Confidential — Not For Distribution';
 
-  // CTA
-  document.getElementById('ctaSalesName').textContent = state.salesName.split(' ')[0] || 'Pete';
-  document.getElementById('ctaName').textContent = state.salesName || 'Pete Sim';
-  document.getElementById('ctaRole').textContent = (state.salesRole || 'Sales Manager') + ' · YLZ Truck Bodies';
-  document.getElementById('ctaDetails').innerHTML = (state.salesPhone || '03 5940 7620') + '<br>ylztruckbodies.com.au';
-
   // Editable flyer text
   const eyebrow = document.getElementById('flyerEyebrow');
   const titleLine1 = document.getElementById('flyerTitleLine1');
@@ -716,7 +710,12 @@ function update() {
   if (titleLine1 && titleLine2) document.querySelector('.flyer-title').innerHTML = escHtml(titleLine1.value) + '<br><span class="blue">' + escHtml(titleLine2.value) + '</span>';
   if (introText) document.getElementById('flyerIntro').textContent = introText.value;
   if (ctaTitle) document.querySelector('.cta-title').textContent = ctaTitle.value;
-  if (ctaSub) document.querySelector('.cta-sub').textContent = ctaSub.value;
+  if (ctaSub) document.querySelector('.cta-sub').innerHTML = escHtml(ctaSub.value);
+
+  // CTA salesperson details
+  document.getElementById('ctaName').textContent = state.salesName || 'Pete Sim';
+  document.getElementById('ctaRole').textContent = (state.salesRole || 'Sales Manager') + ' · YLZ Truck Bodies';
+  document.getElementById('ctaDetails').innerHTML = (state.salesPhone || '03 5940 7620') + '<br>ylztruckbodies.com.au';
 
   // Product sections
   renderProductSections();
