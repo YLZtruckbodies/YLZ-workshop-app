@@ -867,7 +867,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-body">
             <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">Tarp Make / Model</div><div className="field-val">{c('tarpSystem') || ''}</div>{!c('tarpSystem') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Tarp Length (mm)</div><div className="field-val">{c('tarpLength') || ''}</div>{!c('tarpLength') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Tarp Length (mm)</div><div className="field-val">{c('tarpLength') || (c('bodyLength') ? String(Number(c('bodyLength')) - 400) : '')}</div>{!c('tarpLength') && !c('bodyLength') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Tarp Colour</div><div className="field-val">{c('tarpColour') || ''}</div>{!c('tarpColour') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Bow Height</div><div className="field-val">{calcBowHeight(c('material') as string, c('bodyHeight') as string) || c('tarpBowSize') as string || ''}</div>{!calcBowHeight(c('material') as string, c('bodyHeight') as string) && !c('tarpBowSize') && <div className="field-blank" />}</div>
             </div>
