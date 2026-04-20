@@ -80,7 +80,15 @@ export default function VinPlatesPage() {
     try {
       const q = search ? `?q=${encodeURIComponent(search)}` : ''
       const res = await fetch(`/api/vin-plates${q}`)
-      if (res.ok) setRecords(await res.json())
+      if (res.ok) {
+        const data: VinRecord[] = await res.json()
+        data.sort((a, b) => {
+          if (a.jobNumber === '1067') return 1
+          if (b.jobNumber === '1067') return -1
+          return 0
+        })
+        setRecords(data)
+      }
     } catch { /* ignore */ }
     setLoading(false)
   }, [search])
