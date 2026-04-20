@@ -243,8 +243,8 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       key: 'vass',
       label: 'VASS / CVC Form',
       icon: '🔧',
-      status: vass ? (vass.status === 'draft' ? 'warning' : 'ready') : 'missing',
-      detail: vass ? `${vass.status} — ${vass.vehicleMake} ${vass.vehicleModel}` : 'Not created',
+      status: isTrailer ? 'not-applicable' : vass ? (vass.status === 'draft' ? 'warning' : 'ready') : 'missing',
+      detail: isTrailer ? 'Trailers — N/A' : vass ? `${vass.status} — ${vass.vehicleMake} ${vass.vehicleModel}` : 'Not created',
     },
     {
       key: 'axle-order',
