@@ -33,7 +33,11 @@ const MATERIAL_PATTERNS: RegExp[] = [
   /stainless\s*steel\s*(?:gr?\.?\s*)?(?:304|316[lL]?|430|201)?\s*[-–]?\s*[\d.]+\s*mm/i,
   /\bss\s*(?:304|316[lL]?|430|201)\s*[-–]?\s*[\d.]+\s*mm/i,
   /\bss\s*(?:304|316[lL]?|430|201)\b/i,
-  // Aluminium — explicit keyword
+  // Aluminium — comma-separated SolidWorks description format
+  // e.g. "PLATE, ALUMINIUM, 5083, 8.0mm THICK"
+  /alumin(?:ium|um)[,\s]+\d{4}[,\s]+[\d.]+\s*mm/i,
+  /alumin(?:ium|um)[,\s]+[\d.]+\s*mm/i,
+  // Aluminium — explicit keyword with whitespace/dash separators
   /alumin(?:ium|um)\s*(?:\d{4})?\s*(?:-?[tThH]\d+)?\s*[-–]?\s*[\d.]+\s*mm/i,
   /\bal(?:um)?\s*(?:\d{4})\s*(?:-?[tThH]\d+)?\s*[-–]?\s*[\d.]+\s*mm/i,
   /\bal\s*[-–]?\s*[\d.]+\s*mm/i,
@@ -111,9 +115,12 @@ function parseMaterial(text: string): { material: string; thickness: string } {
   const thickness = thicknessMatch ? `${thicknessMatch[1]}mm` : ''
 
   let matClean = materialFound.replace(/[\d.]+\s*mm/, '').replace(/\s*[-–]\s*$/, '').trim()
+  // Normalise comma separators to spaces so patterns like /aluminium\s*5083/ match
+  // comma-separated formats like "PLATE, ALUMINIUM, 5083, THICK"
+  const matCleanNorm = matClean.replace(/[,\s]+/g, ' ').trim()
   let normalised: string | null = null
   for (const [pat, canonical] of MATERIAL_NORMALISE) {
-    if (pat.test(matClean)) { normalised = canonical; break }
+    if (pat.test(matCleanNorm) || pat.test(matClean)) { normalised = canonical; break }
   }
 
   const material = normalised
