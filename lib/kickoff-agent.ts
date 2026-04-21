@@ -187,7 +187,7 @@ export async function generateWorkOrder(
 
   /**
    * List all files in a folder plus files inside any non-Archive subfolders
-   * (one level deep). This picks up revised files stored in subfolders like
+   * (two levels deep). This picks up revised files stored in subfolders like
    * "B Revision" while still excluding any "Archive" subfolder.
    */
   async function listFolderFilesShallow(folderId: string) {
@@ -195,9 +195,15 @@ export async function generateWorkOrder(
     const files = items.filter(f => f.mimeType !== FOLDER_MIME)
     const subfolders = items.filter(f => f.mimeType === FOLDER_MIME && !isArchiveFolder(f))
     if (subfolders.length === 0) return files
-    const subFiles = await Promise.all(subfolders.map(sf => listFolderFiles(sf.id)))
-    const subFilesFlat = subFiles.flat().filter(f => f.mimeType !== FOLDER_MIME && !isArchiveFolder(f))
-    return [...files, ...subFilesFlat]
+    // Level 1
+    const level1 = await Promise.all(subfolders.map(sf => listFolderFiles(sf.id)))
+    const level1Files = level1.flat().filter(f => f.mimeType !== FOLDER_MIME && !isArchiveFolder(f))
+    const level1Folders = level1.flat().filter(f => f.mimeType === FOLDER_MIME && !isArchiveFolder(f))
+    if (level1Folders.length === 0) return [...files, ...level1Files]
+    // Level 2
+    const level2 = await Promise.all(level1Folders.map(sf => listFolderFiles(sf.id)))
+    const level2Files = level2.flat().filter(f => f.mimeType !== FOLDER_MIME && !isArchiveFolder(f))
+    return [...files, ...level1Files, ...level2Files]
   }
 
   const [dxfFiles, pdfSubFiles, drawingsFiles] = await Promise.all([
