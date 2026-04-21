@@ -111,6 +111,8 @@ export async function listFolderFiles(folderId: string): Promise<DriveFile[]> {
       pageSize: 100,
       pageToken,
       orderBy: 'name',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
     })
 
     for (const f of res.data.files || []) {
