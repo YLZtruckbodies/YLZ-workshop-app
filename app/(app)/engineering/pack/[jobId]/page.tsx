@@ -208,6 +208,18 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
+  // Auto-search Drive for VIN photos when the VIN plate section is expanded (trucks only)
+  useEffect(() => {
+    if (expanded !== 'vin-plate' || !job) return
+    const buildType = (job.type || '').toLowerCase()
+    const isTrailerBuild = buildType.includes('trailer') || buildType.includes('dog') || buildType.includes('semi') || buildType.includes('lead')
+    if (isTrailerBuild) return
+    fetch(`/api/jobs/${job.id}/drive-vin-files`)
+      .then(r => r.ok ? r.json() : [])
+      .then(files => setVinDriveFiles(Array.isArray(files) ? files : []))
+      .catch(() => {})
+  }, [expanded, job])
+
   // ── Derived state ──────────────────────────────────────────────────────────
 
   const cfg = quote?.configuration || {} as QuoteConfig
