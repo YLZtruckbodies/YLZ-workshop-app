@@ -33,10 +33,14 @@ const MATERIAL_PATTERNS: RegExp[] = [
   /stainless\s*steel\s*(?:gr?\.?\s*)?(?:304|316[lL]?|430|201)?\s*[-–]?\s*[\d.]+\s*mm/i,
   /\bss\s*(?:304|316[lL]?|430|201)\s*[-–]?\s*[\d.]+\s*mm/i,
   /\bss\s*(?:304|316[lL]?|430|201)\b/i,
-  // Aluminium
+  // Aluminium — explicit keyword
   /alumin(?:ium|um)\s*(?:\d{4})?\s*(?:-?[tThH]\d+)?\s*[-–]?\s*[\d.]+\s*mm/i,
   /\bal(?:um)?\s*(?:\d{4})\s*(?:-?[tThH]\d+)?\s*[-–]?\s*[\d.]+\s*mm/i,
   /\bal\s*[-–]?\s*[\d.]+\s*mm/i,
+  // Aluminium alloy series (5xxx / 6xxx) with temper + thickness — e.g. "5083-H321 - 3mm"
+  /\b[56]\d{3}\s*[-–]\s*[HhTt]\d+\s*[-–]?\s*[\d.]+\s*mm/i,
+  // Aluminium alloy series with thickness but no temper — e.g. "5083 - 3mm"
+  /\b[56]\d{3}\s*[-–]\s*[\d.]+\s*mm/i,
   // Mild steel
   /mild\s*steel\s*(?:gr?\.?\s*)?(?:\d+)?\s*(?:HR)?\s*[-–]?\s*[\d.]+\s*mm/i,
   /ms\s*(?:gr?\.?\s*)?(?:\d+)?\s*(?:HR)?\s*[-–]?\s*[\d.]+\s*mm/i,
@@ -68,6 +72,13 @@ const MATERIAL_NORMALISE: [RegExp, string][] = [
   [/al\s*5083/i,                'Aluminium 5083'],
   [/al\s*6061/i,                'Aluminium 6061'],
   [/al\s*6082/i,                'Aluminium 6082'],
+  // Bare alloy codes (5xxx/6xxx series) — used in SolidWorks title blocks without "Aluminium" prefix
+  [/\b5083\b/i,                 'Aluminium 5083'],
+  [/\b5052\b/i,                 'Aluminium 5052'],
+  [/\b5005\b/i,                 'Aluminium 5005'],
+  [/\b6061\b/i,                 'Aluminium 6061'],
+  [/\b6082\b/i,                 'Aluminium 6082'],
+  [/\b6063\b/i,                 'Aluminium 6063'],
   [/mild\s*steel\s*(?:gr(?:ade)?\s*)?350\s*hr/i, 'Mild Steel 350 HR'],
   [/mild\s*steel\s*(?:gr(?:ade)?\s*)?350/i,       'Mild Steel 350 HR'],
   [/mild\s*steel/i,             'Mild Steel 350 HR'],
