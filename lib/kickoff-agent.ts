@@ -181,11 +181,19 @@ export async function generateWorkOrder(
   if (!dxfFolderId) return
 
   // ── 1. List DXF and PDF files in parallel ────────────────────────────────
-  const [dxfFiles, pdfSubFiles, drawingsFiles] = await Promise.all([
+  const FOLDER_MIME = 'application/vnd.google-apps.folder'
+  const notArchive = (f: { name: string; mimeType: string }) =>
+    f.mimeType !== FOLDER_MIME && f.name.toLowerCase() !== 'archive'
+
+  const [rawDxf, rawPdf, rawDrawings] = await Promise.all([
     listFolderFiles(dxfFolderId),
     pdfFolderId ? listFolderFiles(pdfFolderId) : Promise.resolve([]),
     drawingsFolderId ? listFolderFiles(drawingsFolderId) : Promise.resolve([]),
   ])
+
+  const dxfFiles   = rawDxf.filter(notArchive)
+  const pdfSubFiles = rawPdf.filter(notArchive)
+  const drawingsFiles = rawDrawings.filter(notArchive)
 
   if (dxfFiles.length === 0) return
 
