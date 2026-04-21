@@ -407,6 +407,7 @@ const TAILGATE_TYPES = ['Fixed', '2 Way', 'Single Drop', 'Bi-fold', 'Forward Hin
 const TAILGATE_LIGHTS = ['None', '4 Per Side Round LED', 'LED Strip', 'LED Cluster', 'Reverse Light Only', 'Other']
 const TAIL_LIGHTS = [
   '4 hole round LEDs c/w chrome surround',
+  '5 hole round LEDs c/w chrome surround',
   '7 hole round LEDs c/w chrome surround',
   'LED cluster combination lights',
   'Narva LED combination lights',
