@@ -1,28 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+function parseDDMMYY(d: string): Date | null {
+  const [dd, mm, yy] = d.split('/').map(Number)
+  if (!dd || !mm || !yy) return null
+  return new Date(2000 + yy, mm - 1, dd)
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const from = searchParams.get('from')
   const to = searchParams.get('to')
   const date = searchParams.get('date')
-
   const worker = searchParams.get('worker')
 
   const where: any = {}
-  if (from && to) {
-    where.date = { gte: from, lte: to }
-  } else if (date) {
+  if (date) {
     where.date = date
   }
   if (worker) {
     where.workerName = { contains: worker, mode: 'insensitive' }
   }
 
-  const timesheets = await prisma.timesheet.findMany({
+  let timesheets = await prisma.timesheet.findMany({
     where,
     orderBy: [{ date: 'asc' }, { workerName: 'asc' }, { createdAt: 'asc' }],
   })
+
+  if (from && to) {
+    const fromDate = new Date(from + 'T00:00:00')
+    const toDate = new Date(to + 'T23:59:59')
+    timesheets = timesheets.filter((t: any) => {
+      const d = parseDDMMYY(t.date)
+      return d && d >= fromDate && d <= toDate
+    })
+  }
 
   const SECTION_LABELS: Record<string, string> = {
     alloy: 'Alloy Fabrication',

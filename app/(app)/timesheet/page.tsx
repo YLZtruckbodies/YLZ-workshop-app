@@ -115,6 +115,13 @@ export default function TimesheetPage() {
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState('')
 
+  // Date-range export
+  const [showRangeExport, setShowRangeExport] = useState(false)
+  const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate())
+  const [exportFrom, setExportFrom] = useState(threeMonthsAgo.toISOString().split('T')[0])
+  const [exportTo, setExportTo] = useState(today.toISOString().split('T')[0])
+  const [exportWorker, setExportWorker] = useState('')
+
   const { data: timesheets, mutate } = useTimesheets(date)
   const { data: jobs } = useJobs()
   const { data: repairJobs } = useRepairJobs()
@@ -257,6 +264,18 @@ export default function TimesheetPage() {
     }
     setSubmitting(false)
     setTimeout(() => setMessage(''), 3000)
+  }
+
+  function handleRangeExport() {
+    const params = new URLSearchParams()
+    params.set('from', exportFrom)
+    params.set('to', exportTo)
+    if (exportWorker) params.set('worker', exportWorker)
+    const url = `/api/timesheets/export?${params.toString()}`
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `timesheet-${exportWorker || 'all'}-${exportFrom}-to-${exportTo}.csv`
+    a.click()
   }
 
   async function handleExport() {
@@ -511,8 +530,82 @@ export default function TimesheetPage() {
               Export Week (Xero)
             </button>
           )}
+          <button
+            onClick={() => setShowRangeExport(!showRangeExport)}
+            style={{
+              ...exportBtnStyle,
+              background: showRangeExport ? '#E8681A' : 'rgba(232,104,26,0.15)',
+              color: showRangeExport ? '#fff' : '#E8681A',
+              border: '1.5px solid rgba(232,104,26,0.4)',
+            }}
+          >
+            Export Date Range
+          </button>
         </div>
       </div>
+
+      {showRangeExport && (
+        <div style={{
+          padding: '16px 28px',
+          background: 'rgba(232,104,26,0.04)',
+          borderBottom: '1px solid rgba(232,104,26,0.2)',
+          display: 'flex',
+          gap: 14,
+          alignItems: 'flex-end',
+          flexWrap: 'wrap',
+        }}>
+          <div>
+            <label style={{ ...labelStyle, marginBottom: 4 }}>From</label>
+            <input
+              type="date"
+              value={exportFrom}
+              onChange={(e) => setExportFrom(e.target.value)}
+              style={{ ...inputStyle, minWidth: 160 }}
+            />
+          </div>
+          <div>
+            <label style={{ ...labelStyle, marginBottom: 4 }}>To</label>
+            <input
+              type="date"
+              value={exportTo}
+              onChange={(e) => setExportTo(e.target.value)}
+              style={{ ...inputStyle, minWidth: 160 }}
+            />
+          </div>
+          <div>
+            <label style={{ ...labelStyle, marginBottom: 4 }}>Worker (optional)</label>
+            <select
+              value={exportWorker}
+              onChange={(e) => setExportWorker(e.target.value)}
+              style={{ ...inputStyle, minWidth: 180 }}
+            >
+              <option value="">All workers</option>
+              {workers?.map((w: any) => (
+                <option key={w.id} value={w.name}>{w.name}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={handleRangeExport}
+            style={{
+              fontFamily: "'League Spartan', sans-serif",
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: 0.8,
+              textTransform: 'uppercase',
+              padding: '10px 24px',
+              borderRadius: 4,
+              cursor: 'pointer',
+              border: 'none',
+              background: '#E8681A',
+              color: '#fff',
+              minHeight: 44,
+            }}
+          >
+            Download CSV
+          </button>
+        </div>
+      )}
 
       {/* LOG TIME VIEW */}
       {view === 'log' && (
