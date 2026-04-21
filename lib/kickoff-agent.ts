@@ -180,20 +180,31 @@ export async function generateWorkOrder(
 ): Promise<void> {
   if (!dxfFolderId) return
 
-  // ── 1. List DXF and PDF files in parallel ────────────────────────────────
+  // ── 1. List DXF and PDF files (flat + one level of non-Archive subfolders) ─
   const FOLDER_MIME = 'application/vnd.google-apps.folder'
-  const notArchive = (f: { name: string; mimeType: string }) =>
-    f.mimeType !== FOLDER_MIME && f.name.toLowerCase() !== 'archive'
+  const isArchiveFolder = (f: { name: string; mimeType: string }) =>
+    f.mimeType === FOLDER_MIME && f.name.toLowerCase() === 'archive'
 
-  const [rawDxf, rawPdf, rawDrawings] = await Promise.all([
-    listFolderFiles(dxfFolderId),
-    pdfFolderId ? listFolderFiles(pdfFolderId) : Promise.resolve([]),
-    drawingsFolderId ? listFolderFiles(drawingsFolderId) : Promise.resolve([]),
+  /**
+   * List all files in a folder plus files inside any non-Archive subfolders
+   * (one level deep). This picks up revised files stored in subfolders like
+   * "B Revision" while still excluding any "Archive" subfolder.
+   */
+  async function listFolderFilesShallow(folderId: string) {
+    const items = await listFolderFiles(folderId)
+    const files = items.filter(f => f.mimeType !== FOLDER_MIME)
+    const subfolders = items.filter(f => f.mimeType === FOLDER_MIME && !isArchiveFolder(f))
+    if (subfolders.length === 0) return files
+    const subFiles = await Promise.all(subfolders.map(sf => listFolderFiles(sf.id)))
+    const subFilesFlat = subFiles.flat().filter(f => f.mimeType !== FOLDER_MIME && !isArchiveFolder(f))
+    return [...files, ...subFilesFlat]
+  }
+
+  const [dxfFiles, pdfSubFiles, drawingsFiles] = await Promise.all([
+    listFolderFilesShallow(dxfFolderId),
+    pdfFolderId ? listFolderFilesShallow(pdfFolderId) : Promise.resolve([]),
+    drawingsFolderId ? listFolderFiles(drawingsFolderId).then(items => items.filter(f => f.mimeType !== FOLDER_MIME && !isArchiveFolder(f))) : Promise.resolve([]),
   ])
-
-  const dxfFiles   = rawDxf.filter(notArchive)
-  const pdfSubFiles = rawPdf.filter(notArchive)
-  const drawingsFiles = rawDrawings.filter(notArchive)
 
   if (dxfFiles.length === 0) return
 
