@@ -122,10 +122,13 @@ export async function findKitFiles(bodyLength: number, bodyHeight: number, isHar
 
   if (!kitFolderId) return null
 
+  // Hardox kits:    kit / CAD / Drawings / DXF  (CAD subfolder exists)
+  // Aluminium kits: kit / Drawings / DXF         (no CAD subfolder)
   const cadFolderId = await findChildFolder(kitFolderId, 'CAD')
-  if (!cadFolderId) return null
+  const drawingsFolderId = cadFolderId
+    ? await findChildFolder(cadFolderId, 'Drawings')
+    : await findChildFolder(kitFolderId, 'Drawings')
 
-  const drawingsFolderId = await findChildFolder(cadFolderId, 'Drawings')
   if (!drawingsFolderId) return null
 
   const [dxfId, pdfId] = await Promise.all([
@@ -133,11 +136,12 @@ export async function findKitFiles(bodyLength: number, bodyHeight: number, isHar
     findChildFolder(drawingsFolderId, 'PDF'),
   ])
 
-  // Read metadata.json for mass and specs
+  // Read metadata.json for mass and specs (only present in Hardox CAD folders)
   let massKg = 0
   let resolvedKitName = kitName
   try {
-    const metaId = await findFileInFolder(cadFolderId, 'metadata.json')
+    const metaSearchId = cadFolderId ?? kitFolderId
+    const metaId = await findFileInFolder(metaSearchId, 'metadata.json')
     if (metaId) {
       const meta = await downloadJsonFile(metaId)
       massKg = Math.round((meta.mass_kg as number) ?? 0)
