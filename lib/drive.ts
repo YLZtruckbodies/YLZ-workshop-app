@@ -13,6 +13,11 @@ const PARTS_CONTAINER_ID = '1eAs6Dv4F8DdcvNIFWuggfR1YZzHwPZNo'
 // Structure: Body Kits / [Hardox|Aluminium] / YLZ[length]x[width]-[H|A]-WM / CAD / Drawings / [DXF|PDF]
 export const BODY_KITS_FOLDER_ID = '1Pf__FiZ5hVcl_Oi8faNMLx8OifYW0oQM'
 
+// Generic Designs shared drive root (G:\.shortcut-targets-by-id\11I4WxzE7drzxHwG58yG6I8nV2l5tl3KM)
+// Path: YLZ / Engineering / Generic Designs / Body Kits / Aluminium
+export const GENERIC_DESIGNS_ROOT_ID = '11I4WxzE7drzxHwG58yG6I8nV2l5tl3KM'
+export const ALUMINIUM_BODY_KITS_PATH = ['YLZ', 'Engineering', 'Generic Designs', 'Body Kits', 'Aluminium'] as const
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
 let driveClient: drive_v3.Drive | null = null
@@ -445,6 +450,20 @@ export async function findChildFolder(parentId: string, name: string): Promise<s
     includeItemsFromAllDrives: true,
   })
   return res.data.files?.[0]?.id ?? null
+}
+
+/**
+ * Navigate a folder path from a root ID, resolving each component in sequence.
+ * Returns the ID of the final folder, or null if any step is not found.
+ */
+export async function findFolderByPath(rootId: string, pathParts: readonly string[]): Promise<string | null> {
+  let currentId = rootId
+  for (const part of pathParts) {
+    const next = await findChildFolder(currentId, part)
+    if (!next) return null
+    currentId = next
+  }
+  return currentId
 }
 
 /**

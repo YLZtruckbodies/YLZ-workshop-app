@@ -13,8 +13,11 @@ import { prisma } from './prisma'
 import { resolveBoms } from './bom-resolver'
 import {
   BODY_KITS_FOLDER_ID,
+  GENERIC_DESIGNS_ROOT_ID,
+  ALUMINIUM_BODY_KITS_PATH,
   findChildFolder,
   findFolderByPrefix,
+  findFolderByPath,
   findFileInFolder,
   findJobFolder,
   downloadJsonFile,
@@ -104,6 +107,17 @@ export async function findKitFiles(bodyLength: number, bodyHeight: number, isHar
     if (matFolderId) {
       kitFolderId = await findFolderByPrefix(matFolderId, prefix)
     }
+  }
+
+  // Strategy 3: For aluminium kits, also search the Generic Designs shared drive
+  // (G:\.shortcut-targets-by-id\11I4WxzE7drzxHwG58yG6I8nV2l5tl3KM\YLZ\Engineering\Generic Designs\Body Kits\Aluminium)
+  if (!kitFolderId && !isHardox) {
+    try {
+      const alumFolder = await findFolderByPath(GENERIC_DESIGNS_ROOT_ID, ALUMINIUM_BODY_KITS_PATH)
+      if (alumFolder) {
+        kitFolderId = await findFolderByPrefix(alumFolder, prefix)
+      }
+    } catch { /* non-fatal */ }
   }
 
   if (!kitFolderId) return null
