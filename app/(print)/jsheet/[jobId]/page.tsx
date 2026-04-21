@@ -432,15 +432,19 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <>
                 {/* Job-level fields */}
                 <div style={sectionLbl}>Job Details</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 8 }}>
-                  <div>
-                    <div style={lblStyle}>Chassis / Make & Model</div>
-                    <input style={inpStyle} value={editMake} onChange={e => setEditMake(e.target.value)} placeholder="e.g. UD Trucks Quon CW26 420" />
-                  </div>
-                  <div>
-                    <div style={lblStyle}>Variant</div>
-                    <input style={inpStyle} value={editCfg['chassisVariant'] || ''} onChange={e => setCfgField('chassisVariant', e.target.value)} placeholder="e.g. SAR, 6x4" />
-                  </div>
+                <div style={{ display: 'grid', gridTemplateColumns: isTrailer ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: 12, marginBottom: 8 }}>
+                  {!isTrailer && (
+                    <div>
+                      <div style={lblStyle}>Chassis / Make & Model</div>
+                      <input style={inpStyle} value={editMake} onChange={e => setEditMake(e.target.value)} placeholder="e.g. UD Trucks Quon CW26 420" />
+                    </div>
+                  )}
+                  {!isTrailer && (
+                    <div>
+                      <div style={lblStyle}>Variant</div>
+                      <input style={inpStyle} value={editCfg['chassisVariant'] || ''} onChange={e => setCfgField('chassisVariant', e.target.value)} placeholder="e.g. SAR, 6x4" />
+                    </div>
+                  )}
                   <div>
                     <div style={lblStyle}>VIN</div>
                     <input style={inpStyle} value={editVin} onChange={e => setEditVin(e.target.value)} />
@@ -708,21 +712,25 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="cell-val-sm">{today()}</div>
           </div>
         </div>
-        <div className={`info-row ${isTrailer ? 'info-row-5' : 'info-row-4'}`} style={{ marginBottom: 12 }}>
+        <div className={`info-row ${isTrailer ? 'info-row-3' : 'info-row-4'}`} style={{ marginBottom: 12 }}>
           <div className="cell">
             <div className="cell-lbl">Build Type</div>
             <div className="cell-val-sm">{job.type || '—'}</div>
           </div>
-          <div className="cell">
-            <div className="cell-lbl">Chassis Make</div>
-            <div className="cell-val-sm">{c('chassisMake') || ''}</div>
-            {!c('chassisMake') && <div className="cell-blank" />}
-          </div>
-          <div className="cell">
-            <div className="cell-lbl">Chassis Model</div>
-            <div className="cell-val-sm">{c('chassisModel') || ''}</div>
-            {!c('chassisModel') && <div className="cell-blank" />}
-          </div>
+          {!isTrailer && (
+            <div className="cell">
+              <div className="cell-lbl">Chassis Make</div>
+              <div className="cell-val-sm">{c('chassisMake') || ''}</div>
+              {!c('chassisMake') && <div className="cell-blank" />}
+            </div>
+          )}
+          {!isTrailer && (
+            <div className="cell">
+              <div className="cell-lbl">Chassis Model</div>
+              <div className="cell-val-sm">{c('chassisModel') || ''}</div>
+              {!c('chassisModel') && <div className="cell-blank" />}
+            </div>
+          )}
           <div className="cell">
             <div className="cell-lbl">Due Date</div>
             <div className="cell-val-sm">{job.due || ''}</div>
@@ -1022,17 +1030,21 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="cell-val-sm">{today()}</div>
           </div>
         </div>
-        <div className={`info-row ${isTrailer ? 'info-row-3' : 'info-row-2'}`} style={{ marginBottom: 14 }}>
-          <div className="cell">
-            <div className="cell-lbl">Chassis Make</div>
-            <div className="cell-val-sm">{c('chassisMake') || ''}</div>
-            {!c('chassisMake') && <div className="cell-blank" />}
-          </div>
-          <div className="cell">
-            <div className="cell-lbl">Chassis Model</div>
-            <div className="cell-val-sm">{c('chassisModel') || ''}</div>
-            {!c('chassisModel') && <div className="cell-blank" />}
-          </div>
+        <div className={`info-row ${isTrailer ? 'info-row-1' : 'info-row-2'}`} style={{ marginBottom: 14 }}>
+          {!isTrailer && (
+            <div className="cell">
+              <div className="cell-lbl">Chassis Make</div>
+              <div className="cell-val-sm">{c('chassisMake') || ''}</div>
+              {!c('chassisMake') && <div className="cell-blank" />}
+            </div>
+          )}
+          {!isTrailer && (
+            <div className="cell">
+              <div className="cell-lbl">Chassis Model</div>
+              <div className="cell-val-sm">{c('chassisModel') || ''}</div>
+              {!c('chassisModel') && <div className="cell-blank" />}
+            </div>
+          )}
           {isTrailer && (
             <div className="cell">
               <div className="cell-lbl">Body Length</div>
@@ -1240,17 +1252,21 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="cell-val-sm">{today()}</div>
           </div>
         </div>
-        <div className={`info-row ${isTrailer ? 'info-row-3' : 'info-row-2'}`} style={{ marginBottom: 14 }}>
-          <div className="cell">
-            <div className="cell-lbl">Chassis Make</div>
-            <div className="cell-val-sm">{c('chassisMake') || ''}</div>
-            {!c('chassisMake') && <div className="cell-blank" />}
-          </div>
-          <div className="cell">
-            <div className="cell-lbl">Chassis Model</div>
-            <div className="cell-val-sm">{c('chassisModel') || ''}</div>
-            {!c('chassisModel') && <div className="cell-blank" />}
-          </div>
+        <div className={`info-row ${isTrailer ? 'info-row-1' : 'info-row-2'}`} style={{ marginBottom: 14 }}>
+          {!isTrailer && (
+            <div className="cell">
+              <div className="cell-lbl">Chassis Make</div>
+              <div className="cell-val-sm">{c('chassisMake') || ''}</div>
+              {!c('chassisMake') && <div className="cell-blank" />}
+            </div>
+          )}
+          {!isTrailer && (
+            <div className="cell">
+              <div className="cell-lbl">Chassis Model</div>
+              <div className="cell-val-sm">{c('chassisModel') || ''}</div>
+              {!c('chassisModel') && <div className="cell-blank" />}
+            </div>
+          )}
           {isTrailer && (
             <div className="cell">
               <div className="cell-lbl">Body Length</div>
