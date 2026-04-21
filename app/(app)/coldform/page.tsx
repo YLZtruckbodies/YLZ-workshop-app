@@ -90,9 +90,9 @@ function JobSelect({
 }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)} style={selectStyle}>
-      <option value="">{placeholder || '\u2014 Select Job \u2014'}</option>
+      <option value="" style={{ background: '#1a1a1a', color: '#fff' }}>{placeholder || '\u2014 Select Job \u2014'}</option>
       {jobs.map((j: any) => (
-        <option key={j.id} value={j.num}>
+        <option key={j.id} value={j.num} style={{ background: '#1a1a1a', color: '#fff' }}>
           {j.num} \u2014 {j.type}
         </option>
       ))}
@@ -167,6 +167,45 @@ function WorkOrderDetail({ jobNum }: { jobNum: string }) {
               PDF Folder
             </a>
           )}
+          <button
+            onClick={() => {
+              const html = `<!DOCTYPE html><html><head><title>Work Order — ${jobNum}</title>
+                <style>
+                  * { margin: 0; padding: 0; box-sizing: border-box; }
+                  body { font-family: 'Segoe UI', system-ui, sans-serif; padding: 24px; color: #1a1a1a; }
+                  h1 { font-size: 22px; font-weight: 800; letter-spacing: 2px; }
+                  h2 { font-size: 14px; font-weight: 700; margin: 12px 0 6px; padding: 4px 10px; background: #E8681A; color: #fff; border-radius: 3px; text-transform: uppercase; letter-spacing: 1px; }
+                  .meta { font-size: 11px; color: #888; margin: 4px 0 16px; }
+                  table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 12px; }
+                  th { text-align: left; padding: 5px 8px; border-bottom: 2px solid #333; font-weight: 700; font-size: 10px; text-transform: uppercase; }
+                  td { padding: 4px 8px; border-bottom: 1px solid #e0e0e0; }
+                  @media print { @page { margin: 12mm; } }
+                </style>
+              </head><body>
+                <h1>YLZ WORKSHOP</h1>
+                <div class="meta">Work Order — Job ${jobNum} &nbsp;|&nbsp; Status: ${wo.status} &nbsp;|&nbsp; Printed ${new Date().toLocaleDateString('en-AU')} ${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}</div>
+                ${Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)).map(([material, mParts]) => `
+                  <h2>${material} (${mParts.length})</h2>
+                  <table>
+                    <thead><tr><th>Part Name</th><th>Thickness</th><th>Qty</th><th>Fold</th></tr></thead>
+                    <tbody>
+                      ${mParts.map((p: any) => `<tr>
+                        <td style="font-weight:500">${p.partName}</td>
+                        <td>${p.thickness || material}</td>
+                        <td style="font-weight:600;text-align:center">x${p.quantity}</td>
+                        <td>${p.hasFlatPattern ? '\u2610 Fold' : '\u2014'}</td>
+                      </tr>`).join('')}
+                    </tbody>
+                  </table>
+                `).join('')}
+              </body></html>`
+              const w = window.open('', '_blank')
+              if (w) { w.document.write(html); w.document.close(); w.onload = () => w.print() }
+            }}
+            style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 3, border: '1px solid rgba(255,255,255,0.3)', color: '#fff', background: 'rgba(255,255,255,0.08)', cursor: 'pointer' }}
+          >
+            Print
+          </button>
         </div>
       </div>
       {Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)).map(([material, mParts]) => (
@@ -252,7 +291,41 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
 
   async function handlePartToggle(kit: any, partKey: string) {
     const newVal = nextStatus(kit[partKey] || '')
-    await updateColdformKit(kit.id, { [partKey]: newVal })
+    const updatedKit = { ...kit, [partKey]: newVal }
+    const allComplete = KIT_PARTS.every((p) => {
+      const v = (updatedKit[p.key] || '').toLowerCase().trim()
+      return v === 'y' || v === 'yes'
+    })
+    const wasComplete = KIT_PARTS.every((p) => {
+      const v = (kit[p.key] || '').toLowerCase().trim()
+      return v === 'y' || v === 'yes'
+    })
+
+    const updateData: any = { [partKey]: newVal }
+    if (allComplete && !wasComplete) {
+      updateData.completedAt = new Date().toISOString().split('T')[0]
+      // Notify Keith
+      fetch('/api/users').then(r => r.json()).then((users: any[]) => {
+        const keith = users.find((u: any) => u.name?.toLowerCase().includes('keith'))
+        if (keith?.id) {
+          const jobLabel = kit.allocatedTo ? ` (${kit.allocatedTo})` : ''
+          fetch('/api/notifications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: keith.id,
+              jobNum: kit.allocatedTo || '',
+              type: 'coldform_complete',
+              message: `Hardox kit ${kit.size}${jobLabel} — all parts complete`,
+            }),
+          })
+        }
+      })
+    } else if (!allComplete && wasComplete) {
+      updateData.completedAt = ''
+    }
+
+    await updateColdformKit(kit.id, updateData)
     mutate()
   }
 
@@ -308,6 +381,7 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
                 </th>
               ))}
               <th style={thStyle}>Allocated To</th>
+              <th style={thStyle}>Completed</th>
               <th style={thStyle}>Notes</th>
               <th style={{ ...thStyle, width: 80 }}>Actions</th>
             </tr>
@@ -374,6 +448,15 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
                     )}
                   </td>
                   <td style={tdStyle}>
+                    {allDone && kit.completedAt ? (
+                      <span style={{ color: '#22d07a', fontSize: 12, fontWeight: 600 }}>
+                        {new Date(kit.completedAt + 'T00:00:00').toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--text3)', fontSize: 12 }}>{'\u2014'}</span>
+                    )}
+                  </td>
+                  <td style={tdStyle}>
                     {isEditing ? (
                       <input
                         value={editData.notes ?? kit.notes}
@@ -430,7 +513,7 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
                 </tr>
                 {expandedKit === kit.id && kit.allocatedTo && (
                   <tr>
-                    <td colSpan={KIT_PARTS.length + 4} style={{ padding: 0, background: 'rgba(0,0,0,0.3)', borderBottom: '2px solid #E8681A' }}>
+                    <td colSpan={KIT_PARTS.length + 5} style={{ padding: 0, background: 'rgba(0,0,0,0.3)', borderBottom: '2px solid #E8681A' }}>
                       <WorkOrderDetail jobNum={kit.allocatedTo} />
                     </td>
                   </tr>
