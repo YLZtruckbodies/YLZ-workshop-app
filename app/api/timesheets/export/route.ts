@@ -7,11 +7,16 @@ export async function GET(req: NextRequest) {
   const to = searchParams.get('to')
   const date = searchParams.get('date')
 
+  const worker = searchParams.get('worker')
+
   const where: any = {}
   if (from && to) {
     where.date = { gte: from, lte: to }
   } else if (date) {
     where.date = date
+  }
+  if (worker) {
+    where.workerName = { contains: worker, mode: 'insensitive' }
   }
 
   const timesheets = await prisma.timesheet.findMany({
@@ -35,7 +40,7 @@ export async function GET(req: NextRequest) {
   )
   const csv = [header, ...rows].join('\n')
 
-  const label = from && to ? `${from}_to_${to}` : date || 'all'
+  const label = (worker ? `${worker}-` : '') + (from && to ? `${from}_to_${to}` : date || 'all')
   return new NextResponse(csv, {
     headers: {
       'Content-Type': 'text/csv',
