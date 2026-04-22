@@ -32,6 +32,15 @@ function storeChecks(jobId: string, checks: Record<string, CheckState>) {
   localStorage.setItem(`qa_${jobId}`, JSON.stringify(checks))
 }
 
+function escapeHtml(s: string): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 /* ── Main Component ──────────────────────────────────── */
 
 export default function QAPage() {
@@ -181,6 +190,100 @@ export default function QAPage() {
       setQaUploading(false)
     }
   }, [qaUploadJobId, qaUploadFiles, qaUploadCaption, user, mutateFinalQa])
+
+  const handleDownloadPdf = useCallback((jobId: string) => {
+    const job = qcJobs.find((j: any) => j.id === jobId)
+    const photos = finalQaByJob[jobId] || []
+    if (!job || photos.length === 0) return
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const dateFmt = (d: string | Date) => new Date(d).toLocaleString('en-AU', {
+      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    })
+    const today = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'long', year: 'numeric' })
+
+    const photoBlocks = photos.map((p: any, idx: number) => `
+      <div class="photo">
+        <img src="${origin}${escapeHtml(p.photoUrl || '')}" alt="${escapeHtml(p.photoName || '')}" />
+        <div class="caption">
+          <span class="num">Photo ${idx + 1} of ${photos.length}</span>
+          ${p.message && p.message !== 'Final QA photo' ? `<span class="msg">${escapeHtml(p.message)}</span>` : ''}
+          <span class="meta">${escapeHtml(dateFmt(p.createdAt))} &middot; ${escapeHtml(p.authorName || 'Unknown')}</span>
+        </div>
+      </div>
+    `).join('')
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Final QA Report — ${escapeHtml(job.num)}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #111; font-size: 11px; }
+    .cover { padding: 20mm 16mm 10mm; page-break-after: always; }
+    .cover .brand { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; border-bottom: 3px solid #E8681A; padding-bottom: 8px; }
+    .cover .brand h1 { font-size: 44px; font-weight: 900; letter-spacing: 3px; color: #000; }
+    .cover .brand span { font-size: 13px; color: #666; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+    .cover h2 { font-size: 22px; font-weight: 800; letter-spacing: 1.5px; margin: 18px 0 14px; text-transform: uppercase; }
+    .details { border: 1px solid #ddd; border-radius: 4px; overflow: hidden; }
+    .details .row { display: grid; grid-template-columns: 150px 1fr; border-bottom: 1px solid #eee; }
+    .details .row:last-child { border-bottom: none; }
+    .details label { padding: 10px 12px; background: #f7f7f7; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #555; border-right: 1px solid #eee; }
+    .details value { padding: 10px 12px; font-size: 13px; font-weight: 600; color: #111; display: block; }
+    .footer-note { margin-top: 20mm; padding-top: 10px; border-top: 1px dashed #ccc; font-size: 9px; color: #888; letter-spacing: 0.5px; }
+    .photos { padding: 14mm 16mm; }
+    .photos h3 { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #555; margin-bottom: 10px; }
+    .photo { page-break-inside: avoid; margin-bottom: 10mm; border: 1px solid #eee; border-radius: 4px; overflow: hidden; }
+    .photo img { width: 100%; max-height: 115mm; object-fit: contain; display: block; background: #f7f7f7; }
+    .photo .caption { padding: 8px 12px; font-size: 10px; color: #333; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+    .photo .caption .num { font-weight: 800; color: #E8681A; letter-spacing: 0.5px; text-transform: uppercase; font-size: 9px; }
+    .photo .caption .msg { flex: 1; color: #111; }
+    .photo .caption .meta { color: #888; font-size: 9px; }
+    @page { margin: 0; size: A4 portrait; }
+  </style>
+</head>
+<body>
+  <div class="cover">
+    <div class="brand"><h1>YLZ</h1><span>Truck Bodies &amp; Trailers</span></div>
+    <h2>Final QA Report</h2>
+    <div class="details">
+      <div class="row"><label>Job Number</label><value>${escapeHtml(job.num)}</value></div>
+      <div class="row"><label>Customer</label><value>${escapeHtml(job.customer || '-')}</value></div>
+      <div class="row"><label>Build Type</label><value>${escapeHtml(job.type || '-')}</value></div>
+      <div class="row"><label>Stage</label><value>${escapeHtml(job.stage || 'QC')}</value></div>
+      <div class="row"><label>Report Date</label><value>${escapeHtml(today)}</value></div>
+      <div class="row"><label>Total Photos</label><value>${photos.length}</value></div>
+      <div class="row"><label>Submitted By</label><value>${escapeHtml(photos[0]?.authorName || 'Unknown')}</value></div>
+    </div>
+    <div class="footer-note">
+      YLZ Truck Bodies &amp; Trailers &middot; 29 Southeast Boulevard, Pakenham VIC 3810 &middot; 03 5940 7620 &middot; ylztruckbodies.com.au
+    </div>
+  </div>
+  <div class="photos">
+    <h3>Photos (${photos.length})</h3>
+    ${photoBlocks}
+  </div>
+</body>
+</html>`
+
+    const w = window.open('', '_blank')
+    if (!w) { alert('Pop-ups are blocked. Please allow pop-ups for this site to download the PDF.'); return }
+    w.document.write(html)
+    w.document.close()
+    const triggerPrint = () => {
+      const imgs = Array.from(w.document.images)
+      if (imgs.length === 0 || imgs.every((i) => i.complete)) { w.focus(); w.print(); return }
+      let remaining = imgs.filter((i) => !i.complete).length
+      imgs.forEach((i) => {
+        if (i.complete) return
+        i.addEventListener('load', () => { if (--remaining === 0) { w.focus(); w.print() } })
+        i.addEventListener('error', () => { if (--remaining === 0) { w.focus(); w.print() } })
+      })
+    }
+    if (w.document.readyState === 'complete') triggerPrint()
+    else w.addEventListener('load', triggerPrint)
+  }, [qcJobs, finalQaByJob])
 
   const handleAddNote = useCallback(async (jobId: string) => {
     if (!noteText.trim() || !user) return
@@ -517,7 +620,8 @@ export default function QAPage() {
       {/* Final QA Upload Modal */}
       {qaUploadJobId && (() => {
         const job = qcJobs.find((j: any) => j.id === qaUploadJobId)
-        const existingCount = (finalQaByJob[qaUploadJobId] || []).length
+        const existingPhotos = finalQaByJob[qaUploadJobId] || []
+        const existingCount = existingPhotos.length
         return (
           <div
             onClick={closeQaUpload}
@@ -542,11 +646,6 @@ export default function QAPage() {
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
                     {job?.num} — {job?.type || 'Job'}{job?.customer ? ` / ${job.customer}` : ''}
-                    {existingCount > 0 && (
-                      <span style={{ marginLeft: 10, color: '#22d07a' }}>
-                        · {existingCount} photo{existingCount !== 1 ? 's' : ''} already submitted
-                      </span>
-                    )}
                   </div>
                 </div>
                 <button
@@ -564,6 +663,36 @@ export default function QAPage() {
 
               {/* Modal Body */}
               <div style={{ padding: 20, overflowY: 'auto', flex: 1 }}>
+                {existingCount > 0 && (
+                  <div style={{ marginBottom: 18 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: '#22d07a' }}>✓</span>
+                      Already in report ({existingCount})
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 8 }}>
+                      {existingPhotos.map((p: any) => (
+                        <a
+                          key={p.id}
+                          href={p.photoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          title={`${p.photoName || ''}\n${new Date(p.createdAt).toLocaleString('en-AU')}\n${p.authorName || ''}`}
+                          style={{
+                            display: 'block', position: 'relative', borderRadius: 4, overflow: 'hidden',
+                            border: '1px solid rgba(34,208,122,0.3)', background: 'var(--dark3)', aspectRatio: '1',
+                          }}
+                        >
+                          <img
+                            src={p.photoUrl}
+                            alt={p.photoName || ''}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <label
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -647,7 +776,28 @@ export default function QAPage() {
               </div>
 
               {/* Modal Footer */}
-              <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                <button
+                  onClick={() => qaUploadJobId && handleDownloadPdf(qaUploadJobId)}
+                  disabled={qaUploading || existingCount === 0}
+                  title={existingCount === 0 ? 'Submit at least one photo first' : 'Open print dialog — choose "Save as PDF" as destination'}
+                  style={{
+                    fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700,
+                    letterSpacing: 0.6, textTransform: 'uppercase', padding: '8px 16px',
+                    borderRadius: 4,
+                    cursor: qaUploading ? 'wait' : existingCount === 0 ? 'not-allowed' : 'pointer',
+                    border: '1px solid var(--border2)',
+                    background: 'transparent',
+                    color: existingCount === 0 ? 'var(--text3)' : 'var(--text2)',
+                    opacity: existingCount === 0 ? 0.5 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={(e) => { if (existingCount > 0 && !qaUploading) { e.currentTarget.style.borderColor = '#fff'; e.currentTarget.style.color = '#fff' } }}
+                  onMouseLeave={(e) => { if (existingCount > 0 && !qaUploading) { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.color = 'var(--text2)' } }}
+                >
+                  📄 Save as PDF
+                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   onClick={closeQaUpload}
                   disabled={qaUploading}
@@ -676,6 +826,7 @@ export default function QAPage() {
                 >
                   {qaUploading ? 'Uploading…' : `Submit${qaUploadFiles.length > 0 ? ` (${qaUploadFiles.length})` : ''}`}
                 </button>
+                </div>
               </div>
             </div>
           </div>
