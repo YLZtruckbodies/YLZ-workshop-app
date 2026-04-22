@@ -629,10 +629,18 @@ function WorkerPerformance({
 
 function JobSectionBreakdown({ jobHours, breakdown }: { jobHours: any[]; breakdown: Record<string, Record<string, { hours: number; workers: Record<string, number> }>> }) {
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [jobSearch, setJobSearch] = useState('')
 
-  const jobsWithBreakdown = jobHours.filter((j: any) => breakdown[j.jobNum] && j.hours > 0).slice(0, 25)
+  const allJobsWithBreakdown = jobHours.filter((j: any) => breakdown[j.jobNum] && j.hours > 0)
+  const jobsWithBreakdown = jobSearch
+    ? allJobsWithBreakdown.filter((j: any) =>
+        j.jobNum.toLowerCase().includes(jobSearch.toLowerCase()) ||
+        (j.customer || '').toLowerCase().includes(jobSearch.toLowerCase()) ||
+        (j.type || '').toLowerCase().includes(jobSearch.toLowerCase())
+      )
+    : allJobsWithBreakdown.slice(0, 25)
 
-  if (jobsWithBreakdown.length === 0) return null
+  if (allJobsWithBreakdown.length === 0) return null
 
   return (
     <div
@@ -644,13 +652,26 @@ function JobSectionBreakdown({ jobHours, breakdown }: { jobHours: any[]; breakdo
         marginBottom: 14,
       }}
     >
-      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', background: 'var(--dark3)' }}>
-        <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 14, fontWeight: 800, letterSpacing: 1.5, color: '#fff' }}>
-          HOURS PER JOB — SECTION BREAKDOWN
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', background: 'var(--dark3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 14, fontWeight: 800, letterSpacing: 1.5, color: '#fff' }}>
+            HOURS PER JOB — SECTION BREAKDOWN
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+            Click a job to see hours by section and worker
+          </div>
         </div>
-        <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-          Click a job to see hours by section and worker
-        </div>
+        <input
+          type="text"
+          placeholder="Search job #, customer, type..."
+          value={jobSearch}
+          onChange={(e) => setJobSearch(e.target.value)}
+          style={{
+            background: '#111', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6,
+            padding: '10px 14px', color: '#fff', fontSize: 13, minWidth: 220,
+            outline: 'none',
+          }}
+        />
       </div>
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
