@@ -479,7 +479,7 @@ function WorkerPerformance({
     const [ad, am, ay] = a.split('/')
     const [bd, bm, by] = b.split('/')
     return new Date(2000 + parseInt(by), parseInt(bm) - 1, parseInt(bd)).getTime() - new Date(2000 + parseInt(ay), parseInt(am) - 1, parseInt(ad)).getTime()
-  }).slice(0, 4)
+  }).slice(1, 4)
 
   const visibleWeeks = sortedWeeks.reduce<Record<string, typeof weeks[string]>>((acc, wk) => { acc[wk] = weeks[wk]; return acc }, {})
   const totalH = Object.values(visibleWeeks).reduce((s, w) => s + w.total, 0)
@@ -497,7 +497,7 @@ function WorkerPerformance({
             WORKER PERFORMANCE
           </div>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-            Last 4 weeks — hours, jobs worked, and overtime
+            Previous 3 weeks — hours, jobs worked, and overtime
           </div>
         </div>
         <select
