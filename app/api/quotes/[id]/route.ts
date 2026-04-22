@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { applyConfigDefaults } from '@/lib/quoteConfigDefaults'
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -8,7 +9,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       include: { lineItems: { orderBy: { sortOrder: 'asc' } } },
     })
     if (!quote) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    return NextResponse.json(quote)
+    // Fill in builder-provided defaults for any missing config fields so old
+    // quotes show the same values on the quote sheet and job sheet that the
+    // builder UI shows, without having to re-save them.
+    const filled = {
+      ...quote,
+      configuration: applyConfigDefaults(quote.configuration, quote.buildType),
+    }
+    return NextResponse.json(filled)
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Failed to fetch quote' }, { status: 500 })
   }
