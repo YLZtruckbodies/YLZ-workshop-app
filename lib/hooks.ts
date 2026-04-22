@@ -121,6 +121,15 @@ export async function createNote(data: {
   return res.json()
 }
 
+export async function deleteNote(noteId: string): Promise<void> {
+  const res = await fetch(`/api/notes/${noteId}`, { method: 'DELETE' })
+  if (!res.ok) {
+    let detail = ''
+    try { detail = await res.text() } catch {}
+    throw new Error(`Failed to delete note (${res.status})${detail ? ': ' + detail.slice(0, 200) : ''}`)
+  }
+}
+
 export async function exportTimesheets(date?: string): Promise<Blob> {
   const res = await fetch('/api/timesheets/export', {
     method: 'POST',

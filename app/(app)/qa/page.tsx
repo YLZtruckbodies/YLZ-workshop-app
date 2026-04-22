@@ -1,7 +1,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useJobs, advanceJob, useNotes, createNote, uploadJobPhoto } from '@/lib/hooks'
+import { useJobs, advanceJob, useNotes, createNote, uploadJobPhoto, deleteNote } from '@/lib/hooks'
 import { useState, useMemo, useCallback, useEffect } from 'react'
 
 /* ── QA Checklist items ──────────────────────────────── */
@@ -197,6 +197,23 @@ export default function QAPage() {
       setQaUploading(false)
     }
   }, [qaUploadJobId, qaUploadFiles, qaUploadCaption, user, mutateFinalQa])
+
+  const [qaDeletingId, setQaDeletingId] = useState<string | null>(null)
+
+  const handleDeleteExistingPhoto = useCallback(async (noteId: string, photoName: string) => {
+    if (qaDeletingId) return
+    if (!confirm(`Delete this photo from the Final QA report?\n\n${photoName || 'Photo'}\n\nThis cannot be undone.`)) return
+    setQaDeletingId(noteId)
+    try {
+      await deleteNote(noteId)
+      await mutateFinalQa()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      alert(`Could not delete photo.\n\n${msg}`)
+    } finally {
+      setQaDeletingId(null)
+    }
+  }, [qaDeletingId, mutateFinalQa])
 
   const handleDownloadPdf = useCallback((jobId: string) => {
     const job = qcJobs.find((j: any) => j.id === jobId)
@@ -693,25 +710,49 @@ export default function QAPage() {
                       Already in report ({existingCount})
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 8 }}>
-                      {existingPhotos.map((p: any) => (
-                        <a
-                          key={p.id}
-                          href={p.photoUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          title={`${p.photoName || ''}\n${new Date(p.createdAt).toLocaleString('en-AU')}\n${p.authorName || ''}`}
-                          style={{
-                            display: 'block', position: 'relative', borderRadius: 4, overflow: 'hidden',
-                            border: '1px solid rgba(34,208,122,0.3)', background: 'var(--dark3)', aspectRatio: '1',
-                          }}
-                        >
-                          <img
-                            src={p.photoUrl}
-                            alt={p.photoName || ''}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        </a>
-                      ))}
+                      {existingPhotos.map((p: any) => {
+                        const isDeleting = qaDeletingId === p.id
+                        return (
+                          <div
+                            key={p.id}
+                            style={{
+                              position: 'relative', borderRadius: 4, overflow: 'hidden',
+                              border: '1px solid rgba(34,208,122,0.3)', background: 'var(--dark3)', aspectRatio: '1',
+                              opacity: isDeleting ? 0.4 : 1, transition: 'opacity 0.15s',
+                            }}
+                          >
+                            <a
+                              href={p.photoUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              title={`${p.photoName || ''}\n${new Date(p.createdAt).toLocaleString('en-AU')}\n${p.authorName || ''}`}
+                              style={{ display: 'block', width: '100%', height: '100%' }}
+                            >
+                              <img
+                                src={p.photoUrl}
+                                alt={p.photoName || ''}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            </a>
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteExistingPhoto(p.id, p.photoName || '') }}
+                              disabled={isDeleting || qaUploading}
+                              title={isDeleting ? 'Deleting…' : 'Delete this photo from the report'}
+                              style={{
+                                position: 'absolute', top: 4, right: 4, width: 26, height: 26, borderRadius: '50%',
+                                border: 'none', background: 'rgba(0,0,0,0.78)', color: '#fff',
+                                cursor: isDeleting || qaUploading ? 'wait' : 'pointer',
+                                fontSize: 16, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                padding: 0,
+                              }}
+                              onMouseEnter={(e) => { if (!isDeleting && !qaUploading) e.currentTarget.style.background = '#e84560' }}
+                              onMouseLeave={(e) => { if (!isDeleting && !qaUploading) e.currentTarget.style.background = 'rgba(0,0,0,0.78)' }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
