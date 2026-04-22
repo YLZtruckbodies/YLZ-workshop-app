@@ -9,6 +9,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const authorId = formData.get('authorId') as string || 'system'
   const authorName = formData.get('authorName') as string || 'System'
   const caption = formData.get('caption') as string || ''
+  const noteType = (formData.get('noteType') as string) || 'photo'
 
   if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 })
 
@@ -30,8 +31,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       jobId: params.id,
       authorId,
       authorName,
-      type: 'photo',
-      message: caption || 'Photo attached',
+      type: noteType,
+      message: caption || (noteType === 'qa-final-report' ? 'Final QA photo' : 'Photo attached'),
       photoUrl: `/api/photos/${storedName}`,
       photoName: file.name,
     },

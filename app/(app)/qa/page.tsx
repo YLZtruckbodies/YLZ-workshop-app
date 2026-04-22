@@ -1,7 +1,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useJobs, advanceJob, useNotes, createNote } from '@/lib/hooks'
+import { useJobs, advanceJob, useNotes, createNote, uploadJobPhoto } from '@/lib/hooks'
 import { useState, useMemo, useCallback, useEffect } from 'react'
 
 /* ── QA Checklist items ──────────────────────────────── */
@@ -38,12 +38,19 @@ export default function QAPage() {
   const { data: session } = useSession()
   const { data: jobs, mutate } = useJobs()
   const { data: notes } = useNotes({ type: 'holdup' })
+  const { data: finalQaNotes, mutate: mutateFinalQa } = useNotes({ type: 'qa-final-report' })
   const user = session?.user as any
 
   const [expandedJob, setExpandedJob] = useState<string | null>(null)
   const [checksMap, setChecksMap] = useState<Record<string, Record<string, CheckState>>>({})
   const [noteText, setNoteText] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // Final QA upload modal state
+  const [qaUploadJobId, setQaUploadJobId] = useState<string | null>(null)
+  const [qaUploadFiles, setQaUploadFiles] = useState<File[]>([])
+  const [qaUploadCaption, setQaUploadCaption] = useState('')
+  const [qaUploading, setQaUploading] = useState(false)
 
   // Jobs in QC stage
   const qcJobs = useMemo(() => {
@@ -67,6 +74,17 @@ export default function QAPage() {
     }
     return map
   }, [notes])
+
+  // Final QA photos per job
+  const finalQaByJob = useMemo(() => {
+    if (!finalQaNotes) return {} as Record<string, any[]>
+    const map: Record<string, any[]> = {}
+    for (const n of finalQaNotes as any[]) {
+      if (!map[n.jobId]) map[n.jobId] = []
+      map[n.jobId].push(n)
+    }
+    return map
+  }, [finalQaNotes])
 
   // Load checks from localStorage on mount
   useEffect(() => {
@@ -114,6 +132,55 @@ export default function QAPage() {
       console.error('Failed to advance:', e)
     }
   }, [user, getJobProgress, mutate])
+
+  const openQaUpload = useCallback((jobId: string) => {
+    setQaUploadJobId(jobId)
+    setQaUploadFiles([])
+    setQaUploadCaption('')
+  }, [])
+
+  const closeQaUpload = useCallback(() => {
+    if (qaUploading) return
+    setQaUploadJobId(null)
+    setQaUploadFiles([])
+    setQaUploadCaption('')
+  }, [qaUploading])
+
+  const handleQaFilesPicked = useCallback((list: FileList | null) => {
+    if (!list) return
+    const next = Array.from(list).filter((f) => f.type.startsWith('image/'))
+    setQaUploadFiles((prev) => [...prev, ...next])
+  }, [])
+
+  const removeQaFile = useCallback((idx: number) => {
+    setQaUploadFiles((prev) => prev.filter((_, i) => i !== idx))
+  }, [])
+
+  const handleQaSubmit = useCallback(async () => {
+    if (!qaUploadJobId || qaUploadFiles.length === 0 || !user) return
+    setQaUploading(true)
+    try {
+      for (const file of qaUploadFiles) {
+        await uploadJobPhoto(
+          qaUploadJobId,
+          file,
+          user.id || '',
+          user.name || '',
+          qaUploadCaption.trim(),
+          'qa-final-report',
+        )
+      }
+      await mutateFinalQa()
+      setQaUploadJobId(null)
+      setQaUploadFiles([])
+      setQaUploadCaption('')
+    } catch (e) {
+      console.error('Failed to upload final QA photos:', e)
+      alert('Failed to upload one or more photos. Please try again.')
+    } finally {
+      setQaUploading(false)
+    }
+  }, [qaUploadJobId, qaUploadFiles, qaUploadCaption, user, mutateFinalQa])
 
   const handleAddNote = useCallback(async (jobId: string) => {
     if (!noteText.trim() || !user) return
@@ -301,6 +368,27 @@ export default function QAPage() {
                     </span>
                   )}
 
+                  {/* Final QA Badge — always visible */}
+                  {(() => {
+                    const qaCount = (finalQaByJob[job.id] || []).length
+                    const submitted = qaCount > 0
+                    return (
+                      <span
+                        title={submitted ? `Final QA submitted — ${qaCount} photo${qaCount !== 1 ? 's' : ''}` : 'Final QA not yet submitted'}
+                        style={{
+                          fontSize: 9, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase',
+                          padding: '3px 10px', borderRadius: 3,
+                          background: submitted ? 'rgba(34,208,122,0.15)' : 'rgba(255,255,255,0.04)',
+                          color: submitted ? '#22d07a' : 'var(--text3)',
+                          border: `1px solid ${submitted ? 'rgba(34,208,122,0.3)' : 'var(--border2)'}`,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {submitted ? `📎 FINAL QA ✓ ${qaCount}` : '📎 FINAL QA —'}
+                      </span>
+                    )
+                  })()}
+
                   {holdups.length > 0 && (
                     <span style={{ fontSize: 10, color: '#e84560', fontWeight: 700 }} title={`${holdups.length} active holdup(s)`}>🚨</span>
                   )}
@@ -370,10 +458,30 @@ export default function QAPage() {
                     </div>
 
                     {/* Actions */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                      <div style={{ fontSize: 10, color: 'var(--text3)', flex: 1 }}>
                         Click items to cycle: ⬜ Unchecked → ✅ Pass → ❌ Fail
                       </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openQaUpload(job.id) }}
+                        style={{
+                          fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700,
+                          letterSpacing: 0.6, textTransform: 'uppercase', padding: '8px 18px',
+                          borderRadius: 4, cursor: 'pointer', transition: '0.15s',
+                          border: '1px solid rgba(232,104,26,0.5)',
+                          background: 'rgba(232,104,26,0.12)',
+                          color: '#E8681A',
+                          whiteSpace: 'nowrap',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(232,104,26,0.25)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(232,104,26,0.12)'
+                        }}
+                      >
+                        📎 Final QA
+                      </button>
                       {user?.canAdvance && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleAdvance(job.id) }}
@@ -405,6 +513,174 @@ export default function QAPage() {
           })}
         </div>
       )}
+
+      {/* Final QA Upload Modal */}
+      {qaUploadJobId && (() => {
+        const job = qcJobs.find((j: any) => j.id === qaUploadJobId)
+        const existingCount = (finalQaByJob[qaUploadJobId] || []).length
+        return (
+          <div
+            onClick={closeQaUpload}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'var(--dark2)', border: '1px solid var(--border)', borderRadius: 8,
+                width: '100%', maxWidth: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+                fontFamily: "'League Spartan', sans-serif",
+              }}
+            >
+              {/* Modal Header */}
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: 1, textTransform: 'uppercase' }}>
+                    Final QA Report
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                    {job?.num} — {job?.type || 'Job'}{job?.customer ? ` / ${job.customer}` : ''}
+                    {existingCount > 0 && (
+                      <span style={{ marginLeft: 10, color: '#22d07a' }}>
+                        · {existingCount} photo{existingCount !== 1 ? 's' : ''} already submitted
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={closeQaUpload}
+                  disabled={qaUploading}
+                  style={{
+                    background: 'transparent', border: 'none', color: 'var(--text3)', cursor: qaUploading ? 'wait' : 'pointer',
+                    fontSize: 20, padding: 4, lineHeight: 1,
+                  }}
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div style={{ padding: 20, overflowY: 'auto', flex: 1 }}>
+                <label
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: 8, padding: '24px 16px', border: '2px dashed var(--border2)', borderRadius: 6,
+                    cursor: qaUploading ? 'wait' : 'pointer', background: 'rgba(255,255,255,0.02)',
+                    transition: '0.15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(232,104,26,0.5)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border2)' }}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    disabled={qaUploading}
+                    onChange={(e) => { handleQaFilesPicked(e.target.files); e.target.value = '' }}
+                    style={{ display: 'none' }}
+                  />
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', letterSpacing: 0.5 }}>
+                    📷 Tap to select photos
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    Multi-select supported — JPG, PNG, HEIC
+                  </div>
+                </label>
+
+                {qaUploadFiles.length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 8 }}>
+                      Selected ({qaUploadFiles.length})
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 8 }}>
+                      {qaUploadFiles.map((file, idx) => (
+                        <div
+                          key={`${file.name}-${idx}`}
+                          style={{
+                            position: 'relative', borderRadius: 4, overflow: 'hidden',
+                            border: '1px solid var(--border)', background: 'var(--dark3)', aspectRatio: '1',
+                          }}
+                        >
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                          <button
+                            onClick={() => removeQaFile(idx)}
+                            disabled={qaUploading}
+                            title="Remove"
+                            style={{
+                              position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%',
+                              border: 'none', background: 'rgba(0,0,0,0.75)', color: '#fff', cursor: qaUploading ? 'wait' : 'pointer',
+                              fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ marginTop: 16 }}>
+                  <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text3)', display: 'block', marginBottom: 6 }}>
+                    Notes (optional)
+                  </label>
+                  <textarea
+                    value={qaUploadCaption}
+                    onChange={(e) => setQaUploadCaption(e.target.value)}
+                    disabled={qaUploading}
+                    placeholder="Any comments to attach to this final QA report..."
+                    rows={3}
+                    style={{
+                      width: '100%', background: 'var(--dark3)', border: '1px solid var(--border)',
+                      borderRadius: 4, color: '#fff', padding: '8px 12px', fontSize: 12, outline: 'none',
+                      fontFamily: "'League Spartan', sans-serif", resize: 'vertical',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button
+                  onClick={closeQaUpload}
+                  disabled={qaUploading}
+                  style={{
+                    fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700,
+                    letterSpacing: 0.6, textTransform: 'uppercase', padding: '8px 18px',
+                    borderRadius: 4, cursor: qaUploading ? 'wait' : 'pointer',
+                    border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text2)',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleQaSubmit}
+                  disabled={qaUploading || qaUploadFiles.length === 0}
+                  style={{
+                    fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700,
+                    letterSpacing: 0.6, textTransform: 'uppercase', padding: '8px 18px',
+                    borderRadius: 4,
+                    cursor: qaUploading ? 'wait' : qaUploadFiles.length === 0 ? 'not-allowed' : 'pointer',
+                    border: 'none',
+                    background: qaUploadFiles.length === 0 ? 'rgba(255,255,255,0.06)' : '#E8681A',
+                    color: qaUploadFiles.length === 0 ? 'var(--text3)' : '#fff',
+                    opacity: qaUploading ? 0.7 : 1,
+                  }}
+                >
+                  {qaUploading ? 'Uploading…' : `Submit${qaUploadFiles.length > 0 ? ` (${qaUploadFiles.length})` : ''}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Upcoming Jobs */}
       <SectionHeader title="COMING UP — FITOUT" count={upcomingJobs.length} color="#f5a623" />

@@ -487,12 +487,13 @@ export async function moveJobStage(jobId: string, stage: string, userId = '', us
 }
 
 // ── Job photo upload ──
-export async function uploadJobPhoto(jobId: string, file: File, authorId: string, authorName: string, caption = ''): Promise<any> {
+export async function uploadJobPhoto(jobId: string, file: File, authorId: string, authorName: string, caption = '', noteType = 'photo'): Promise<any> {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('authorId', authorId)
   formData.append('authorName', authorName)
   formData.append('caption', caption)
+  formData.append('noteType', noteType)
   const res = await fetch(`/api/jobs/${jobId}/photos`, { method: 'POST', body: formData })
   if (!res.ok) throw new Error('Failed to upload photo')
   return res.json()
