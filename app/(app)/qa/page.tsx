@@ -146,6 +146,7 @@ export default function QAPage() {
     setQaUploadJobId(jobId)
     setQaUploadFiles([])
     setQaUploadCaption('')
+    setQaJustUploaded(0)
   }, [])
 
   const closeQaUpload = useCallback(() => {
@@ -153,6 +154,7 @@ export default function QAPage() {
     setQaUploadJobId(null)
     setQaUploadFiles([])
     setQaUploadCaption('')
+    setQaJustUploaded(0)
   }, [qaUploading])
 
   const handleQaFilesPicked = useCallback((list: FileList | null) => {
@@ -165,9 +167,12 @@ export default function QAPage() {
     setQaUploadFiles((prev) => prev.filter((_, i) => i !== idx))
   }, [])
 
+  const [qaJustUploaded, setQaJustUploaded] = useState(0)
+
   const handleQaSubmit = useCallback(async () => {
     if (!qaUploadJobId || qaUploadFiles.length === 0 || !user) return
     setQaUploading(true)
+    const count = qaUploadFiles.length
     try {
       for (const file of qaUploadFiles) {
         await uploadJobPhoto(
@@ -180,9 +185,10 @@ export default function QAPage() {
         )
       }
       await mutateFinalQa()
-      setQaUploadJobId(null)
       setQaUploadFiles([])
       setQaUploadCaption('')
+      setQaJustUploaded(count)
+      setTimeout(() => setQaJustUploaded(0), 4000)
     } catch (e) {
       console.error('Failed to upload final QA photos:', e)
       alert('Failed to upload one or more photos. Please try again.')
@@ -663,6 +669,17 @@ export default function QAPage() {
 
               {/* Modal Body */}
               <div style={{ padding: 20, overflowY: 'auto', flex: 1 }}>
+                {qaJustUploaded > 0 && (
+                  <div style={{
+                    marginBottom: 16, padding: '10px 14px', borderRadius: 4,
+                    background: 'rgba(34,208,122,0.12)', border: '1px solid rgba(34,208,122,0.35)',
+                    color: '#22d07a', fontSize: 12, fontWeight: 600, letterSpacing: 0.3,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                  }}>
+                    <span style={{ fontSize: 16 }}>✓</span>
+                    <span>{qaJustUploaded} photo{qaJustUploaded !== 1 ? 's' : ''} uploaded — now in report. You can Save as PDF.</span>
+                  </div>
+                )}
                 {existingCount > 0 && (
                   <div style={{ marginBottom: 18 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -721,8 +738,8 @@ export default function QAPage() {
 
                 {qaUploadFiles.length > 0 && (
                   <div style={{ marginTop: 16 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 8 }}>
-                      Selected ({qaUploadFiles.length})
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: '#E8681A', marginBottom: 8 }}>
+                      To Upload ({qaUploadFiles.length}) — click Submit to save
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 8 }}>
                       {qaUploadFiles.map((file, idx) => (
@@ -780,7 +797,7 @@ export default function QAPage() {
                 <button
                   onClick={() => qaUploadJobId && handleDownloadPdf(qaUploadJobId)}
                   disabled={qaUploading || existingCount === 0}
-                  title={existingCount === 0 ? 'Submit at least one photo first' : 'Open print dialog — choose "Save as PDF" as destination'}
+                  title={existingCount === 0 ? 'Click Submit first to upload photos — Save as PDF uses only photos already in the report' : 'Open print dialog — choose "Save as PDF" as destination'}
                   style={{
                     fontFamily: "'League Spartan', sans-serif", fontSize: 11, fontWeight: 700,
                     letterSpacing: 0.6, textTransform: 'uppercase', padding: '8px 16px',
