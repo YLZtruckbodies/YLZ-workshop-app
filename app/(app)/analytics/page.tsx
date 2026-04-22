@@ -722,10 +722,14 @@ function JobSectionBreakdown({ jobHours, breakdown }: { jobHours: any[]; breakdo
         </thead>
         <tbody>
           {jobsWithBreakdown.map((job: any) => {
-            const sections = breakdown[job.jobNum] || {}
-            const sectionKeys = Object.keys(sections).sort((a, b) => sections[b].hours - sections[a].hours)
+            const allSections = breakdown[job.jobNum] || {}
+            const sections = sectionFilter
+              ? { [sectionFilter]: allSections[sectionFilter] }
+              : allSections
+            const sectionKeys = Object.keys(sections).filter(k => sections[k]).sort((a, b) => sections[b].hours - sections[a].hours)
+            const displayHours = sectionKeys.reduce((sum, k) => sum + (sections[k]?.hours || 0), 0)
             const isExpanded = expanded.has(job.jobNum)
-            const maxHours = Math.max(...Object.values(sections).map((s: any) => s.hours), 1)
+            const maxHours = Math.max(...sectionKeys.map(k => sections[k]?.hours || 0), 1)
 
             return (
               <React.Fragment key={job.jobNum}>
@@ -753,13 +757,13 @@ function JobSectionBreakdown({ jobHours, breakdown }: { jobHours: any[]; breakdo
                   <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text3)' }}>{job.customer || '—'}</td>
                   <td style={{ padding: '10px 16px' }}>
                     <span style={{ fontFamily: "'League Spartan', sans-serif", fontSize: 14, fontWeight: 700, color: '#fff' }}>
-                      {Math.round(job.hours * 10) / 10}h
+                      {Math.round(displayHours * 10) / 10}h
                     </span>
                   </td>
                   <td style={{ padding: '10px 16px' }}>
                     <div style={{ display: 'flex', height: 14, borderRadius: 3, overflow: 'hidden', maxWidth: 200 }}>
                       {sectionKeys.map((ws) => {
-                        const pct = (sections[ws].hours / job.hours) * 100
+                        const pct = (sections[ws].hours / displayHours) * 100
                         return (
                           <div
                             key={ws}
