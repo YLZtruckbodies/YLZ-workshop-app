@@ -16,14 +16,14 @@ async function nextJobNumbers(count: number): Promise<string[]> {
     const match = j.jobNumber.match(/(\d+)$/)
     if (match) {
       const n = parseInt(match[1], 10)
-      if (n > maxNum) maxNum = n
+      if (n > maxNum && n < 9000) maxNum = n
     }
   }
   for (const j of jobs) {
     const match = j.num.match(/(\d+)$/)
     if (match) {
       const n = parseInt(match[1], 10)
-      if (n > maxNum) maxNum = n
+      if (n > maxNum && n < 9000) maxNum = n
     }
   }
 
