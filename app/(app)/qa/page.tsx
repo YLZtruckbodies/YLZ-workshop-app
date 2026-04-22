@@ -220,6 +220,9 @@ export default function QAPage() {
     const photos = finalQaByJob[jobId] || []
     if (!job || photos.length === 0) return
 
+    const jobChecks = checksMap[jobId] || {}
+    const passedItems = QA_CHECKLIST.filter((item) => jobChecks[item.key] === 'pass')
+
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const resolveSrc = (url: string) => {
       if (!url) return ''
@@ -260,6 +263,13 @@ export default function QAPage() {
     .details .row:last-child { border-bottom: none; }
     .details label { padding: 10px 12px; background: #f7f7f7; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #555; border-right: 1px solid #eee; }
     .details value { padding: 10px 12px; font-size: 13px; font-weight: 600; color: #111; display: block; }
+    .checks { margin-top: 14mm; }
+    .checks h3 { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #555; margin-bottom: 10px; }
+    .checks ul { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; }
+    .checks li { display: flex; align-items: baseline; gap: 8px; font-size: 12px; color: #111; padding: 4px 0; border-bottom: 1px dotted #eee; }
+    .checks .tick { color: #0a7a3e; font-weight: 900; font-size: 13px; flex-shrink: 0; }
+    .checks .label { font-weight: 700; }
+    .checks .desc { color: #666; font-size: 10px; font-weight: 400; margin-left: 4px; }
     .footer-note { margin-top: 20mm; padding-top: 10px; border-top: 1px dashed #ccc; font-size: 9px; color: #888; letter-spacing: 0.5px; }
     .photos { padding: 14mm 16mm; }
     .photos h3 { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #555; margin-bottom: 10px; }
@@ -285,6 +295,19 @@ export default function QAPage() {
       <div class="row"><label>Total Photos</label><value>${photos.length}</value></div>
       <div class="row"><label>Submitted By</label><value>${escapeHtml(photos[0]?.authorName || 'Unknown')}</value></div>
     </div>
+    ${passedItems.length > 0 ? `
+    <div class="checks">
+      <h3>QA Checks Passed (${passedItems.length} of ${QA_CHECKLIST.length})</h3>
+      <ul>
+        ${passedItems.map((item) => `
+          <li>
+            <span class="tick">&check;</span>
+            <span><span class="label">${escapeHtml(item.label)}</span><span class="desc">${escapeHtml(item.desc)}</span></span>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+    ` : ''}
     <div class="footer-note">
       YLZ Truck Bodies &amp; Trailers &middot; 29 Southeast Boulevard, Pakenham VIC 3810 &middot; 03 5940 7620 &middot; ylztruckbodies.com.au
     </div>
@@ -312,7 +335,7 @@ export default function QAPage() {
     }
     if (w.document.readyState === 'complete') triggerPrint()
     else w.addEventListener('load', triggerPrint)
-  }, [qcJobs, finalQaByJob])
+  }, [qcJobs, finalQaByJob, checksMap])
 
   const handleAddNote = useCallback(async (jobId: string) => {
     if (!noteText.trim() || !user) return
