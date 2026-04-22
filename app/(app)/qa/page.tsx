@@ -204,6 +204,11 @@ export default function QAPage() {
     if (!job || photos.length === 0) return
 
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const resolveSrc = (url: string) => {
+      if (!url) return ''
+      if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) return url
+      return origin + url
+    }
     const dateFmt = (d: string | Date) => new Date(d).toLocaleString('en-AU', {
       day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
     })
@@ -211,7 +216,7 @@ export default function QAPage() {
 
     const photoBlocks = photos.map((p: any, idx: number) => `
       <div class="photo">
-        <img src="${origin}${escapeHtml(p.photoUrl || '')}" alt="${escapeHtml(p.photoName || '')}" />
+        <img src="${resolveSrc(p.photoUrl || '')}" alt="${escapeHtml(p.photoName || '')}" />
         <div class="caption">
           <span class="num">Photo ${idx + 1} of ${photos.length}</span>
           ${p.message && p.message !== 'Final QA photo' ? `<span class="msg">${escapeHtml(p.message)}</span>` : ''}
