@@ -111,6 +111,7 @@ const pageCSS = `
 
 export default function QuoteSheetPage({ params }: { params: { id: string } }) {
   const [quote, setQuote] = useState<Quote | null>(null)
+  const [jobNum, setJobNum] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -122,6 +123,16 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
       })
       .catch(() => setLoading(false))
   }, [params.id])
+
+  // If the quote has been accepted and linked to a job, grab the job number so
+  // every "Job Number" cell in the sheets can be populated instead of left blank.
+  useEffect(() => {
+    if (!quote?.jobId) { setJobNum(''); return }
+    fetch(`/api/jobs/${quote.jobId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then((job) => { if (job && job.num) setJobNum(job.num) })
+      .catch(() => {})
+  }, [quote?.jobId])
 
   useEffect(() => {
     if (quote) {
@@ -191,7 +202,7 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
         <div className="info-row info-row-4">
           <div className="cell">
             <div className="cell-lbl">Job Number</div>
-            <div className="cell-blank" />
+            {jobNum ? <div className="cell-val-sm">{jobNum}</div> : <div className="cell-blank" />}
           </div>
           <div className="cell">
             <div className="cell-lbl">Customer</div>
@@ -462,7 +473,7 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
         <div className="divider" />
 
         <div className="info-row info-row-4" style={{ marginBottom: 14 }}>
-          <div className="cell"><div className="cell-lbl">Job Number</div><div className="cell-blank" /></div>
+          <div className="cell"><div className="cell-lbl">Job Number</div>{jobNum ? <div className="cell-val-sm">{jobNum}</div> : <div className="cell-blank" />}</div>
           <div className="cell"><div className="cell-lbl">Customer</div><div className="cell-val-sm">{quote.customerName || '—'}</div></div>
           <div className="cell"><div className="cell-lbl">Build Type</div><div className="cell-val-sm">{quote.buildType || '—'}</div></div>
           <div className="cell"><div className="cell-lbl">Date</div><div className="cell-val-sm">{today()}</div></div>
@@ -566,7 +577,7 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
         <div className="divider" />
 
         <div className="info-row info-row-4" style={{ marginBottom: 14 }}>
-          <div className="cell"><div className="cell-lbl">Job Number</div><div className="cell-blank" /></div>
+          <div className="cell"><div className="cell-lbl">Job Number</div>{jobNum ? <div className="cell-val-sm">{jobNum}</div> : <div className="cell-blank" />}</div>
           <div className="cell"><div className="cell-lbl">Customer</div><div className="cell-val-sm">{quote.customerName || '—'}</div></div>
           <div className="cell"><div className="cell-lbl">Build Type</div><div className="cell-val-sm">{quote.buildType || '—'}</div></div>
           <div className="cell"><div className="cell-lbl">Date</div><div className="cell-val-sm">{today()}</div></div>
