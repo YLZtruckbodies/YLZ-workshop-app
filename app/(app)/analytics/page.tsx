@@ -479,14 +479,15 @@ function WorkerPerformance({
     const [ad, am, ay] = a.split('/')
     const [bd, bm, by] = b.split('/')
     return new Date(2000 + parseInt(by), parseInt(bm) - 1, parseInt(bd)).getTime() - new Date(2000 + parseInt(ay), parseInt(am) - 1, parseInt(ad)).getTime()
-  })
+  }).slice(0, 4)
 
-  const totalH = Object.values(weeks).reduce((s, w) => s + w.total, 0)
-  const totalOT = Object.values(weeks).reduce((s, w) => s + w.ot, 0)
-  const weeksWorked = sortedWeeks.filter(wk => weeks[wk].total > 0).length
+  const visibleWeeks = sortedWeeks.reduce<Record<string, typeof weeks[string]>>((acc, wk) => { acc[wk] = weeks[wk]; return acc }, {})
+  const totalH = Object.values(visibleWeeks).reduce((s, w) => s + w.total, 0)
+  const totalOT = Object.values(visibleWeeks).reduce((s, w) => s + w.ot, 0)
+  const weeksWorked = sortedWeeks.filter(wk => visibleWeeks[wk].total > 0).length
   const avgWeek = weeksWorked > 0 ? totalH / weeksWorked : 0
-  const totalDays = Object.values(weeks).reduce((s, w) => s + w.days, 0)
-  const maxWeekH = Math.max(...Object.values(weeks).map(w => w.total), 1)
+  const totalDays = Object.values(visibleWeeks).reduce((s, w) => s + w.days, 0)
+  const maxWeekH = Math.max(...Object.values(visibleWeeks).map(w => w.total), 1)
 
   return (
     <div style={{ background: 'var(--dark2)', border: '1px solid var(--border)', borderRadius: 4, overflow: 'hidden', marginBottom: 14 }}>
@@ -496,7 +497,7 @@ function WorkerPerformance({
             WORKER PERFORMANCE
           </div>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-            Weekly hours, jobs worked, and overtime
+            Last 4 weeks — hours, jobs worked, and overtime
           </div>
         </div>
         <select
