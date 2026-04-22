@@ -11,7 +11,7 @@ async function nextJobNumbers(count: number): Promise<string[]> {
     prisma.job.findMany({ select: { num: true } }),
   ])
 
-  let maxNum = 1093
+  let maxNum = 1122
   for (const j of masters) {
     const match = j.jobNumber.match(/(\d+)$/)
     if (match) {
