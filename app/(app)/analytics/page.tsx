@@ -630,8 +630,16 @@ function WorkerPerformance({
 function JobSectionBreakdown({ jobHours, breakdown }: { jobHours: any[]; breakdown: Record<string, Record<string, { hours: number; workers: Record<string, number> }>> }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [jobSearch, setJobSearch] = useState('')
+  const [sectionFilter, setSectionFilter] = useState('')
 
-  const allJobsWithBreakdown = jobHours.filter((j: any) => breakdown[j.jobNum] && j.hours > 0)
+  const allJobsWithBreakdown = jobHours.filter((j: any) => {
+    if (!breakdown[j.jobNum] || j.hours <= 0) return false
+    if (sectionFilter) {
+      const sections = breakdown[j.jobNum]
+      return sections[sectionFilter] && sections[sectionFilter].hours > 0
+    }
+    return true
+  })
   const jobsWithBreakdown = jobSearch
     ? allJobsWithBreakdown.filter((j: any) =>
         j.jobNum.toLowerCase().includes(jobSearch.toLowerCase()) ||
@@ -661,17 +669,33 @@ function JobSectionBreakdown({ jobHours, breakdown }: { jobHours: any[]; breakdo
             Click a job to see hours by section and worker
           </div>
         </div>
-        <input
-          type="text"
-          placeholder="Search job #, customer, type..."
-          value={jobSearch}
-          onChange={(e) => setJobSearch(e.target.value)}
-          style={{
-            background: '#111', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6,
-            padding: '10px 14px', color: '#fff', fontSize: 13, minWidth: 220,
-            outline: 'none',
-          }}
-        />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <select
+            value={sectionFilter}
+            onChange={(e) => setSectionFilter(e.target.value)}
+            style={{
+              background: '#111', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6,
+              padding: '10px 14px', color: '#fff', fontSize: 13, cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            <option value="">All Sections</option>
+            {Object.entries(WS_LABELS).filter(([k]) => k !== '').map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            placeholder="Search job #, customer, type..."
+            value={jobSearch}
+            onChange={(e) => setJobSearch(e.target.value)}
+            style={{
+              background: '#111', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6,
+              padding: '10px 14px', color: '#fff', fontSize: 13, minWidth: 220,
+              outline: 'none',
+            }}
+          />
+        </div>
       </div>
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
