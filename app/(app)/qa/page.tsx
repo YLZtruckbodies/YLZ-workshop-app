@@ -191,7 +191,8 @@ export default function QAPage() {
       setTimeout(() => setQaJustUploaded(0), 4000)
     } catch (e) {
       console.error('Failed to upload final QA photos:', e)
-      alert('Failed to upload one or more photos. Please try again.')
+      const msg = e instanceof Error ? e.message : String(e)
+      alert(`Final QA upload failed.\n\n${msg}\n\nCopy this message and share it so we can diagnose.`)
     } finally {
       setQaUploading(false)
     }
