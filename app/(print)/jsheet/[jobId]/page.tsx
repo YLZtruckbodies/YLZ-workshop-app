@@ -62,6 +62,22 @@ function deriveCouplingLoad(coupling: string): string {
   return ''
 }
 
+const HARDOX_HOIST_BOX_HEIGHTS: [number, number][] = [
+  [4200, 1195], [4300, 1195], [4400, 1195],
+  [4500, 1280], [4600, 1280], [4660, 1280], [4700, 1280], [4770, 1280],
+  [4800, 1040], [4900, 1040],
+  [6000, 1265],
+  [7700, 1320], [8300, 1320],
+]
+
+function calcHoistBoxHeight(bodyLength: string | undefined): string {
+  if (!bodyLength) return ''
+  const len = parseInt(bodyLength, 10)
+  if (isNaN(len)) return ''
+  const entry = HARDOX_HOIST_BOX_HEIGHTS.find(([l]) => l === len)
+  return entry ? `${entry[1]}mm` : ''
+}
+
 function calcBowHeight(material: string | undefined, bodyHeight: string | undefined): string {
   if (!material || !bodyHeight) return ''
   if (material === 'Aluminium') return '250mm'
@@ -485,6 +501,19 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {!isTrailer && cfgField('Pump Type', 'pump')}
                   {cfgField('Hose Burst Valve', 'hoseBurstValve')}
                 </div>
+                {(job.btype === 'hardox-trailer' || String(editCfg['material'] || '').toLowerCase().includes('hardox')) && (() => {
+                  const hoistBoxH = calcHoistBoxHeight(String(editCfg['bodyLength'] || ''))
+                  return (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 8 }}>
+                      <div>
+                        <div style={lblStyle}>Hoist Box Height from Floor (mm)</div>
+                        <div style={{ ...inpStyle, background: '#2a2a2a', color: hoistBoxH ? '#fff' : '#666', cursor: 'default' }}>
+                          {hoistBoxH || '— (body length not in matrix)'}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {!isTrailer && <>
                   <div style={sectionLbl}>Valve Bank</div>
@@ -801,6 +830,12 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               {!isTrailer && <div className="field"><div className="field-lbl">Pump Type</div><div className="field-val">{c('pump') || c('pumpType') || ''}</div>{!(c('pump') || c('pumpType')) && <div className="field-blank" />}</div>}
               <div className="field"><div className="field-lbl">Hose Burst Valve</div><div className="field-val">{c('hoseBurstValve') || ''}</div>{!c('hoseBurstValve') && <div className="field-blank" />}</div>
             </div>
+            {(job.btype === 'hardox-trailer' || (c('material') || '').toLowerCase().includes('hardox')) && (
+              <div className="field-row field-row-2">
+                <div className="field"><div className="field-lbl">Hoist Box Height from Floor (mm)</div><div className="field-val">{calcHoistBoxHeight(c('bodyLength') || '')}</div>{!calcHoistBoxHeight(c('bodyLength') || '') && <div className="field-blank" />}</div>
+                <div className="field" />
+              </div>
+            )}
           </div>
         </div>
 
