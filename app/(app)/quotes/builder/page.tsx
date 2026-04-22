@@ -398,8 +398,6 @@ const PTO_OPTIONS = [
   // Fuller
   '500-97 — Fuller RT906 PZB3B Air',
   '500-216 — Fuller OMFB Kit',
-  // Iveco
-  '500-23 — Iveco Stralis/Eurotech',
   // Job specific
   '500-75 — Job Specific PTO Kit',
 ]
