@@ -136,16 +136,16 @@ export default function QuotesPage() {
               padding: '12px 24px',
               borderRadius: 8,
               cursor: 'pointer',
-              border: '1px solid rgba(255,255,255,0.15)',
-              background: 'transparent',
-              color: 'var(--text2)',
+              border: 'none',
+              background: '#E8681A',
+              color: '#fff',
               display: 'flex',
               alignItems: 'center',
               gap: 8,
               transition: 'all 0.2s',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.color = '#3b82f6' }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = 'var(--text2)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#ff7a2e' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#E8681A' }}
           >
             Dealer Flyer
           </button>
