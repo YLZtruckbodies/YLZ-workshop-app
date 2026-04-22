@@ -628,7 +628,7 @@ function WorkerPerformance({
 }
 
 function JobSectionBreakdown({ jobHours, breakdown }: { jobHours: any[]; breakdown: Record<string, Record<string, { hours: number; workers: Record<string, number> }>> }) {
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [jobSearch, setJobSearch] = useState('')
 
   const allJobsWithBreakdown = jobHours.filter((j: any) => breakdown[j.jobNum] && j.hours > 0)
@@ -700,13 +700,18 @@ function JobSectionBreakdown({ jobHours, breakdown }: { jobHours: any[]; breakdo
           {jobsWithBreakdown.map((job: any) => {
             const sections = breakdown[job.jobNum] || {}
             const sectionKeys = Object.keys(sections).sort((a, b) => sections[b].hours - sections[a].hours)
-            const isExpanded = expanded === job.jobNum
+            const isExpanded = expanded.has(job.jobNum)
             const maxHours = Math.max(...Object.values(sections).map((s: any) => s.hours), 1)
 
             return (
               <React.Fragment key={job.jobNum}>
                 <tr
-                  onClick={() => setExpanded(isExpanded ? null : job.jobNum)}
+                  onClick={() => setExpanded(prev => {
+                    const next = new Set(prev)
+                    if (next.has(job.jobNum)) next.delete(job.jobNum)
+                    else next.add(job.jobNum)
+                    return next
+                  })}
                   style={{
                     borderBottom: '1px solid var(--border)',
                     cursor: 'pointer',
