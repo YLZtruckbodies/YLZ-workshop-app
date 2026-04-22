@@ -323,18 +323,27 @@ export default function QAPage() {
     if (!w) { alert('Pop-ups are blocked. Please allow pop-ups for this site to download the PDF.'); return }
     w.document.write(html)
     w.document.close()
-    const triggerPrint = () => {
+
+    const triggerPrint = async () => {
       const imgs = Array.from(w.document.images)
-      if (imgs.length === 0 || imgs.every((i) => i.complete)) { w.focus(); w.print(); return }
-      let remaining = imgs.filter((i) => !i.complete).length
-      imgs.forEach((i) => {
-        if (i.complete) return
-        i.addEventListener('load', () => { if (--remaining === 0) { w.focus(); w.print() } })
-        i.addEventListener('error', () => { if (--remaining === 0) { w.focus(); w.print() } })
-      })
+      // Wait for every image to be fully decoded (data URLs included). decode() resolves
+      // when the image is ready to paint, which is what we need before print preview.
+      await Promise.all(imgs.map((img) => {
+        if (typeof img.decode === 'function') return img.decode().catch(() => null)
+        if (img.complete) return null
+        return new Promise<void>((resolve) => {
+          img.addEventListener('load', () => resolve())
+          img.addEventListener('error', () => resolve())
+        })
+      }))
+      // Let layout settle one frame before print is called.
+      await new Promise((r) => setTimeout(r, 150))
+      w.focus()
+      w.print()
     }
+
     if (w.document.readyState === 'complete') triggerPrint()
-    else w.addEventListener('load', triggerPrint)
+    else w.addEventListener('load', () => { triggerPrint() })
   }, [qcJobs, finalQaByJob, checksMap])
 
   const handleAddNote = useCallback(async (jobId: string) => {
