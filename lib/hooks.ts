@@ -486,16 +486,51 @@ export async function moveJobStage(jobId: string, stage: string, userId = '', us
   return res.json()
 }
 
+// ── Image compression (client-side) ──
+// Resizes a File to fit within maxEdge pixels on its longest side and re-encodes as JPEG.
+// Keeps photos small enough to store as base64 data URLs in Postgres without blowing the row size.
+export async function compressImageToDataUrl(file: File, maxEdge = 1600, quality = 0.75): Promise<string> {
+  if (typeof window === 'undefined') throw new Error('compressImageToDataUrl must run in the browser')
+  const objectUrl = URL.createObjectURL(file)
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image()
+      image.onload = () => resolve(image)
+      image.onerror = () => reject(new Error(`Could not read ${file.name} — unsupported format (try JPG or PNG).`))
+      image.src = objectUrl
+    })
+    if (!img.width || !img.height) throw new Error(`Invalid image ${file.name}`)
+    const scale = Math.min(1, maxEdge / Math.max(img.width, img.height))
+    const w = Math.round(img.width * scale)
+    const h = Math.round(img.height * scale)
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas not supported in this browser')
+    ctx.drawImage(img, 0, 0, w, h)
+    return canvas.toDataURL('image/jpeg', quality)
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
+}
+
 // ── Job photo upload ──
 export async function uploadJobPhoto(jobId: string, file: File, authorId: string, authorName: string, caption = '', noteType = 'photo'): Promise<any> {
+  const dataUrl = await compressImageToDataUrl(file)
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('dataUrl', dataUrl)
+  formData.append('filename', file.name)
   formData.append('authorId', authorId)
   formData.append('authorName', authorName)
   formData.append('caption', caption)
   formData.append('noteType', noteType)
   const res = await fetch(`/api/jobs/${jobId}/photos`, { method: 'POST', body: formData })
-  if (!res.ok) throw new Error('Failed to upload photo')
+  if (!res.ok) {
+    let detail = ''
+    try { detail = await res.text() } catch {}
+    throw new Error(`Failed to upload photo (${res.status})${detail ? ': ' + detail.slice(0, 200) : ''}`)
+  }
   return res.json()
 }
 
