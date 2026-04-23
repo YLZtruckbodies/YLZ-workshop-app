@@ -513,7 +513,7 @@ const SEED_TEMPLATES = [
     name: 'Hardox 4-Axle Dog Trailer 20m3',
     category: 'quick-quote',
     description: 'Hardox 500 4-axle tipping dog trailer, 20m3. 8300mm L × 1100mm H × 2400mm W. 6mm Hardox 500 floor, 5mm sides, Strenx 700 chassis. Binotto 4-stage hoist, Razor electric tarp, SAF drum brakes, EBS, Alcoa wheels. PBS 57.5T available.',
-    imagePath: '/images/trailers/dog-trailer-4axle.jpg',
+    imagePath: '/images/trailers/hardox-dog-trailer-4axle.png',
     configuration: {
       buildType: 'trailer',
       templateType: 'quick-quote',
