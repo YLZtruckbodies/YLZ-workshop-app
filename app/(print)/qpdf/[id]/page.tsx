@@ -54,7 +54,6 @@ const SPEC_GROUPS: SpecGroup[] = [
     ['Width', 'bodyWidth', ' mm'],
     ['Height', 'bodyHeight', ' mm'],
     ['Capacity', 'bodyCapacity', ' m³'],
-    ['Main Runner Width', 'mainRunnerWidth', ' mm'],
     ['Tare (est.)', 'tare', ' kg'],
     ['Floor Sheet', 'floorSheet'],
     ['Side Sheet', 'sideSheet'],
@@ -64,7 +63,6 @@ const SPEC_GROUPS: SpecGroup[] = [
   { title: 'Hoist & Controls', items: [
     ['Hoist Model', 'hoist'],
     ['Controls', 'controls'],
-    ['C/L Pivot to Rear', 'pivotCentre', ' mm'],
     ['PTO', 'pto'],
     ['Pump', 'pump'],
   ]},
