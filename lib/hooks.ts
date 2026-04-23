@@ -587,6 +587,10 @@ export function useChecklistTemplates(stage?: string) {
 }
 
 // ── Delivery sign-offs ──
+export function useMrpChecklists() {
+  return useSWR('/api/mrp-checklist', fetcher, { refreshInterval: 60000 })
+}
+
 export function useSignoffs(jobId: string | null) {
   return useSWR(jobId ? `/api/signoffs?jobId=${jobId}` : null, fetcher, { refreshInterval: 30000 })
 }

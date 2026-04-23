@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
-import { useWorkers, useJobs, useTarps, addWorkerJob, updateWorkerJobs, deleteWorkerJob, syncFromSheets, markWorkerJobDone } from '@/lib/hooks'
+import { useWorkers, useJobs, useTarps, useMrpChecklists, addWorkerJob, updateWorkerJobs, deleteWorkerJob, syncFromSheets, markWorkerJobDone } from '@/lib/hooks'
 import { parseDate, fmtDate, addWorkdays, nextWorkday, compDate } from '@/lib/workdays'
 import { useSession } from 'next-auth/react'
 import { useSWRConfig } from 'swr'
@@ -111,6 +111,41 @@ function calcCompletion(jobs: WorkerJob[], idx: number): string {
   return ''
 }
 
+/* ── Parts readiness helpers ───────────────────────────────────── */
+
+function getSectionStatus(items: any[], sectionKey: string): 'ready' | 'ordered' | 'none' {
+  const relevant = (items || []).filter((i: any) => i.section === sectionKey)
+  if (!relevant.length) return 'none'
+  if (relevant.every((i: any) => i.details?.picked)) return 'ready'
+  if (relevant.some((i: any) => i.ordered)) return 'ordered'
+  return 'none'
+}
+
+// Which parts section(s) to surface for each worker type
+function partsIndicatorsForWorker(hdr: string, section: string): Array<{ key: string; label: string }> {
+  if (hdr === 'hardox' || hdr === 'steel') return [{ key: 'coldform-kit', label: 'CF' }]
+  if (section === 'subfit') return [{ key: 'pto', label: 'PTO' }]
+  if (hdr === 'fitout' && section === 'fitout') return [{ key: 'tarp', label: 'TARP' }]
+  return []
+}
+
+function PartsBadge({ label, status }: { label: string; status: 'ready' | 'ordered' | 'none' }) {
+  if (status === 'none') return null
+  const color = status === 'ready' ? '#22d07a' : '#f5a623'
+  const icon = status === 'ready' ? '✓' : '~'
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 2,
+      fontSize: 9, fontWeight: 700, letterSpacing: 0.4,
+      padding: '2px 5px', borderRadius: 3,
+      background: `${color}20`, color, border: `1px solid ${color}44`,
+      whiteSpace: 'nowrap',
+    }}>
+      {icon} {label}
+    </span>
+  )
+}
+
 /* ── Status pill colors ────────────────────────────────────────── */
 
 function statusColor(status: string): { bg: string; text: string } {
@@ -177,6 +212,19 @@ export default function KeithSchedulePage() {
       (j) => !['Dispatch', 'Requires Sales'].includes(j.stage)
     )
   }, [jobs])
+
+  /* ── MRP checklist map: normalised jobNo → checklist ─────────── */
+  const { data: checklists = [] } = useMrpChecklists()
+  const checklistMap = useMemo(() => {
+    const m: Record<string, any> = {}
+    if (Array.isArray(checklists)) {
+      checklists.forEach((c: any) => {
+        const key = (c.jobNum || '').replace(/^YLZ\s*/i, '').trim()
+        if (key) m[key] = c
+      })
+    }
+    return m
+  }, [checklists])
 
   /* ── Refresh shorthand ─────────────────────────────── */
   const refresh = useCallback(() => {
@@ -564,6 +612,7 @@ export default function KeithSchedulePage() {
                     worker={worker}
                     jobsMap={jobsMap}
                     boardJobs={activeBoardJobs}
+                    checklistMap={checklistMap}
                     onUpdateField={handleUpdateField}
                     onAddRow={handleAddRow}
                     onDeleteJob={handleDeleteJob}
@@ -592,6 +641,7 @@ function WorkerCard({
   worker,
   jobsMap,
   boardJobs,
+  checklistMap,
   onUpdateField,
   onAddRow,
   onDeleteJob,
@@ -601,6 +651,7 @@ function WorkerCard({
   worker: Worker
   jobsMap: Record<string, BoardJob>
   boardJobs: BoardJob[]
+  checklistMap: Record<string, any>
   onUpdateField: (worker: Worker, jobId: string, field: 'jobNo' | 'type' | 'start' | 'days', value: string | number) => void
   onAddRow: (workerId: string) => void
   onDeleteJob: (workerId: string, jobId: string) => void
@@ -755,6 +806,9 @@ function WorkerCard({
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 32, textAlign: 'center' }}></th>
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 90 }}>Job No.</th>
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600 }}>Type</th>
+            {partsIndicatorsForWorker(worker.hdr, worker.section).length > 0 && (
+              <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 80 }}>Parts</th>
+            )}
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 100 }}>Start Date</th>
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 60 }}>Days</th>
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 100 }}>Completion</th>
@@ -774,6 +828,8 @@ function WorkerCard({
             const textStyle: React.CSSProperties = isDone
               ? { textDecoration: 'line-through', color: 'var(--text3)' }
               : {}
+            const indicators = partsIndicatorsForWorker(worker.hdr, worker.section)
+            const checklist = checklistMap[job.jobNo]
             return (
               <tr key={job.id} style={rowStyle}>
                 {/* Done tick */}
@@ -855,6 +911,19 @@ function WorkerCard({
                     }}
                   />
                 </td>
+                {indicators.length > 0 && (
+                  <td style={{ padding: '6px 4px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      {indicators.map(({ key, label }) => (
+                        <PartsBadge
+                          key={key}
+                          label={label}
+                          status={checklist ? getSectionStatus(checklist.items, key) : 'none'}
+                        />
+                      ))}
+                    </div>
+                  </td>
+                )}
                 <td style={{ padding: 6 }}>
                   <input
                     type="text"
