@@ -45,7 +45,7 @@ interface TEBSConfig {
 
 const TEBS_DATA: Record<string, TEBSConfig> = {
   '3-SAF-DISC': {
-    brakeSarn: '35391 CS', frontAxles: '1', rearAxles: '2',
+    brakeSarn: '035391 CS', frontAxles: '1', rearAxles: '2',
     teeth1: '100', teeth2: '100',
     suspSarnF: '011857', suspSarnR: '011858',
     suspMakeF: 'SAF', suspMakeR: 'SAF',
@@ -67,7 +67,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '3-SAF-DRUM': {
-    brakeSarn: '35391 CS', frontAxles: '1', rearAxles: '2',
+    brakeSarn: '035391 CS', frontAxles: '1', rearAxles: '2',
     teeth1: '100', teeth2: '100',
     suspSarnF: '011857', suspSarnR: '011858',
     suspMakeF: 'SAF', suspMakeR: 'SAF',
@@ -89,7 +89,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '3-TMC-DISC': {
-    brakeSarn: '35391 CS', frontAxles: '1', rearAxles: '2',
+    brakeSarn: '035391 CS', frontAxles: '1', rearAxles: '2',
     teeth1: '100', teeth2: '100',
     suspSarnF: '060058', suspSarnR: '060063',
     suspMakeF: 'TMC', suspMakeR: 'TMC',
@@ -111,7 +111,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '3-TMC-DRUM': {
-    brakeSarn: '35391 CS', frontAxles: '1', rearAxles: '2',
+    brakeSarn: '035391 CS', frontAxles: '1', rearAxles: '2',
     teeth1: '100', teeth2: '100',
     suspSarnF: '060058', suspSarnR: '060063',
     suspMakeF: 'TMC', suspMakeR: 'TMC',
@@ -133,7 +133,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '4-SAF-DISC': {
-    brakeSarn: '33261 CS', frontAxles: '2', rearAxles: '2',
+    brakeSarn: '033261 CS', frontAxles: '2', rearAxles: '2',
     teeth1: '100', teeth2: '100',
     suspSarnF: '011858', suspSarnR: '011858',
     suspMakeF: 'SAF', suspMakeR: 'SAF',
@@ -155,7 +155,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '4-SAF-DRUM': {
-    brakeSarn: '33261 CS', frontAxles: '2', rearAxles: '2',
+    brakeSarn: '033261 CS', frontAxles: '2', rearAxles: '2',
     teeth1: '100', teeth2: '100',
     suspSarnF: '011858', suspSarnR: '011858',
     suspMakeF: 'SAF', suspMakeR: 'SAF',
@@ -177,7 +177,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '4-TMC-DISC': {
-    brakeSarn: '33261 CS', frontAxles: '2', rearAxles: '2',
+    brakeSarn: '033261 CS', frontAxles: '2', rearAxles: '2',
     teeth1: '100', teeth2: '100',
     suspSarnF: '060060', suspSarnR: '060060',
     suspMakeF: 'TMC', suspMakeR: 'TMC',
@@ -199,7 +199,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '4-TMC-DRUM': {
-    brakeSarn: '33261 CS', frontAxles: '2', rearAxles: '2',
+    brakeSarn: '033261 CS', frontAxles: '2', rearAxles: '2',
     teeth1: '100', teeth2: '100',
     suspSarnF: '060060', suspSarnR: '060060',
     suspMakeF: 'TMC', suspMakeR: 'TMC',
@@ -221,7 +221,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '5-SAF-DISC': {
-    brakeSarn: '47495 CS', frontAxles: '2', rearAxles: '3',
+    brakeSarn: '047495 CS', frontAxles: '2', rearAxles: '3',
     teeth1: '100', teeth2: '100',
     suspSarnF: '011858', suspSarnR: '011859',
     suspMakeF: 'SAF', suspMakeR: 'SAF',
@@ -243,7 +243,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '5-SAF-DRUM': {
-    brakeSarn: '47495 CS', frontAxles: '2', rearAxles: '3',
+    brakeSarn: '047495 CS', frontAxles: '2', rearAxles: '3',
     teeth1: '100', teeth2: '100',
     suspSarnF: '011858', suspSarnR: '011859',
     suspMakeF: 'SAF', suspMakeR: 'SAF',
@@ -265,7 +265,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '6-SAF-DISC': {
-    brakeSarn: '47497 CS', frontAxles: '3', rearAxles: '3',
+    brakeSarn: '047497 CS', frontAxles: '3', rearAxles: '3',
     teeth1: '100', teeth2: '100',
     suspSarnF: '011859', suspSarnR: '011859',
     suspMakeF: 'SAF', suspMakeR: 'SAF',
@@ -287,7 +287,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '6-SAF-DRUM': {
-    brakeSarn: '47497 CS', frontAxles: '3', rearAxles: '3',
+    brakeSarn: '047497 CS', frontAxles: '3', rearAxles: '3',
     teeth1: '100', teeth2: '100',
     suspSarnF: '011859', suspSarnR: '011859',
     suspMakeF: 'SAF', suspMakeR: 'SAF',
