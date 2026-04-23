@@ -34,6 +34,7 @@ const TRUCK_BODY_DEFAULTS: Record<string, string> = {
   catMarkers: 'Yes',
   camera: 'No',
   vibrator: 'No',
+  tarpColour: 'Black',
 }
 
 function fillDefaults(target: Record<string, any>, defaults: Record<string, string>): Record<string, any> {
