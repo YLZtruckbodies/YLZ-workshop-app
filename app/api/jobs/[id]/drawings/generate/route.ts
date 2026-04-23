@@ -41,32 +41,34 @@ export async function POST(
 
       const bodyFolderKey = `${axles}-${isAlly ? 'ally' : 'steel'}`
       const bodyFolderId = TRAILER_BODY_FOLDER_IDS[bodyFolderKey] ?? null
-      if (!bodyFolderId) return NextResponse.json({ error: 'No standard body folder found' }, { status: 404 })
 
-      let lookupId = bodyFolderId
-      if (axles === 4 && bodyLength > 0) {
-        const lenFolder = await findChildFolder(bodyFolderId, `${bodyLength} Body`)
-        if (lenFolder) lookupId = lenFolder
+      if (bodyFolderId) {
+        let lookupId = bodyFolderId
+        if (axles === 4 && bodyLength > 0) {
+          const lenFolder = await findChildFolder(bodyFolderId, `${bodyLength} Body`)
+          if (lenFolder) lookupId = lenFolder
+        }
+        const drawingsId = await findChildFolder(lookupId, 'Drawings')
+        const pdfId = drawingsId ? await findChildFolder(drawingsId, 'PDF') : null
+        await generateJobDrawings(jobId, lookupId, drawingsId, pdfId, job.num)
+      } else {
+        await generateJobDrawings(jobId, null, null, null, job.num)
       }
-
-      const drawingsId = await findChildFolder(lookupId, 'Drawings')
-      const pdfId = drawingsId ? await findChildFolder(drawingsId, 'PDF') : null
-
-      await generateJobDrawings(jobId, lookupId, drawingsId, pdfId, job.num)
     } else {
       const material = (cfg.material || cfg.truckMaterial || '').toLowerCase()
       const bodyLength = parseInt((cfg.bodyLength || cfg.truckBodyLength || '0').replace(/[^\d]/g, ''), 10)
       const bodyHeight = parseInt((cfg.bodyHeight || cfg.truckBodyHeight || '0').replace(/[^\d]/g, ''), 10)
       const isHardox = material.includes('hardox')
 
-      if (bodyLength === 0 || bodyHeight === 0) {
-        return NextResponse.json({ error: 'Missing body dimensions in quote config' }, { status: 400 })
+      const kitFiles = (bodyLength > 0 && bodyHeight > 0)
+        ? await findKitFiles(bodyLength, bodyHeight, isHardox)
+        : null
+
+      if (kitFiles) {
+        await generateJobDrawings(jobId, kitFiles.cadFolderId, kitFiles.drawingsFolderId, kitFiles.pdfFolderId, job.num)
+      } else {
+        await generateJobDrawings(jobId, null, null, null, job.num)
       }
-
-      const kitFiles = await findKitFiles(bodyLength, bodyHeight, isHardox)
-      if (!kitFiles) return NextResponse.json({ error: 'No standard kit found' }, { status: 404 })
-
-      await generateJobDrawings(jobId, kitFiles.cadFolderId, kitFiles.drawingsFolderId, kitFiles.pdfFolderId, job.num)
     }
 
     const drawings = await prisma.jobDrawing.findMany({

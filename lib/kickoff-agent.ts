@@ -353,6 +353,7 @@ export async function generateJobDrawings(
     if (depth > 3) return // limit recursion depth
     const files = await listFolderFiles(folderId)
     const inCadFolder = folderName.toUpperCase() === 'CAD'
+    const inPdfFolder = folderName.toUpperCase() === 'PDF'
     for (const f of files) {
       if (f.mimeType === 'application/vnd.google-apps.folder') {
         await scanFolderRecursive(f.id, depth + 1, f.name)
@@ -362,11 +363,11 @@ export async function generateJobDrawings(
       if (lower.endsWith('.step') || lower.endsWith('.stp')) {
         addFile(f, 'step', 'tube-laser')
       } else if (lower.endsWith('.pdf') || f.mimeType === 'application/pdf') {
-        // Always include PDFs from a CAD folder or _BW/_BF body drawings
+        // Always include PDFs from a CAD or PDF folder, or _BW/_BF body drawings, or keyword-named files
         const isBwBf = lower.endsWith('_bw.pdf') || lower.endsWith('_bf.pdf')
         const hasKeyword = lower.includes('drawing') || lower.includes('assy') || lower.includes('assembly') ||
           lower.includes('subframe') || lower.includes('body') || lower.includes('hoist') || lower.includes('tailgate')
-        if (inCadFolder || isBwBf || hasKeyword) {
+        if (inCadFolder || inPdfFolder || isBwBf || hasKeyword) {
           addFile(f, 'assembly', categoriseDrawing(f.name))
         }
       }
