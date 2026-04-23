@@ -632,8 +632,8 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
           <div className="section-hdr">Paint Specification</div>
           <div className="section-body">
             <div className="field-row field-row-4">
-              <div className="field"><div className="field-lbl">Paint Colour</div><div className="field-val">{c('paintColour')}</div>{!c('paintColour') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Paint Spec</div><div className="field-val">{c('paintSpec') || (c('paintColour') ? 'To match cab' : '')}</div>{!c('paintSpec') && !c('paintColour') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">{isTrailer ? 'Chassis Colour' : 'Subframe Colour'}</div><div className="field-val">{isTrailer ? (c('chassisColour') || c('paintColour')) : (c('subframeColour') || c('paintColour'))}</div>{!(isTrailer ? (c('chassisColour') || c('paintColour')) : (c('subframeColour') || c('paintColour'))) && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Body Colour</div><div className="field-val">{c('bodyColour')}</div>{!c('bodyColour') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Paint Code</div><div className="field-blank" /></div>
               <div className="field"><div className="field-lbl">Paint Brand</div><div className="field-blank" /></div>
             </div>
