@@ -19,7 +19,8 @@ const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 export default function CalendarPage() {
   const router = useRouter()
   const { data: jobs } = useJobs()
-  const { data: deliveries } = useDeliveries()
+  const { data: deliveriesData } = useDeliveries()
+  const deliveries = deliveriesData?.deliveries
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
