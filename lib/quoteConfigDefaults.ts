@@ -46,18 +46,28 @@ function fillDefaults(target: Record<string, any>, defaults: Record<string, stri
 
 export function applyConfigDefaults(cfg: any, buildType: string | null | undefined): any {
   if (!cfg || typeof cfg !== 'object') return cfg
-  const bt = (buildType || '').toLowerCase()
+  // The DB stores buildType in a handful of forms: the form-code form
+  // ("truck-body", "truck-and-trailer"), the capitalised display form
+  // ("Truck Body", "Truck + Trailer"), and legacy variants. Normalise to
+  // a comparable shape by stripping everything except letters.
+  const bt = (buildType || '').toLowerCase().replace(/[^a-z]/g, '')
+  const hasTruck = bt.includes('truck') || bt === 'body' || bt === 'truckbody'
+  const hasTrailer = bt.includes('trailer')
 
-  if (bt === 'truck-body') {
-    return fillDefaults(cfg, TRUCK_BODY_DEFAULTS)
-  }
-
-  if (bt === 'truck-and-trailer') {
+  if (hasTruck && hasTrailer) {
     const filled = { ...cfg }
     if (filled.truckConfig && typeof filled.truckConfig === 'object') {
       filled.truckConfig = fillDefaults(filled.truckConfig, TRUCK_BODY_DEFAULTS)
+    } else {
+      // Some truck-and-trailer quotes may not have a nested truckConfig yet;
+      // still fill defaults at the top level so any truck-body fields resolve.
+      return fillDefaults(filled, TRUCK_BODY_DEFAULTS)
     }
     return filled
+  }
+
+  if (hasTruck) {
+    return fillDefaults(cfg, TRUCK_BODY_DEFAULTS)
   }
 
   return cfg
