@@ -231,7 +231,7 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
   const tubeLaserPdfs = drawings.filter(d => d.type !== 'step' && d.category === 'tube-laser')
 
   const tebsInput: TEBSInput | null = isTrailer && cfg.axleCount && cfg.axleMake && cfg.axleType
-    ? { axleCount: cfg.axleCount, axleMake: cfg.axleMake, axleType: cfg.axleType, vin: job?.vin || (cfg.vin as string) || '', jobNumber: job?.num || '' }
+    ? { axleCount: cfg.axleCount, axleMake: cfg.axleMake, axleType: cfg.axleType, hasLiftAxle: cfg.axleLift === 'Yes' || (cfg.trailerConfig as any)?.axleLift === 'Yes', vin: job?.vin || (cfg.vin as string) || '', jobNumber: job?.num || '' }
     : null
   const hasTEBS = tebsInput && hasTEBSData(tebsInput)
 

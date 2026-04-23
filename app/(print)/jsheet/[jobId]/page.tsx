@@ -401,7 +401,6 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
 
   const handleTEBSDownload = async () => {
     if (!tebsInput) return
-    console.log('[TEBS] job.cfg.axleLift:', job.cfg?.axleLift, '| c(axleLift):', c('axleLift'), '| hasLiftAxle:', tebsInput.hasLiftAxle)
     setTebsLoading(true)
     try {
       const blob = await generateTEBSDocx(tebsInput)
