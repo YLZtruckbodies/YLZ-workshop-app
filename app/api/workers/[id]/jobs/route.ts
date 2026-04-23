@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const body = await req.json()
   // Bulk update worker jobs (reorder, update start/days)
-  const { jobs } = body as { jobs: Array<{ id: string; jobNo?: string; type?: string; start?: string; days?: number; position?: number }> }
+  const { jobs } = body as { jobs: Array<{ id: string; jobNo?: string; type?: string; start?: string; days?: number; position?: number; done?: boolean }> }
 
   const updates = jobs.map((j, i) =>
     prisma.workerJob.update({
@@ -41,6 +41,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         start: j.start ?? undefined,
         days: j.days ?? undefined,
         position: j.position ?? i,
+        done: j.done ?? undefined,
       },
     })
   )

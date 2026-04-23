@@ -281,6 +281,16 @@ export async function syncFromMonday(): Promise<any> {
 }
 
 // Google Sheets sync
+export async function markWorkerJobDone(workerId: string, jobId: string, done: boolean): Promise<any> {
+  const res = await fetch(`/api/workers/${workerId}/jobs/${jobId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ done }),
+  })
+  if (!res.ok) throw new Error('Failed to update job')
+  return res.json()
+}
+
 export async function populateKeithSchedule(): Promise<any> {
   const res = await fetch('/api/keith/populate', { method: 'POST' })
   if (!res.ok) {

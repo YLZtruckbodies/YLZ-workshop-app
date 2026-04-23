@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
-import { useWorkers, useJobs, useTarps, addWorkerJob, updateWorkerJobs, deleteWorkerJob, syncFromSheets, populateKeithSchedule } from '@/lib/hooks'
+import { useWorkers, useJobs, useTarps, addWorkerJob, updateWorkerJobs, deleteWorkerJob, syncFromSheets, markWorkerJobDone } from '@/lib/hooks'
 import { parseDate, fmtDate, addWorkdays, nextWorkday, compDate } from '@/lib/workdays'
 import { useSession } from 'next-auth/react'
 import { useSWRConfig } from 'swr'
@@ -17,6 +17,7 @@ interface WorkerJob {
   start: string
   days: number
   position: number
+  done?: boolean
 }
 
 interface Worker {
@@ -29,12 +30,14 @@ interface Worker {
   jobs: WorkerJob[]
 }
 
-interface Job {
+interface BoardJob {
   id: string
   num: string
   type: string
   stage: string
   customer: string
+  btype: string
+  dealer: string
 }
 
 interface Tarp {
@@ -138,19 +141,41 @@ export default function KeithSchedulePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('alloy')
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
-  const [populating, setPopulating] = useState(false)
-  const [popMsg, setPopMsg] = useState('')
 
   /* ── Jobs lookup map ───────────────────────────────── */
   const jobsMap = useMemo(() => {
-    const m: Record<string, Job> = {}
+    const m: Record<string, BoardJob> = {}
     if (Array.isArray(jobs)) {
-      jobs.forEach((j: Job) => {
+      jobs.forEach((j: BoardJob) => {
         m[j.id] = j
         m[j.num] = j
       })
     }
     return m
+  }, [jobs])
+
+  /* ── Section scheduled set (jobNo → sections already containing it) ── */
+  const sectionScheduled = useMemo(() => {
+    const map: Record<string, Set<string>> = {}
+    const sectionOf = (w: Worker) => {
+      if (w.section === 'trailerfit') return 'trailerfit'
+      if (w.section === 'subfit') return 'subfit'
+      return w.hdr
+    }
+    ;(workers as Worker[]).forEach((w) => {
+      const sec = sectionOf(w)
+      if (!map[sec]) map[sec] = new Set()
+      w.jobs.forEach((wj) => { if (wj.jobNo) map[sec].add(wj.jobNo) })
+    })
+    return map
+  }, [workers])
+
+  /* ── Active board jobs (non-dispatched, non-sales) ─────────────── */
+  const activeBoardJobs = useMemo(() => {
+    if (!Array.isArray(jobs)) return [] as BoardJob[]
+    return (jobs as BoardJob[]).filter(
+      (j) => !['Dispatch', 'Requires Sales'].includes(j.stage)
+    )
   }, [jobs])
 
   /* ── Refresh shorthand ─────────────────────────────── */
@@ -173,7 +198,7 @@ export default function KeithSchedulePage() {
             position: j.position,
           }
         }
-        return { id: j.id, jobNo: j.jobNo, type: j.type, start: j.start, days: j.days, position: j.position }
+        return { id: j.id, jobNo: j.jobNo, type: j.type, start: j.start, days: j.days, position: j.position, done: j.done }
       })
       await updateWorkerJobs(worker.id, updatedJobs)
       refresh()
@@ -216,6 +241,23 @@ export default function KeithSchedulePage() {
     [refresh, workers, pushUndo],
   )
 
+  const handleToggleDone = useCallback(
+    async (worker: Worker, jobId: string, currentDone: boolean) => {
+      await markWorkerJobDone(worker.id, jobId, !currentDone)
+      refresh()
+      mutate('/api/jobs') // refresh job board stage
+    },
+    [refresh, mutate],
+  )
+
+  const handleAddFromBoard = useCallback(
+    async (workerId: string, jobNo: string, type: string) => {
+      await addWorkerJob(workerId, { jobNo, type, start: '', days: 1 })
+      refresh()
+    },
+    [refresh],
+  )
+
   /* ── Sheet Sync handler ──────────────────────────── */
   const handleSheetSync = useCallback(async () => {
     setSyncing(true)
@@ -238,22 +280,6 @@ export default function KeithSchedulePage() {
     } finally {
       setSyncing(false)
       setTimeout(() => setSyncMsg(''), 8000)
-    }
-  }, [refresh])
-
-  /* ── Populate handler ───────────────────────────── */
-  const handlePopulate = useCallback(async () => {
-    setPopulating(true)
-    setPopMsg('')
-    try {
-      const result = await populateKeithSchedule()
-      setPopMsg(result.added === 0 ? 'All jobs already scheduled' : `Added ${result.added} entries`)
-      refresh()
-    } catch (err: any) {
-      setPopMsg(`Failed: ${err.message}`)
-    } finally {
-      setPopulating(false)
-      setTimeout(() => setPopMsg(''), 8000)
     }
   }, [refresh])
 
@@ -405,50 +431,11 @@ export default function KeithSchedulePage() {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {popMsg && (
-            <span style={{ fontSize: 11, color: popMsg.includes('Failed') ? '#e84560' : '#22d07a', marginRight: 4 }}>
-              {popMsg}
-            </span>
-          )}
           {syncMsg && (
             <span style={{ fontSize: 11, color: syncMsg.includes('failed') ? '#e84560' : '#22d07a', marginRight: 4 }}>
               {syncMsg}
             </span>
           )}
-          <button
-            onClick={handlePopulate}
-            disabled={populating}
-            style={{
-              fontFamily: "'League Spartan', sans-serif",
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: 0.8,
-              textTransform: 'uppercase',
-              padding: '8px 16px',
-              borderRadius: 4,
-              cursor: populating ? 'wait' : 'pointer',
-              border: '1px solid var(--border2)',
-              background: 'transparent',
-              color: populating ? 'var(--text3)' : '#E8681A',
-              borderColor: populating ? 'var(--border2)' : '#E8681A',
-              transition: '0.15s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              whiteSpace: 'nowrap',
-              opacity: populating ? 0.6 : 1,
-            }}
-            onMouseEnter={(e) => {
-              if (!populating) {
-                e.currentTarget.style.background = 'rgba(232,104,26,0.1)'
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent'
-            }}
-          >
-            {populating ? 'Populating...' : 'Populate from Jobs'}
-          </button>
           <button
             onClick={handleSheetSync}
             disabled={syncing}
@@ -570,16 +557,26 @@ export default function KeithSchedulePage() {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {filtered.map((worker) => (
-                <WorkerCard
-                  key={worker.id}
-                  worker={worker}
-                  jobsMap={jobsMap}
-                  onUpdateField={handleUpdateField}
-                  onAddRow={handleAddRow}
-                  onDeleteJob={handleDeleteJob}
-                />
-              ))}
+              {filtered.map((worker) => {
+                const sectionKey = worker.section === 'trailerfit' ? 'trailerfit'
+                  : worker.section === 'subfit' ? 'subfit'
+                  : worker.hdr
+                const scheduledInSection = sectionScheduled[sectionKey] || new Set<string>()
+                return (
+                  <WorkerCard
+                    key={worker.id}
+                    worker={worker}
+                    jobsMap={jobsMap}
+                    boardJobs={activeBoardJobs}
+                    scheduledInSection={scheduledInSection}
+                    onUpdateField={handleUpdateField}
+                    onAddRow={handleAddRow}
+                    onDeleteJob={handleDeleteJob}
+                    onToggleDone={handleToggleDone}
+                    onAddFromBoard={handleAddFromBoard}
+                  />
+                )
+              })}
             </div>
           )}
         </>
@@ -592,20 +589,45 @@ export default function KeithSchedulePage() {
    Worker Card
    ══════════════════════════════════════════════════════════════ */
 
+function normaliseNum(num: string) {
+  return num.replace(/^YLZ\s*/i, '').trim()
+}
+
 function WorkerCard({
   worker,
   jobsMap,
+  boardJobs,
+  scheduledInSection,
   onUpdateField,
   onAddRow,
   onDeleteJob,
+  onToggleDone,
+  onAddFromBoard,
 }: {
   worker: Worker
-  jobsMap: Record<string, Job>
+  jobsMap: Record<string, BoardJob>
+  boardJobs: BoardJob[]
+  scheduledInSection: Set<string>
   onUpdateField: (worker: Worker, jobId: string, field: 'jobNo' | 'type' | 'start' | 'days', value: string | number) => void
   onAddRow: (workerId: string) => void
   onDeleteJob: (workerId: string, jobId: string) => void
+  onToggleDone: (worker: Worker, jobId: string, currentDone: boolean) => void
+  onAddFromBoard: (workerId: string, jobNo: string, type: string) => void
 }) {
+  const [showPicker, setShowPicker] = useState(false)
+  const [search, setSearch] = useState('')
+
   const sortedJobs = [...worker.jobs].sort((a, b) => a.position - b.position)
+
+  // Jobs available to add: active, relevant to section, not already in this section
+  const workerJobNums = new Set(worker.jobs.map((j) => j.jobNo))
+  const availableJobs = boardJobs.filter((bj) => {
+    const n = normaliseNum(bj.num)
+    if (scheduledInSection.has(n) || workerJobNums.has(n)) return false
+    const q = search.toLowerCase()
+    if (q && !bj.num.toLowerCase().includes(q) && !bj.type.toLowerCase().includes(q) && !bj.customer.toLowerCase().includes(q)) return false
+    return true
+  })
 
   return (
     <div
@@ -629,7 +651,98 @@ function WorkerCard({
         />
         <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{worker.name}</span>
         <span style={{ fontSize: 11, color: 'var(--text3)' }}>{worker.role}</span>
+        <div style={{ marginLeft: 'auto' }}>
+          <button
+            onClick={() => { setShowPicker((v) => !v); setSearch('') }}
+            style={{
+              fontFamily: "'League Spartan', sans-serif",
+              fontSize: 11,
+              fontWeight: 700,
+              padding: '4px 12px',
+              borderRadius: 3,
+              border: showPicker ? '1px solid #E8681A' : '1px solid var(--border2)',
+              background: showPicker ? 'rgba(232,104,26,0.12)' : 'transparent',
+              color: showPicker ? '#E8681A' : 'var(--text3)',
+              cursor: 'pointer',
+              letterSpacing: 0.5,
+              textTransform: 'uppercase',
+            }}
+          >
+            + Add from Job Board
+          </button>
+        </div>
       </div>
+
+      {/* Job Picker */}
+      {showPicker && (
+        <div style={{
+          background: 'var(--dark3)',
+          border: '1px solid var(--border)',
+          borderRadius: 4,
+          marginBottom: 12,
+          padding: '10px 12px',
+        }}>
+          <input
+            type="text"
+            placeholder="Search job number, type or customer..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: '100%',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid var(--border)',
+              color: '#fff',
+              borderRadius: 3,
+              padding: '6px 10px',
+              fontSize: 11,
+              fontFamily: "'League Spartan', sans-serif",
+              outline: 'none',
+              marginBottom: 8,
+            }}
+            autoFocus
+          />
+          {availableJobs.length === 0 ? (
+            <div style={{ fontSize: 11, color: 'var(--text3)', padding: '4px 0' }}>
+              {search ? 'No matches' : 'All jobs already scheduled for this section'}
+            </div>
+          ) : (
+            <div style={{ maxHeight: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {availableJobs.slice(0, 30).map((bj) => (
+                <div
+                  key={bj.id}
+                  onClick={() => {
+                    onAddFromBoard(worker.id, normaliseNum(bj.num), bj.type)
+                    setShowPicker(false)
+                    setSearch('')
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '6px 8px',
+                    borderRadius: 3,
+                    cursor: 'pointer',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(232,104,26,0.1)'
+                    e.currentTarget.style.borderColor = '#E8681A44'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
+                    e.currentTarget.style.borderColor = 'transparent'
+                  }}
+                >
+                  <span style={{ fontWeight: 700, color: '#E8681A', fontSize: 11, minWidth: 70 }}>{bj.num}</span>
+                  <span style={{ color: 'var(--text2)', fontSize: 11, flex: 1 }}>{bj.type}</span>
+                  <span style={{ color: 'var(--text3)', fontSize: 10 }}>{bj.stage}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Job Queue Table */}
       <table
@@ -646,21 +759,54 @@ function WorkerCard({
               textAlign: 'left',
             }}
           >
+            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 32, textAlign: 'center' }}></th>
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 90 }}>Job No.</th>
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600 }}>Type</th>
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 100 }}>Start Date</th>
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 60 }}>Days</th>
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 100 }}>Completion</th>
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 50, textAlign: 'center' }}>
-              Delete
+              Del
             </th>
           </tr>
         </thead>
         <tbody>
           {sortedJobs.map((job, idx) => {
             const completion = calcCompletion(sortedJobs, idx)
+            const isDone = !!job.done
+            const rowStyle: React.CSSProperties = {
+              borderBottom: '1px solid var(--border)',
+              opacity: isDone ? 0.5 : 1,
+            }
+            const textStyle: React.CSSProperties = isDone
+              ? { textDecoration: 'line-through', color: 'var(--text3)' }
+              : {}
             return (
-              <tr key={job.id} style={{ borderBottom: '1px solid var(--border)' }}>
+              <tr key={job.id} style={rowStyle}>
+                {/* Done tick */}
+                <td style={{ padding: 6, textAlign: 'center' }}>
+                  <button
+                    onClick={() => onToggleDone(worker, job.id, isDone)}
+                    title={isDone ? 'Mark incomplete' : 'Mark done — advances job board stage'}
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      border: isDone ? '2px solid #22d07a' : '2px solid var(--border2)',
+                      background: isDone ? '#22d07a' : 'transparent',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 12,
+                      color: isDone ? '#000' : 'var(--text3)',
+                      padding: 0,
+                      transition: '0.15s',
+                    }}
+                  >
+                    {isDone ? '✓' : ''}
+                  </button>
+                </td>
                 <td style={{ padding: 6 }}>
                   <input
                     type="text"
@@ -685,6 +831,7 @@ function WorkerCard({
                       outline: 'none',
                       fontFamily: "'League Spartan', sans-serif",
                       fontWeight: 600,
+                      ...textStyle,
                     }}
                   />
                 </td>
@@ -711,6 +858,7 @@ function WorkerCard({
                       borderRadius: 2,
                       outline: 'none',
                       fontFamily: "'League Spartan', sans-serif",
+                      ...textStyle,
                     }}
                   />
                 </td>
@@ -827,7 +975,7 @@ function WorkerCard({
           e.currentTarget.style.color = 'var(--text3)'
         }}
       >
-        + Add Row
+        + Add Row (Manual)
       </button>
 
       {/* Snapshot Panel */}
