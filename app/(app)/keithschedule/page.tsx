@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
-import { useWorkers, useJobs, useTarps, addWorkerJob, updateWorkerJobs, deleteWorkerJob, syncFromSheets } from '@/lib/hooks'
+import { useWorkers, useJobs, useTarps, addWorkerJob, updateWorkerJobs, deleteWorkerJob, syncFromSheets, populateKeithSchedule } from '@/lib/hooks'
 import { parseDate, fmtDate, addWorkdays, nextWorkday, compDate } from '@/lib/workdays'
 import { useSession } from 'next-auth/react'
 import { useSWRConfig } from 'swr'
@@ -138,6 +138,8 @@ export default function KeithSchedulePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('alloy')
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
+  const [populating, setPopulating] = useState(false)
+  const [popMsg, setPopMsg] = useState('')
 
   /* ── Jobs lookup map ───────────────────────────────── */
   const jobsMap = useMemo(() => {
@@ -236,6 +238,22 @@ export default function KeithSchedulePage() {
     } finally {
       setSyncing(false)
       setTimeout(() => setSyncMsg(''), 8000)
+    }
+  }, [refresh])
+
+  /* ── Populate handler ───────────────────────────── */
+  const handlePopulate = useCallback(async () => {
+    setPopulating(true)
+    setPopMsg('')
+    try {
+      const result = await populateKeithSchedule()
+      setPopMsg(result.added === 0 ? 'All jobs already scheduled' : `Added ${result.added} entries`)
+      refresh()
+    } catch (err: any) {
+      setPopMsg(`Failed: ${err.message}`)
+    } finally {
+      setPopulating(false)
+      setTimeout(() => setPopMsg(''), 8000)
     }
   }, [refresh])
 
@@ -387,11 +405,50 @@ export default function KeithSchedulePage() {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {popMsg && (
+            <span style={{ fontSize: 11, color: popMsg.includes('Failed') ? '#e84560' : '#22d07a', marginRight: 4 }}>
+              {popMsg}
+            </span>
+          )}
           {syncMsg && (
             <span style={{ fontSize: 11, color: syncMsg.includes('failed') ? '#e84560' : '#22d07a', marginRight: 4 }}>
               {syncMsg}
             </span>
           )}
+          <button
+            onClick={handlePopulate}
+            disabled={populating}
+            style={{
+              fontFamily: "'League Spartan', sans-serif",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 0.8,
+              textTransform: 'uppercase',
+              padding: '8px 16px',
+              borderRadius: 4,
+              cursor: populating ? 'wait' : 'pointer',
+              border: '1px solid var(--border2)',
+              background: 'transparent',
+              color: populating ? 'var(--text3)' : '#E8681A',
+              borderColor: populating ? 'var(--border2)' : '#E8681A',
+              transition: '0.15s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              whiteSpace: 'nowrap',
+              opacity: populating ? 0.6 : 1,
+            }}
+            onMouseEnter={(e) => {
+              if (!populating) {
+                e.currentTarget.style.background = 'rgba(232,104,26,0.1)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+            }}
+          >
+            {populating ? 'Populating...' : 'Populate from Jobs'}
+          </button>
           <button
             onClick={handleSheetSync}
             disabled={syncing}

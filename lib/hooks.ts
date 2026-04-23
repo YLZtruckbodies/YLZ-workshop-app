@@ -281,6 +281,15 @@ export async function syncFromMonday(): Promise<any> {
 }
 
 // Google Sheets sync
+export async function populateKeithSchedule(): Promise<any> {
+  const res = await fetch('/api/keith/populate', { method: 'POST' })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.error || 'Populate failed')
+  }
+  return res.json()
+}
+
 export async function syncFromSheets(workerId?: string): Promise<any> {
   const res = await fetch('/api/sheets/sync', {
     method: 'POST',
