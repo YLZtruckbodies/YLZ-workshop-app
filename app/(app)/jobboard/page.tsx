@@ -37,22 +37,18 @@ const TABLE_COLUMNS = [
   '', // drag handle
   'Job No.',
   'Body/Trailer Type',
-  'In Build Progress',
   'Dealer',
   'Customer',
-  'Due',
-  'Truck On Site',
-  'Job Sheet',
-  "DWG's",
-  'MRP',
-  'Parts Order',
-  'EBS File',
-  'VASS Engineering',
-  'Notes',
   'Make & Model',
+  'Due',
+  'On Site',
+  'Engineering',
+  'MRP',
+  'Parts',
+  'QA',
+  'Build Progress',
+  'Notes',
   'PO',
-  'Body Dims',
-  'VIN',
   'Files',
   'Actions',
 ]
@@ -61,27 +57,23 @@ const DEFAULT_COL_WIDTHS: number[] = [
   28,   // drag handle
   100,  // Job No.
   180,  // Body/Trailer Type
-  140,  // In Build Progress
   120,  // Dealer
-  120,  // Customer
-  90,   // Due
-  90,   // Truck On Site
-  80,   // Job Sheet
-  80,   // DWG's
-  80,   // MRP
-  90,   // Parts Order
-  80,   // EBS File
-  140,  // VASS Engineering
+  130,  // Customer
+  130,  // Make & Model
+  80,   // Due
+  80,   // On Site
+  90,   // Engineering
+  65,   // MRP
+  65,   // Parts
+  65,   // QA
+  230,  // Build Progress
   160,  // Notes
-  120,  // Make & Model
   80,   // PO
-  90,   // Body Dims
-  120,  // VIN
-  60,   // Files
+  55,   // Files
   100,  // Actions
 ]
 
-const COL_WIDTHS_KEY = 'ylz-jobboard-col-widths'
+const COL_WIDTHS_KEY = 'ylz-jobboard-col-widths-v2'
 
 const FILE_TYPE_ICONS: Record<string, string> = {
   'application/pdf': '\u{1F4C4}',
@@ -190,6 +182,101 @@ function BuildProgressPill({ stage }: { stage: string }) {
       {label}
     </span>
   )
+}
+
+// ── Status dot — for Engineering / MRP / Parts / QA columns ─────────
+function StatusDot({ state, doneLabel = 'Done', progressLabel = 'In Progress' }: { state: 'done' | 'progress' | 'waiting'; doneLabel?: string; progressLabel?: string }) {
+  const color = state === 'done' ? '#22d07a' : state === 'progress' ? '#f59e0b' : 'rgba(255,255,255,0.15)'
+  const label = state === 'done' ? doneLabel : state === 'progress' ? progressLabel : '—'
+  return (
+    <td style={{ padding: '8px 6px', textAlign: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: color }} />
+        <span style={{ fontSize: 8, color, fontWeight: 700, letterSpacing: 0.3, whiteSpace: 'nowrap' }}>{label}</span>
+      </div>
+    </td>
+  )
+}
+
+// ── Build progress bar — 5 segments from stage ───────────────────────
+function BuildProgressBar({ stage, btype }: { stage: string; btype: string }) {
+  const idx = stageIndex(stage)
+  const fabIdx = stageIndex('Fab')
+  const paintIdx = stageIndex('Paint')
+  const fitoutIdx = stageIndex('Fitout')
+
+  const isAlloy = btype?.includes('ally')
+  const isTrailer = btype?.includes('trailer') || btype === 'dolly' || btype === 'beavertail'
+
+  const segments = [
+    { label: isAlloy ? 'Alloy' : 'Hardox', activeAt: fabIdx },
+    { label: 'Body', activeAt: fabIdx },
+    { label: isTrailer ? 'Trailer Chs.' : 'Truck Chs.', activeAt: fabIdx },
+    { label: 'Paint', activeAt: paintIdx },
+    { label: 'Fitout', activeAt: fitoutIdx },
+  ]
+
+  return (
+    <td style={{ padding: '6px 10px' }}>
+      <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end' }}>
+        {segments.map(seg => {
+          const done = idx > seg.activeAt
+          const active = idx === seg.activeAt
+          const barColor = done ? '#22d07a' : active ? '#f59e0b' : 'rgba(255,255,255,0.1)'
+          const textColor = done ? '#22d07a' : active ? '#f59e0b' : 'rgba(255,255,255,0.2)'
+          return (
+            <div key={seg.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flex: 1 }}>
+              <div style={{ height: 6, width: '100%', borderRadius: 3, background: barColor }} />
+              <span style={{ fontSize: 7, color: textColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%', textAlign: 'center' }}>
+                {seg.label}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </td>
+  )
+}
+
+// ── Site toggle — click to mark truck on site ────────────────────────
+function SiteToggleCell({ value, jobId, onSave }: { value: string; jobId: string; onSave: (id: string, field: string, val: string, old: string) => void }) {
+  const isOnSite = value?.toLowerCase() === 'arrived' || value?.toLowerCase() === 'yes'
+  return (
+    <td style={{ padding: '8px 6px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+      <button
+        onClick={() => onSave(jobId, 'site', isOnSite ? '' : 'Arrived', value || '')}
+        style={{
+          fontSize: 9, fontWeight: 700, letterSpacing: 0.3, textTransform: 'uppercase',
+          padding: '3px 7px', borderRadius: 3, cursor: 'pointer',
+          background: isOnSite ? 'rgba(34,208,122,0.12)' : 'rgba(255,255,255,0.05)',
+          color: isOnSite ? '#22d07a' : 'rgba(255,255,255,0.25)',
+          border: `1px solid ${isOnSite ? 'rgba(34,208,122,0.35)' : 'rgba(255,255,255,0.1)'}`,
+        }}
+      >
+        {isOnSite ? '✓ On Site' : 'No'}
+      </button>
+    </td>
+  )
+}
+
+// ── Derive MRP / Parts status from checklist ─────────────────────────
+function getMrpStatus(checklist: any): 'done' | 'waiting' {
+  if (!checklist?.items) return 'waiting'
+  const item = checklist.items.find((i: any) => i.section === 'mrp-entry')
+  if (!item) return 'waiting'
+  const d = item.details || {}
+  return item.ordered || d.picked ? 'done' : 'waiting'
+}
+
+function getPartsStatus(checklist: any): 'done' | 'progress' | 'waiting' {
+  if (!checklist?.items) return 'waiting'
+  const items = checklist.items.filter((i: any) => i.section !== 'mrp-entry')
+  if (!items.length) return 'waiting'
+  const allPicked = items.every((i: any) => { const d = i.details || {}; return d.picked || d.ready })
+  const anyOrdered = items.some((i: any) => i.ordered)
+  if (allPicked) return 'done'
+  if (anyOrdered) return 'progress'
+  return 'waiting'
 }
 
 // ── Status dropdown options ──────────────────────────
@@ -481,6 +568,7 @@ function DroppableGroup({ id, children }: { id: string; children: React.ReactNod
 function DraggableJobRow({
   job,
   user,
+  checklist,
   isExpanded,
   onToggleExpand,
   onAdvance,
@@ -499,6 +587,7 @@ function DraggableJobRow({
 }: {
   job: any
   user: any
+  checklist: any
   isExpanded: boolean
   onToggleExpand: () => void
   onAdvance: (id: string) => void
@@ -572,7 +661,7 @@ function DraggableJobRow({
           }}
         >
           <span style={{ marginRight: 6, fontSize: 10, color: 'var(--text3)' }}>
-            {isExpanded ? '\u25BC' : '\u25B6'}
+            {isExpanded ? '▼' : '▶'}
           </span>
           {job.num}
         </td>
@@ -580,41 +669,53 @@ function DraggableJobRow({
         {/* Body/Trailer Type */}
         <EditableTextCell value={job.type || ''} jobId={job.id} field="type" onSave={onFieldSave} style={{ fontWeight: 500, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} />
 
-        {/* Build Progress */}
-        <EditableStagePill stage={job.stage} jobId={job.id} onSave={onFieldSave} />
-
         {/* Dealer */}
         <EditableTextCell value={job.dealer || ''} jobId={job.id} field="dealer" onSave={onFieldSave} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }} />
 
         {/* Customer */}
-        <EditableTextCell value={job.customer || ''} jobId={job.id} field="customer" onSave={onFieldSave} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }} />
+        <EditableTextCell value={job.customer || ''} jobId={job.id} field="customer" onSave={onFieldSave} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 130 }} />
+
+        {/* Make & Model */}
+        <EditableTextCell value={job.make || ''} jobId={job.id} field="make" onSave={onFieldSave} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 130 }} />
 
         {/* Due */}
         <EditableTextCell value={job.due || ''} jobId={job.id} field="due" onSave={onFieldSave} style={{ fontWeight: 600, color: dueDateColor(job.due || ''), whiteSpace: 'nowrap' }} />
 
-        {/* Status Columns */}
-        <EditableStatusCell value={job.site || ''} jobId={job.id} field="site" onSave={onFieldSave} />
-        <EditableStatusCell value={job.sheet || ''} jobId={job.id} field="sheet" onSave={onFieldSave} />
-        <EditableStatusCell value={job.dwg || ''} jobId={job.id} field="dwg" onSave={onFieldSave} />
-        <EditableStatusCell value={job.mrp || ''} jobId={job.id} field="mrp" onSave={onFieldSave} />
-        <EditableStatusCell value={job.parts || ''} jobId={job.id} field="parts" onSave={onFieldSave} />
-        <EditableStatusCell value={job.ebs || ''} jobId={job.id} field="ebs" onSave={onFieldSave} />
-        <EditableStatusCell value={(job as any).vass || ''} jobId={job.id} field="vass" onSave={onFieldSave} options={['VASS Engineering Pending', 'VASS Engineering Performed', '']} />
+        {/* On Site — manual toggle */}
+        <SiteToggleCell value={job.site || ''} jobId={job.id} onSave={onFieldSave} />
+
+        {/* Engineering — green once past Requires Engineering */}
+        <StatusDot
+          state={stageIndex(job.stage) > stageIndex('Requires Engineering') ? 'done' : stageIndex(job.stage) === stageIndex('Requires Engineering') ? 'progress' : 'waiting'}
+          doneLabel="Approved"
+          progressLabel="Pending"
+        />
+
+        {/* MRP — from parts tracker mrp-entry */}
+        <StatusDot state={getMrpStatus(checklist) === 'done' ? 'done' : 'waiting'} doneLabel="Entered" />
+
+        {/* Parts — from parts tracker */}
+        <StatusDot
+          state={getPartsStatus(checklist)}
+          doneLabel="All Ready"
+          progressLabel="Ordered"
+        />
+
+        {/* QA — from job stage */}
+        <StatusDot
+          state={stageIndex(job.stage) > stageIndex('QC') ? 'done' : stageIndex(job.stage) === stageIndex('QC') ? 'progress' : 'waiting'}
+          doneLabel="Passed"
+          progressLabel="In QC"
+        />
+
+        {/* Build Progress — loading bar */}
+        <BuildProgressBar stage={job.stage} btype={job.btype || deriveBtype(job.type || '')} />
 
         {/* Notes */}
         <EditableTextCell value={job.notes || ''} jobId={job.id} field="notes" onSave={onFieldSave} style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text3)', fontSize: 10 }} />
 
-        {/* Make */}
-        <EditableTextCell value={job.make || ''} jobId={job.id} field="make" onSave={onFieldSave} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }} />
-
         {/* PO */}
         <EditableTextCell value={job.po || ''} jobId={job.id} field="po" onSave={onFieldSave} style={{ whiteSpace: 'nowrap' }} />
-
-        {/* Dims */}
-        <EditableTextCell value={job.dims || ''} jobId={job.id} field="dims" onSave={onFieldSave} style={{ whiteSpace: 'nowrap' }} />
-
-        {/* VIN */}
-        <EditableTextCell value={job.vin || ''} jobId={job.id} field="vin" onSave={onFieldSave} style={{ whiteSpace: 'nowrap', fontSize: 10, fontFamily: 'monospace', color: 'var(--text3)' }} />
 
         {/* Files count */}
         <td style={{ padding: '8px 10px', textAlign: 'center' }}>
@@ -1009,6 +1110,20 @@ export default function JobBoardPage() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overGroupId, setOverGroupId] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; jobId: string; job: any } | null>(null)
+  const [checklistMap, setChecklistMap] = useState<Record<string, any>>({})
+
+  // Load checklists for MRP/Parts status indicators
+  useEffect(() => {
+    fetch('/api/mrp-checklist')
+      .then(r => r.json())
+      .then((cls: any[]) => {
+        if (!Array.isArray(cls)) return
+        const map: Record<string, any> = {}
+        cls.forEach(cl => { map[cl.jobId] = cl })
+        setChecklistMap(map)
+      })
+      .catch(() => {})
+  }, [])
 
   // Column resize state
   const [colWidths, setColWidths] = useState<number[]>(() => {
@@ -2080,6 +2195,7 @@ export default function JobBoardPage() {
                                 key={job.id}
                                 job={job}
                                 user={user}
+                                checklist={checklistMap[job.id] || null}
                                 isExpanded={expandedJob === job.id}
                                 onToggleExpand={() => setExpandedJob(expandedJob === job.id ? null : job.id)}
                                 onAdvance={handleAdvance}
