@@ -385,7 +385,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
 
   // TEBS datasheet — only for trailers with axle config
   const tebsInput: TEBSInput | null = isTrailer && job.cfg?.axleCount && job.cfg?.axleMake && job.cfg?.axleType
-    ? { axleCount: job.cfg.axleCount, axleMake: job.cfg.axleMake, axleType: job.cfg.axleType, vin: job.vin || job.cfg?.vin || '', jobNumber: job.num }
+    ? { axleCount: job.cfg.axleCount, axleMake: job.cfg.axleMake, axleType: job.cfg.axleType, hasLiftAxle: c('axleLift') === 'Yes', vin: job.vin || job.cfg?.vin || '', jobNumber: job.num }
     : null
   const canDownloadTEBS = tebsInput && hasTEBSData(tebsInput)
 
