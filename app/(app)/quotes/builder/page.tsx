@@ -1364,7 +1364,7 @@ function QuoteBuilderInner() {
   const [existingJobNum, setExistingJobNum] = useState('')
   const [newJobNum, setNewJobNum] = useState('')
   const [previewVin, setPreviewVin] = useState('')
-  const [acceptResult, setAcceptResult] = useState<{ jobNum: string; jobId: string; isExisting?: boolean } | null>(null)
+  const [acceptResult, setAcceptResult] = useState<{ jobNum: string; jobId: string; isExisting?: boolean; pairedJobNum?: string; pairedJobId?: string } | null>(null)
   const [saveError, setSaveError] = useState('')
   const [isQuickQuote, setIsQuickQuote] = useState(false)
   const [declineModal, setDeclineModal] = useState(false)
@@ -1427,7 +1427,17 @@ function QuoteBuilderInner() {
           if (quote.jobId) {
             fetch(`/api/jobs/${quote.jobId}`)
               .then((r) => r.json())
-              .then((j) => { if (j?.num) setLinkedJobNum(j.num) })
+              .then((j) => {
+                if (!j?.num) return
+                if (j.pairedId) {
+                  fetch(`/api/jobs/${j.pairedId}`)
+                    .then((r) => r.json())
+                    .then((p) => setLinkedJobNum(p?.num ? `${j.num} + ${p.num}` : j.num))
+                    .catch(() => setLinkedJobNum(j.num))
+                } else {
+                  setLinkedJobNum(j.num)
+                }
+              })
               .catch(() => {})
           }
           const cfg = quote.configuration as Record<string, any>
@@ -1820,8 +1830,14 @@ function QuoteBuilderInner() {
         setSaveError(data.error || 'Accept failed')
       } else {
         setForm((f) => ({ ...f, status: 'accepted', jobId: data.job.id }))
-        setLinkedJobNum(data.job.num)
-        setAcceptResult({ jobNum: data.job.num, jobId: data.job.id, isExisting: data.isExisting })
+        setLinkedJobNum(data.pairedJob ? `${data.job.num} + ${data.pairedJob.num}` : data.job.num)
+        setAcceptResult({
+          jobNum: data.job.num,
+          jobId: data.job.id,
+          isExisting: data.isExisting,
+          pairedJobNum: data.pairedJob?.num,
+          pairedJobId: data.pairedJob?.id,
+        })
       }
     } catch (e: any) {
       setSaveError(e.message || 'Accept failed')
@@ -3839,6 +3855,14 @@ function QuoteBuilderInner() {
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, marginBottom: 20 }}>
               {acceptResult.isExisting ? (
                 <>Quote linked to existing job <strong style={{ color: '#E8681A', fontSize: 16 }}>{acceptResult.jobNum}</strong>.</>
+              ) : acceptResult.pairedJobNum ? (
+                <>
+                  Two jobs created on the Production Board at <strong style={{ color: '#fff' }}>Requires Engineering</strong>:<br />
+                  <span style={{ display: 'inline-block', marginTop: 6 }}>
+                    🚛 Truck body — <strong style={{ color: '#E8681A', fontSize: 16 }}>{acceptResult.jobNum}</strong><br />
+                    🚚 Trailer — <strong style={{ color: '#E8681A', fontSize: 16 }}>{acceptResult.pairedJobNum}</strong>
+                  </span>
+                </>
               ) : (
                 <>Job <strong style={{ color: '#E8681A', fontSize: 16 }}>{acceptResult.jobNum}</strong> has been created on the Production Board at{' '}<strong style={{ color: '#fff' }}>Requires Engineering</strong>.</>
               )}

@@ -291,7 +291,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const origin = req.headers.get('origin') || req.headers.get('x-forwarded-host') || 'http://localhost:3000'
 
   const rawBuildType = (quote.buildType || '').toLowerCase()
-  const isPairedQuote = rawBuildType.includes('truck') && rawBuildType.includes('trailer') && !existingJobNum && !customJobNum
+  // Truck+trailer quotes always create two jobs — a custom job number (if supplied)
+  // is treated as the truck's number and the trailer's number is auto-generated.
+  const isPairedQuote = rawBuildType.includes('truck') && rawBuildType.includes('trailer') && !existingJobNum
 
   let job: { id: string; num: string }
   let pairedJob: { id: string; num: string } | null = null
@@ -332,7 +334,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   } else if (isPairedQuote) {
     // ── Create paired truck + trailer jobs (truck gets lower number) ──
     const cfg = quote.configuration as Record<string, any>
-    const [truckNum, trailerNum] = await nextJobNumbers(2)
+    let truckNum: string
+    let trailerNum: string
+    if (customJobNum) {
+      truckNum = customJobNum
+      const [gen] = await nextJobNumbers(1)
+      trailerNum = gen
+    } else {
+      [truckNum, trailerNum] = await nextJobNumbers(2)
+    }
 
     // Auto-generate trailer VIN
     const trailerModel = cfg.trailerConfig?.trailerModel || cfg.trailerModel || 'DT-4 (4-Axle Dog)'
