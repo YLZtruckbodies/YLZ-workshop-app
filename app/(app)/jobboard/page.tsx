@@ -1145,13 +1145,7 @@ export default function JobBoardPage() {
     try { localStorage.setItem(COL_WIDTHS_KEY, JSON.stringify(colWidths)) } catch {}
   }, [colWidths])
 
-  // Close context menu on outside click
-  useEffect(() => {
-    if (!contextMenu) return
-    const close = () => setContextMenu(null)
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [contextMenu])
+  // Context menu closed via overlay (see render below)
 
   // Column resize handlers
   const onResizeStart = useCallback((idx: number, e: React.MouseEvent) => {
@@ -1293,7 +1287,8 @@ export default function JobBoardPage() {
   }
 
   const handleMoveGroup = useCallback(async (jobId: string, newGroup: string) => {
-    mutate((current: any) => current?.map((j: any) => j.id === jobId ? { ...j, prodGroup: newGroup } : j), false)
+    setContextMenu(null)
+    mutate((current: any) => Array.isArray(current) ? current.map((j: any) => j.id === jobId ? { ...j, prodGroup: newGroup } : j) : current, { revalidate: false })
     try {
       await updateJob(jobId, { prodGroup: newGroup, _userId: user?.id || '', _userName: user?.name || '' })
       mutate()
@@ -1301,11 +1296,11 @@ export default function JobBoardPage() {
       console.error('Failed to move group:', e)
       mutate()
     }
-    setContextMenu(null)
   }, [mutate, user?.id, user?.name])
 
   const handleMoveStage = useCallback(async (jobId: string, newStage: string) => {
-    mutate((current: any) => current?.map((j: any) => j.id === jobId ? { ...j, stage: newStage } : j), false)
+    setContextMenu(null)
+    mutate((current: any) => Array.isArray(current) ? current.map((j: any) => j.id === jobId ? { ...j, stage: newStage } : j) : current, { revalidate: false })
     try {
       await fetch(`/api/jobs/${jobId}/stage`, {
         method: 'PATCH',
@@ -1317,7 +1312,6 @@ export default function JobBoardPage() {
       console.error('Failed to move stage:', e)
       mutate()
     }
-    setContextMenu(null)
   }, [mutate, user?.id, user?.name])
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; num: string } | null>(null)
@@ -2436,13 +2430,18 @@ export default function JobBoardPage() {
 
       {/* Right-click context menu */}
       {contextMenu && (
-        <div
-          onMouseDown={(e) => e.stopPropagation()}
-          style={{
-            position: 'fixed',
-            left: contextMenu.x,
-            top: contextMenu.y,
-            zIndex: 1000,
+        <>
+          {/* Transparent overlay — click anywhere outside menu to close */}
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+            onClick={() => setContextMenu(null)}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              left: contextMenu.x,
+              top: contextMenu.y,
+              zIndex: 1000,
             background: '#1a1a1a',
             border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 6,
@@ -2498,7 +2497,8 @@ export default function JobBoardPage() {
               </button>
             )
           })}
-        </div>
+          </div>
+        </>
       )}
 
       {/* Delete confirmation modal */}
