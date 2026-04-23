@@ -25,11 +25,13 @@ const SALES: NavItem[] = [
 ]
 
 const TOOLS: NavItem[] = [
-  { key: 'floor', label: 'Workshop Floor', icon: '\uD83D\uDD27', href: '/floor' },
-  { key: 'parts', label: 'Parts Tracker', icon: '📦', href: '/parts' },
-  { key: 'timesheet', label: 'Time Logging', icon: '\u23F1', href: '/timesheet' },
-  { key: 'jobs', label: 'Jobs List', icon: '\uD83D\uDCD1', href: '/jobs' },
-  { key: 'reports', label: 'Reports', icon: '\uD83D\uDCCB', href: '/reports' },
+  { key: 'floor',       label: 'Workshop Floor', icon: '🔧', href: '/floor' },
+  { key: 'timesheet',   label: 'Time Logging',   icon: '⏱', href: '/timesheet' },
+  { key: 'jobs',        label: 'Jobs List',      icon: '📑', href: '/jobs' },
+  { key: 'engineering', label: 'Engineering',    icon: '📐', href: '/engineering' },
+  { key: 'parts',       label: 'Parts Tracker',  icon: '📦', href: '/parts' },
+  { key: 'coldform',    label: 'Cold Form',      icon: '🏭', href: '/coldform' },
+  { key: 'reports',     label: 'Reports',        icon: '📋', href: '/reports' },
 ]
 
 export default function Sidebar() {
