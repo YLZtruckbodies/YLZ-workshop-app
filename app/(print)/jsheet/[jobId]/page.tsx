@@ -62,6 +62,16 @@ function deriveCouplingLoad(coupling: string): string {
   return ''
 }
 
+const LIFT_AXLE_LOCATIONS: Record<number, string> = {
+  3: '2nd Axle', 4: '3rd Axle', 5: '4th Axle', 6: '5th Axle',
+}
+
+function calcLiftAxleLocation(axleCount: string | undefined): string {
+  if (!axleCount) return ''
+  const n = parseInt(axleCount, 10)
+  return LIFT_AXLE_LOCATIONS[n] || ''
+}
+
 const TRAILER_PIVOT_CENTRE: [number, number][] = [
   [5400, 450], [6000, 510], [6100, 610],
   [7700, 190], [8300, 330], [9200, 225],
@@ -650,6 +660,22 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Axle Count', 'axleCount')}
                   {cfgField('Main Runner Width Inside (mm)', 'mainRunnerWidth')}
                 </div>
+                {isTrailer && (() => {
+                  const liftAxle = String(editCfg['axleLift'] || '')
+                  const liftLoc = liftAxle === 'Yes' ? calcLiftAxleLocation(String(editCfg['axleCount'] || '')) : ''
+                  return (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
+                      <div>
+                        <div style={lblStyle}>Lift Axle</div>
+                        <div style={{ ...inpStyle, background: '#2a2a2a', color: liftAxle ? '#fff' : '#666', cursor: 'default' }}>{liftAxle || '—'}</div>
+                      </div>
+                      <div>
+                        <div style={lblStyle}>Lift Axle Location</div>
+                        <div style={{ ...inpStyle, background: '#2a2a2a', color: liftLoc ? '#fff' : '#666', cursor: 'default' }}>{liftLoc || '—'}</div>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 <div style={sectionLbl}>Wheels &amp; Tyres (Trailer)</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
@@ -821,6 +847,12 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 <div className="field"><div className="field-lbl">Axle Make / Type</div><div className="field-val">{`${c('axleMake')} ${c('axleType')}`.trim() || ''}</div>{!c('axleMake') && <div className="field-blank" />}</div>
                 <div className="field"><div className="field-lbl">Wheelbase (mm)</div><div className="field-val">{c('wheelbase') || ''}</div>{!c('wheelbase') && <div className="field-blank" />}</div>
                 <div className="field"><div className="field-lbl">Drawbar Length (mm)</div><div className="field-val">{c('drawbarLength') || ''}</div>{!c('drawbarLength') && <div className="field-blank" />}</div>
+              </div>
+            )}
+            {isTrailer && (
+              <div className="field-row field-row-2">
+                <div className="field"><div className="field-lbl">Lift Axle</div><div className="field-val">{c('axleLift') || ''}</div>{!c('axleLift') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Lift Axle Location</div><div className="field-val">{c('axleLift') === 'Yes' ? calcLiftAxleLocation(c('axleCount') || '') : ''}</div>{c('axleLift') !== 'Yes' && <div className="field-blank" />}</div>
               </div>
             )}
             {!isTrailer && (
