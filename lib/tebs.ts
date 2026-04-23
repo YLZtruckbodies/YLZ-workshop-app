@@ -400,9 +400,7 @@ export async function generateTEBSDocx(input: TEBSInput): Promise<Blob | null> {
   for (const row of sensorRows) {
     const vals = tebs.sensors[row]
     for (let i = 0; i < 6; i++) {
-      // Lift axle ticks only shown if the quote has a lift axle configured
-      const active = row === 'lift' ? (input.hasLiftAxle ? vals[i] : 0) : vals[i]
-      replacements[`{{${row.toUpperCase()}_AX${i + 1}}}`] = active ? '\u2611' : ''
+      replacements[`{{${row.toUpperCase()}_AX${i + 1}}}`] = vals[i] ? '\u2611' : ''
     }
   }
 
