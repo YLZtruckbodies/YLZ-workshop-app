@@ -588,7 +588,7 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
         </button>
         {quote && (
           <button
-            onClick={() => window.open(`/qsheet/${quote.id}`, '_blank')}
+            onClick={() => window.open(`/qpdf/${quote.id}`, '_blank')}
             style={actionBtn('rgba(255,255,255,0.5)')}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}

@@ -192,7 +192,7 @@ export default function EngineeringPage() {
                   </button>
                   {job.quoteId && (
                     <button
-                      onClick={() => window.open(`/qsheet/${job.quoteId}`, '_blank')}
+                      onClick={() => window.open(`/qpdf/${job.quoteId}`, '_blank')}
                       style={btnStyle('rgba(255,255,255,0.5)')}
                       onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
