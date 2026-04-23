@@ -29,8 +29,92 @@ interface Quote {
   notes: string
   terms: string
   lineItems: LineItem[]
+  configuration?: Record<string, any> | null
   createdAt: string
 }
+
+// Specification sections to render on the quote. Order is top-to-bottom.
+// Each entry is [label, config key, optional suffix]. suffix is appended
+// when value is a non-empty string and doesn't already include the unit.
+type SpecItem = [label: string, key: string, suffix?: string]
+interface SpecGroup { title: string; items: SpecItem[] }
+const SPEC_GROUPS: SpecGroup[] = [
+  { title: 'Chassis', items: [
+    ['Make', 'chassisMake'],
+    ['Model', 'chassisModel'],
+    ['Variant', 'chassisVariant'],
+    ['Serial No.', 'serial'],
+    ['VIN', 'vin'],
+    ['GVM', 'gvm', ' kg'],
+  ]},
+  { title: 'Body', items: [
+    ['Material', 'material'],
+    ['Mount Type', 'mountType'],
+    ['Length', 'bodyLength', ' mm'],
+    ['Width', 'bodyWidth', ' mm'],
+    ['Height', 'bodyHeight', ' mm'],
+    ['Capacity', 'bodyCapacity', ' m³'],
+    ['Main Runner Width', 'mainRunnerWidth', ' mm'],
+    ['Tare (est.)', 'tare', ' kg'],
+    ['Floor Sheet', 'floorSheet'],
+    ['Side Sheet', 'sideSheet'],
+    ['Subframe / Chassis Colour', 'subframeColour'],
+    ['Body Colour', 'bodyColour'],
+  ]},
+  { title: 'Hoist & Controls', items: [
+    ['Hoist Model', 'hoist'],
+    ['Controls', 'controls'],
+    ['C/L Pivot to Rear', 'pivotCentre', ' mm'],
+    ['PTO', 'pto'],
+    ['Pump', 'pump'],
+  ]},
+  { title: 'Hydraulics', items: [
+    ['Valve Bank / System', 'hydraulics'],
+    ['Tank Type', 'hydTankType'],
+    ['Tank Location', 'hydTankLocation'],
+    ['Hose Burst Valve', 'hoseBurstValve'],
+  ]},
+  { title: 'Tarp', items: [
+    ['System', 'tarpSystem'],
+    ['Colour', 'tarpColour'],
+    ['Length', 'tarpLength', ' mm'],
+    ['Bow Size', 'tarpBowSize'],
+  ]},
+  { title: 'Coupling', items: [
+    ['Coupling', 'coupling'],
+    ['Brake Coupling', 'brakeCoupling'],
+    ['D-Value', 'dValue', ' kN'],
+    ['Coupling Vertical Load', 'couplingLoad'],
+  ]},
+  { title: 'Lights & Signage', items: [
+    ['Tail Lights', 'tailLights'],
+    ['Tailgate Type', 'tailgateType'],
+    ['Tailgate Lights', 'tailgateLights'],
+    ['Side Lights', 'sideLights'],
+    ['Side Lights (custom)', 'sideLightsCustom'],
+    ['Indicators', 'indicators'],
+    ['Rear CAT Markers', 'catMarkers'],
+    ['Reflectors', 'reflectors'],
+    ['Reverse Buzzer / Squawker', 'reverseBuzzer'],
+  ]},
+  { title: 'Body Extras', items: [
+    ['Mudflaps', 'mudflaps'],
+    ['Anti Spray Suppressant', 'antiSpray'],
+    ['Underbody Shovel Holder', 'shovelHolder'],
+    ['Ladder Type', 'ladderType'],
+    ['Ladder Position', 'ladderPosition'],
+    ['Spreader Chain', 'spreaderChain'],
+    ['Push Lugs', 'pushLugs'],
+    ['Grain Doors', 'grainDoors'],
+    ['Grain Locks', 'grainLocks'],
+    ['Body Spigot', 'bodySpigot'],
+    ['Rock Sheet', 'rockSheet'],
+    ['Liner', 'liner'],
+    ['Camera', 'camera'],
+    ['Vibrator', 'vibrator'],
+    ['Chassis Extension', 'chassisExtension'],
+  ]},
+]
 
 // ─── YLZ company constants ────────────────────────────────────────────────────
 const CO = {
@@ -188,6 +272,36 @@ export default function QuotePrintPage({ params }: { params: { id: string } }) {
   // Customer block: show dealer name if set, otherwise customer name
   const customerLine   = quote.dealerName || quote.customerName
 
+  // ─── Spec reader: checks top-level, then truckConfig, then trailerConfig ──
+  const cfgRaw = (quote.configuration || {}) as Record<string, any>
+  const readCfg = (key: string): string => {
+    const v = cfgRaw[key]
+    if (v != null && v !== '') return String(v)
+    const tVal = (cfgRaw.truckConfig as any)?.[key]
+    if (tVal != null && tVal !== '') return String(tVal)
+    const trVal = (cfgRaw.trailerConfig as any)?.[key]
+    if (trVal != null && trVal !== '') return String(trVal)
+    // Legacy fallback: subframeColour may live under paintColour on older quotes
+    if (key === 'subframeColour') {
+      const p = cfgRaw.paintColour
+      if (p != null && p !== '') return String(p)
+    }
+    return ''
+  }
+
+  // Build the rendered spec groups (filtered to only items with meaningful values)
+  const renderedSpecGroups = SPEC_GROUPS.map((group) => {
+    const items = group.items.map(([label, key, suffix]) => {
+      const raw = readCfg(key).trim()
+      if (!raw) return null
+      const low = raw.toLowerCase()
+      if (low === 'no' || low === 'none') return null
+      const hasSuffix = suffix && !raw.includes(suffix.trim())
+      return { label, value: hasSuffix ? raw + suffix : raw }
+    }).filter(Boolean) as Array<{ label: string; value: string }>
+    return { title: group.title, items }
+  }).filter((g) => g.items.length > 0)
+
   return (
     <>
       <style>{`
@@ -296,6 +410,30 @@ export default function QuotePrintPage({ params }: { params: { id: string } }) {
           padding-top: 5px;
           border-top: 1.5px solid #1a1a1a;
         }
+
+        /* ── Specifications ── */
+        .specs-wrap { margin-top: 28px; page-break-inside: auto; }
+        .specs-heading { font-weight: 700; font-size: 10.5pt; margin-bottom: 5px; }
+        .specs-rule { border: none; border-top: 1px solid #1a1a1a; margin-bottom: 10px; }
+        .spec-group { margin-bottom: 10px; page-break-inside: avoid; }
+        .spec-group-title {
+          font-size: 8.5pt; font-weight: 700; color: #555;
+          text-transform: uppercase; letter-spacing: 1px;
+          margin-bottom: 4px;
+        }
+        .spec-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 4px 14px;
+        }
+        .spec-item {
+          padding: 3px 0;
+          border-top: 0.5px solid #e5e5e5;
+          font-size: 9pt;
+          line-height: 1.35;
+        }
+        .spec-label { color: #888; font-size: 8pt; letter-spacing: 0.3px; }
+        .spec-value { color: #1a1a1a; font-weight: 600; }
 
         /* ── Terms ── */
         .terms-wrap { margin-top: 32px; }
@@ -451,6 +589,27 @@ export default function QuotePrintPage({ params }: { params: { id: string } }) {
 
           </tbody>
         </table>
+
+        {/* ── Specifications ── */}
+        {renderedSpecGroups.length > 0 && (
+          <div className="specs-wrap">
+            <div className="specs-heading">Specifications</div>
+            <hr className="specs-rule" />
+            {renderedSpecGroups.map((g) => (
+              <div key={g.title} className="spec-group">
+                <div className="spec-group-title">{g.title}</div>
+                <div className="spec-grid">
+                  {g.items.map((it) => (
+                    <div key={it.label} className="spec-item">
+                      <div className="spec-label">{it.label}</div>
+                      <div className="spec-value">{it.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* ── Terms ── */}
         {termsParas.length > 0 && (
