@@ -26,6 +26,7 @@ const SCREEN_OPTIONS = [
   { key: 'keithschedule', label: "Keith's Schedule" },
   { key: 'jobboard', label: 'Job Board' },
   { key: 'floor', label: 'Workshop Floor' },
+  { key: 'parts', label: 'Parts Tracker' },
   { key: 'qa', label: 'QA Checklist' },
   { key: 'notifications', label: 'Notifications' },
   { key: 'timesheet', label: 'Time Logging' },

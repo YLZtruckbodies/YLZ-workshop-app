@@ -26,6 +26,7 @@ const SALES: NavItem[] = [
 
 const TOOLS: NavItem[] = [
   { key: 'floor', label: 'Workshop Floor', icon: '\uD83D\uDD27', href: '/floor' },
+  { key: 'parts', label: 'Parts Tracker', icon: '📦', href: '/parts' },
   { key: 'timesheet', label: 'Time Logging', icon: '\u23F1', href: '/timesheet' },
   { key: 'jobs', label: 'Jobs List', icon: '\uD83D\uDCD1', href: '/jobs' },
   { key: 'reports', label: 'Reports', icon: '\uD83D\uDCCB', href: '/reports' },
