@@ -667,7 +667,10 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 8 }}>
                       <div>
                         <div style={lblStyle}>Lift Axle</div>
-                        <div style={{ ...inpStyle, background: '#2a2a2a', color: liftAxle ? '#fff' : '#666', cursor: 'default' }}>{liftAxle || '—'}</div>
+                        <select value={liftAxle || 'No'} onChange={e => setCfgField('axleLift', e.target.value)} style={inpStyle}>
+                          <option value="No">No</option>
+                          <option value="Yes">Yes</option>
+                        </select>
                       </div>
                       <div>
                         <div style={lblStyle}>Lift Axle Location</div>
