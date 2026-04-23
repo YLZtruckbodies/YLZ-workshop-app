@@ -55,9 +55,9 @@ const TABS = [
   { key: 'alloy', label: 'Alloy Workers' },
   { key: 'hardox_steel', label: 'Hardox & Steel' },
   { key: 'chassis', label: 'Chassis' },
-  { key: 'fitout_paint', label: 'Fitout & Paint' },
-  { key: 'trailerfit', label: 'Trailer Chassis Fitout' },
-  { key: 'subfit', label: 'Subframe Fitout' },
+  { key: 'fitout', label: 'Fitout' },
+  { key: 'paint', label: 'Paint' },
+  { key: 'trailer_subfit', label: 'Trailer & Subframe Fitout' },
   { key: 'tarps', label: 'Tarps & Suspension' },
   { key: 'completed', label: 'Completed Orders' },
 ] as const
@@ -74,12 +74,12 @@ function workersForTab(workers: Worker[], tab: TabKey): Worker[] {
       return workers.filter((w) => w.hdr === 'hardox' || w.hdr === 'steel')
     case 'chassis':
       return workers.filter((w) => w.hdr === 'chassis' && w.section !== 'subfit')
-    case 'fitout_paint':
-      return workers.filter((w) => w.hdr === 'fitout' || w.hdr === 'paint')
-    case 'trailerfit':
-      return workers.filter((w) => w.section === 'trailerfit')
-    case 'subfit':
-      return workers.filter((w) => w.section === 'subfit')
+    case 'fitout':
+      return workers.filter((w) => w.hdr === 'fitout' && w.section !== 'trailerfit')
+    case 'paint':
+      return workers.filter((w) => w.hdr === 'paint')
+    case 'trailer_subfit':
+      return workers.filter((w) => w.section === 'trailerfit' || w.section === 'subfit')
     default:
       return []
   }
