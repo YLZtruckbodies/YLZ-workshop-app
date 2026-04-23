@@ -37,6 +37,10 @@ const TRUCK_BODY_DEFAULTS: Record<string, string> = {
   tarpColour: 'Black',
 }
 
+const TRAILER_DEFAULTS: Record<string, string> = {
+  tarpColour: 'Black',
+}
+
 function fillDefaults(target: Record<string, any>, defaults: Record<string, string>): Record<string, any> {
   const out: Record<string, any> = { ...target }
   for (const [k, v] of Object.entries(defaults)) {
@@ -59,16 +63,24 @@ export function applyConfigDefaults(cfg: any, buildType: string | null | undefin
     const filled = { ...cfg }
     if (filled.truckConfig && typeof filled.truckConfig === 'object') {
       filled.truckConfig = fillDefaults(filled.truckConfig, TRUCK_BODY_DEFAULTS)
-    } else {
-      // Some truck-and-trailer quotes may not have a nested truckConfig yet;
-      // still fill defaults at the top level so any truck-body fields resolve.
-      return fillDefaults(filled, TRUCK_BODY_DEFAULTS)
+    }
+    if (filled.trailerConfig && typeof filled.trailerConfig === 'object') {
+      filled.trailerConfig = fillDefaults(filled.trailerConfig, TRAILER_DEFAULTS)
+    }
+    // Truck-and-trailer quotes without nested configs — fall back to
+    // filling defaults at the top level so any reader still resolves them.
+    if (!filled.truckConfig && !filled.trailerConfig) {
+      return fillDefaults(filled, { ...TRUCK_BODY_DEFAULTS, ...TRAILER_DEFAULTS })
     }
     return filled
   }
 
   if (hasTruck) {
     return fillDefaults(cfg, TRUCK_BODY_DEFAULTS)
+  }
+
+  if (hasTrailer) {
+    return fillDefaults(cfg, TRAILER_DEFAULTS)
   }
 
   return cfg
