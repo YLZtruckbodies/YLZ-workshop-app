@@ -242,7 +242,7 @@ export default function EngineeringPage() {
                   {(() => {
                     const isTrailer = job.type?.toLowerCase().includes('trailer') || job.type?.toLowerCase().includes('dog') || job.type?.toLowerCase().includes('semi')
                     const tInput: TEBSInput | null = isTrailer && job.quoteCfg?.axleCount && job.quoteCfg?.axleMake && job.quoteCfg?.axleType
-                      ? { axleCount: job.quoteCfg.axleCount, axleMake: job.quoteCfg.axleMake, axleType: job.quoteCfg.axleType, vin: job.vin || (job.quoteCfg?.vin as string) || '', jobNumber: job.num }
+                      ? { axleCount: job.quoteCfg.axleCount, axleMake: job.quoteCfg.axleMake, axleType: job.quoteCfg.axleType, hasLiftAxle: job.quoteCfg?.axleLift === 'Yes' || (job.quoteCfg?.trailerConfig as any)?.axleLift === 'Yes', vin: job.vin || (job.quoteCfg?.vin as string) || '', jobNumber: job.num }
                       : null
                     if (!tInput || !hasTEBSData(tInput)) return null
                     return (
