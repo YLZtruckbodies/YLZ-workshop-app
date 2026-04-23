@@ -558,17 +558,12 @@ export default function KeithSchedulePage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {filtered.map((worker) => {
-                const sectionKey = worker.section === 'trailerfit' ? 'trailerfit'
-                  : worker.section === 'subfit' ? 'subfit'
-                  : worker.hdr
-                const scheduledInSection = sectionScheduled[sectionKey] || new Set<string>()
                 return (
                   <WorkerCard
                     key={worker.id}
                     worker={worker}
                     jobsMap={jobsMap}
                     boardJobs={activeBoardJobs}
-                    scheduledInSection={scheduledInSection}
                     onUpdateField={handleUpdateField}
                     onAddRow={handleAddRow}
                     onDeleteJob={handleDeleteJob}
@@ -597,7 +592,6 @@ function WorkerCard({
   worker,
   jobsMap,
   boardJobs,
-  scheduledInSection,
   onUpdateField,
   onAddRow,
   onDeleteJob,
@@ -607,7 +601,6 @@ function WorkerCard({
   worker: Worker
   jobsMap: Record<string, BoardJob>
   boardJobs: BoardJob[]
-  scheduledInSection: Set<string>
   onUpdateField: (worker: Worker, jobId: string, field: 'jobNo' | 'type' | 'start' | 'days', value: string | number) => void
   onAddRow: (workerId: string) => void
   onDeleteJob: (workerId: string, jobId: string) => void
@@ -623,7 +616,7 @@ function WorkerCard({
   const workerJobNums = new Set(worker.jobs.map((j) => j.jobNo))
   const availableJobs = boardJobs.filter((bj) => {
     const n = normaliseNum(bj.num)
-    if (scheduledInSection.has(n) || workerJobNums.has(n)) return false
+    if (workerJobNums.has(n)) return false
     const q = search.toLowerCase()
     if (q && !bj.num.toLowerCase().includes(q) && !bj.type.toLowerCase().includes(q) && !bj.customer.toLowerCase().includes(q)) return false
     return true
