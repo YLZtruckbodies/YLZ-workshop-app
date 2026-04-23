@@ -1319,14 +1319,13 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         )}
 
-        {/* Notes */}
+        {/* Notes — mirrored from Fabrication sheet so fitout sees the same instructions */}
         <div className="notes-box" style={{ marginTop: 10 }}>
           <div className="notes-lbl">Special Instructions / Notes</div>
-          <div className="notes-lines">
-            <div className="notes-line" />
-            <div className="notes-line" />
-            <div className="notes-line" />
-            <div className="notes-line" />
+          <div className="notes-text">
+            {'Use drawings with _BW.pdf (flat pattern / cutting) and _BF.pdf (bent form / 3D view) for fabrication.'}
+            {c('specialRequirements') ? `\n\n${c('specialRequirements')}` : ''}
+            {job.notes ? `\n\n${job.notes}` : ''}
           </div>
         </div>
 
