@@ -40,7 +40,6 @@ interface TEBSConfig {
     lift: number[]
     steer: number[]
   }
-  features: string
 }
 
 const TEBS_DATA: Record<string, TEBSConfig> = {
@@ -64,7 +63,6 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
       cd: [1,0,0,0,0,0], ef: [0,0,1,0,0,0], mod: [0,1,0,0,0,0],
       lift: [0,1,0,0,0,0], steer: [0,0,0,0,0,0]
     },
-    features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '3-SAF-DRUM': {
     brakeSarn: '035391 CS', frontAxles: '1', rearAxles: '2',
@@ -86,7 +84,6 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
       cd: [1,0,0,0,0,0], ef: [0,0,1,0,0,0], mod: [0,1,0,0,0,0],
       lift: [0,1,0,0,0,0], steer: [0,0,0,0,0,0]
     },
-    features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '3-TMC-DISC': {
     brakeSarn: '035391 CS', frontAxles: '1', rearAxles: '2',
@@ -108,7 +105,6 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
       cd: [1,0,0,0,0,0], ef: [0,0,1,0,0,0], mod: [0,1,0,0,0,0],
       lift: [0,1,0,0,0,0], steer: [0,0,0,0,0,0]
     },
-    features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '3-TMC-DRUM': {
     brakeSarn: '035391 CS', frontAxles: '1', rearAxles: '2',
@@ -130,7 +126,6 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
       cd: [1,0,0,0,0,0], ef: [0,0,1,0,0,0], mod: [0,1,0,0,0,0],
       lift: [0,1,0,0,0,0], steer: [0,0,0,0,0,0]
     },
-    features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '4-SAF-DISC': {
     brakeSarn: '033261 CS', frontAxles: '2', rearAxles: '2',
@@ -152,7 +147,6 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
       cd: [0,1,0,0,0,0], ef: [0,0,0,1,0,0], mod: [0,0,1,0,0,0],
       lift: [0,0,1,0,0,0], steer: [0,0,0,0,0,0]
     },
-    features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '4-SAF-DRUM': {
     brakeSarn: '033261 CS', frontAxles: '2', rearAxles: '2',
@@ -174,7 +168,6 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
       cd: [0,1,0,0,0,0], ef: [0,0,0,1,0,0], mod: [0,0,1,0,0,0],
       lift: [0,0,1,0,0,0], steer: [0,0,0,0,0,0]
     },
-    features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '4-TMC-DISC': {
     brakeSarn: '033261 CS', frontAxles: '2', rearAxles: '2',
@@ -196,7 +189,6 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
       cd: [0,1,0,0,0,0], ef: [0,0,0,1,0,0], mod: [0,0,1,0,0,0],
       lift: [0,0,1,0,0,0], steer: [0,0,0,0,0,0]
     },
-    features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '4-TMC-DRUM': {
     brakeSarn: '033261 CS', frontAxles: '2', rearAxles: '2',
@@ -218,7 +210,6 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
       cd: [0,1,0,0,0,0], ef: [0,0,0,1,0,0], mod: [0,0,1,0,0,0],
       lift: [0,0,1,0,0,0], steer: [0,0,0,0,0,0]
     },
-    features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '5-SAF-DISC': {
     brakeSarn: '047495 CS', frontAxles: '2', rearAxles: '3',
@@ -240,7 +231,6 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
       cd: [0,1,0,0,0,0], ef: [0,0,0,0,1,0], mod: [0,0,0,1,0,0],
       lift: [0,0,1,0,0,0], steer: [0,0,0,0,0,0]
     },
-    features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '5-SAF-DRUM': {
     brakeSarn: '047495 CS', frontAxles: '2', rearAxles: '3',
@@ -262,7 +252,6 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
       cd: [0,1,0,0,0,0], ef: [0,0,0,0,1,0], mod: [0,0,0,1,0,0],
       lift: [0,0,1,0,0,0], steer: [0,0,0,0,0,0]
     },
-    features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '6-SAF-DISC': {
     brakeSarn: '047497 CS', frontAxles: '3', rearAxles: '3',
@@ -284,7 +273,6 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
       cd: [0,0,1,0,0,0], ef: [0,0,0,0,0,1], mod: [0,0,0,0,1,0],
       lift: [0,0,1,0,0,0], steer: [0,0,0,0,0,0]
     },
-    features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
   '6-SAF-DRUM': {
     brakeSarn: '047497 CS', frontAxles: '3', rearAxles: '3',
@@ -306,7 +294,6 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
       cd: [0,0,1,0,0,0], ef: [0,0,0,0,0,1], mod: [0,0,0,0,1,0],
       lift: [0,0,1,0,0,0], steer: [0,0,0,0,0,0]
     },
-    features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
 }
 
@@ -376,7 +363,9 @@ export async function generateTEBSDocx(input: TEBSInput): Promise<Blob | null> {
     '{{TYRE_F}}': tebs.tyreF,
     '{{TYRE_R}}': tebs.tyreR,
     '{{MFR_NAME}}': 'YLZ Truck Bodies',
-    '{{FEATURES}}': tebs.features,
+    '{{FEATURES}}': input.hasLiftAxle
+      ? 'Front Pressure Sensor (GIO4), Green Light, Lift Axle'
+      : 'Front Pressure Sensor (GIO4), Green Light',
     '{{UTM_F}}': tebs.utmF,
     '{{LADEN_F}}': tebs.ladenF,
     '{{UTM_R}}': tebs.utmR,
