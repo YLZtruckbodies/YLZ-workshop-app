@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
-import { useWorkers, useJobs, useTarps, useMrpChecklists, addWorkerJob, updateWorkerJobs, deleteWorkerJob, syncFromSheets, markWorkerJobDone } from '@/lib/hooks'
+import { useWorkers, useJobs, useMrpChecklists, addWorkerJob, updateWorkerJobs, deleteWorkerJob, syncFromSheets, markWorkerJobDone } from '@/lib/hooks'
 import { parseDate, fmtDate, addWorkdays, nextWorkday, compDate } from '@/lib/workdays'
 import { useSession } from 'next-auth/react'
 import { useSWRConfig } from 'swr'
@@ -40,14 +40,6 @@ interface BoardJob {
   dealer: string
 }
 
-interface Tarp {
-  id: string
-  jobNo: string
-  type: string
-  susp: string
-  tyres: string
-  tarp: string
-}
 
 /* ── Tab Definitions ───────────────────────────────────────────── */
 
@@ -59,8 +51,6 @@ const TABS = [
   { key: 'fitout', label: 'Fitout' },
   { key: 'paint', label: 'Paint' },
   { key: 'trailer_subfit', label: 'Trailer & Subframe Fitout' },
-  { key: 'tarps', label: 'Tarps & Suspension' },
-  { key: 'completed', label: 'Completed Orders' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -149,30 +139,12 @@ function PartsBadge({ label, status }: { label: string; status: 'ready' | 'order
   )
 }
 
-/* ── Status pill colors ────────────────────────────────────────── */
-
-function statusColor(status: string): { bg: string; text: string } {
-  switch (status) {
-    case 'arrived':
-      return { bg: 'rgba(34,208,122,0.15)', text: '#22d07a' }
-    case 'ordered':
-      return { bg: 'rgba(59,157,232,0.15)', text: '#3b9de8' }
-    case 'pending':
-      return { bg: 'rgba(245,166,35,0.15)', text: '#f5a623' }
-    case 'na':
-      return { bg: 'rgba(255,255,255,0.06)', text: '#787878' }
-    default:
-      return { bg: 'rgba(255,255,255,0.06)', text: '#787878' }
-  }
-}
-
 /* ── Main Component ────────────────────────────────────────────── */
 
 export default function KeithSchedulePage() {
   useSession()
   const { data: workers = [], isLoading: wLoad } = useWorkers()
   const { data: jobs = [], isLoading: jLoad } = useJobs()
-  const { data: tarps = [], isLoading: tLoad } = useTarps()
   const { mutate } = useSWRConfig()
 
   const { pushUndo } = useUndo()
@@ -342,26 +314,7 @@ export default function KeithSchedulePage() {
 
     let content = ''
 
-    if (activeTab === 'tarps') {
-      // Print tarps table
-      const rows = (tarps as Tarp[]).map((t) => `<tr>
-        <td style="padding:6px 10px;font-weight:600;">${t.jobNo}</td>
-        <td style="padding:6px 10px;">${t.type || '-'}</td>
-        <td style="padding:6px 10px;text-align:center;"><span class="pill pill-${t.susp}">${t.susp}</span></td>
-        <td style="padding:6px 10px;text-align:center;"><span class="pill pill-${t.tyres}">${t.tyres}</span></td>
-        <td style="padding:6px 10px;text-align:center;"><span class="pill pill-${t.tarp}">${t.tarp}</span></td>
-      </tr>`).join('')
-      content = `<table>
-        <thead><tr>
-          <th>Job No</th><th>Type</th><th style="text-align:center;">Suspension</th><th style="text-align:center;">Tyres</th><th style="text-align:center;">Tarp</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>`
-    } else if (activeTab === 'completed') {
-      content = `<p style="color:#666;font-size:12px;">Completed orders — see app for full data.</p>`
-    } else {
-      // Print worker cards for active tab
-      const tabWorkers = workersForTab(workers as Worker[], activeTab)
+    const tabWorkers = workersForTab(workers as Worker[], activeTab)
       content = tabWorkers.map((worker) => {
         const sortedJobs = [...worker.jobs].sort((a, b) => a.position - b.position)
         const rows = sortedJobs.map((job, idx) => {
@@ -394,7 +347,6 @@ export default function KeithSchedulePage() {
           }
         </div>`
       }).join('')
-    }
 
     const html = `<!DOCTYPE html>
 <html>
@@ -442,11 +394,11 @@ export default function KeithSchedulePage() {
       printWindow.document.close()
       printWindow.onload = () => { printWindow.print() }
     }
-  }, [activeTab, workers, tarps, jobsMap])
+  }, [activeTab, workers, jobsMap])
 
   /* ── Loading state ─────────────────────────────────── */
 
-  if (wLoad || jLoad || tLoad) {
+  if (wLoad || jLoad) {
     return (
       <div style={{ padding: 40, color: 'var(--text3)', fontSize: 14 }}>
         Loading schedule data...
@@ -596,13 +548,8 @@ export default function KeithSchedulePage() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'tarps' ? (
-        <TarpsTab tarps={tarps as Tarp[]} />
-      ) : activeTab === 'completed' ? (
-        <CompletedTab />
-      ) : (
-        <>
-          {filtered.length === 0 ? (
+      <>
+        {filtered.length === 0 ? (
             <div style={{ padding: 30, color: 'var(--text3)', fontSize: 13, textAlign: 'center' }}>
               No workers assigned to this section.
             </div>
@@ -626,8 +573,7 @@ export default function KeithSchedulePage() {
               })}
             </div>
           )}
-        </>
-      )}
+      </>
     </div>
   )
 }
@@ -1116,129 +1062,3 @@ function WorkerCard({
   )
 }
 
-/* ══════════════════════════════════════════════════════════════════
-   Tarps & Suspension Tab
-   ══════════════════════════════════════════════════════════════ */
-
-function TarpsTab({ tarps }: { tarps: Tarp[] }) {
-  if (!tarps || tarps.length === 0) {
-    return (
-      <div style={{ padding: 30, color: 'var(--text3)', fontSize: 13, textAlign: 'center' }}>
-        No tarps data available.
-      </div>
-    )
-  }
-
-  return (
-    <div
-      style={{
-        background: 'var(--dark2)',
-        border: '1px solid var(--border)',
-        borderRadius: 4,
-        padding: '14px 16px',
-      }}
-    >
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid var(--border2)', textAlign: 'left' }}>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600 }}>Job No</th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600 }}>Type</th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, textAlign: 'center' }}>
-              Suspension
-            </th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, textAlign: 'center' }}>Tyres</th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, textAlign: 'center' }}>Tarp</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tarps.map((t) => (
-            <tr key={t.id} style={{ borderBottom: '1px solid var(--border)' }}>
-              <td style={{ padding: 6, color: 'var(--text2)', fontWeight: 600 }}>{t.jobNo}</td>
-              <td style={{ padding: 6, color: 'var(--text2)' }}>{t.type || '-'}</td>
-              <td style={{ padding: 6, textAlign: 'center' }}>
-                <StatusPill status={t.susp} />
-              </td>
-              <td style={{ padding: 6, textAlign: 'center' }}>
-                <StatusPill status={t.tyres} />
-              </td>
-              <td style={{ padding: 6, textAlign: 'center' }}>
-                <StatusPill status={t.tarp} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-/* ── Status Pill ───────────────────────────────────────────────── */
-
-function StatusPill({ status }: { status: string }) {
-  const { bg, text } = statusColor(status)
-  return (
-    <span
-      style={{
-        display: 'inline-block',
-        padding: '3px 10px',
-        borderRadius: 10,
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: 0.5,
-        textTransform: 'uppercase',
-        background: bg,
-        color: text,
-      }}
-    >
-      {status}
-    </span>
-  )
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   Completed Orders Tab
-   ══════════════════════════════════════════════════════════════ */
-
-function CompletedTab() {
-  const placeholderData = [
-    { id: '1', jobNo: 'J-0340', name: 'Hardox Tipper Body', fab: '12/01/26', paint: '19/01/26', fitout: '26/01/26', date: '02/02/26' },
-    { id: '2', jobNo: 'J-0341', name: 'Alloy Tray Body', fab: '05/01/26', paint: '12/01/26', fitout: '20/01/26', date: '27/01/26' },
-    { id: '3', jobNo: 'J-0342', name: 'Flat Tray Trailer', fab: '08/01/26', paint: '15/01/26', fitout: '22/01/26', date: '30/01/26' },
-  ]
-
-  return (
-    <div
-      style={{
-        background: 'var(--dark2)',
-        border: '1px solid var(--border)',
-        borderRadius: 4,
-        padding: '14px 16px',
-      }}
-    >
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid var(--border2)', textAlign: 'left' }}>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600 }}>Job No</th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600 }}>Name</th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600 }}>Fab</th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600 }}>Paint</th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600 }}>Fitout</th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600 }}>Completed</th>
-          </tr>
-        </thead>
-        <tbody>
-          {placeholderData.map((order) => (
-            <tr key={order.id} style={{ borderBottom: '1px solid var(--border)' }}>
-              <td style={{ padding: 6, color: 'var(--text2)', fontWeight: 600 }}>{order.jobNo}</td>
-              <td style={{ padding: 6, color: 'var(--text2)' }}>{order.name}</td>
-              <td style={{ padding: 6, color: 'var(--text3)' }}>{order.fab}</td>
-              <td style={{ padding: 6, color: 'var(--text3)' }}>{order.paint}</td>
-              <td style={{ padding: 6, color: 'var(--text3)' }}>{order.fitout}</td>
-              <td style={{ padding: 6, color: 'var(--green)', fontWeight: 600 }}>{order.date}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
