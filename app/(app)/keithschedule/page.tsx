@@ -73,7 +73,7 @@ function workersForTab(workers: Worker[], tab: TabKey): Worker[] {
     case 'hardox_steel':
       return workers.filter((w) => w.hdr === 'hardox' || w.hdr === 'steel')
     case 'chassis':
-      return workers.filter((w) => w.hdr === 'chassis')
+      return workers.filter((w) => w.hdr === 'chassis' && w.section !== 'subfit')
     case 'fitout_paint':
       return workers.filter((w) => w.hdr === 'fitout' || w.hdr === 'paint')
     case 'trailerfit':
