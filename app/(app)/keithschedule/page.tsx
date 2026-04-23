@@ -54,7 +54,8 @@ interface Tarp {
 const TABS = [
   { key: 'alloy', label: 'Alloy Workers' },
   { key: 'hardox_steel', label: 'Hardox & Steel' },
-  { key: 'chassis', label: 'Chassis' },
+  { key: 'chassis', label: 'Truck Chassis' },
+  { key: 'trailer_chassis', label: 'Trailer Chassis' },
   { key: 'fitout', label: 'Fitout' },
   { key: 'paint', label: 'Paint' },
   { key: 'trailer_subfit', label: 'Trailer & Subframe Fitout' },
@@ -73,7 +74,9 @@ function workersForTab(workers: Worker[], tab: TabKey): Worker[] {
     case 'hardox_steel':
       return workers.filter((w) => w.hdr === 'hardox' || w.hdr === 'steel')
     case 'chassis':
-      return workers.filter((w) => w.hdr === 'chassis' && w.section !== 'subfit')
+      return workers.filter((w) => w.hdr === 'chassis' && w.section === 'chassis')
+    case 'trailer_chassis':
+      return workers.filter((w) => w.section === 'trailer_chassis')
     case 'fitout':
       return workers.filter((w) => w.hdr === 'fitout' && w.section !== 'trailerfit')
     case 'paint':
