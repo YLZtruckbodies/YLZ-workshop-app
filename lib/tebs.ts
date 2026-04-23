@@ -238,7 +238,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     utmF: '3', ladenF: '17', utmR: '3', ladenR: '23.5',
     sensors: {
       cd: [0,1,0,0,0,0], ef: [0,0,0,0,1,0], mod: [0,0,0,1,0,0],
-      lift: [0,0,0,1,0,0], steer: [0,0,0,0,0,0]
+      lift: [0,0,1,0,0,0], steer: [0,0,0,0,0,0]
     },
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
@@ -260,7 +260,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     utmF: '2', ladenF: '17', utmR: '3', ladenR: '23.5',
     sensors: {
       cd: [0,1,0,0,0,0], ef: [0,0,0,0,1,0], mod: [0,0,0,1,0,0],
-      lift: [0,0,0,1,0,0], steer: [0,0,0,0,0,0]
+      lift: [0,0,1,0,0,0], steer: [0,0,0,0,0,0]
     },
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
@@ -282,7 +282,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     utmF: '4', ladenF: '23.5', utmR: '3', ladenR: '22.5',
     sensors: {
       cd: [0,0,1,0,0,0], ef: [0,0,0,0,0,1], mod: [0,0,0,0,1,0],
-      lift: [0,0,0,0,1,0], steer: [0,0,0,0,0,0]
+      lift: [0,0,1,0,0,0], steer: [0,0,0,0,0,0]
     },
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
@@ -304,7 +304,7 @@ const TEBS_DATA: Record<string, TEBSConfig> = {
     utmF: '4', ladenF: '22.5', utmR: '3', ladenR: '22.5',
     sensors: {
       cd: [0,0,1,0,0,0], ef: [0,0,0,0,0,1], mod: [0,0,0,0,1,0],
-      lift: [0,0,0,0,1,0], steer: [0,0,0,0,0,0]
+      lift: [0,0,1,0,0,0], steer: [0,0,0,0,0,0]
     },
     features: 'Front pressure sensor, Lift Up Axle (GIO2), Hardox body'
   },
