@@ -509,7 +509,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Hoist Model', 'hoist')}
                   <div key="pivotCentre">
                     <div style={lblStyle}>C/L Pivot to Rear (mm)</div>
-                    <input style={inpStyle} value={isTrailer ? (editCfg['pivotCentre'] || calcPivotCentre(true, String(editCfg['bodyLength'] || ''))) : '235'} onChange={e => setCfgField('pivotCentre', e.target.value)} />
+                    <input style={inpStyle} value={isTrailer ? (editCfg['pivotCentre'] || calcPivotCentre(true, String(editCfg['bodyLength'] || ''))) : (editCfg['pivotCentre'] as string || '235')} onChange={e => setCfgField('pivotCentre', e.target.value)} />
                   </div>
                   {!isTrailer && cfgField('Hoist Controls', 'controls')}
                   {!isTrailer && cfgField('Pump Type', 'pump')}
@@ -839,7 +839,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-body">
             <div className={`field-row ${isTrailer ? 'field-row-3' : 'field-row-5'}`}>
               <div className="field"><div className="field-lbl">Hoist Model</div><div className="field-val">{c('hoist') || ''}</div>{!c('hoist') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{isTrailer ? (c('pivotCentre') || calcPivotCentre(true, c('bodyLength') || '')) : '235'}</div></div>
+              <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{isTrailer ? (c('pivotCentre') || calcPivotCentre(true, c('bodyLength') || '')) : (c('pivotCentre') || '235')}</div></div>
               {!isTrailer && <div className="field"><div className="field-lbl">Hoist Controls</div><div className="field-val">{c('controls') || ''}</div>{!c('controls') && <div className="field-blank" />}</div>}
               {!isTrailer && <div className="field"><div className="field-lbl">Pump Type</div><div className="field-val">{c('pump') || c('pumpType') || ''}</div>{!(c('pump') || c('pumpType')) && <div className="field-blank" />}</div>}
               <div className="field"><div className="field-lbl">Hose Burst Valve</div><div className="field-val">{c('hoseBurstValve') || ''}</div>{!c('hoseBurstValve') && <div className="field-blank" />}</div>
