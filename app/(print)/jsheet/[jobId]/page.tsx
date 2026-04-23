@@ -1167,6 +1167,51 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         )}
 
+        {/* Parts to Fit — summary of selected tail-light / body-extras options from the quote */}
+        {(() => {
+          const items = [
+            { label: 'Tail Lights', value: c('tailLights') },
+            { label: 'Tailgate Lights', value: c('tailgateLights') },
+            { label: 'Side Lights', value: c('sideLightsCustom') || c('sideLights') },
+            { label: 'Indicators', value: c('indicators') },
+            { label: 'Mudflaps', value: c('mudflaps') },
+            { label: 'Anti Spray Suppressant', value: c('antiSpray') },
+            { label: 'Underbody Shovel Holder', value: c('shovelHolder') },
+            { label: 'Grain Doors', value: c('grainDoors') },
+            { label: 'Grain Locks', value: c('grainLocks') },
+            { label: 'Reverse Buzzer / Squawker', value: c('reverseBuzzer') },
+            { label: 'Rear CAT Markers', value: c('catMarkers') },
+            { label: 'Reflectors', value: c('reflectors') },
+            { label: 'Camera', value: c('camera') },
+            { label: 'Vibrator', value: c('vibrator') },
+            { label: 'Ladder Type', value: c('ladderType') },
+            { label: 'Ladder Position', value: c('ladderPosition') },
+            { label: 'Spreader Chain', value: c('spreaderChain') },
+            { label: 'Push Lugs', value: c('pushLugs') },
+          ].filter((it) => {
+            const v = String(it.value || '').trim()
+            if (!v) return false
+            const low = v.toLowerCase()
+            return low !== 'no' && low !== 'none'
+          })
+          if (items.length === 0) return null
+          return (
+            <div className="section" style={{ marginTop: 10 }}>
+              <div className="section-hdr">Parts to Fit (from Quote)</div>
+              <div className="section-body">
+                <div className="field-row field-row-2">
+                  {items.map((it) => (
+                    <div className="field" key={it.label}>
+                      <div className="field-lbl">{it.label}</div>
+                      <div className="field-val">{it.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
         {/* Fitout details */}
         <div className="section" style={{ marginTop: 10 }}>
           <div className="section-hdr">Fitout Details</div>
