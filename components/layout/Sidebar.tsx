@@ -31,6 +31,7 @@ const TOOLS: NavItem[] = [
   { key: 'engineering', label: 'Engineering',    icon: '📐', href: '/engineering' },
   { key: 'parts',       label: 'Parts Tracker',  icon: '📦', href: '/parts' },
   { key: 'coldform',    label: 'Cold Form',      icon: '🏭', href: '/coldform' },
+  { key: 'mrp-tools',   label: 'MRP / Parts',   icon: '📊', href: '/mrp-tools' },
   { key: 'reports',     label: 'Reports',        icon: '📋', href: '/reports' },
 ]
 
