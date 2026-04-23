@@ -62,6 +62,20 @@ function deriveCouplingLoad(coupling: string): string {
   return ''
 }
 
+const TRAILER_PIVOT_CENTRE: [number, number][] = [
+  [5400, 450], [6000, 510], [6100, 610],
+  [7700, 190], [8300, 330], [9200, 225],
+]
+
+function calcPivotCentre(isTrailer: boolean, bodyLength: string | undefined): string {
+  if (!isTrailer) return '235'
+  if (!bodyLength) return ''
+  const len = parseInt(bodyLength, 10)
+  if (isNaN(len)) return ''
+  const entry = TRAILER_PIVOT_CENTRE.find(([l]) => l === len)
+  return entry ? `${entry[1]}` : ''
+}
+
 const HARDOX_HOIST_BOX_HEIGHTS: [number, number][] = [
   [4200, 1195], [4300, 1195], [4400, 1195],
   [4500, 1280], [4600, 1280], [4660, 1280], [4700, 1280], [4770, 1280],
@@ -495,7 +509,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   {cfgField('Hoist Model', 'hoist')}
                   <div key="pivotCentre">
                     <div style={lblStyle}>C/L Pivot to Rear (mm)</div>
-                    <input style={inpStyle} value={editCfg['pivotCentre'] || '235'} onChange={e => setCfgField('pivotCentre', e.target.value)} />
+                    <input style={inpStyle} value={editCfg['pivotCentre'] || calcPivotCentre(isTrailer, String(editCfg['bodyLength'] || ''))} onChange={e => setCfgField('pivotCentre', e.target.value)} />
                   </div>
                   {!isTrailer && cfgField('Hoist Controls', 'controls')}
                   {!isTrailer && cfgField('Pump Type', 'pump')}
@@ -825,7 +839,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-body">
             <div className={`field-row ${isTrailer ? 'field-row-3' : 'field-row-5'}`}>
               <div className="field"><div className="field-lbl">Hoist Model</div><div className="field-val">{c('hoist') || ''}</div>{!c('hoist') && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{c('pivotCentre') || '235'}</div></div>
+              <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{c('pivotCentre') || calcPivotCentre(isTrailer, c('bodyLength') || '')}</div></div>
               {!isTrailer && <div className="field"><div className="field-lbl">Hoist Controls</div><div className="field-val">{c('controls') || ''}</div>{!c('controls') && <div className="field-blank" />}</div>}
               {!isTrailer && <div className="field"><div className="field-lbl">Pump Type</div><div className="field-val">{c('pump') || c('pumpType') || ''}</div>{!(c('pump') || c('pumpType')) && <div className="field-blank" />}</div>}
               <div className="field"><div className="field-lbl">Hose Burst Valve</div><div className="field-val">{c('hoseBurstValve') || ''}</div>{!c('hoseBurstValve') && <div className="field-blank" />}</div>
