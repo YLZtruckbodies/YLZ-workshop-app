@@ -279,7 +279,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!quote) {
     return NextResponse.json({ error: 'Quote not found' }, { status: 404 })
   }
-  if (quote.status === 'accepted') {
+  // Allow re-accepting quotes that were flagged 'accepted' but have no job yet
+  // (e.g. status was changed via the quote builder's status dropdown without
+  // going through the accept flow). Only block when a job actually exists.
+  if (quote.status === 'accepted' && quote.jobId) {
     return NextResponse.json({ error: 'Quote already accepted', jobId: quote.jobId }, { status: 409 })
   }
 

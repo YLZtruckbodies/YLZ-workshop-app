@@ -366,6 +366,19 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
     || job.type?.toLowerCase().includes('semi')
   const bodyLabel = isTrailer ? 'Trailer Body' : 'Truck Body'
 
+  // Paired truck+trailer detection: current job is the TRUCK side of a paired
+  // quote when it's not itself a trailer but the quote carries a trailerConfig.
+  // When this is true, we render dedicated Trailer sections on the truck's Fab
+  // and Fitout sheets so the workshop sees the full build on one document.
+  const trailerCfg = (job.cfg?.trailerConfig && typeof job.cfg.trailerConfig === 'object')
+    ? job.cfg.trailerConfig as Record<string, any>
+    : null
+  const showPairedTrailerSections = !isTrailer && !!trailerCfg && Object.keys(trailerCfg).length > 0
+  const t = (key: string): string => {
+    const v = trailerCfg?.[key]
+    return v != null && v !== '' ? String(v) : ''
+  }
+
   // Helper to get a value from quote config, with fallback.
   // For truck-and-trailer builds, truck fields are nested under cfg.truckConfig.
   const c = (key: string) => {
@@ -1053,6 +1066,45 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         </div>
 
+        {/* ── Paired Trailer — Fabrication ── */}
+        {showPairedTrailerSections && (
+          <div className="section" style={{ borderLeft: '4px solid #E8681A', paddingLeft: 8 }}>
+            <div className="section-hdr">Trailer — Fabrication</div>
+            <div className="section-body">
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Trailer Model</div><div className="field-val">{t('trailerModel') || t('trailerType') || ''}</div>{!t('trailerModel') && !t('trailerType') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Material</div><div className="field-val">{t('material') || ''}</div>{!t('material') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">PBS Rating</div><div className="field-val">{t('pbsRating') || ''}</div>{!t('pbsRating') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Serial No.</div><div className="field-val">{t('serial') || ''}</div>{!t('serial') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Body Length (mm)</div><div className="field-val">{t('bodyLength') || ''}</div>{!t('bodyLength') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Body Width (mm)</div><div className="field-val">{t('bodyWidth') || ''}</div>{!t('bodyWidth') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Body Height (mm)</div><div className="field-val">{t('bodyHeight') || ''}</div>{!t('bodyHeight') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Capacity (m³)</div><div className="field-val">{t('bodyCapacity') || ''}</div>{!t('bodyCapacity') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Floor Sheet</div><div className="field-val">{t('floorSheet') || ''}</div>{!t('floorSheet') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Side Sheet</div><div className="field-val">{t('sideSheet') || ''}</div>{!t('sideSheet') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Main Runner Width</div><div className="field-val">{t('mainRunnerWidth') || ''}</div>{!t('mainRunnerWidth') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Tare (est.)</div><div className="field-val">{t('tare') || ''}</div>{!t('tare') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Chassis Colour</div><div className="field-val">{t('chassisColour') || t('paintColour') || 'Black'}</div></div>
+                <div className="field"><div className="field-lbl">Body Colour</div><div className="field-val">{t('bodyColour') || ''}</div>{!t('bodyColour') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Axle Make</div><div className="field-val">{t('axleMake') || ''}</div>{!t('axleMake') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Axle Count</div><div className="field-val">{t('axleCount') || ''}</div>{!t('axleCount') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Axle Type / Brakes</div><div className="field-val">{t('axleType') || ''}</div>{!t('axleType') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Suspension</div><div className="field-val">{t('suspension') || ''}</div>{!t('suspension') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">GTM (kg)</div><div className="field-val">{t('gtm') || ''}</div>{!t('gtm') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">GCM (kg)</div><div className="field-val">{t('gcm') || ''}</div>{!t('gcm') && <div className="field-blank" />}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Notes */}
         <div className="notes-box">
           <div className="notes-lbl">Special Instructions / Notes</div>
@@ -1315,6 +1367,51 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                   </div>
                 )
               })()}
+            </div>
+          </div>
+        )}
+
+        {/* ── Paired Trailer — Fitout ── */}
+        {showPairedTrailerSections && (
+          <div className="section" style={{ marginTop: 10, borderLeft: '4px solid #E8681A', paddingLeft: 8 }}>
+            <div className="section-hdr">Trailer — Fitout</div>
+            <div className="section-body">
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Hoist</div><div className="field-val">{t('hoist') || ''}</div>{!t('hoist') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Tailgate Type</div><div className="field-val">{t('tailgateType') || ''}</div>{!t('tailgateType') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Tailgate Lights</div><div className="field-val">{t('tailgateLights') || ''}</div>{!t('tailgateLights') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Tail Lights</div><div className="field-val">{t('tailLights') || ''}</div>{!t('tailLights') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Side Lights</div><div className="field-val">{t('sideLightsCustom') || t('sideLights') || ''}</div>{!t('sideLightsCustom') && !t('sideLights') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Indicators</div><div className="field-val">{t('indicators') || ''}</div>{!t('indicators') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Anti-Spray</div><div className="field-val">{t('antiSpray') || ''}</div>{!t('antiSpray') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Rear CAT Markers</div><div className="field-val">{t('catMarkers') || ''}</div>{!t('catMarkers') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Tarp System</div><div className="field-val">{t('tarpSystem') || ''}</div>{!t('tarpSystem') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Tarp Length (mm)</div><div className="field-val">{t('tarpLength') || ''}</div>{!t('tarpLength') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Tarp Colour</div><div className="field-val">{t('tarpColour') || 'Black'}</div></div>
+                <div className="field"><div className="field-lbl">Bow Size</div><div className="field-val">{t('tarpBowSize') || ''}</div>{!t('tarpBowSize') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Drawbar Coupling</div><div className="field-val">{t('drawbarCoupling') || ''}</div>{!t('drawbarCoupling') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Anderson Plug</div><div className="field-val">{t('andersonPlug') || ''}</div>{!t('andersonPlug') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Drop Down Leg</div><div className="field-val">{t('dropDownLeg') || ''}</div>{!t('dropDownLeg') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Pogo Stick</div><div className="field-val">{t('pogoStick') || ''}</div>{!t('pogoStick') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Wheel Carrier</div><div className="field-val">{t('wheelCarrier') || ''}</div>{!t('wheelCarrier') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Mudflaps</div><div className="field-val">{t('mudflaps') || ''}</div>{!t('mudflaps') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Axle Lift</div><div className="field-val">{t('axleLift') || ''}</div>{!t('axleLift') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Hubodometer</div><div className="field-val">{t('hubodometer') || ''}</div>{!t('hubodometer') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Tyre</div><div className="field-val">{t('tyre') || ''}</div>{!t('tyre') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Inner Wheels</div><div className="field-val">{t('innerWheels') || ''}</div>{!t('innerWheels') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Outer Wheels</div><div className="field-val">{t('outerWheels') || ''}</div>{!t('outerWheels') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">VIN</div><div className="field-val">{t('vin') || ''}</div>{!t('vin') && <div className="field-blank" />}</div>
+              </div>
             </div>
           </div>
         )}
