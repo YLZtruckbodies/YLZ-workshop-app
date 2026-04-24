@@ -1327,21 +1327,14 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               )
             })()}
 
-            {/* Notes */}
+            {/* Notes — mirrored from Body Fabrication sheet so chassis build sees the same instructions */}
             <div className="notes-box" style={{ marginTop: 10 }}>
-              <div className="notes-lbl">Chassis Build Notes</div>
+              <div className="notes-lbl">Special Instructions / Notes</div>
               <div className="notes-text">
-                {c('specialRequirements') ? c('specialRequirements') : ''}
-                {c('specialRequirements') && job.notes ? '\n\n' : ''}
-                {job.notes || ''}
+                {'Use drawings with _BW.pdf (flat pattern / cutting) and _BF.pdf (bent form / 3D view) for fabrication.'}
+                {c('specialRequirements') ? `\n\n${c('specialRequirements')}` : ''}
+                {job.notes ? `\n\n${job.notes}` : ''}
               </div>
-              {!c('specialRequirements') && !job.notes && (
-                <div className="notes-lines">
-                  <div className="notes-line" />
-                  <div className="notes-line" />
-                  <div className="notes-line" />
-                </div>
-              )}
             </div>
 
             {/* Sign-off */}
