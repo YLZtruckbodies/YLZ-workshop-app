@@ -341,8 +341,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     let trailerNum: string
     if (customJobNum) {
       truckNum = customJobNum
+      // Ensure trailer number is unique — must be higher than both the existing
+      // max AND the custom truck number, otherwise we'd collide when creating the
+      // trailer Job record (customJobNum isn't in the DB yet when nextJobNumbers
+      // runs).
       const [gen] = await nextJobNumbers(1)
-      trailerNum = gen
+      const truckN = parseInt(customJobNum.match(/(\d+)$/)?.[1] || '0', 10)
+      const genN = parseInt(gen.match(/(\d+)$/)?.[1] || '0', 10)
+      const trailerN = Math.max(truckN + 1, genN)
+      trailerNum = `YLZ${trailerN}`
     } else {
       [truckNum, trailerNum] = await nextJobNumbers(2)
     }

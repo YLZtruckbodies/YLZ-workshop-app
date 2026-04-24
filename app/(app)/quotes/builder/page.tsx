@@ -3710,10 +3710,14 @@ function QuoteBuilderInner() {
                   Link to Existing Job
                 </button>
               </div>
-              {acceptMode === 'new' && (
+              {acceptMode === 'new' && (() => {
+                const isPairedBuild = form.buildType === 'truck-and-trailer'
+                const truckN = parseInt(newJobNum.match(/(\d+)$/)?.[1] || '0', 10)
+                const trailerPreview = isPairedBuild && truckN > 0 ? `YLZ${truckN + 1}` : ''
+                return (
                 <div>
                   <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 6 }}>
-                    Job Number
+                    {isPairedBuild ? 'Truck Job Number' : 'Job Number'}
                   </label>
                   <input
                     value={newJobNum}
@@ -3728,8 +3732,27 @@ function QuoteBuilderInner() {
                     }}
                   />
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 6 }}>
-                    Auto-filled with the next available number. Edit if needed.
+                    {isPairedBuild ? 'Auto-filled with the next available number — becomes the truck\'s job number.' : 'Auto-filled with the next available number. Edit if needed.'}
                   </div>
+
+                  {isPairedBuild && (
+                    <div style={{ marginTop: 16 }}>
+                      <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 6 }}>
+                        Trailer Job Number
+                      </label>
+                      <div style={{
+                        width: '100%', boxSizing: 'border-box',
+                        background: '#0a0a0a', border: '1px solid rgba(34,197,94,0.25)',
+                        borderRadius: 4, color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: 600,
+                        padding: '10px 12px', letterSpacing: 1,
+                      }}>
+                        {trailerPreview || '…'}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 6 }}>
+                        Auto-assigned on acceptance (truck number + 1 if available).
+                      </div>
+                    </div>
+                  )}
                   {previewVin && (
                     <div style={{ marginTop: 16 }}>
                       <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 6 }}>
@@ -3749,7 +3772,8 @@ function QuoteBuilderInner() {
                     </div>
                   )}
                 </div>
-              )}
+                )
+              })()}
               {acceptMode === 'existing' && (
                 <div>
                   <input
@@ -3777,13 +3801,28 @@ function QuoteBuilderInner() {
             </p>
             <ul style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, paddingLeft: 20, marginBottom: 24 }}>
               <li>Mark quote <strong style={{ color: '#fff' }}>{form.quoteNumber}</strong> as Accepted</li>
-              {acceptMode === 'new' ? (
-                <>
-                  <li>Create job <strong style={{ color: '#22c55e' }}>{newJobNum || '…'}</strong> on the Production Board</li>
-                  <li>Stage the job at <strong style={{ color: '#fff' }}>Requires Engineering</strong></li>
-                  <li>Create a draft Parts Order for Liz</li>
-                </>
-              ) : (
+              {acceptMode === 'new' ? (() => {
+                const isPairedBuild = form.buildType === 'truck-and-trailer'
+                const truckN = parseInt(newJobNum.match(/(\d+)$/)?.[1] || '0', 10)
+                const trailerPreview = isPairedBuild && truckN > 0 ? `YLZ${truckN + 1}` : ''
+                return (
+                  <>
+                    {isPairedBuild ? (
+                      <>
+                        <li>Create truck job <strong style={{ color: '#22c55e' }}>{newJobNum || '…'}</strong> and trailer job <strong style={{ color: '#22c55e' }}>{trailerPreview || '…'}</strong> on the Production Board</li>
+                        <li>Stage both jobs at <strong style={{ color: '#fff' }}>Requires Engineering</strong></li>
+                        <li>Create separate draft Parts Orders for the truck and trailer</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>Create job <strong style={{ color: '#22c55e' }}>{newJobNum || '…'}</strong> on the Production Board</li>
+                        <li>Stage the job at <strong style={{ color: '#fff' }}>Requires Engineering</strong></li>
+                        <li>Create a draft Parts Order for Liz</li>
+                      </>
+                    )}
+                  </>
+                )
+              })() : (
                 <li>Link this quote to job <strong style={{ color: '#E8681A' }}>{existingJobNum || '…'}</strong></li>
               )}
               <li>Send workshop notification email (if configured)</li>
