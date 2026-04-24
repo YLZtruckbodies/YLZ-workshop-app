@@ -113,6 +113,12 @@ function calcBowHeight(material: string | undefined, bodyHeight: string | undefi
   return ''
 }
 
+interface ManualBomItem {
+  code: string
+  name: string
+  section: string
+}
+
 interface Job {
   id: string
   num: string
@@ -127,6 +133,7 @@ interface Job {
   po: string
   vin: string
   bomList?: BomEntry[]
+  manualBomItems?: ManualBomItem[]
   createdAt: string
   // Quote config — populated from linked quote
   cfg?: QuoteConfig
@@ -240,6 +247,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
   const [editNotes, setEditNotes] = useState('')
   const [editDims, setEditDims] = useState('')
   const [editPo, setEditPo] = useState('')
+  const [editManualBom, setEditManualBom] = useState<ManualBomItem[]>([])
 
   // Editable fields — quote config
   const [editCfg, setEditCfg] = useState<Record<string, string>>({})
@@ -293,6 +301,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         setEditNotes(jobData.notes || '')
         setEditDims(jobData.dims || '')
         setEditPo(jobData.po || '')
+        setEditManualBom(Array.isArray(jobData.manualBomItems) ? jobData.manualBomItems : [])
         if (jobData.cfg) {
           const cfgInit: Record<string, string> = {}
           for (const [k, v] of Object.entries(jobData.cfg)) {
@@ -327,6 +336,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           notes: editNotes,
           dims: editDims,
           po: editPo,
+          manualBomItems: editManualBom,
           _userName: 'Engineering',
         }),
       })
@@ -756,6 +766,45 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                     <textarea style={{ ...inpStyle, minHeight: 70, resize: 'vertical' }} value={editCfg['specialRequirements'] || ''} onChange={e => setCfgField('specialRequirements', e.target.value)} />
                   </div>
                 </div>
+
+                {/* Manual BOM items */}
+                <div style={sectionLbl}>Additional BOMs / Parts (Manual)</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 160px 40px', gap: 6, alignItems: 'center', marginBottom: 4 }}>
+                  <div style={{ ...lblStyle, marginBottom: 0 }}>BOM / Part Code</div>
+                  <div style={{ ...lblStyle, marginBottom: 0 }}>Description</div>
+                  <div style={{ ...lblStyle, marginBottom: 0 }}>Section</div>
+                  <div />
+                </div>
+                {editManualBom.map((item, i) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 160px 40px', gap: 6, alignItems: 'center', marginBottom: 4 }}>
+                    <input
+                      style={inpStyle}
+                      value={item.code}
+                      placeholder="e.g. CTA-001234"
+                      onChange={e => setEditManualBom(prev => prev.map((r, j) => j === i ? { ...r, code: e.target.value } : r))}
+                    />
+                    <input
+                      style={inpStyle}
+                      value={item.name}
+                      placeholder="Description"
+                      onChange={e => setEditManualBom(prev => prev.map((r, j) => j === i ? { ...r, name: e.target.value } : r))}
+                    />
+                    <input
+                      style={inpStyle}
+                      value={item.section}
+                      placeholder="e.g. Fab"
+                      onChange={e => setEditManualBom(prev => prev.map((r, j) => j === i ? { ...r, section: e.target.value } : r))}
+                    />
+                    <button
+                      onClick={() => setEditManualBom(prev => prev.filter((_, j) => j !== i))}
+                      style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 4, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 16, padding: '6px 10px' }}
+                    >×</button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setEditManualBom(prev => [...prev, { code: '', name: '', section: '' }])}
+                  style={{ marginTop: 4, background: 'rgba(255,255,255,0.08)', border: '1px dashed rgba(255,255,255,0.2)', borderRadius: 4, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 13, padding: '6px 14px' }}
+                >+ Add Row</button>
               </>
             )
           })()}
@@ -1626,24 +1675,40 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </table>
 
           {/* Manual entry rows */}
-          <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: '8.5pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: '#999', marginBottom: 6 }}>
-              Additional BOMs / Parts (manual)
-            </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5pt' }}>
-              <tbody>
-                {[1,2,3,4,5].map(i => (
-                  <tr key={i} style={{ borderBottom: '1px solid #ddd' }}>
-                    <td style={{ padding: '7px 10px', width: 35, color: '#999' }}>{(job.bomList as BomEntry[]).length + i}</td>
-                    <td style={{ padding: '7px 10px', width: 90, borderBottom: '1px dotted #ccc' }} />
-                    <td style={{ padding: '7px 10px', borderBottom: '1px dotted #ccc' }} />
-                    <td style={{ padding: '7px 10px', width: 110, borderBottom: '1px dotted #ccc' }} />
-                    <td style={{ padding: '7px 10px', width: 70, textAlign: 'center', fontSize: '12pt' }}>☐</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {(() => {
+            const bomCount = (job.bomList as BomEntry[]).length
+            const saved = Array.isArray(job.manualBomItems) ? (job.manualBomItems as ManualBomItem[]) : []
+            const blankCount = Math.max(5 - saved.length, 2)
+            return (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontSize: '8.5pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: '#999', marginBottom: 6 }}>
+                  Additional BOMs / Parts (manual)
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5pt' }}>
+                  <tbody>
+                    {saved.map((item, i) => (
+                      <tr key={`saved-${i}`} style={{ borderBottom: '1px solid #ddd' }}>
+                        <td style={{ padding: '6px 10px', width: 35, color: '#999' }}>{bomCount + i + 1}</td>
+                        <td style={{ padding: '6px 10px', width: 90, fontFamily: 'monospace', fontWeight: 700, color: '#E8681A' }}>{item.code}</td>
+                        <td style={{ padding: '6px 10px' }}>{item.name}</td>
+                        <td style={{ padding: '6px 10px', width: 110, color: '#666', fontSize: '8.5pt' }}>{item.section}</td>
+                        <td style={{ padding: '6px 10px', width: 70, textAlign: 'center', fontSize: '12pt' }}>☐</td>
+                      </tr>
+                    ))}
+                    {Array.from({ length: blankCount }, (_, i) => (
+                      <tr key={`blank-${i}`} style={{ borderBottom: '1px solid #ddd' }}>
+                        <td style={{ padding: '7px 10px', width: 35, color: '#999' }}>{bomCount + saved.length + i + 1}</td>
+                        <td style={{ padding: '7px 10px', width: 90, borderBottom: '1px dotted #ccc' }} />
+                        <td style={{ padding: '7px 10px', borderBottom: '1px dotted #ccc' }} />
+                        <td style={{ padding: '7px 10px', width: 110, borderBottom: '1px dotted #ccc' }} />
+                        <td style={{ padding: '7px 10px', width: 70, textAlign: 'center', fontSize: '12pt' }}>☐</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          })()}
 
           <div style={{ marginTop: 20, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 4, fontSize: '8.5pt', color: '#666' }}>
             <strong>Note:</strong> This BOM list was auto-generated from the quote configuration. TBD items (shown in red) need manual lookup.
