@@ -21,6 +21,7 @@ interface EngineeringJob {
   dims: string
   createdAt: string
   vin?: string
+  pairedId?: string | null
   quoteId?: string
   quoteCfg?: QuoteConfig
   hasWorkOrder?: boolean
@@ -45,17 +46,27 @@ export default function EngineeringPage() {
             let quoteId = ''
             let quoteCfg: QuoteConfig | undefined
             try {
-              const qRes = await fetch(`/api/quotes?jobId=${job.id}`)
-              if (qRes.ok) {
-                const quotes = await qRes.json()
-                if (quotes.length > 0) {
-                  quoteId = quotes[0].id
-                  // Fetch full quote for configuration
-                  const fullRes = await fetch(`/api/quotes/${quotes[0].id}`)
-                  if (fullRes.ok) {
-                    const fullQuote = await fullRes.json()
-                    if (fullQuote.configuration) quoteCfg = fullQuote.configuration
+              // Paired truck+trailer quotes store quote.jobId against the TRUCK job only,
+              // so for the TRAILER side we fall back to the paired job's id.
+              const lookupIds: string[] = [job.id]
+              if (job.pairedId) lookupIds.push(job.pairedId)
+              let matchedQuoteId = ''
+              for (const lookupId of lookupIds) {
+                const qRes = await fetch(`/api/quotes?jobId=${lookupId}`)
+                if (qRes.ok) {
+                  const quotes = await qRes.json()
+                  if (Array.isArray(quotes) && quotes.length > 0) {
+                    matchedQuoteId = quotes[0].id
+                    break
                   }
+                }
+              }
+              if (matchedQuoteId) {
+                quoteId = matchedQuoteId
+                const fullRes = await fetch(`/api/quotes/${matchedQuoteId}`)
+                if (fullRes.ok) {
+                  const fullQuote = await fullRes.json()
+                  if (fullQuote.configuration) quoteCfg = fullQuote.configuration
                 }
               }
             } catch { /* ignore */ }
@@ -241,8 +252,17 @@ export default function EngineeringPage() {
                   )}
                   {(() => {
                     const isTrailer = job.type?.toLowerCase().includes('trailer') || job.type?.toLowerCase().includes('dog') || job.type?.toLowerCase().includes('semi')
-                    const tInput: TEBSInput | null = isTrailer && job.quoteCfg?.axleCount && job.quoteCfg?.axleMake && job.quoteCfg?.axleType
-                      ? { axleCount: job.quoteCfg.axleCount, axleMake: job.quoteCfg.axleMake, axleType: job.quoteCfg.axleType, hasLiftAxle: job.quoteCfg?.axleLift === 'Yes' || (job.quoteCfg?.trailerConfig as any)?.axleLift === 'Yes', vin: job.vin || (job.quoteCfg?.vin as string) || '', jobNumber: job.num }
+                    // For paired truck+trailer quotes the trailer's axle data lives in
+                    // quoteCfg.trailerConfig, so fall back to that if the top-level
+                    // keys aren't populated.
+                    const trailerCfg = (job.quoteCfg?.trailerConfig as Record<string, any>) || null
+                    const axleCount = (job.quoteCfg?.axleCount ?? trailerCfg?.axleCount) as number | string | undefined
+                    const axleMake = (job.quoteCfg?.axleMake ?? trailerCfg?.axleMake) as string | undefined
+                    const axleType = (job.quoteCfg?.axleType ?? trailerCfg?.axleType) as string | undefined
+                    const axleLiftYes = job.quoteCfg?.axleLift === 'Yes' || trailerCfg?.axleLift === 'Yes'
+                    const trailerVin = (job.vin || (job.quoteCfg?.vin as string) || (trailerCfg?.vin as string) || '') as string
+                    const tInput: TEBSInput | null = isTrailer && axleCount && axleMake && axleType
+                      ? { axleCount: axleCount as number, axleMake, axleType, hasLiftAxle: axleLiftYes, vin: trailerVin, jobNumber: job.num }
                       : null
                     if (!tInput || !hasTEBSData(tInput)) return null
                     return (

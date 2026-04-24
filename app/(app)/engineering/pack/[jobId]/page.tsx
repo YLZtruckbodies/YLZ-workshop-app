@@ -158,13 +158,19 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       const jobData = await jobRes.json()
       setJob(jobData)
 
-      // Fetch quote
-      const qRes = await fetch(`/api/quotes?jobId=${jobId}`)
-      if (qRes.ok) {
+      // Fetch quote — paired truck+trailer quotes link the Quote.jobId to the
+      // TRUCK job only, so for the TRAILER side we fall back to the paired id.
+      const lookupIds: string[] = [jobId]
+      if (jobData.pairedId) lookupIds.push(jobData.pairedId)
+      for (const lookupId of lookupIds) {
+        const qRes = await fetch(`/api/quotes?jobId=${lookupId}`)
+        if (!qRes.ok) continue
         const quotes = await qRes.json()
-        if (quotes.length > 0) {
-          const fullRes = await fetch(`/api/quotes/${quotes[0].id}`)
-          if (fullRes.ok) setQuote(await fullRes.json())
+        if (!Array.isArray(quotes) || quotes.length === 0) continue
+        const fullRes = await fetch(`/api/quotes/${quotes[0].id}`)
+        if (fullRes.ok) {
+          setQuote(await fullRes.json())
+          break
         }
       }
 
@@ -230,8 +236,15 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
   const stepFiles = drawings.filter(d => d.type === 'step')
   const tubeLaserPdfs = drawings.filter(d => d.type !== 'step' && d.category === 'tube-laser')
 
-  const tebsInput: TEBSInput | null = isTrailer && cfg.axleCount && cfg.axleMake && cfg.axleType
-    ? { axleCount: cfg.axleCount, axleMake: cfg.axleMake, axleType: cfg.axleType, hasLiftAxle: cfg.axleLift === 'Yes' || (cfg.trailerConfig as any)?.axleLift === 'Yes', vin: job?.vin || (cfg.vin as string) || '', jobNumber: job?.num || '' }
+  // For paired truck+trailer quotes the trailer's axle data lives in cfg.trailerConfig.
+  const tCfg = (cfg.trailerConfig as Record<string, any>) || null
+  const tebsAxleCount = cfg.axleCount ?? tCfg?.axleCount
+  const tebsAxleMake = cfg.axleMake ?? tCfg?.axleMake
+  const tebsAxleType = cfg.axleType ?? tCfg?.axleType
+  const tebsAxleLiftYes = cfg.axleLift === 'Yes' || tCfg?.axleLift === 'Yes'
+  const tebsVin = job?.vin || (cfg.vin as string) || (tCfg?.vin as string) || ''
+  const tebsInput: TEBSInput | null = isTrailer && tebsAxleCount && tebsAxleMake && tebsAxleType
+    ? { axleCount: tebsAxleCount as number, axleMake: tebsAxleMake as string, axleType: tebsAxleType as string, hasLiftAxle: tebsAxleLiftYes, vin: tebsVin, jobNumber: job?.num || '' }
     : null
   const hasTEBS = tebsInput && hasTEBSData(tebsInput)
 
