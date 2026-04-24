@@ -410,6 +410,7 @@ const TAIL_LIGHTS = [
   'LED cluster combination lights',
   'Narva LED combination lights',
   'Hella LED combination lights',
+  'Reuse Existing OEM Taillights',
   'Customer supplied',
   'None',
 ]
