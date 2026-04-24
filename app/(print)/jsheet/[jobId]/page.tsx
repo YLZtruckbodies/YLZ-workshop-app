@@ -135,9 +135,12 @@ interface Job {
   bomList?: BomEntry[]
   manualBomItems?: ManualBomItem[]
   createdAt: string
+  pairedId?: string | null
   // Quote config — populated from linked quote
   cfg?: QuoteConfig
   quoteNumber?: string
+  // Paired partner's num (fetched if pairedId is set)
+  pairedJobNum?: string
 }
 
 function today() {
@@ -282,6 +285,17 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             if (fullQuote.dealerName) jobData.dealer = fullQuote.dealerName
           }
         } catch { /* quote fetch failed — continue with job data only */ }
+
+        // Fetch paired job's num (for truck+trailer pairs — show the trailer's number on the truck sheet)
+        if (jobData.pairedId) {
+          try {
+            const pRes = await fetch(`/api/jobs/${jobData.pairedId}`)
+            if (pRes.ok) {
+              const p = await pRes.json()
+              if (p?.num) jobData.pairedJobNum = p.num
+            }
+          } catch { /* non-fatal */ }
+        }
 
         // Always re-resolve BOM from latest resolver so new entries/notes are always current
         if (jobData.id) {
@@ -1118,7 +1132,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         {/* ── Paired Trailer — Fabrication ── */}
         {showPairedTrailerSections && (
           <div className="section" style={{ borderLeft: '4px solid #E8681A', paddingLeft: 8 }}>
-            <div className="section-hdr">Trailer — Fabrication</div>
+            <div className="section-hdr">Trailer — Fabrication{job.pairedJobNum ? ` — ${job.pairedJobNum}` : ''}</div>
             <div className="section-body">
               <div className="field-row field-row-4">
                 <div className="field"><div className="field-lbl">Trailer Model</div><div className="field-val">{t('trailerModel') || t('trailerType') || ''}</div>{!t('trailerModel') && !t('trailerType') && <div className="field-blank" />}</div>
@@ -1423,7 +1437,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         {/* ── Paired Trailer — Fitout ── */}
         {showPairedTrailerSections && (
           <div className="section" style={{ marginTop: 10, borderLeft: '4px solid #E8681A', paddingLeft: 8 }}>
-            <div className="section-hdr">Trailer — Fitout</div>
+            <div className="section-hdr">Trailer — Fitout{job.pairedJobNum ? ` — ${job.pairedJobNum}` : ''}</div>
             <div className="section-body">
               <div className="field-row field-row-4">
                 <div className="field"><div className="field-lbl">Hoist</div><div className="field-val">{t('hoist') || ''}</div>{!t('hoist') && <div className="field-blank" />}</div>
@@ -1567,6 +1581,27 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             </div>
           </div>
         </div>
+
+        {/* ── Paired Trailer — Paint ── */}
+        {showPairedTrailerSections && (
+          <div className="section" style={{ borderLeft: '4px solid #E8681A', paddingLeft: 8 }}>
+            <div className="section-hdr">Trailer — Paint{job.pairedJobNum ? ` — ${job.pairedJobNum}` : ''}</div>
+            <div className="section-body">
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Chassis Colour</div><div className="field-val">{t('chassisColour') || t('paintColour') || 'Black'}</div></div>
+                <div className="field"><div className="field-lbl">Body Colour</div><div className="field-val">{t('bodyColour') || ''}</div>{!t('bodyColour') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Paint Code</div><div className="field-blank" /></div>
+                <div className="field"><div className="field-lbl">Paint Brand</div><div className="field-blank" /></div>
+              </div>
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Finish</div><div className="field-blank" /></div>
+                <div className="field"><div className="field-lbl">Primer</div><div className="field-blank" /></div>
+                <div className="field"><div className="field-lbl">Coats</div><div className="field-blank" /></div>
+                <div className="field"><div className="field-lbl">Material</div><div className="field-val">{t('material') || ''}</div>{!t('material') && <div className="field-blank" />}</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Paint areas */}
         <div className="section">
