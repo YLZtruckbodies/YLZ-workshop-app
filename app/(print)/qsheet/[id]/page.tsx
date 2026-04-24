@@ -436,6 +436,7 @@ export default function QuoteSheetPage({ params }: { params: { id: string } }) {
           <div className="notes-lbl">Special Instructions / Notes</div>
           <div className="notes-text">
             {'Use drawings with _BW.pdf (flat pattern / cutting) and _BF.pdf (bent form / 3D view) for fabrication.'}
+            {(c('liner') === 'Yes' || ((quote.configuration as any)?.trailerConfig?.liner === 'Yes')) ? '\n\nHas floor liner — need to organise to get liner fitted after body is built.' : ''}
             {c('specialRequirements') ? `\n\n${c('specialRequirements')}` : ''}
             {quote.notes ? `\n\n${quote.notes}` : ''}
           </div>

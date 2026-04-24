@@ -447,6 +447,12 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
     return ''
   }
 
+  // Floor liner flag — when the quote specifies Liner = Yes we auto-inject a
+  // scheduling reminder into the Special Instructions on every sheet so the
+  // workshop knows to organise liner fitment after the body is built.
+  const LINER_NOTE = 'Has floor liner — need to organise to get liner fitted after body is built.'
+  const hasLinerNote = c('liner') === 'Yes' || (showPairedTrailerSections && t('liner') === 'Yes')
+
   // TEBS datasheet — only for trailers with axle config
   const tebsInput: TEBSInput | null = isTrailer && job.cfg?.axleCount && job.cfg?.axleMake && job.cfg?.axleType
     ? { axleCount: job.cfg.axleCount, axleMake: job.cfg.axleMake, axleType: job.cfg.axleType, hasLiftAxle: c('axleLift') === 'Yes', vin: job.vin || job.cfg?.vin || '', jobNumber: job.num }
@@ -1189,6 +1195,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="notes-lbl">Special Instructions / Notes</div>
           <div className="notes-text">
             {'Use drawings with _BW.pdf (flat pattern / cutting) and _BF.pdf (bent form / 3D view) for fabrication.'}
+            {hasLinerNote ? `\n\n${LINER_NOTE}` : ''}
             {c('specialRequirements') ? `\n\n${c('specialRequirements')}` : ''}
             {job.notes ? `\n\n${job.notes}` : ''}
           </div>
@@ -1662,6 +1669,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="notes-lbl">Special Instructions / Notes</div>
           <div className="notes-text">
             {'Use drawings with _BW.pdf (flat pattern / cutting) and _BF.pdf (bent form / 3D view) for fabrication.'}
+            {hasLinerNote ? `\n\n${LINER_NOTE}` : ''}
             {c('specialRequirements') ? `\n\n${c('specialRequirements')}` : ''}
             {job.notes ? `\n\n${job.notes}` : ''}
           </div>
