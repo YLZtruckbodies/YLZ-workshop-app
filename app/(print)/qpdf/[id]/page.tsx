@@ -114,6 +114,93 @@ const SPEC_GROUPS: SpecGroup[] = [
   ]},
 ]
 
+// Trailer-only spec groups, rendered as a separate block under 'Trailer
+// Specifications' for paired truck+trailer quotes. Keys are looked up in
+// configuration.trailerConfig.
+const TRAILER_SPEC_GROUPS: SpecGroup[] = [
+  { title: 'Chassis', items: [
+    ['Model', 'trailerModel'],
+    ['Type', 'trailerType'],
+    ['Serial No.', 'serial'],
+    ['VIN', 'vin'],
+    ['GTM', 'gtm', ' kg'],
+    ['GCM', 'gcm', ' kg'],
+    ['Tare (est.)', 'tare', ' kg'],
+    ['Chassis Length', 'chassisLength', ' mm'],
+    ['Wheelbase', 'wheelbase', ' mm'],
+  ]},
+  { title: 'Body', items: [
+    ['Material', 'material'],
+    ['PBS Rating', 'pbsRating'],
+    ['Length', 'bodyLength', ' mm'],
+    ['Width', 'bodyWidth', ' mm'],
+    ['Height', 'bodyHeight', ' mm'],
+    ['Capacity', 'bodyCapacity', ' m³'],
+    ['Floor Sheet', 'floorSheet'],
+    ['Side Sheet', 'sideSheet'],
+    ['Chassis Colour', 'chassisColour'],
+    ['Body Colour', 'bodyColour'],
+  ]},
+  { title: 'Axles & Wheels', items: [
+    ['Axle Make', 'axleMake'],
+    ['Axle Count', 'axleCount'],
+    ['Axle Type', 'axleType'],
+    ['Suspension', 'suspension'],
+    ['Stud Pattern', 'studPattern'],
+    ['Tyre', 'tyre'],
+    ['Inner Wheels', 'innerWheels'],
+    ['Outer Wheels', 'outerWheels'],
+    ['Axle Lift', 'axleLift'],
+    ['Hubodometer', 'hubodometer'],
+  ]},
+  { title: 'Hoist & Hydraulics', items: [
+    ['Hoist Model', 'hoist'],
+    ['Push Lugs', 'pushLugs'],
+    ['Hose Burst Valve', 'hoseBurstValve'],
+  ]},
+  { title: 'Tarp', items: [
+    ['System', 'tarpSystem'],
+    ['Colour', 'tarpColour'],
+    ['Material', 'tarpMaterial'],
+    ['Type', 'tarpType'],
+    ['Location', 'tarpLocation'],
+    ['Length', 'tarpLength', ' mm'],
+    ['Bow Size', 'tarpBowSize'],
+  ]},
+  { title: 'Drawbar', items: [
+    ['Drawbar Length', 'drawbarLength', ' mm'],
+    ['Drawbar Tape', 'drawbarTape'],
+    ['Drawbar Coupling', 'drawbarCoupling'],
+    ['Anderson Plug', 'andersonPlug'],
+    ['Wheel Carrier on Drawbar', 'wheelCarrier'],
+    ['Drop Down Leg', 'dropDownLeg'],
+    ['Pogo Stick', 'pogoStick'],
+  ]},
+  { title: 'Lights & Signage', items: [
+    ['Tail Lights', 'tailLights'],
+    ['Tailgate Type', 'tailgateType'],
+    ['Tailgate Lights', 'tailgateLights'],
+    ['Side Lights', 'sideLights'],
+    ['Side Lights (custom)', 'sideLightsCustom'],
+    ['Indicators', 'indicators'],
+    ['Rear CAT Markers', 'catMarkers'],
+    ['Reflectors', 'reflectors'],
+    ['Lock Flap', 'lockFlap'],
+  ]},
+  { title: 'Body Extras', items: [
+    ['Rear Ladder', 'rearLadder'],
+    ['Centre Chain', 'centreChain'],
+    ['Mudflaps', 'mudflaps'],
+    ['Anti Spray Suppressant', 'antiSpray'],
+    ['Grain Doors', 'grainDoors'],
+    ['Grain Locks', 'grainLocks'],
+    ['Rock Sheet', 'rockSheet'],
+    ['Liner', 'liner'],
+    ['Camera', 'camera'],
+    ['Vibrator', 'vibrator'],
+  ]},
+]
+
 // ─── YLZ company constants ────────────────────────────────────────────────────
 const CO = {
   entity:    'YLZ Truck Bodies Pty Ltd',
@@ -291,6 +378,28 @@ export default function QuotePrintPage({ params }: { params: { id: string } }) {
   const renderedSpecGroups = SPEC_GROUPS.map((group) => {
     const items = group.items.map(([label, key, suffix]) => {
       const raw = readCfg(key).trim()
+      if (!raw) return null
+      const low = raw.toLowerCase()
+      if (low === 'no' || low === 'none') return null
+      const hasSuffix = suffix && !raw.includes(suffix.trim())
+      return { label, value: hasSuffix ? raw + suffix : raw }
+    }).filter(Boolean) as Array<{ label: string; value: string }>
+    return { title: group.title, items }
+  }).filter((g) => g.items.length > 0)
+
+  // Paired truck+trailer? Detect from buildType and the presence of a trailerConfig.
+  const btNorm = (quote.buildType || '').toLowerCase().replace(/[^a-z]/g, '')
+  const isPaired = btNorm.includes('truck') && btNorm.includes('trailer') && !!cfgRaw.trailerConfig
+
+  // Reader that ONLY looks at trailerConfig — used for the Trailer Specifications block.
+  const readTrailer = (key: string): string => {
+    const v = (cfgRaw.trailerConfig as any)?.[key]
+    return v != null && v !== '' ? String(v) : ''
+  }
+
+  const renderedTrailerSpecGroups = !isPaired ? [] : TRAILER_SPEC_GROUPS.map((group) => {
+    const items = group.items.map(([label, key, suffix]) => {
+      const raw = readTrailer(key).trim()
       if (!raw) return null
       const low = raw.toLowerCase()
       if (low === 'no' || low === 'none') return null
@@ -591,9 +700,30 @@ export default function QuotePrintPage({ params }: { params: { id: string } }) {
         {/* ── Specifications ── */}
         {renderedSpecGroups.length > 0 && (
           <div className="specs-wrap">
-            <div className="specs-heading">Specifications</div>
+            <div className="specs-heading">{isPaired ? 'Truck Specifications' : 'Specifications'}</div>
             <hr className="specs-rule" />
             {renderedSpecGroups.map((g) => (
+              <div key={g.title} className="spec-group">
+                <div className="spec-group-title">{g.title}</div>
+                <div className="spec-grid">
+                  {g.items.map((it) => (
+                    <div key={it.label} className="spec-item">
+                      <div className="spec-label">{it.label}</div>
+                      <div className="spec-value">{it.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Trailer Specifications (paired quotes only) ── */}
+        {isPaired && renderedTrailerSpecGroups.length > 0 && (
+          <div className="specs-wrap">
+            <div className="specs-heading">Trailer Specifications</div>
+            <hr className="specs-rule" />
+            {renderedTrailerSpecGroups.map((g) => (
               <div key={g.title} className="spec-group">
                 <div className="spec-group-title">{g.title}</div>
                 <div className="spec-grid">
