@@ -943,6 +943,51 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         </div>
 
+        {/* ── Chassis Build — trailer only ── */}
+        {isTrailer && (() => {
+          const axles = Number(c('axleCount') || 0)
+          const drawRaw = Number(c('drawbarLength'))
+          const eyeOffset = axles >= 4 ? 1360 : 807
+          const eyeToEye = drawRaw && !isNaN(drawRaw) ? drawRaw - eyeOffset : null
+          const liftYes = c('axleLift') === 'Yes'
+          return (
+            <div className="section">
+              <div className="section-hdr">Chassis Build</div>
+              <div className="section-body">
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">Chassis Length (mm)</div><div className="field-val">{c('chassisLength') || ''}</div>{!c('chassisLength') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Wheelbase (mm)</div><div className="field-val">{c('wheelbase') || ''}</div>{!c('wheelbase') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Drawbar Length (mm)</div><div className="field-val">{c('drawbarLength') || ''}</div>{!c('drawbarLength') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Drawbar Eye-to-Eye (mm)</div><div className="field-val">{eyeToEye != null ? String(eyeToEye) : ''}</div>{eyeToEye == null && <div className="field-blank" />}</div>
+                </div>
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{c('pivotCentre') || ''}</div>{!c('pivotCentre') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Main Runner Width</div><div className="field-val">{c('mainRunnerWidth') || ''}</div>{!c('mainRunnerWidth') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Chassis Material</div><div className="field-val">Strenx 700</div></div>
+                  <div className="field"><div className="field-lbl">PBS Rating</div><div className="field-val">{c('pbsRating') || ''}</div>{!c('pbsRating') && <div className="field-blank" />}</div>
+                </div>
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">Axle Make</div><div className="field-val">{c('axleMake') || ''}</div>{!c('axleMake') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Axle Count</div><div className="field-val">{c('axleCount') || ''}</div>{!c('axleCount') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Axle Type / Brakes</div><div className="field-val">{c('axleType') || ''}</div>{!c('axleType') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Suspension</div><div className="field-val">{c('suspension') || ''}</div>{!c('suspension') && <div className="field-blank" />}</div>
+                </div>
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">Stud Pattern</div><div className="field-val">{c('studPattern') || ''}</div>{!c('studPattern') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Lift Axle</div><div className="field-val">{c('axleLift') || ''}</div>{!c('axleLift') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Lift Axle Location</div><div className="field-val">{liftYes ? calcLiftAxleLocation(c('axleCount') || '') : ''}</div>{!liftYes && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Lock Flap</div><div className="field-val">{c('lockFlap') || ''}</div>{!c('lockFlap') && <div className="field-blank" />}</div>
+                </div>
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">GTM (kg)</div><div className="field-val">{c('gtm') || ''}</div>{!c('gtm') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">GCM (kg)</div><div className="field-val">{c('gcm') || ''}</div>{!c('gcm') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Tare (kg)</div><div className="field-val">{c('tare') || ''}</div>{!c('tare') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">VIN</div><div className="field-val">{c('vin') || job.vin || ''}</div>{!c('vin') && !job.vin && <div className="field-blank" />}</div>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Hoist & Controls */}
         <div className="section">
