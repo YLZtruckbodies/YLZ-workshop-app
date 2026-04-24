@@ -413,6 +413,13 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
     return v != null && v !== '' ? String(v) : ''
   }
 
+  // For paired truck+trailer jobs, show both numbers in every JOB NUMBER cell
+  // so workshop staff can see which truck body pairs with which trailer. Truck
+  // number always comes first regardless of which side we're viewing.
+  const displayJobNum = job.pairedJobNum
+    ? (isTrailer ? `${job.pairedJobNum} + ${job.num}` : `${job.num} + ${job.pairedJobNum}`)
+    : job.num
+
   // Helper to get a value from quote config, with fallback.
   // For truck-and-trailer builds, truck fields are nested under cfg.truckConfig.
   const c = (key: string) => {
@@ -855,7 +862,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         <div className="info-row info-row-4">
           <div className="cell">
             <div className="cell-lbl">Job Number</div>
-            <div className="cell-val-num">{job.num}</div>
+            <div className="cell-val-num">{displayJobNum}</div>
           </div>
           <div className="cell">
             <div className="cell-lbl">Customer</div>
@@ -1230,7 +1237,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             <div className="info-row info-row-4" style={{ marginBottom: 8 }}>
               <div className="cell">
                 <div className="cell-lbl">Job Number</div>
-                <div className="cell-val-num">{job.num}</div>
+                <div className="cell-val-num">{displayJobNum}</div>
               </div>
               <div className="cell">
                 <div className="cell-lbl">Customer</div>
@@ -1385,7 +1392,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         <div className="info-row info-row-4" style={{ marginBottom: 8 }}>
           <div className="cell">
             <div className="cell-lbl">Job Number</div>
-            <div className="cell-val-num">{job.num}</div>
+            <div className="cell-val-num">{displayJobNum}</div>
           </div>
           <div className="cell">
             <div className="cell-lbl">Customer</div>
@@ -1696,7 +1703,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         <div className="info-row info-row-4" style={{ marginBottom: 8 }}>
           <div className="cell">
             <div className="cell-lbl">Job Number</div>
-            <div className="cell-val-num">{job.num}</div>
+            <div className="cell-val-num">{displayJobNum}</div>
           </div>
           <div className="cell">
             <div className="cell-lbl">Customer</div>
@@ -1833,7 +1840,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="info-row info-row-4" style={{ marginBottom: isTrailer ? 8 : 14 }}>
             <div className="cell">
               <div className="cell-lbl">Job Number</div>
-              <div className="cell-val-num">{job.num}</div>
+              <div className="cell-val-num">{displayJobNum}</div>
             </div>
             <div className="cell">
               <div className="cell-lbl">Customer</div>
