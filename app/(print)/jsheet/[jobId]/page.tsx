@@ -261,11 +261,21 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
     fetch(`/api/jobs/${params.jobId}`)
       .then(r => r.json())
       .then(async (jobData) => {
-        // Try to fetch linked quote for configuration data
+        // Try to fetch linked quote for configuration data.
+        // Direct lookup: quote.jobId === this job's id. Works for truck-only,
+        // trailer-only, and the TRUCK side of a paired truck+trailer build.
+        // For the TRAILER side of a paired build the quote is linked to the
+        // truck job instead, so we fall back to the paired (truck) job's id.
         try {
-          const qRes = await fetch(`/api/quotes?jobId=${jobData.id}`)
-          const quotes = await qRes.json()
-          const quote = Array.isArray(quotes) ? quotes.find((q: any) => q.jobId === jobData.id) : null
+          const lookupIds: string[] = [jobData.id]
+          if (jobData.pairedId) lookupIds.push(jobData.pairedId)
+          let quote: any = null
+          for (const lookupId of lookupIds) {
+            const qRes = await fetch(`/api/quotes?jobId=${lookupId}`)
+            const quotes = await qRes.json()
+            const match = Array.isArray(quotes) ? quotes.find((q: any) => q.jobId === lookupId) : null
+            if (match) { quote = match; break }
+          }
           if (quote) {
             setQuoteId(quote.id)
             // Fetch full quote with configuration
