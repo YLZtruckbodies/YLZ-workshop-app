@@ -1526,7 +1526,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 <div className="field"><div className="field-lbl">Lock Flap</div><div className="field-val">{c('lockFlap') || ''}</div>{!c('lockFlap') && <div className="field-blank" />}</div>
               </div>
             )}
-            {(c('hydraulics') || c('hydTankType') || c('hydTankLocation')) && (
+            {!isTrailer && (c('hydraulics') || c('hydTankType') || c('hydTankLocation')) && (
               <div className="field-row field-row-3">
                 <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('valveBankType') || ''}</div>{!c('valveBankType') && <div className="field-blank" />}</div>
                 <div className="field"><div className="field-lbl">Hydraulic Tank Type</div><div className="field-val">{c('hydTankType') || ''}</div>{!c('hydTankType') && <div className="field-blank" />}</div>
