@@ -943,52 +943,6 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         </div>
 
-        {/* ── Chassis Build — trailer only ── */}
-        {isTrailer && (() => {
-          const axles = Number(c('axleCount') || 0)
-          const drawRaw = Number(c('drawbarLength'))
-          const eyeOffset = axles >= 4 ? 1360 : 807
-          const eyeToEye = drawRaw && !isNaN(drawRaw) ? drawRaw - eyeOffset : null
-          const liftYes = c('axleLift') === 'Yes'
-          return (
-            <div className="section">
-              <div className="section-hdr">Chassis Build</div>
-              <div className="section-body">
-                <div className="field-row field-row-4">
-                  <div className="field"><div className="field-lbl">Chassis Length (mm)</div><div className="field-val">{c('chassisLength') || ''}</div>{!c('chassisLength') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">Wheelbase (mm)</div><div className="field-val">{c('wheelbase') || ''}</div>{!c('wheelbase') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">Drawbar Length (mm)</div><div className="field-val">{c('drawbarLength') || ''}</div>{!c('drawbarLength') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">Drawbar Eye-to-Eye (mm)</div><div className="field-val">{eyeToEye != null ? String(eyeToEye) : ''}</div>{eyeToEye == null && <div className="field-blank" />}</div>
-                </div>
-                <div className="field-row field-row-4">
-                  <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{c('pivotCentre') || ''}</div>{!c('pivotCentre') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">Main Runner Width</div><div className="field-val">{c('mainRunnerWidth') || ''}</div>{!c('mainRunnerWidth') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">Chassis Material</div><div className="field-val">Strenx 700</div></div>
-                  <div className="field"><div className="field-lbl">PBS Rating</div><div className="field-val">{c('pbsRating') || ''}</div>{!c('pbsRating') && <div className="field-blank" />}</div>
-                </div>
-                <div className="field-row field-row-4">
-                  <div className="field"><div className="field-lbl">Axle Make</div><div className="field-val">{c('axleMake') || ''}</div>{!c('axleMake') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">Axle Count</div><div className="field-val">{c('axleCount') || ''}</div>{!c('axleCount') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">Axle Type / Brakes</div><div className="field-val">{c('axleType') || ''}</div>{!c('axleType') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">Suspension</div><div className="field-val">{c('suspension') || ''}</div>{!c('suspension') && <div className="field-blank" />}</div>
-                </div>
-                <div className="field-row field-row-4">
-                  <div className="field"><div className="field-lbl">Stud Pattern</div><div className="field-val">{c('studPattern') || ''}</div>{!c('studPattern') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">Lift Axle</div><div className="field-val">{c('axleLift') || ''}</div>{!c('axleLift') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">Lift Axle Location</div><div className="field-val">{liftYes ? calcLiftAxleLocation(c('axleCount') || '') : ''}</div>{!liftYes && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">Lock Flap</div><div className="field-val">{c('lockFlap') || ''}</div>{!c('lockFlap') && <div className="field-blank" />}</div>
-                </div>
-                <div className="field-row field-row-4">
-                  <div className="field"><div className="field-lbl">GTM (kg)</div><div className="field-val">{c('gtm') || ''}</div>{!c('gtm') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">GCM (kg)</div><div className="field-val">{c('gcm') || ''}</div>{!c('gcm') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">Tare (kg)</div><div className="field-val">{c('tare') || ''}</div>{!c('tare') && <div className="field-blank" />}</div>
-                  <div className="field"><div className="field-lbl">VIN</div><div className="field-val">{c('vin') || job.vin || ''}</div>{!c('vin') && !job.vin && <div className="field-blank" />}</div>
-                </div>
-              </div>
-            </div>
-          )
-        })()}
-
         {/* Hoist & Controls */}
         <div className="section">
           <div className="section-hdr">Hoist &amp; Controls</div>
@@ -1239,6 +1193,175 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         </div>
       </div>
+
+      {/* ═══════════════════════════════════════════
+          SHEET 1B — CHASSIS BUILD (trailer only)
+      ═══════════════════════════════════════════ */}
+      {isTrailer && (() => {
+        const axles = Number(c('axleCount') || 0)
+        const drawRaw = Number(c('drawbarLength'))
+        const eyeOffset = axles >= 4 ? 1360 : 807
+        const eyeToEye = drawRaw && !isNaN(drawRaw) ? drawRaw - eyeOffset : null
+        const liftYes = c('axleLift') === 'Yes'
+        return (
+          <div className="sheet">
+            <div className="hdr">
+              <div>
+                <div className="hdr-title">Chassis Build Sheet</div>
+                <div className="hdr-sub">Workshop Copy — Chassis</div>
+              </div>
+              <div>
+                <div className="hdr-ylz">YLZ</div>
+                <div className="hdr-ylzsub">YLZ Truck Bodies &amp; Trailers</div>
+              </div>
+            </div>
+            <div className="divider" />
+
+            <div className="info-row info-row-4" style={{ marginBottom: 8 }}>
+              <div className="cell">
+                <div className="cell-lbl">Job Number</div>
+                <div className="cell-val-num">{job.num}</div>
+              </div>
+              <div className="cell">
+                <div className="cell-lbl">Customer</div>
+                <div className="cell-val-sm">{job.customer || '—'}</div>
+              </div>
+              <div className="cell">
+                <div className="cell-lbl">Build Type</div>
+                <div className="cell-val-sm">{job.type || '—'}</div>
+              </div>
+              <div className="cell">
+                <div className="cell-lbl">Date</div>
+                <div className="cell-val-sm">{today()}</div>
+              </div>
+            </div>
+
+            <div className="info-row info-row-3" style={{ marginBottom: 14 }}>
+              <div className="cell">
+                <div className="cell-lbl">VIN</div>
+                <div className="cell-val-sm">{c('vin') || job.vin || ''}</div>
+                {!c('vin') && !job.vin && <div className="cell-blank" />}
+              </div>
+              <div className="cell">
+                <div className="cell-lbl">Trailer Model</div>
+                <div className="cell-val-sm">{c('trailerModel') || c('trailerType') || ''}</div>
+                {!c('trailerModel') && !c('trailerType') && <div className="cell-blank" />}
+              </div>
+              <div className="cell">
+                <div className="cell-lbl">Chassis Material</div>
+                <div className="cell-val-sm">Strenx 700</div>
+              </div>
+            </div>
+
+            {/* Chassis Dimensions */}
+            <div className="section">
+              <div className="section-hdr">Chassis Dimensions</div>
+              <div className="section-body">
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">Chassis Length (mm)</div><div className="field-val">{c('chassisLength') || ''}</div>{!c('chassisLength') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Wheelbase (mm)</div><div className="field-val">{c('wheelbase') || ''}</div>{!c('wheelbase') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Drawbar Length (mm)</div><div className="field-val">{c('drawbarLength') || ''}</div>{!c('drawbarLength') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Drawbar Eye-to-Eye (mm)</div><div className="field-val">{eyeToEye != null ? String(eyeToEye) : ''}</div>{eyeToEye == null && <div className="field-blank" />}</div>
+                </div>
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">C/L Pivot to Rear (mm)</div><div className="field-val">{c('pivotCentre') || ''}</div>{!c('pivotCentre') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Main Runner Width</div><div className="field-val">{c('mainRunnerWidth') || ''}</div>{!c('mainRunnerWidth') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Body Length (mm)</div><div className="field-val">{c('bodyLength') || ''}</div>{!c('bodyLength') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Body Width (mm)</div><div className="field-val">{c('bodyWidth') || ''}</div>{!c('bodyWidth') && <div className="field-blank" />}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Axle & Suspension */}
+            <div className="section">
+              <div className="section-hdr">Axle &amp; Suspension</div>
+              <div className="section-body">
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">Axle Make</div><div className="field-val">{c('axleMake') || ''}</div>{!c('axleMake') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Axle Count</div><div className="field-val">{c('axleCount') || ''}</div>{!c('axleCount') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Axle Type / Brakes</div><div className="field-val">{c('axleType') || ''}</div>{!c('axleType') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Suspension</div><div className="field-val">{c('suspension') || ''}</div>{!c('suspension') && <div className="field-blank" />}</div>
+                </div>
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">Stud Pattern</div><div className="field-val">{c('studPattern') || ''}</div>{!c('studPattern') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Lift Axle</div><div className="field-val">{c('axleLift') || ''}</div>{!c('axleLift') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Lift Axle Location</div><div className="field-val">{liftYes ? calcLiftAxleLocation(c('axleCount') || '') : ''}</div>{!liftYes && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Lock Flap</div><div className="field-val">{c('lockFlap') || ''}</div>{!c('lockFlap') && <div className="field-blank" />}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mass & Ratings */}
+            <div className="section">
+              <div className="section-hdr">Mass &amp; Ratings</div>
+              <div className="section-body">
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">GTM (kg)</div><div className="field-val">{c('gtm') || ''}</div>{!c('gtm') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">GCM (kg)</div><div className="field-val">{c('gcm') || ''}</div>{!c('gcm') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Tare (est.) (kg)</div><div className="field-val">{c('tare') || ''}</div>{!c('tare') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">PBS Rating</div><div className="field-val">{c('pbsRating') || ''}</div>{!c('pbsRating') && <div className="field-blank" />}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Booster Settings & Slack Lengths (if present) */}
+            {(() => {
+              const axleSettings = (job.cfg?.axleSettings || (job.cfg?.trailerConfig as any)?.axleSettings) as { boosters: string[]; slacks: string[] } | undefined
+              if (!axleSettings) return null
+              return (
+                <div className="section">
+                  <div className="section-hdr">Booster Settings &amp; Slack Lengths</div>
+                  <div className="section-body">
+                    <div className="field-row field-row-2">
+                      <div className="field">
+                        <div className="field-lbl">Booster Settings</div>
+                        <div className="field-val">{axleSettings.boosters.map((v, i) => `${i + 1}: ${v}`).join('  |  ')}</div>
+                      </div>
+                      <div className="field">
+                        <div className="field-lbl">Slack Lengths</div>
+                        <div className="field-val">{axleSettings.slacks.map((v, i) => `${i + 1}: ${v}mm`).join('  |  ')}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Notes */}
+            <div className="notes-box" style={{ marginTop: 10 }}>
+              <div className="notes-lbl">Chassis Build Notes</div>
+              <div className="notes-text">
+                {c('specialRequirements') ? c('specialRequirements') : ''}
+                {c('specialRequirements') && job.notes ? '\n\n' : ''}
+                {job.notes || ''}
+              </div>
+              {!c('specialRequirements') && !job.notes && (
+                <div className="notes-lines">
+                  <div className="notes-line" />
+                  <div className="notes-line" />
+                  <div className="notes-line" />
+                </div>
+              )}
+            </div>
+
+            {/* Sign-off */}
+            <div>
+              <div className="signoff-hdr">Chassis Build Sign-Off</div>
+              <div className="signoff-grid">
+                {['Chassis — Start', 'Chassis — Complete', 'QA Check', 'Supervisor Approval'].map(s => (
+                  <div key={s} className="signoff-cell">
+                    <div className="signoff-stage">{s}</div>
+                    <div className="sig-line" />
+                    <div className="sig-lbl">Signed: ___________</div>
+                    <div style={{ height: 12 }} />
+                    <div className="sig-lbl">Date: _____________</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ═══════════════════════════════════════════
           SHEET 2 — FITOUT
