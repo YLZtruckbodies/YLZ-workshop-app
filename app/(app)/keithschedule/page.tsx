@@ -80,6 +80,17 @@ function workersForTab(workers: Worker[], tab: TabKey): Worker[] {
   }
 }
 
+/* ── MO number derivation ──────────────────────────────────────── */
+
+function deriveMO(jobNo: string, hdr: string, section: string): string {
+  const base = `MO-YLZ${jobNo}`
+  if (['hardox', 'alloy', 'steel'].includes(hdr)) return base
+  if (hdr === 'paint')      return `${base}.6`
+  if (section === 'subfit') return `${base}.7`
+  // chassis, fitout, trailerfit, trailer_chassis: sub-numbers TBC
+  return ''
+}
+
 /* ── Completion calculator ─────────────────────────────────────── */
 
 function calcCompletion(jobs: WorkerJob[], idx: number): string {
@@ -284,10 +295,12 @@ export default function KeithSchedulePage() {
 
   const handleAddFromBoard = useCallback(
     async (workerId: string, jobNo: string, type: string) => {
-      await addWorkerJob(workerId, { jobNo, type, start: '', days: 1 })
+      const worker = (workers as Worker[]).find((w) => w.id === workerId)
+      const moNumber = worker ? deriveMO(jobNo, worker.hdr, worker.section) : ''
+      await addWorkerJob(workerId, { jobNo, type, start: '', days: 1, moNumber })
       refresh()
     },
-    [refresh],
+    [refresh, workers],
   )
 
   /* ── Sheet Sync handler ──────────────────────────── */
