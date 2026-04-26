@@ -281,14 +281,28 @@ export async function syncFromMonday(): Promise<any> {
 }
 
 // Google Sheets sync
-export async function markWorkerJobDone(workerId: string, jobId: string, done: boolean): Promise<any> {
+export async function markWorkerJobDone(workerId: string, jobId: string, done: boolean, moNumber?: string): Promise<any> {
   const res = await fetch(`/api/workers/${workerId}/jobs/${jobId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ done }),
+    body: JSON.stringify({ done, ...(moNumber !== undefined ? { moNumber } : {}) }),
   })
   if (!res.ok) throw new Error('Failed to update job')
   return res.json()
+}
+
+export async function saveWorkerJobMO(workerId: string, jobId: string, moNumber: string): Promise<any> {
+  const res = await fetch(`/api/workers/${workerId}/jobs/${jobId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ moNumber }),
+  })
+  if (!res.ok) throw new Error('Failed to save MO number')
+  return res.json()
+}
+
+export function useKeithCompletions() {
+  return useSWR('/api/keith/completions', fetcher, { refreshInterval: 30000 })
 }
 
 export async function populateKeithSchedule(): Promise<any> {

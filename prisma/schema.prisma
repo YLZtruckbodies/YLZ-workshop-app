@@ -88,15 +88,18 @@ model SyncLog {
 }
 
 model WorkerJob {
-  id       String  @id @default(cuid())
-  workerId String
-  jobNo    String
-  type     String
-  start    String  @default("")
-  days     Int     @default(1)
-  position Int     @default(0)
-  done     Boolean @default(false)
-  worker   Worker  @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  workerId    String
+  jobNo       String
+  type        String
+  start       String    @default("")
+  days        Int       @default(1)
+  position    Int       @default(0)
+  done         Boolean   @default(false)
+  moNumber     String    @default("")
+  completedAt  DateTime?
+  mrpProcessed Boolean   @default(false)
+  worker       Worker    @relation(fields: [workerId], references: [id], onDelete: Cascade)
 }
 
 model Tarp {

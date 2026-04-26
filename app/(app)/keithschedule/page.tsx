@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
-import { useWorkers, useJobs, useMrpChecklists, addWorkerJob, updateWorkerJobs, deleteWorkerJob, syncFromSheets, markWorkerJobDone } from '@/lib/hooks'
+import { useWorkers, useJobs, useMrpChecklists, addWorkerJob, updateWorkerJobs, deleteWorkerJob, syncFromSheets, markWorkerJobDone, saveWorkerJobMO } from '@/lib/hooks'
 import { parseDate, fmtDate, addWorkdays, nextWorkday, compDate } from '@/lib/workdays'
 import { useSession } from 'next-auth/react'
 import { useSWRConfig } from 'swr'
@@ -18,6 +18,8 @@ interface WorkerJob {
   days: number
   position: number
   done?: boolean
+  moNumber?: string
+  completedAt?: string
 }
 
 interface Worker {
@@ -44,12 +46,12 @@ interface BoardJob {
 /* ── Tab Definitions ───────────────────────────────────────────── */
 
 const TABS = [
-  { key: 'alloy', label: 'Alloy Workers' },
-  { key: 'hardox_steel', label: 'Hardox & Steel' },
   { key: 'chassis', label: 'Truck Chassis' },
   { key: 'trailer_chassis', label: 'Trailer Chassis' },
-  { key: 'fitout', label: 'Fitout' },
+  { key: 'alloy', label: 'Alloy Workers' },
+  { key: 'hardox_steel', label: 'Hardox & Steel' },
   { key: 'paint', label: 'Paint' },
+  { key: 'fitout', label: 'Fitout' },
   { key: 'trailer_subfit', label: 'Trailer & Subframe Fitout' },
 ] as const
 
@@ -264,13 +266,20 @@ export default function KeithSchedulePage() {
     [refresh, workers, pushUndo],
   )
 
-  const handleToggleDone = useCallback(
-    async (worker: Worker, jobId: string, currentDone: boolean) => {
-      await markWorkerJobDone(worker.id, jobId, !currentDone)
+  const handleMarkComplete = useCallback(
+    async (worker: Worker, jobId: string, done: boolean, moNumber: string) => {
+      await markWorkerJobDone(worker.id, jobId, done, moNumber)
       refresh()
-      mutate('/api/jobs') // refresh job board stage
+      mutate('/api/jobs')
     },
     [refresh, mutate],
+  )
+
+  const handleSaveMO = useCallback(
+    async (workerId: string, jobId: string, moNumber: string) => {
+      await saveWorkerJobMO(workerId, jobId, moNumber)
+    },
+    [],
   )
 
   const handleAddFromBoard = useCallback(
@@ -566,7 +575,8 @@ export default function KeithSchedulePage() {
                     onUpdateField={handleUpdateField}
                     onAddRow={handleAddRow}
                     onDeleteJob={handleDeleteJob}
-                    onToggleDone={handleToggleDone}
+                    onMarkComplete={handleMarkComplete}
+                    onSaveMO={handleSaveMO}
                     onAddFromBoard={handleAddFromBoard}
                   />
                 )
@@ -594,7 +604,8 @@ function WorkerCard({
   onUpdateField,
   onAddRow,
   onDeleteJob,
-  onToggleDone,
+  onMarkComplete,
+  onSaveMO,
   onAddFromBoard,
 }: {
   worker: Worker
@@ -604,7 +615,8 @@ function WorkerCard({
   onUpdateField: (worker: Worker, jobId: string, field: 'jobNo' | 'type' | 'start' | 'days', value: string | number) => void
   onAddRow: (workerId: string) => void
   onDeleteJob: (workerId: string, jobId: string) => void
-  onToggleDone: (worker: Worker, jobId: string, currentDone: boolean) => void
+  onMarkComplete: (worker: Worker, jobId: string, done: boolean, moNumber: string) => void
+  onSaveMO: (workerId: string, jobId: string, moNumber: string) => void
   onAddFromBoard: (workerId: string, jobNo: string, type: string) => void
 }) {
   const [showPicker, setShowPicker] = useState(false)
@@ -746,24 +758,18 @@ function WorkerCard({
         }}
       >
         <thead>
-          <tr
-            style={{
-              borderBottom: '1px solid var(--border2)',
-              textAlign: 'left',
-            }}
-          >
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 32, textAlign: 'center' }}></th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 90 }}>Job No.</th>
+          <tr style={{ borderBottom: '1px solid var(--border2)', textAlign: 'left' }}>
+            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 110 }}>Status</th>
+            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 80 }}>Job No.</th>
             <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600 }}>Type</th>
             {partsIndicatorsForWorker(worker.hdr, worker.section).length > 0 && (
-              <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 80 }}>Parts</th>
+              <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 70 }}>Parts</th>
             )}
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 100 }}>Start Date</th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 60 }}>Days</th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 100 }}>Completion</th>
-            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 50, textAlign: 'center' }}>
-              Del
-            </th>
+            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 90 }}>MO No.</th>
+            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 90 }}>Start Date</th>
+            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 50 }}>Days</th>
+            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 90 }}>Completion</th>
+            <th style={{ padding: 6, color: 'var(--text3)', fontWeight: 600, width: 40, textAlign: 'center' }}>Del</th>
           </tr>
         </thead>
         <tbody>
@@ -781,29 +787,35 @@ function WorkerCard({
             const checklist = checklistMap[job.jobNo]
             return (
               <tr key={job.id} style={rowStyle}>
-                {/* Done tick */}
-                <td style={{ padding: 6, textAlign: 'center' }}>
-                  <button
-                    onClick={() => onToggleDone(worker, job.id, isDone)}
-                    title={isDone ? 'Mark incomplete' : 'Mark done — advances job board stage'}
+                {/* Status dropdown */}
+                <td style={{ padding: 6 }}>
+                  <select
+                    value={isDone ? 'complete' : 'inprogress'}
+                    onChange={(e) => {
+                      const newDone = e.target.value === 'complete'
+                      const moEl = document.getElementById(`mo-${job.id}`) as HTMLInputElement | null
+                      const mo = moEl?.value ?? job.moNumber ?? ''
+                      onMarkComplete(worker, job.id, newDone, mo)
+                    }}
                     style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      border: isDone ? '2px solid #22d07a' : '2px solid var(--border2)',
-                      background: isDone ? '#22d07a' : 'transparent',
+                      background: isDone ? 'rgba(34,208,122,0.12)' : 'var(--dark3)',
+                      border: `1px solid ${isDone ? '#22d07a' : 'var(--border)'}`,
+                      color: isDone ? '#22d07a' : 'var(--text2)',
+                      borderRadius: 3,
+                      padding: '4px 6px',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      fontFamily: "'League Spartan', sans-serif",
+                      letterSpacing: 0.4,
+                      textTransform: 'uppercase',
                       cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 12,
-                      color: isDone ? '#000' : 'var(--text3)',
-                      padding: 0,
-                      transition: '0.15s',
+                      width: 100,
+                      outline: 'none',
                     }}
                   >
-                    {isDone ? '✓' : ''}
-                  </button>
+                    <option value="inprogress">In Progress</option>
+                    <option value="complete">Complete</option>
+                  </select>
                 </td>
                 <td style={{ padding: 6 }}>
                   <input
@@ -873,6 +885,35 @@ function WorkerCard({
                     </div>
                   </td>
                 )}
+                {/* MO Number */}
+                <td style={{ padding: 6 }}>
+                  <input
+                    id={`mo-${job.id}`}
+                    type="text"
+                    defaultValue={job.moNumber ?? ''}
+                    placeholder="MO-..."
+                    onBlur={(e) => {
+                      if (e.target.value !== (job.moNumber ?? '')) {
+                        onSaveMO(worker.id, job.id, e.target.value)
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                    }}
+                    style={{
+                      background: 'var(--dark3)',
+                      border: '1px solid var(--border)',
+                      color: '#fff',
+                      padding: '4px 6px',
+                      fontSize: 10,
+                      width: 80,
+                      borderRadius: 2,
+                      outline: 'none',
+                      fontFamily: 'monospace',
+                      ...textStyle,
+                    }}
+                  />
+                </td>
                 <td style={{ padding: 6 }}>
                   <input
                     type="text"
