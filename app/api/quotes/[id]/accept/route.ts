@@ -702,6 +702,64 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
   }
 
+  // ── Notify Keith + Dom if build has a liner (tipper tarps need arranging) ──
+  if (apiKey) {
+    try {
+      const cfg = (quote.configuration ?? {}) as Record<string, any>
+      const bt = (quote.buildType || '').toLowerCase()
+      const linerSections: { label: string; bodyLength: string; jobNum: string }[] = []
+      if (bt === 'truck-and-trailer') {
+        const tc = cfg.truckConfig || {}
+        const trc = cfg.trailerConfig || {}
+        if (tc.liner === 'Yes') linerSections.push({ label: 'Truck Body', bodyLength: tc.bodyLength || '', jobNum: job.num })
+        if (trc.liner === 'Yes') linerSections.push({ label: 'Trailer', bodyLength: trc.bodyLength || '', jobNum: pairedJob?.num || job.num })
+      } else if (bt === 'truck-body') {
+        if (cfg.liner === 'Yes') linerSections.push({ label: 'Truck Body', bodyLength: cfg.bodyLength || '', jobNum: job.num })
+      } else if (bt === 'trailer') {
+        if (cfg.liner === 'Yes') linerSections.push({ label: 'Trailer', bodyLength: cfg.bodyLength || '', jobNum: job.num })
+      }
+
+      if (linerSections.length > 0) {
+        const { Resend } = await import('resend')
+        const resend = new Resend(apiKey)
+        const fromEmail = process.env.FROM_EMAIL || 'noreply@ylztrucks.com.au'
+        const keithEmail = process.env.KEITH_EMAIL || 'workshop@ylztruckbodies.com'
+        const domEmail = process.env.DOM_EMAIL || 'domenic@ylztruckbodies.com'
+        const sectionRows = linerSections.map(s => `
+          <tr>
+            <td style="padding:8px 0;color:#666;font-size:13px;width:160px">${s.label}</td>
+            <td style="font-weight:600">Job ${s.jobNum}${s.bodyLength ? ` — ${s.bodyLength}mm body` : ''}</td>
+          </tr>`).join('')
+        const html = `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;padding:32px">
+            <div style="background:#E8681A;padding:16px 24px;border-radius:6px 6px 0 0">
+              <span style="color:#fff;font-size:20px;font-weight:900;letter-spacing:1px">YLZ — Liner build accepted (tipper tarp required)</span>
+            </div>
+            <div style="border:1px solid #eee;border-top:none;padding:24px;border-radius:0 0 6px 6px">
+              <p style="margin:0 0 16px;font-size:14px">Quote <strong>${quote.quoteNumber}</strong> for <strong>${quote.customerName}</strong> has been accepted and includes a liner. Please arrange tipper tarps for the section(s) below when booking the job in.</p>
+              <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+                <tr><td style="padding:8px 0;color:#666;font-size:13px;width:160px">Quote</td><td style="font-weight:700;font-size:15px">${quote.quoteNumber}</td></tr>
+                <tr><td style="padding:8px 0;color:#666;font-size:13px">Customer</td><td style="font-weight:600">${quote.customerName}</td></tr>
+                <tr><td style="padding:8px 0;color:#666;font-size:13px">Build Type</td><td style="font-weight:600">${typeStr}</td></tr>
+                ${sectionRows}
+              </table>
+              <a href="${origin}/quotes/builder?id=${quote.id}" style="background:#E8681A;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;font-weight:700;font-size:13px">View Quote</a>
+            </div>
+          </div>
+        `
+        const sectionLabels = linerSections.map(s => s.label).join(' + ')
+        await resend.emails.send({
+          from: fromEmail,
+          to: [keithEmail, domEmail],
+          subject: `Liner build accepted — ${quote.quoteNumber} (${sectionLabels}) — tipper tarp required`,
+          html,
+        })
+      }
+    } catch {
+      // graceful failure
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     job: { id: job.id, num: job.num },
