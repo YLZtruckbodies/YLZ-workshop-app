@@ -700,6 +700,7 @@ model VinPlateRecord {
   vinPlateOrdered  Boolean  @default(false)
   vinPlateReceived Boolean  @default(false)
   roverInput       Boolean  @default(false)
+  plateOnChassis   Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

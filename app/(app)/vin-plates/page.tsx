@@ -14,6 +14,7 @@ type VinRecord = {
   vinPlateOrdered: boolean
   vinPlateReceived: boolean
   roverInput: boolean
+  plateOnChassis: boolean
   createdAt: string
 }
 
@@ -41,7 +42,7 @@ const btnStyle: React.CSSProperties = {
 
 const emptyForm = {
   vin: '', axleType: '', hubConfiguration: '', type: '', jobNumber: '', customer: '', notes: '',
-  vinPlateOrdered: false, vinPlateReceived: false, roverInput: false,
+  vinPlateOrdered: false, vinPlateReceived: false, roverInput: false, plateOnChassis: false,
 }
 
 function BoolSelect({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
@@ -120,7 +121,7 @@ export default function VinPlatesPage() {
     setForm({
       vin: r.vin, axleType: r.axleType, hubConfiguration: r.hubConfiguration,
       type: r.type, jobNumber: r.jobNumber, customer: r.customer, notes: r.notes,
-      vinPlateOrdered: r.vinPlateOrdered, vinPlateReceived: r.vinPlateReceived, roverInput: r.roverInput,
+      vinPlateOrdered: r.vinPlateOrdered, vinPlateReceived: r.vinPlateReceived, roverInput: r.roverInput, plateOnChassis: r.plateOnChassis,
     })
     setEditId(r.id)
     setShowForm(true)
@@ -143,7 +144,7 @@ export default function VinPlatesPage() {
   }
 
   // Inline toggle for the 3 boolean fields
-  const handleToggle = async (id: string, field: 'vinPlateOrdered' | 'vinPlateReceived' | 'roverInput', current: boolean) => {
+  const handleToggle = async (id: string, field: 'vinPlateOrdered' | 'vinPlateReceived' | 'roverInput' | 'plateOnChassis', current: boolean) => {
     setTogglingId(id + field)
     setRecords(prev => prev.map(r => r.id === id ? { ...r, [field]: !current } : r))
     try {
@@ -233,7 +234,7 @@ export default function VinPlatesPage() {
               <label style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Notes</label>
               <input value={form.notes} onChange={(e: React.ChangeEvent<HTMLInputElement>) => set('notes', e.target.value)} style={inputStyle} placeholder="Optional notes" />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 12, maxWidth: 480 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 12, maxWidth: 640 }}>
               <div>
                 <label style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Plate Ordered</label>
                 <select value={form.vinPlateOrdered ? 'yes' : 'no'} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => set('vinPlateOrdered', e.target.value === 'yes')} style={{ ...inputStyle, width: 'auto' }}>
@@ -251,6 +252,13 @@ export default function VinPlatesPage() {
               <div>
                 <label style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Rover Input</label>
                 <select value={form.roverInput ? 'yes' : 'no'} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => set('roverInput', e.target.value === 'yes')} style={{ ...inputStyle, width: 'auto' }}>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Plate on Chassis</label>
+                <select value={form.plateOnChassis ? 'yes' : 'no'} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => set('plateOnChassis', e.target.value === 'yes')} style={{ ...inputStyle, width: 'auto' }}>
                   <option value="no">No</option>
                   <option value="yes">Yes</option>
                 </select>
@@ -289,6 +297,7 @@ export default function VinPlatesPage() {
                 <th style={thStyle}>Plate Ordered</th>
                 <th style={thStyle}>Plate Received</th>
                 <th style={thStyle}>Rover Input</th>
+                <th style={thStyle}>Plate on Chassis</th>
                 <th style={thStyle}>Date Added</th>
                 <th style={{ ...thStyle, textAlign: 'right' }}>Actions</th>
               </tr>
@@ -321,6 +330,12 @@ export default function VinPlatesPage() {
                     <BoolSelect
                       value={r.roverInput}
                       onChange={(v) => { if (togglingId !== r.id + 'roverInput') handleToggle(r.id, 'roverInput', r.roverInput) }}
+                    />
+                  </td>
+                  <td style={tdStyle}>
+                    <BoolSelect
+                      value={r.plateOnChassis}
+                      onChange={(v) => { if (togglingId !== r.id + 'plateOnChassis') handleToggle(r.id, 'plateOnChassis', r.plateOnChassis) }}
                     />
                   </td>
                   <td style={{ ...tdStyle, color: '#888', fontSize: 12 }}>
