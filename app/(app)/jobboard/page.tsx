@@ -46,6 +46,7 @@ const TABLE_COLUMNS = [
   'MRP',
   'Parts',
   'QA',
+  'VASS Engineering',
   'Build Progress',
   'Notes',
   'PO',
@@ -66,6 +67,7 @@ const DEFAULT_COL_WIDTHS: number[] = [
   65,   // MRP
   65,   // Parts
   65,   // QA
+  130,  // VASS Engineering
   230,  // Build Progress
   160,  // Notes
   80,   // PO
@@ -73,7 +75,7 @@ const DEFAULT_COL_WIDTHS: number[] = [
   100,  // Actions
 ]
 
-const COL_WIDTHS_KEY = 'ylz-jobboard-col-widths-v2'
+const COL_WIDTHS_KEY = 'ylz-jobboard-col-widths-v3'
 
 const FILE_TYPE_ICONS: Record<string, string> = {
   'application/pdf': '\u{1F4C4}',
@@ -255,6 +257,35 @@ function SiteToggleCell({ value, jobId, onSave }: { value: string; jobId: string
       >
         {isOnSite ? '✓ On Site' : 'No'}
       </button>
+    </td>
+  )
+}
+
+// ── VASS Engineering cell ─────────────────────────────────────────────
+const VASS_OPTIONS = ['', 'To Be Done', 'Inspected', 'Booked in'] as const
+const vassColor = (v: string) => {
+  if (v === 'Booked in') return { color: '#22d07a', bg: 'rgba(34,208,122,0.1)', border: 'rgba(34,208,122,0.3)' }
+  if (v === 'Inspected') return { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)' }
+  if (v === 'To Be Done') return { color: '#e84560', bg: 'rgba(232,69,96,0.1)', border: 'rgba(232,69,96,0.3)' }
+  return { color: 'rgba(255,255,255,0.25)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.1)' }
+}
+function VassEngineeringCell({ value, jobId, onSave }: { value: string; jobId: string; onSave: (id: string, field: string, val: string, old: string) => void }) {
+  const c = vassColor(value)
+  return (
+    <td style={{ padding: '6px 8px' }} onClick={e => e.stopPropagation()}>
+      <select
+        value={value || ''}
+        onChange={e => onSave(jobId, 'vass', e.target.value, value || '')}
+        style={{
+          background: c.bg, border: `1px solid ${c.border}`, borderRadius: 4,
+          color: c.color, fontSize: 10, fontWeight: 700, cursor: 'pointer',
+          outline: 'none', padding: '3px 6px', width: '100%',
+          fontFamily: "'League Spartan', sans-serif", letterSpacing: 0.3,
+          textTransform: 'uppercase',
+        }}
+      >
+        {VASS_OPTIONS.map(o => <option key={o} value={o}>{o || '—'}</option>)}
+      </select>
     </td>
   )
 }
@@ -707,6 +738,9 @@ function DraggableJobRow({
           doneLabel="Passed"
           progressLabel="In QC"
         />
+
+        {/* VASS Engineering */}
+        <VassEngineeringCell value={job.vass || ''} jobId={job.id} onSave={onFieldSave} />
 
         {/* Build Progress — loading bar */}
         <BuildProgressBar stage={job.stage} btype={job.btype || deriveBtype(job.type || '')} />
