@@ -262,7 +262,7 @@ function SiteToggleCell({ value, jobId, onSave }: { value: string; jobId: string
 }
 
 // ── VASS Engineering cell ─────────────────────────────────────────────
-const VASS_OPTIONS = ['', 'To Be Done', 'Inspected', 'Booked in'] as const
+const VASS_OPTIONS = ['', 'To Be Done', 'Ready for Inspection', 'Inspected', 'Booked in'] as const
 const vassColor = (v: string) => {
   if (v === 'Booked in') return { color: '#22d07a', bg: 'rgba(34,208,122,0.1)', border: 'rgba(34,208,122,0.3)' }
   if (v === 'Inspected') return { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)' }
