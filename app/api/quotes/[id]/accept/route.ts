@@ -703,6 +703,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   // ── Notify Keith + Dom if build has a liner (tipper tarps need arranging) ──
+  console.log('[liner-email] starting check for quote', quote.quoteNumber, 'buildType:', quote.buildType, 'apiKey set:', !!apiKey)
   if (apiKey) {
     try {
       const cfg = (quote.configuration ?? {}) as Record<string, any>
@@ -711,12 +712,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       if (bt === 'truck-and-trailer') {
         const tc = cfg.truckConfig || {}
         const trc = cfg.trailerConfig || {}
+        console.log('[liner-email] truck-and-trailer — truckConfig.liner:', tc.liner, 'trailerConfig.liner:', trc.liner)
         if (tc.liner === 'Yes') linerSections.push({ label: 'Truck Body', bodyLength: tc.bodyLength || '', jobNum: job.num })
         if (trc.liner === 'Yes') linerSections.push({ label: 'Trailer', bodyLength: trc.bodyLength || '', jobNum: pairedJob?.num || job.num })
       } else if (bt === 'truck-body') {
+        console.log('[liner-email] truck-body — cfg.liner:', cfg.liner)
         if (cfg.liner === 'Yes') linerSections.push({ label: 'Truck Body', bodyLength: cfg.bodyLength || '', jobNum: job.num })
       } else if (bt === 'trailer') {
+        console.log('[liner-email] trailer — cfg.liner:', cfg.liner)
         if (cfg.liner === 'Yes') linerSections.push({ label: 'Trailer', bodyLength: cfg.bodyLength || '', jobNum: job.num })
+      } else {
+        console.log('[liner-email] buildType not handled:', bt)
       }
 
       if (linerSections.length > 0) {
@@ -748,16 +754,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           </div>
         `
         const sectionLabels = linerSections.map(s => s.label).join(' + ')
-        await resend.emails.send({
+        console.log('[liner-email] sending to', keithEmail, domEmail, 'sections:', sectionLabels)
+        const result = await resend.emails.send({
           from: fromEmail,
           to: [keithEmail, domEmail],
           subject: `Liner build accepted — ${quote.quoteNumber} (${sectionLabels}) — tipper tarp required`,
           html,
         })
+        console.log('[liner-email] resend result:', JSON.stringify(result))
+      } else {
+        console.log('[liner-email] no liner sections found — skipping email')
       }
-    } catch {
-      // graceful failure
+    } catch (err) {
+      console.error('[liner-email] failed:', err)
     }
+  } else {
+    console.log('[liner-email] skipped — RESEND_API_KEY not set')
   }
 
   return NextResponse.json({
