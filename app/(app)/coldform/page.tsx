@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useSession } from 'next-auth/react'
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   useJobs,
   useColdformKits,
@@ -263,8 +263,14 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
   const [adding, setAdding] = useState(false)
   const [expandedKit, setExpandedKit] = useState<string | null>(null)
   const [newKit, setNewKit] = useState({ size: '', allocatedTo: '', notes: '' })
+  const [localItems, setLocalItems] = useState<any[]>([])
+  const dragIdx = useRef<number | null>(null)
 
-  const items = (kits || []) as any[]
+  useEffect(() => {
+    if (kits) setLocalItems([...(kits as any[])].sort((a: any, b: any) => a.position - b.position))
+  }, [kits])
+
+  const items = localItems
 
   const stats = useMemo(() => {
     const total = items.length
@@ -361,6 +367,26 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
     mutate()
   }
 
+  function handleDragStart(idx: number) {
+    dragIdx.current = idx
+  }
+
+  function handleDragOver(e: React.DragEvent, idx: number) {
+    e.preventDefault()
+    if (dragIdx.current === null || dragIdx.current === idx) return
+    const reordered = [...localItems]
+    const [moved] = reordered.splice(dragIdx.current, 1)
+    reordered.splice(idx, 0, moved)
+    dragIdx.current = idx
+    setLocalItems(reordered)
+  }
+
+  async function handleKitDrop() {
+    dragIdx.current = null
+    await Promise.all(localItems.map((kit: any, i: number) => updateColdformKit(kit.id, { position: i })))
+    mutate()
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -374,6 +400,7 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: '2px solid rgba(255,255,255,0.15)' }}>
+              <th style={{ ...thStyle, width: 28 }}></th>
               <th style={thStyle}>Size</th>
               {KIT_PARTS.map((p) => (
                 <th key={p.key} style={{ ...thStyle, textAlign: 'center', minWidth: 70 }}>
@@ -387,7 +414,7 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
             </tr>
           </thead>
           <tbody>
-            {items.map((kit: any) => {
+            {items.map((kit: any, idx: number) => {
               const isEditing = editingId === kit.id
               const allDone = KIT_PARTS.every((p) => {
                 const v = (kit[p.key] || '').toLowerCase().trim()
@@ -396,11 +423,19 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
               return (
                 <React.Fragment key={kit.id}>
                 <tr
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDrop={handleKitDrop}
+                  onDragEnd={() => { dragIdx.current = null }}
                   style={{
                     borderBottom: '1px solid rgba(255,255,255,0.06)',
                     background: allDone ? 'rgba(34,208,122,0.06)' : 'transparent',
                   }}
                 >
+                  <td style={{ ...tdStyle, width: 28, cursor: 'grab', textAlign: 'center', color: 'rgba(255,255,255,0.3)', userSelect: 'none', fontSize: 16 }}>
+                    &#8801;
+                  </td>
                   <td style={tdStyle}>
                     {isEditing ? (
                       <input
@@ -513,7 +548,7 @@ function HardoxKitsTab({ jobs }: { jobs: any[] }) {
                 </tr>
                 {expandedKit === kit.id && kit.allocatedTo && (
                   <tr>
-                    <td colSpan={KIT_PARTS.length + 5} style={{ padding: 0, background: 'rgba(0,0,0,0.3)', borderBottom: '2px solid #E8681A' }}>
+                    <td colSpan={KIT_PARTS.length + 6} style={{ padding: 0, background: 'rgba(0,0,0,0.3)', borderBottom: '2px solid #E8681A' }}>
                       <WorkOrderDetail jobNum={kit.allocatedTo} />
                     </td>
                   </tr>
@@ -618,7 +653,14 @@ function TrailerChassisTab({ jobs }: { jobs: any[] }) {
   const [adding, setAdding] = useState(false)
   const [newChassis, setNewChassis] = useState({ jobNo: '', chassisLength: '', dollyType: '', drawbar: '', dateNeeded: '', notes: '' })
 
-  const items = (chassis || []) as any[]
+  const [localItems, setLocalItems] = useState<any[]>([])
+  const dragIdx = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (chassis) setLocalItems([...(chassis as any[])].sort((a: any, b: any) => a.position - b.position))
+  }, [chassis])
+
+  const items = localItems
 
   const CHASSIS_REF = [
     { body: '5300', chassis: '4950' },
@@ -652,6 +694,26 @@ function TrailerChassisTab({ jobs }: { jobs: any[] }) {
     await deleteColdformChassis(id)
     mutate()
   }
+  function handleDragStart(idx: number) {
+    dragIdx.current = idx
+  }
+
+  function handleDragOver(e: React.DragEvent, idx: number) {
+    e.preventDefault()
+    if (dragIdx.current === null || dragIdx.current === idx) return
+    const reordered = [...localItems]
+    const [moved] = reordered.splice(dragIdx.current, 1)
+    reordered.splice(idx, 0, moved)
+    dragIdx.current = idx
+    setLocalItems(reordered)
+  }
+
+  async function handleChassisDrop() {
+    dragIdx.current = null
+    await Promise.all(localItems.map((c: any, i: number) => updateColdformChassis(c.id, { position: i })))
+    mutate()
+  }
+
 
   return (
     <div>
@@ -663,6 +725,7 @@ function TrailerChassisTab({ jobs }: { jobs: any[] }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: '2px solid rgba(255,255,255,0.15)' }}>
+              <th style={{ ...thStyle, width: 28 }}></th>
               <th style={thStyle}>Job No</th>
               <th style={thStyle}>Chassis Length</th>
               <th style={thStyle}>Dolly Type</th>
@@ -673,10 +736,20 @@ function TrailerChassisTab({ jobs }: { jobs: any[] }) {
             </tr>
           </thead>
           <tbody>
-            {items.map((c: any) => {
+            {items.map((c: any, idx: number) => {
               const isEditing = editingId === c.id
               return (
-                <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <tr
+                key={c.id}
+                draggable
+                onDragStart={() => handleDragStart(idx)}
+                onDragOver={(e) => handleDragOver(e, idx)}
+                onDrop={handleChassisDrop}
+                onDragEnd={() => { dragIdx.current = null }}
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <td style={{ ...tdStyle, width: 28, cursor: 'grab', textAlign: 'center', color: 'rgba(255,255,255,0.3)', userSelect: 'none', fontSize: 16 }}>
+                  &#8801;
+                </td>
                   <td style={tdStyle}>
                     {isEditing ? (
                       <JobSelect value={editData.jobNo ?? c.jobNo} onChange={(v) => setEditData({ ...editData, jobNo: v })} jobs={jobs} />
