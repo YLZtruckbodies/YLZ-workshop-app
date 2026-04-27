@@ -284,7 +284,7 @@ function VassEngineeringCell({ value, jobId, onSave }: { value: string; jobId: s
           textTransform: 'uppercase',
         }}
       >
-        {VASS_OPTIONS.map(o => <option key={o} value={o} style={{ color: '#111', background: '#fff' }}>{o || '—'}</option>)}
+        {VASS_OPTIONS.map(o => <option key={o} value={o} style={{ color: '#fff', background: '#111' }}>{o || '—'}</option>)}
       </select>
     </td>
   )
