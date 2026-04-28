@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { generateTEBSDocx, downloadTEBSBlob, hasTEBSData, type TEBSInput } from '@/lib/tebs'
 import { VIN_PLATE_LOOKUP, normaliseBrand, normaliseBrake } from '@/lib/vin-plate-lookup'
 
@@ -85,6 +86,13 @@ interface VassBooking {
   vehicleModel: string
 }
 
+interface LinerNote {
+  id: string
+  authorName: string
+  message: string
+  createdAt: string
+}
+
 interface VinPlateData {
   vin?: string
   make?: string
@@ -120,6 +128,7 @@ interface PackItem {
 
 export default function EngineeringPackPage({ params }: { params: { jobId: string } }) {
   const router = useRouter()
+  const { data: session } = useSession()
   const { jobId } = params
 
   const [job, setJob] = useState<Job | null>(null)
@@ -128,6 +137,8 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
   const [boms, setBoms] = useState<BomItem[]>([])
   const [drawings, setDrawings] = useState<JobDrawing[]>([])
   const [vass, setVass] = useState<VassBooking | null>(null)
+  const [linerNote, setLinerNote] = useState<LinerNote | null>(null)
+  const [linerSaving, setLinerSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [tebsLoading, setTebsLoading] = useState(false)
@@ -208,6 +219,13 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
         const vassData = await vassRes.json()
         if (Array.isArray(vassData) && vassData.length > 0) setVass(vassData[0])
       }
+
+      // Fetch liner-booked note (if any)
+      const linerRes = await fetch(`/api/notes?jobId=${jobId}&type=liner-booked`)
+      if (linerRes.ok) {
+        const linerNotes = await linerRes.json()
+        if (Array.isArray(linerNotes) && linerNotes.length > 0) setLinerNote(linerNotes[0])
+      }
     } catch { /* ignore */ }
     setLoading(false)
   }, [jobId])
@@ -248,6 +266,19 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
     : null
   const hasTEBS = tebsInput && hasTEBSData(tebsInput)
 
+  // ── Liner detection ──
+  // Paired truck+trailer: liner lives on cfg.truckConfig.liner / cfg.trailerConfig.liner
+  // Single truck or trailer: liner lives on cfg.liner (flattened)
+  const truckCfg = (cfg.truckConfig as Record<string, any>) || null
+  const linerSections: { label: string; bodyLength: string }[] = []
+  if (buildType.includes('truck-and-trailer')) {
+    if (truckCfg?.liner === 'Yes') linerSections.push({ label: 'Truck Body', bodyLength: (truckCfg.bodyLength as string) || '' })
+    if (tCfg?.liner === 'Yes')     linerSections.push({ label: 'Trailer',    bodyLength: (tCfg.bodyLength as string) || '' })
+  } else if (cfg.liner === 'Yes') {
+    linerSections.push({ label: isTrailer ? 'Trailer' : 'Truck Body', bodyLength: (cfg.bodyLength as string) || '' })
+  }
+  const hasLiner = linerSections.length > 0
+
   // Build pack item statuses
   const packItems: PackItem[] = [
     {
@@ -278,6 +309,15 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       status: isTrailer ? 'not-applicable' : vass ? (vass.status === 'draft' ? 'warning' : 'ready') : 'missing',
       detail: isTrailer ? 'Trailers — N/A' : vass ? `${vass.status} — ${vass.vehicleMake} ${vass.vehicleModel}` : 'Not created',
     },
+    ...(hasLiner ? [{
+      key: 'liner',
+      label: 'Liner Installation',
+      icon: '🧱',
+      status: linerNote ? ('ready' as PackItemStatus) : ('warning' as PackItemStatus),
+      detail: linerNote
+        ? `Booked in by ${linerNote.authorName} on ${new Date(linerNote.createdAt).toLocaleDateString('en-AU')}`
+        : `Needs book-in — tipper tarp arranged for ${linerSections.map(s => s.label).join(' + ')}`,
+    }] : []),
     {
       key: 'axle-order',
       label: 'Axle / Suspension Order',
@@ -356,6 +396,30 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       await fetchAll()
     } catch { /* ignore */ }
     setApproving(false)
+  }
+
+  const handleMarkLinerBooked = async () => {
+    if (!job || linerSaving) return
+    const sectionLabels = linerSections.map(s => s.label).join(' + ')
+    const user = session?.user as { name?: string } | undefined
+    setLinerSaving(true)
+    try {
+      const res = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId: job.id,
+          authorName: user?.name || 'Engineering',
+          type: 'liner-booked',
+          message: `Liner booked in for ${sectionLabels}.`,
+        }),
+      })
+      if (res.ok) {
+        const note = await res.json()
+        setLinerNote(note)
+      }
+    } catch { /* ignore */ }
+    setLinerSaving(false)
   }
 
   const handleTEBS = async () => {
@@ -716,6 +780,7 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
       case 'work-order': return renderWorkOrder()
 case 'tebs': return renderTEBS()
       case 'vass': return renderVASS()
+      case 'liner': return renderLiner()
       case 'axle-order': return renderAxleOrder()
       case 'drawings': return renderDrawings()
       case 'tube-laser': return renderTubeLaser()
@@ -1140,6 +1205,42 @@ case 'tebs': return renderTEBS()
         </div>
         <button onClick={() => router.push(`/engineering/vass-booking?jobNum=${job!.num}`)} style={actionBtn('rgba(255,255,255,0.5)')}>
           Create VASS Booking
+        </button>
+      </div>
+    )
+  }
+
+  function renderLiner() {
+    const sectionLabels = linerSections.map(s =>
+      s.bodyLength ? `${s.label} (${s.bodyLength}mm body)` : s.label
+    ).join(', ')
+
+    if (linerNote) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, color: '#fff', fontWeight: 500 }}>
+              Liner book-in confirmed — {sectionLabels}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+              Booked in by {linerNote.authorName} on {new Date(linerNote.createdAt).toLocaleString('en-AU')}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1, fontSize: 12, color: 'var(--text3)' }}>
+          Liner installed in {sectionLabels}. Book in with tipper tarps so the liner can be fitted after the body is built.
+        </div>
+        <button
+          onClick={handleMarkLinerBooked}
+          disabled={linerSaving}
+          style={{ ...actionBtn('#22c55e'), opacity: linerSaving ? 0.5 : 1 }}
+        >
+          {linerSaving ? 'Saving...' : '✓ Mark as Booked In'}
         </button>
       </div>
     )
