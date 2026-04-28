@@ -30,7 +30,7 @@ interface MOSummary {
   drawingsFound: string[]
 }
 
-const TOOLS = ['Keith Completions', 'Laser Pack Generator', 'Drive Browser'] as const
+const TOOLS = ['Keith Completions', 'Laser Pack Generator', 'Laser BOM Extractor', 'Drive Browser'] as const
 type Tool = (typeof TOOLS)[number]
 
 export default function MRPToolsPage() {
@@ -88,6 +88,7 @@ export default function MRPToolsPage() {
 
       {activeTool === 'Keith Completions' && <KeithCompletionsTool />}
       {activeTool === 'Laser Pack Generator' && <LaserPackTool />}
+      {activeTool === 'Laser BOM Extractor' && <LaserBomTool />}
       {activeTool === 'Drive Browser' && <DriveBrowserTool />}
     </div>
   )
@@ -704,6 +705,211 @@ function LaserPackTool() {
               fontSize: 12, color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
             }}>
               New MO
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// LASER BOM EXTRACTOR
+// ══════════════════════════════════════════════════════════════════════════
+
+interface BomStats {
+  totalPairs: number
+  rowsProduced: number
+  failures: number
+  unknownCodes: number
+}
+
+const DEFAULT_FOLDER_ID = '15mg2nsgwGNDJH8mMxS7dDhmZpKIFCLAl'
+
+function LaserBomTool() {
+  const [folderId, setFolderId]   = useState(DEFAULT_FOLDER_ID)
+  const [recursive, setRecursive] = useState(false)
+  const [limit, setLimit]         = useState<string>('')
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState<string | null>(null)
+  const [stats, setStats]         = useState<BomStats | null>(null)
+  const [csvBlob, setCsvBlob]     = useState<Blob | null>(null)
+
+  const onRun = async () => {
+    setLoading(true); setError(null); setStats(null); setCsvBlob(null)
+    try {
+      const body: Record<string, unknown> = { folderId, recursive }
+      const n = parseInt(limit)
+      if (!isNaN(n) && n > 0) body.limit = n
+
+      const res = await fetch('/api/mrp-tools/extract-laser-bom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        let message = 'Something went wrong.'
+        try { message = JSON.parse(text).error ?? message } catch { /* raw text */ }
+        throw new Error(message)
+      }
+
+      const statsHeader = res.headers.get('X-Stats')
+      if (statsHeader) setStats(JSON.parse(decodeURIComponent(statsHeader)))
+      setCsvBlob(await res.blob())
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Unknown error.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const onDownload = () => {
+    if (!csvBlob) return
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(csvBlob)
+    a.download = 'laser_bom.csv'
+    a.click()
+  }
+
+  const reset = () => { setStats(null); setCsvBlob(null); setError(null) }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 620 }}>
+      <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
+        Walks the YLZ Parts Drive folder, extracts geometry from each DXF and material
+        info from each PDF title block, and outputs a CSV ready for MRPeasy import.
+      </div>
+
+      {/* Folder ID */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
+          Drive Folder ID
+        </label>
+        <input
+          type="text"
+          value={folderId}
+          onChange={e => setFolderId(e.target.value)}
+          placeholder={DEFAULT_FOLDER_ID}
+          style={{
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 6, padding: '10px 14px', fontSize: 12,
+            color: '#fff', outline: 'none', fontFamily: 'monospace',
+          }}
+        />
+      </div>
+
+      {/* Options row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+        {/* Recursive */}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+          <div
+            onClick={() => setRecursive(v => !v)}
+            style={{
+              width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+              border: `2px solid ${recursive ? '#E8681A' : 'rgba(255,255,255,0.25)'}`,
+              background: recursive ? '#E8681A' : 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', transition: '0.15s',
+            }}
+          >
+            {recursive && <span style={{ color: '#fff', fontSize: 11, fontWeight: 800, lineHeight: 1 }}>&#10003;</span>}
+          </div>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>Recursive (include subfolders)</span>
+        </label>
+
+        {/* Limit */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>Limit</span>
+          <input
+            type="number"
+            value={limit}
+            onChange={e => setLimit(e.target.value)}
+            placeholder="all"
+            min={1}
+            style={{
+              width: 72, background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6,
+              padding: '8px 10px', fontSize: 12, color: '#fff', outline: 'none',
+              textAlign: 'center',
+            }}
+          />
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>pairs</span>
+        </div>
+      </div>
+
+      {error && (
+        <div style={{
+          background: 'rgba(232,68,96,0.1)', border: '1px solid rgba(232,68,96,0.3)',
+          borderRadius: 6, padding: '10px 14px', fontSize: 13, color: '#e84560',
+        }}>
+          {error}
+        </div>
+      )}
+
+      {!stats ? (
+        <button
+          onClick={onRun}
+          disabled={!folderId.trim() || loading}
+          style={{
+            padding: '14px 20px', borderRadius: 6, border: 'none',
+            fontFamily: "'League Spartan', sans-serif",
+            fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+            cursor: !folderId.trim() || loading ? 'not-allowed' : 'pointer',
+            background: !folderId.trim() || loading ? 'rgba(255,255,255,0.08)' : '#E8681A',
+            color: !folderId.trim() || loading ? 'rgba(255,255,255,0.3)' : '#fff',
+            transition: '0.15s',
+          }}
+        >
+          {loading ? 'Extracting BOM…' : 'Generate BOM CSV'}
+        </button>
+      ) : (
+        <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ background: '#E8681A', padding: '14px 20px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>
+              BOM Extraction Complete
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>
+              {stats.rowsProduced} rows
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', padding: '14px 20px', gap: 16, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            {([
+              { label: 'Pairs found',   value: String(stats.totalPairs) },
+              { label: 'Rows produced', value: String(stats.rowsProduced), accent: true },
+              { label: 'Failures',      value: String(stats.failures),     warn: stats.failures > 0 },
+              { label: 'Unknown codes', value: String(stats.unknownCodes), warn: stats.unknownCodes > 0 },
+            ] as Array<{ label: string; value: string; accent?: boolean; warn?: boolean }>).map(({ label, value, accent, warn }) => (
+              <div key={label}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: 'var(--text3)', marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: accent ? '#E8681A' : warn ? '#f0a830' : '#fff' }}>{value}</div>
+              </div>
+            ))}
+          </div>
+
+          {stats.unknownCodes > 0 && (
+            <div style={{ padding: '10px 20px', fontSize: 11, color: '#f0a830', borderBottom: '1px solid rgba(255,255,255,0.06)', lineHeight: 1.5 }}>
+              {stats.unknownCodes} part{stats.unknownCodes !== 1 ? 's' : ''} have no material code &mdash; material text didn&apos;t match a known grade/thickness. Check the CSV and update manually or expand the material table.
+            </div>
+          )}
+
+          <div style={{ padding: '14px 20px', display: 'flex', gap: 10 }}>
+            <button onClick={onDownload} style={{
+              flex: 1, padding: '12px 16px', borderRadius: 6, border: 'none',
+              fontFamily: "'League Spartan', sans-serif",
+              fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase',
+              background: '#E8681A', color: '#fff', cursor: 'pointer',
+            }}>
+              Download laser_bom.csv
+            </button>
+            <button onClick={reset} style={{
+              padding: '12px 16px', borderRadius: 6,
+              border: '1px solid rgba(255,255,255,0.15)', background: 'transparent',
+              fontSize: 12, color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
+            }}>
+              New Run
             </button>
           </div>
         </div>

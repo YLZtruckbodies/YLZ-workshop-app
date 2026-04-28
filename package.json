@@ -21,6 +21,7 @@
     "@types/pdf-parse": "^1.1.5",
     "@types/pdfkit": "^0.17.5",
     "bcryptjs": "^3.0.3",
+    "dxf-parser": "^1.1.2",
     "googleapis": "^171.4.0",
     "jszip": "^3.10.1",
     "next": "14.1.4",
