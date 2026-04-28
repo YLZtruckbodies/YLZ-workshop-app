@@ -269,15 +269,22 @@ export default function EngineeringPackPage({ params }: { params: { jobId: strin
   // ── Liner detection ──
   // Paired truck+trailer: liner lives on cfg.truckConfig.liner / cfg.trailerConfig.liner
   // Single truck or trailer: liner lives on cfg.liner (flattened)
+  // Detection is permissive — accepts 'Yes', 'yes', true, 1.
+  const isLinerYes = (v: unknown) =>
+    v === true || v === 1 || (typeof v === 'string' && v.trim().toLowerCase() === 'yes')
   const truckCfg = (cfg.truckConfig as Record<string, any>) || null
   const linerSections: { label: string; bodyLength: string }[] = []
-  if (buildType.includes('truck-and-trailer')) {
-    if (truckCfg?.liner === 'Yes') linerSections.push({ label: 'Truck Body', bodyLength: (truckCfg.bodyLength as string) || '' })
-    if (tCfg?.liner === 'Yes')     linerSections.push({ label: 'Trailer',    bodyLength: (tCfg.bodyLength as string) || '' })
-  } else if (cfg.liner === 'Yes') {
+  if (isLinerYes(truckCfg?.liner)) linerSections.push({ label: 'Truck Body', bodyLength: (truckCfg?.bodyLength as string) || '' })
+  if (isLinerYes(tCfg?.liner))     linerSections.push({ label: 'Trailer',    bodyLength: (tCfg?.bodyLength as string) || '' })
+  if (linerSections.length === 0 && isLinerYes(cfg.liner)) {
     linerSections.push({ label: isTrailer ? 'Trailer' : 'Truck Body', bodyLength: (cfg.bodyLength as string) || '' })
   }
   const hasLiner = linerSections.length > 0
+  if (typeof window !== 'undefined' && quote) {
+    console.log('[liner-detect] job', job?.num, 'buildType', buildType,
+      'truckConfig.liner:', truckCfg?.liner, 'trailerConfig.liner:', tCfg?.liner, 'cfg.liner:', cfg.liner,
+      '→ hasLiner:', hasLiner)
+  }
 
   // Build pack item statuses
   const packItems: PackItem[] = [
