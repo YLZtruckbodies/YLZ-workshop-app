@@ -1541,7 +1541,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section">
             <div className="section-hdr">Beavertail Tray Accessories</div>
             <div className="check-grid">
-              {['Stabiliser Legs', 'Chain Points', 'Shovel Racks', 'Toolbox', 'Twin Ramps', 'Ramp Hinges', 'Hydraulic Power Pack', 'Hand Controls', 'Key Switch Isolator', 'Traction Bars', 'Headboard', 'Side Coaming', 'Steps & Handles', 'Tail Lights', 'Side Markers', 'License Plate Light'].map(item => (
+              {['Stabiliser Legs', 'Chain Points', 'Toolbox', 'Twin Ramps', 'Ramp Hinges', 'Hydraulic Power Pack', 'Hand Controls', 'Key Switch Isolator', 'Traction Bars', 'Tail Lights', 'Side Markers', 'License Plate Light'].map(item => (
                 <div key={item} className="check-item">
                   <div className="check-box" />
                   <span>{item}</span>
@@ -1667,10 +1667,6 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
                 <div className="field"><div className="field-lbl">Ramp Width (mm)</div><div className="field-val">{c('btRampWidth') || ''}</div>{!c('btRampWidth') && <div className="field-blank" />}</div>
                 <div className="field"><div className="field-lbl">Ramp Length (mm)</div><div className="field-val">{c('btRampActualLength') || ''}</div>{!c('btRampActualLength') && <div className="field-blank" />}</div>
                 <div className="field"><div className="field-lbl">Ramp Capacity</div><div className="field-val">{c('btRampCapacity') || ''}</div>{!c('btRampCapacity') && <div className="field-blank" />}</div>
-              </div>
-              <div className="field-row field-row-2">
-                <div className="field"><div className="field-lbl">Floor Plate</div><div className="field-val">{c('btFloorPlate') || ''}</div>{!c('btFloorPlate') && <div className="field-blank" />}</div>
-                <div className="field"><div className="field-lbl">Cross-Members</div><div className="field-val">{c('btCrossMembers') || ''}</div>{!c('btCrossMembers') && <div className="field-blank" />}</div>
               </div>
               <div className="field-row field-row-1">
                 <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('btHydraulics') || ''}</div>{!c('btHydraulics') && <div className="field-blank" />}</div>
