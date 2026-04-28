@@ -398,7 +398,8 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
   const isTrailer = job.btype === 'ally-trailer' || job.btype === 'hardox-trailer'
     || job.type?.toLowerCase().includes('trailer') || job.type?.toLowerCase().includes('dog')
     || job.type?.toLowerCase().includes('semi')
-  const bodyLabel = isTrailer ? 'Trailer Body' : 'Truck Body'
+  const isBeavertail = job.btype === 'beavertail' || job.type?.toLowerCase().includes('beavertail')
+  const bodyLabel = isBeavertail ? 'Beavertail Tray' : isTrailer ? 'Trailer Body' : 'Truck Body'
 
   // Paired truck+trailer detection: current job is the TRUCK side of a paired
   // quote when it's not itself a trailer but the quote carries a trailerConfig.
@@ -927,6 +928,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           </div>
         </div>
 
+        {!isBeavertail && (<>
         {/* Body Details */}
         <div className="section">
           <div className="section-hdr">Body Details</div>
@@ -1150,6 +1152,88 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             </div>
           </div>
         </div>
+        </>)}
+
+        {/* ── Beavertail — Fabrication ── */}
+        {isBeavertail && (
+          <>
+            <div className="section">
+              <div className="section-hdr">Deck Specifications</div>
+              <div className="section-body">
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">Deck Width (mm)</div><div className="field-val">{c('btDeckWidth') || ''}</div>{!c('btDeckWidth') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Overall Length (mm)</div><div className="field-val">{c('btDeckLength') || ''}</div>{!c('btDeckLength') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Flat Deck Section (mm)</div><div className="field-val">{c('btFlatDeckLength') || ''}</div>{!c('btFlatDeckLength') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Tail Section (mm)</div><div className="field-val">{c('btTailLength') || ''}</div>{!c('btTailLength') && <div className="field-blank" />}</div>
+                </div>
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">Tail Angle (°)</div><div className="field-val">{c('btTailAngle') || ''}</div>{!c('btTailAngle') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Ramp Extension (mm)</div><div className="field-val">{c('btRampExtension') || ''}</div>{!c('btRampExtension') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Floor Plate</div><div className="field-val">{c('btFloorPlate') || ''}</div>{!c('btFloorPlate') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Cross-Members</div><div className="field-val">{c('btCrossMembers') || ''}</div>{!c('btCrossMembers') && <div className="field-blank" />}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="section">
+              <div className="section-hdr">Ramps</div>
+              <div className="section-body">
+                <div className="field-row field-row-4">
+                  <div className="field"><div className="field-lbl">Ramp Type</div><div className="field-val">{c('btRampType') || ''}</div>{!c('btRampType') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Ramp Width (mm)</div><div className="field-val">{c('btRampWidth') || ''}</div>{!c('btRampWidth') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Ramp Length (mm)</div><div className="field-val">{c('btRampActualLength') || ''}</div>{!c('btRampActualLength') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Ramp Capacity</div><div className="field-val">{c('btRampCapacity') || ''}</div>{!c('btRampCapacity') && <div className="field-blank" />}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="section">
+              <div className="section-hdr">Hydraulics</div>
+              <div className="section-body">
+                <div className="field-row field-row-1">
+                  <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('btHydraulics') || ''}</div>{!c('btHydraulics') && <div className="field-blank" />}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="section">
+              <div className="section-hdr">Accessories</div>
+              <div className="section-body">
+                <div className="field-row field-row-2">
+                  <div className="field"><div className="field-lbl">Stabiliser Legs</div><div className="field-val">{c('btStabiliserLegs') || ''}</div>{!c('btStabiliserLegs') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Chain Points</div><div className="field-val">{c('btChainPoints') || ''}</div>{!c('btChainPoints') && <div className="field-blank" />}</div>
+                </div>
+                <div className="field-row field-row-2">
+                  <div className="field"><div className="field-lbl">Shovel Racks</div><div className="field-val">{c('btShovelRacks') || ''}</div>{!c('btShovelRacks') && <div className="field-blank" />}</div>
+                  <div className="field"><div className="field-lbl">Toolbox (L×W×H mm)</div><div className="field-val">{c('btToolbox') || ''}</div>{!c('btToolbox') && <div className="field-blank" />}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="section">
+              <div className="section-hdr">Lights &amp; Paint</div>
+              <div className="section-body">
+                <div className="field-row field-row-1">
+                  <div className="field"><div className="field-lbl">Lights</div><div className="field-val">{c('btLights') || ''}</div>{!c('btLights') && <div className="field-blank" />}</div>
+                </div>
+                <div className="field-row field-row-1">
+                  <div className="field"><div className="field-lbl">Paint</div><div className="field-val">{c('btPaint') || ''}</div>{!c('btPaint') && <div className="field-blank" />}</div>
+                </div>
+              </div>
+            </div>
+
+            {c('btEngineeringNote') && (
+              <div className="section">
+                <div className="section-hdr">Engineering Note</div>
+                <div className="section-body">
+                  <div className="field-row field-row-1">
+                    <div className="field"><div className="field-val">{c('btEngineeringNote')}</div></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
         {/* ── Paired Trailer — Fabrication ── */}
         {showPairedTrailerSections && (
@@ -1438,11 +1522,26 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         </div>
 
         {/* Truck accessories */}
-        {!isTrailer && (
+        {!isTrailer && !isBeavertail && (
           <div className="section">
             <div className="section-hdr">Truck Body Accessories</div>
             <div className="check-grid">
               {['Rope Rails', 'Toolbox LHS', 'Toolbox RHS', 'Underbody Toolbox', 'Water Cooler Holder', 'Ladder', 'Tow Hitch', 'Headboard', 'Cab Guard', 'Load Pegs', 'Grain Sides', 'Mesh Extensions', 'Drop Sides', 'Side Pegs', 'Rear Bumper', 'Mudflaps'].map(item => (
+                <div key={item} className="check-item">
+                  <div className="check-box" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Beavertail accessories — fitout checklist */}
+        {isBeavertail && (
+          <div className="section">
+            <div className="section-hdr">Beavertail Tray Accessories</div>
+            <div className="check-grid">
+              {['Stabiliser Legs', 'Chain Points', 'Shovel Racks', 'Toolbox', 'Twin Ramps', 'Ramp Hinges', 'Hydraulic Power Pack', 'Hand Controls', 'Key Switch Isolator', 'Traction Bars', 'Headboard', 'Side Coaming', 'Steps & Handles', 'Tail Lights', 'Side Markers', 'License Plate Light'].map(item => (
                 <div key={item} className="check-item">
                   <div className="check-box" />
                   <span>{item}</span>
@@ -1468,7 +1567,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         )}
 
         {/* Parts to Fit — summary of selected tail-light / body-extras options from the quote */}
-        {(() => {
+        {!isBeavertail && (() => {
           const items = [
             { label: 'Tail Lights', value: c('tailLights') },
             { label: 'Tailgate Lights', value: c('tailgateLights') },
@@ -1513,6 +1612,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
         })()}
 
         {/* Fitout details */}
+        {!isBeavertail && (
         <div className="section" style={{ marginTop: 10 }}>
           <div className="section-hdr">Fitout Details</div>
           <div className="section-body">
@@ -1549,6 +1649,46 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
             )}
           </div>
         </div>
+        )}
+
+        {/* Beavertail fitout details */}
+        {isBeavertail && (
+          <div className="section" style={{ marginTop: 10 }}>
+            <div className="section-hdr">Fitout Details</div>
+            <div className="section-body">
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Deck Width (mm)</div><div className="field-val">{c('btDeckWidth') || ''}</div>{!c('btDeckWidth') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Flat Deck (mm)</div><div className="field-val">{c('btFlatDeckLength') || ''}</div>{!c('btFlatDeckLength') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Tail Section (mm)</div><div className="field-val">{c('btTailLength') || ''}</div>{!c('btTailLength') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Tail Angle (°)</div><div className="field-val">{c('btTailAngle') || ''}</div>{!c('btTailAngle') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-4">
+                <div className="field"><div className="field-lbl">Ramp Type</div><div className="field-val">{c('btRampType') || ''}</div>{!c('btRampType') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Ramp Width (mm)</div><div className="field-val">{c('btRampWidth') || ''}</div>{!c('btRampWidth') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Ramp Length (mm)</div><div className="field-val">{c('btRampActualLength') || ''}</div>{!c('btRampActualLength') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Ramp Capacity</div><div className="field-val">{c('btRampCapacity') || ''}</div>{!c('btRampCapacity') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-2">
+                <div className="field"><div className="field-lbl">Floor Plate</div><div className="field-val">{c('btFloorPlate') || ''}</div>{!c('btFloorPlate') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Cross-Members</div><div className="field-val">{c('btCrossMembers') || ''}</div>{!c('btCrossMembers') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-1">
+                <div className="field"><div className="field-lbl">Hydraulic System</div><div className="field-val">{c('btHydraulics') || ''}</div>{!c('btHydraulics') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-2">
+                <div className="field"><div className="field-lbl">Stabiliser Legs</div><div className="field-val">{c('btStabiliserLegs') || ''}</div>{!c('btStabiliserLegs') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Chain Points</div><div className="field-val">{c('btChainPoints') || ''}</div>{!c('btChainPoints') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-2">
+                <div className="field"><div className="field-lbl">Shovel Racks</div><div className="field-val">{c('btShovelRacks') || ''}</div>{!c('btShovelRacks') && <div className="field-blank" />}</div>
+                <div className="field"><div className="field-lbl">Toolbox (L×W×H mm)</div><div className="field-val">{c('btToolbox') || ''}</div>{!c('btToolbox') && <div className="field-blank" />}</div>
+              </div>
+              <div className="field-row field-row-1">
+                <div className="field"><div className="field-lbl">Lights</div><div className="field-val">{c('btLights') || ''}</div>{!c('btLights') && <div className="field-blank" />}</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Wheels & Tyres — trailer only */}
         {isTrailer && (
@@ -1765,6 +1905,11 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               <div className="field"><div className="field-lbl">Coats</div><div className="field-blank" /></div>
               <div className="field"><div className="field-lbl">Material</div><div className="field-val">{c('material') || ''}</div>{!c('material') && <div className="field-blank" />}</div>
             </div>
+            {isBeavertail && c('btPaint') && (
+              <div className="field-row field-row-1">
+                <div className="field"><div className="field-lbl">Paint Notes (from Quote)</div><div className="field-val">{c('btPaint')}</div></div>
+              </div>
+            )}
           </div>
         </div>
 
