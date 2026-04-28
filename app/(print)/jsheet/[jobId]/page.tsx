@@ -1895,7 +1895,7 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
           <div className="section-body">
             <div className="field-row field-row-4">
               <div className="field"><div className="field-lbl">{isTrailer ? 'Chassis Colour' : 'Subframe Colour'}</div><div className="field-val">{isTrailer ? (c('chassisColour') || '') : (c('subframeColour') || '')}</div>{!(isTrailer ? c('chassisColour') : c('subframeColour')) && <div className="field-blank" />}</div>
-              <div className="field"><div className="field-lbl">Body Colour</div><div className="field-val">{c('bodyColour') || ''}</div>{!c('bodyColour') && <div className="field-blank" />}</div>
+              <div className="field"><div className="field-lbl">Body Colour</div><div className="field-val">{c('chassisMake') || c('bodyColour') || ''}</div>{!c('chassisMake') && !c('bodyColour') && <div className="field-blank" />}</div>
               <div className="field"><div className="field-lbl">Paint Code</div><div className="field-blank" /></div>
               <div className="field"><div className="field-lbl">Paint Brand</div><div className="field-blank" /></div>
             </div>
