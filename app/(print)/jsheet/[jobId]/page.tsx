@@ -1210,18 +1210,6 @@ export default function JobSheetPage({ params }: { params: { jobId: string } }) 
               </div>
             </div>
 
-            <div className="section">
-              <div className="section-hdr">Lights &amp; Paint</div>
-              <div className="section-body">
-                <div className="field-row field-row-1">
-                  <div className="field"><div className="field-lbl">Lights</div><div className="field-val">{c('btLights') || ''}</div>{!c('btLights') && <div className="field-blank" />}</div>
-                </div>
-                <div className="field-row field-row-1">
-                  <div className="field"><div className="field-lbl">Paint</div><div className="field-val">{c('btPaint') || ''}</div>{!c('btPaint') && <div className="field-blank" />}</div>
-                </div>
-              </div>
-            </div>
-
             {c('btEngineeringNote') && (
               <div className="section">
                 <div className="section-hdr">Engineering Note</div>
